@@ -47,8 +47,8 @@ These guidelines provide a strong baseline, but there are always exceptions and 
 >
 > **Minimum system requirements**
 >
-> | Role    | Cores    | Memory        | System Disk               |
-> |---------|----------|---------------|---------------------------|
+> | Role | Cores | Memory | System Disk |
+> | --------- | ------- | -------- | ------------- |
 > | Control/Worker | 4 | 16GB | 256GB SSD/NVMe |
 
 1. Head over to the [Talos Linux Image Factory](https://factory.talos.dev) and follow the instructions. Be sure to only choose the **bare-minimum system extensions** as some might require additional configuration and prevent Talos from booting without it. Depending on your CPU start with the Intel/AMD system extensions (`i915`, `intel-ucode` & `mei` **or** `amdgpu` & `amd-ucode`), you can always add system extensions after Talos is installed and working.
