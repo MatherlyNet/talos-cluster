@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "name": "matherlynet-talos-cluster",
+    "type": "kubernetes-gitops",
+    "generated": "2026-01-01",
+    "version": "1.0.0"
+  },
+  "description": "Talos Linux Kubernetes cluster template with Flux GitOps for home/bare-metal deployments",
+  "upstream": "onedr0p/cluster-template",
+  "stack": {
+    "os": "talos-linux",
+    "gitops": "flux-cd",
+    "cni": "cilium",
+    "ingress": "envoy-gateway",
+    "dns": ["external-dns", "k8s-gateway"],
+    "tunnel": "cloudflare",
+    "secrets": "sops-age",
+    "templating": "makejinja"
+  },
+  "structure": {
+    "root_files": [
+      "Taskfile.yaml",
+      "makejinja.toml",
+      "cluster.sample.yaml",
+      "nodes.sample.yaml",
+      ".mise.toml",
+      "README.md",
+      "LICENSE"
+    ],
+    "directories": {
+      ".github": {
+        "description": "GitHub Actions and config",
+        "contents": [
+          "workflows/",
+          "tests/",
+          "labels.yaml",
+          "labeler.yaml",
+          "release.yaml"
+        ]
+      },
+      ".taskfiles": {
+        "description": "Task automation",
+        "contents": [
+          "bootstrap/Taskfile.yaml",
+          "talos/Taskfile.yaml",
+          "template/Taskfile.yaml"
+        ]
+      },
+      "scripts": {
+        "description": "Shell scripts",
+        "contents": ["bootstrap-apps.sh", "lib/common.sh"]
+      },
+      "templates": {
+        "description": "Jinja2 templates (93 files)",
+        "contents": [
+          "config/kubernetes/",
+          "config/talos/",
+          "config/bootstrap/",
+          "overrides/"
+        ]
+      }
+    },
+    "generated_dirs": ["kubernetes/", "talos/", "bootstrap/"]
+  },
+  "entry_points": {
+    "main_taskfile": "Taskfile.yaml",
+    "bootstrap_talos": ".taskfiles/bootstrap/Taskfile.yaml",
+    "bootstrap_apps": "scripts/bootstrap-apps.sh",
+    "template_tasks": ".taskfiles/template/Taskfile.yaml",
+    "talos_tasks": ".taskfiles/talos/Taskfile.yaml"
+  },
+  "tasks": {
+    "init": "Generate config files from samples",
+    "configure": "Render templates, validate, encrypt secrets",
+    "bootstrap:talos": "Install Talos on nodes",
+    "bootstrap:apps": "Deploy Cilium, CoreDNS, Spegel, Flux",
+    "reconcile": "Force Flux Git sync",
+    "talos:apply-node": "Apply config to node (IP=required)",
+    "talos:upgrade-node": "Upgrade Talos on node (IP=required)",
+    "talos:upgrade-k8s": "Upgrade Kubernetes version",
+    "talos:reset": "Reset cluster to maintenance mode",
+    "template:debug": "Gather cluster resources",
+    "template:tidy": "Archive template files post-setup"
+  },
+  "configuration": {
+    "cluster_config": {
+      "file": "cluster.yaml",
+      "sample": "cluster.sample.yaml",
+      "required_fields": [
+        "node_cidr",
+        "cluster_api_addr",
+        "cluster_dns_gateway_addr",
+        "cluster_gateway_addr",
+        "repository_name",
+        "cloudflare_domain",
+        "cloudflare_token",
+        "cloudflare_gateway_addr"
+      ]
+    },
+    "nodes_config": {
+      "file": "nodes.yaml",
+      "sample": "nodes.sample.yaml",
+      "required_fields": [
+        "name",
+        "address",
+        "controller",
+        "disk",
+        "mac_addr",
+        "schematic_id"
+      ]
+    }
+  },
+  "applications": [
+    {
+      "namespace": "kube-system",
+      "name": "cilium",
+      "purpose": "CNI + LoadBalancer"
+    },
+    { "namespace": "kube-system", "name": "coredns", "purpose": "Cluster DNS" },
+    {
+      "namespace": "kube-system",
+      "name": "kubelet-csr-approver",
+      "purpose": "CSR automation"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "spegel",
+      "purpose": "P2P image distribution"
+    },
+    {
+      "namespace": "flux-system",
+      "name": "flux-operator",
+      "purpose": "Flux deployment"
+    },
+    {
+      "namespace": "flux-system",
+      "name": "flux-instance",
+      "purpose": "Flux config"
+    },
+    {
+      "namespace": "cert-manager",
+      "name": "cert-manager",
+      "purpose": "TLS certificates"
+    },
+    {
+      "namespace": "network",
+      "name": "envoy-gateway",
+      "purpose": "Ingress/Gateway API"
+    },
+    {
+      "namespace": "network",
+      "name": "external-dns",
+      "purpose": "DNS automation"
+    },
+    {
+      "namespace": "network",
+      "name": "cloudflare-tunnel",
+      "purpose": "External access"
+    },
+    { "namespace": "network", "name": "k8s-gateway", "purpose": "Split DNS" },
+    { "namespace": "default", "name": "echo", "purpose": "Test application" },
+    {
+      "namespace": "kube-system",
+      "name": "reloader",
+      "purpose": "Secret/ConfigMap reload"
+    }
+  ],
+  "tools": {
+    "talosctl": { "version": "1.12.0", "purpose": "Talos node management" },
+    "talhelper": { "version": "3.0.44", "purpose": "Talos config generator" },
+    "kubectl": { "version": "1.35.0", "purpose": "Kubernetes CLI" },
+    "flux": { "version": "2.7.5", "purpose": "Flux CD CLI" },
+    "helm": { "version": "3.19.4", "purpose": "Helm charts" },
+    "helmfile": { "version": "1.2.3", "purpose": "Helm release management" },
+    "sops": { "version": "3.11.0", "purpose": "Secret encryption" },
+    "age": { "version": "1.3.1", "purpose": "Encryption backend" },
+    "cilium": { "version": "0.18.9", "purpose": "Cilium CLI" },
+    "cloudflared": { "version": "2025.11.1", "purpose": "Cloudflare tunnel" },
+    "kustomize": { "version": "5.8.0", "purpose": "Kustomize" },
+    "kubeconform": { "version": "0.7.0", "purpose": "Manifest validation" },
+    "cue": { "version": "0.15.3", "purpose": "Schema validation" }
+  },
+  "workflows": {
+    "flux-local.yaml": {
+      "trigger": "PR to main",
+      "purpose": "Test/diff Flux resources"
+    },
+    "labeler.yaml": { "trigger": "PR", "purpose": "Auto-label PRs" },
+    "label-sync.yaml": { "trigger": "Push", "purpose": "Sync GitHub labels" },
+    "release.yaml": { "trigger": "Push", "purpose": "Release automation" },
+    "e2e.yaml": { "trigger": "Manual", "purpose": "End-to-end testing" }
+  },
+  "environment": {
+    "KUBECONFIG": "./kubeconfig",
+    "TALOSCONFIG": "./talos/clusterconfig/talosconfig",
+    "SOPS_AGE_KEY_FILE": "./age.key"
+  },
+  "template_config": {
+    "engine": "makejinja",
+    "config_file": "makejinja.toml",
+    "delimiters": {
+      "block": ["#%", "%#"],
+      "variable": ["#{", "}#"],
+      "comment": ["#|", "#|"]
+    },
+    "data_sources": ["cluster.yaml", "nodes.yaml"],
+    "template_count": 93
+  },
+  "bootstrap_sequence": [
+    "mise trust && mise install",
+    "task init",
+    "Edit cluster.yaml and nodes.yaml",
+    "cloudflared tunnel login",
+    "cloudflared tunnel create --credentials-file cloudflare-tunnel.json kubernetes",
+    "task configure",
+    "git add -A && git commit -m 'Initial config' && git push",
+    "task bootstrap:talos",
+    "task bootstrap:apps"
+  ]
+}

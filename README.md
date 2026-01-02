@@ -26,7 +26,7 @@ A Kubernetes cluster deployed with [Talos Linux](https://github.com/siderolabs/t
 
 Does this sound cool to you? If so, continue to read on! 👇
 
-## 🚀 Let's Go!
+## 🚀 Let's Go
 
 There are **6 stages** outlined below for completing this project, make sure you follow the stages in order.
 
@@ -40,13 +40,13 @@ Using **enterprise NVMe or SATA SSDs on Bare Metal** (even used drives) provides
 
 These guidelines provide a strong baseline, but there are always exceptions and nuances. The best way to ensure your hardware configuration works is to **test it thoroughly and benchmark performance** under realistic workloads.
 
-
 ### Stage 2: Machine Preparation
 
 > [!IMPORTANT]
 > If you have **3 or more nodes** it is recommended to make 3 of them controller nodes for a highly available control plane. This project configures **all nodes** to be able to run workloads. **Worker nodes** are therefore **optional**.
 >
 > **Minimum system requirements**
+>
 > | Role    | Cores    | Memory        | System Disk               |
 > |---------|----------|---------------|---------------------------|
 > | Control/Worker | 4 | 16GB | 256GB SSD/NVMe |

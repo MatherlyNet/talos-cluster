@@ -19,3 +19,8 @@ talosconfig
 .venv/
 .DS_Store
 Thumbs.db
+# AI
+.claude/
+.serena/
+# IDE
+local_docs/
