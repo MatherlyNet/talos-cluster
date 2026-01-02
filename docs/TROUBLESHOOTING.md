@@ -1,0 +1,486 @@
+# Troubleshooting Guide
+
+> Systematic troubleshooting for common cluster issues
+
+## Diagnostic Flowchart
+
+```
+                    ┌─────────────────────────────────┐
+                    │       ISSUE DETECTED            │
+                    └─────────────────┬───────────────┘
+                                      │
+                    ┌─────────────────▼───────────────┐
+                    │    What layer is affected?      │
+                    └─────────────────┬───────────────┘
+                                      │
+        ┌─────────────┬───────────────┼───────────────┬─────────────┐
+        │             │               │               │             │
+        ▼             ▼               ▼               ▼             ▼
+   ┌─────────┐  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+   │  Nodes  │  │   Pods  │    │ Network │    │  Flux   │    │  Certs  │
+   │ Not     │  │   Not   │    │  Issues │    │   Not   │    │   Not   │
+   │ Ready   │  │ Running │    │         │    │ Syncing │    │  Valid  │
+   └────┬────┘  └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘
+        │            │              │              │              │
+        ▼            ▼              ▼              ▼              ▼
+   See: §1       See: §2        See: §3       See: §4        See: §5
+```
+
+---
+
+## Section 1: Node Issues
+
+### Symptom: Node Not Ready
+
+**Quick Check:**
+```bash
+kubectl get nodes -o wide
+kubectl describe node <node-name> | grep -A5 Conditions
+```
+
+**Decision Tree:**
+
+```
+Node Not Ready
+     │
+     ├── Status: NotReady + NetworkNotReady
+     │   └── CNI Issue → Go to "Cilium Not Running"
+     │
+     ├── Status: NotReady + DiskPressure
+     │   └── Disk full → Clean up or expand storage
+     │
+     ├── Status: NotReady + MemoryPressure
+     │   └── OOM → Check resource limits, evicted pods
+     │
+     └── Status: Unknown
+         └── Node unreachable → Check network/hardware
+```
+
+**Detailed Diagnostics:**
+
+```bash
+# 1. Check Talos health
+talosctl health -n <node-ip>
+
+# 2. Check Talos services
+talosctl services -n <node-ip>
+
+# 3. Check system logs
+talosctl dmesg -n <node-ip> | tail -50
+
+# 4. Check kubelet logs
+talosctl logs kubelet -n <node-ip>
+```
+
+**Common Fixes:**
+
+| Issue | Solution |
+| ------- | ---------- |
+| Kubelet not starting | Check etcd health, restart kubelet |
+| Network plugin failing | Check Cilium pods, network connectivity |
+| Disk pressure | Clean up unused images, PVCs |
+| API server unreachable | Check VIP, control plane pods |
+
+---
+
+## Section 2: Pod Issues
+
+### Symptom: Pods Not Running
+
+**Quick Check:**
+```bash
+kubectl get pods -A | grep -v Running
+kubectl describe pod <pod-name> -n <namespace>
+kubectl logs <pod-name> -n <namespace> --previous
+```
+
+**Decision Tree:**
+
+```
+Pod Not Running
+     │
+     ├── Status: Pending
+     │   ├── "no nodes available" → Check node capacity/taints
+     │   ├── "Insufficient cpu/memory" → Adjust requests/limits
+     │   └── "persistentvolumeclaim not found" → Check PVC/StorageClass
+     │
+     ├── Status: ImagePullBackOff
+     │   ├── Private registry → Check imagePullSecrets
+     │   ├── Image not found → Verify image:tag exists
+     │   └── Rate limited → Wait or configure Spegel
+     │
+     ├── Status: CrashLoopBackOff
+     │   ├── Check logs → kubectl logs <pod> --previous
+     │   ├── Config error → Check ConfigMaps/Secrets
+     │   └── Dependency missing → Check init containers
+     │
+     └── Status: ContainerCreating (stuck)
+         ├── CNI issue → Check Cilium
+         ├── Volume mount → Check PVC status
+         └── Secret missing → Check SOPS decryption
+```
+
+**Image Pull Issues (Spegel):**
+
+```bash
+# Check Spegel status
+kubectl get pods -n kube-system -l app.kubernetes.io/name=spegel
+
+# Check if image is cached
+kubectl logs -n kube-system -l app.kubernetes.io/name=spegel | grep <image>
+```
+
+---
+
+## Section 3: Network Issues
+
+### Symptom: Service Not Reachable
+
+**Quick Check:**
+```bash
+kubectl get svc -A | grep <service>
+kubectl get endpoints -n <namespace> <service>
+cilium status
+```
+
+**Decision Tree:**
+
+```
+Service Not Reachable
+     │
+     ├── No External IP (LoadBalancer pending)
+     │   ├── Check CiliumLoadBalancerIPPool
+     │   ├── Check CiliumL2AnnouncementPolicy
+     │   └── Check available IPs in pool
+     │
+     ├── External IP assigned but not responding
+     │   ├── ARP issue → Check L2 announcements
+     │   ├── No endpoints → Check pod labels/selectors
+     │   └── Firewall → Check node firewall rules
+     │
+     └── Internal service not reachable
+         ├── DNS issue → Test with nslookup from pod
+         ├── NetworkPolicy blocking → Check policies
+         └── Cilium identity issue → Check BPF maps
+```
+
+**Cilium Diagnostics:**
+
+```bash
+# Overall status
+cilium status
+
+# Check BPF load balancer entries
+kubectl -n kube-system exec -it ds/cilium -- cilium bpf lb list
+
+# Check service resolution
+kubectl -n kube-system exec -it ds/cilium -- cilium service list
+
+# Run connectivity test
+cilium connectivity test
+```
+
+**L2 Announcement Issues:**
+
+```bash
+# Check L2 policy
+kubectl get ciliuml2announcementpolicy -o yaml
+
+# Check IP pool
+kubectl get ciliumloadbalancerippool -o yaml
+
+# Verify ARP responses (from external machine)
+arping -I <interface> <loadbalancer-ip>
+```
+
+---
+
+## Section 4: Flux Issues
+
+### Symptom: Flux Not Syncing
+
+**Quick Check:**
+```bash
+flux check
+flux get sources git -A
+flux get ks -A
+flux get hr -A
+```
+
+**Decision Tree:**
+
+```
+Flux Not Syncing
+     │
+     ├── GitRepository not ready
+     │   ├── "authentication required" → Check deploy key
+     │   ├── "repository not found" → Verify repo URL
+     │   └── "unable to clone" → Check network/SSH
+     │
+     ├── Kustomization not ready
+     │   ├── "Source not found" → Check sourceRef
+     │   ├── "dependency not ready" → Check dependsOn chain
+     │   └── "failed to render" → Check YAML syntax
+     │
+     └── HelmRelease not ready
+         ├── "chart not found" → Check OCIRepository
+         ├── "values validation failed" → Check values
+         └── "upgrade failed" → Check helm diff
+```
+
+**Force Reconciliation:**
+
+```bash
+# Reconcile entire cluster
+task reconcile
+
+# Reconcile specific resource
+flux reconcile ks <name> --with-source
+flux reconcile hr -n <namespace> <name>
+
+# Suspend and resume (for stuck resources)
+flux suspend ks <name>
+flux resume ks <name>
+```
+
+**Check Flux Logs:**
+
+```bash
+# Source controller (Git/OCI)
+kubectl -n flux-system logs deploy/source-controller
+
+# Kustomize controller
+kubectl -n flux-system logs deploy/kustomize-controller
+
+# Helm controller
+kubectl -n flux-system logs deploy/helm-controller
+```
+
+**SOPS Decryption Issues:**
+
+```bash
+# Check SOPS secret exists
+kubectl -n flux-system get secret sops-age
+
+# Verify key matches
+kubectl -n flux-system get secret sops-age -o jsonpath='{.data.age\.agekey}' | base64 -d
+
+# Test decryption locally
+sops -d <file>.sops.yaml
+```
+
+---
+
+## Section 5: Certificate Issues
+
+### Symptom: Certificates Not Ready
+
+**Quick Check:**
+```bash
+kubectl get certificates -A
+kubectl get certificaterequests -A
+kubectl get orders -A
+kubectl get challenges -A
+```
+
+**Decision Tree:**
+
+```
+Certificate Not Ready
+     │
+     ├── CertificateRequest pending
+     │   └── Check ClusterIssuer ready
+     │
+     ├── Order pending
+     │   └── Waiting for challenge verification
+     │
+     └── Challenge failing
+         ├── DNS-01: Check Cloudflare token/permissions
+         ├── HTTP-01: Check ingress routing
+         └── Timeout: Check DNS propagation
+```
+
+**cert-manager Diagnostics:**
+
+```bash
+# Check issuer status
+kubectl get clusterissuer -o yaml
+kubectl get issuer -A -o yaml
+
+# Check cert-manager logs
+kubectl -n cert-manager logs deploy/cert-manager
+
+# Describe failing certificate
+kubectl describe certificate <name> -n <namespace>
+
+# Check challenge status
+kubectl describe challenge <name> -n <namespace>
+```
+
+**Cloudflare DNS-01 Issues:**
+
+```bash
+# Verify token permissions (Zone:DNS:Edit, Zone:Zone:Read)
+# Check TXT record creation
+dig +short TXT _acme-challenge.<domain>
+
+# Check external-dns logs
+kubectl -n network logs deploy/external-dns
+```
+
+---
+
+## Section 6: Talos-Specific Issues
+
+### etcd Problems
+
+```bash
+# Check etcd status
+talosctl etcd status -n <control-plane-ip>
+
+# List etcd members
+talosctl etcd members -n <control-plane-ip>
+
+# Check etcd health
+talosctl etcd alarm list -n <control-plane-ip>
+```
+
+**etcd Quorum Lost:**
+
+```bash
+# If only one control plane survives
+talosctl etcd forfeit-leadership -n <surviving-node>
+talosctl etcd remove-member <failed-member-id> -n <surviving-node>
+
+# Re-bootstrap failed node
+task talos:apply-node IP=<failed-node-ip>
+```
+
+### API Server Unreachable
+
+```bash
+# Check VIP assignment
+talosctl get virtualip -n <any-control-plane>
+
+# Check API server pods
+talosctl containers -n <control-plane-ip> | grep kube-apiserver
+
+# Check API server logs
+talosctl logs kube-apiserver -n <control-plane-ip>
+```
+
+---
+
+## Quick Reference: Diagnostic Commands
+
+### Cluster Health
+
+```bash
+# Overall health check
+kubectl get nodes -o wide
+kubectl get pods -A | grep -v Running
+kubectl get events -A --sort-by='.lastTimestamp' | tail -20
+
+# Resource usage
+kubectl top nodes
+kubectl top pods -A --sort-by=memory
+```
+
+### Network Stack
+
+```bash
+# Cilium
+cilium status
+cilium connectivity test
+
+# DNS
+kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
+
+# External DNS
+dig @<cluster_dns_gateway_addr> <domain>
+```
+
+### GitOps Stack
+
+```bash
+# Flux overall
+flux check
+flux stats
+
+# Reconciliation status
+flux get all -A
+```
+
+### Talos Nodes
+
+```bash
+# Health
+talosctl health -n <ip>
+
+# Services
+talosctl services -n <ip>
+
+# Logs
+talosctl dmesg -n <ip>
+talosctl logs kubelet -n <ip>
+```
+
+---
+
+## Common Error Messages
+
+| Error | Likely Cause | Solution |
+| ------- | -------------- | ---------- |
+| `no nodes available to schedule pods` | All nodes tainted or full | Check node taints, resource limits |
+| `container runtime network not ready` | Cilium not running | Check Cilium pods, restart |
+| `failed to pull image` | Registry auth, rate limit | Check imagePullSecrets, Spegel |
+| `SOPS: Decryption failed` | Wrong Age key | Verify sops-age secret matches age.key |
+| `authentication required for git repo` | Deploy key issue | Check github-deploy-key secret |
+| `unable to recognize "..."` | CRD not installed | Check CRD installation order |
+| `context deadline exceeded` | Timeout on operation | Check network, increase timeout |
+| `etcd cluster is unavailable` | etcd quorum lost | Check control plane health |
+
+---
+
+## Emergency Procedures
+
+### Full Cluster Recovery
+
+```bash
+# 1. If nodes are responsive
+talosctl health -n <any-node>
+
+# 2. If API is down but nodes up
+talosctl kubeconfig -n <control-plane-ip>
+
+# 3. If etcd corrupt (last resort)
+task talos:reset
+task bootstrap:talos
+task bootstrap:apps
+# Flux will restore all applications from Git
+```
+
+### Single Node Recovery
+
+```bash
+# Reset stuck node
+talosctl reset --nodes <node-ip> --graceful=false
+
+# Re-apply configuration
+task talos:apply-node IP=<node-ip>
+
+# Wait for rejoin
+kubectl get nodes -w
+```
+
+### Force Flux Resync
+
+```bash
+# Nuclear option: delete and let Flux recreate
+flux suspend ks --all
+flux resume ks --all
+
+# Or delete stuck HelmRelease
+kubectl delete hr <name> -n <namespace>
+# Flux will recreate it
+```

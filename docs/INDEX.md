@@ -5,11 +5,15 @@
 ## Quick Navigation
 
 | Document | Description | When to Read |
-| ---------- | ------------- | -------------- |
+| -------- | ----------- | ------------ |
 | [PROJECT_INDEX.md](../PROJECT_INDEX.md) | Token-efficient project summary | Every session start |
+| [QUICKSTART.md](./QUICKSTART.md) | Step-by-step setup guide | First-time setup |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and component layers | Understanding the system |
 | [CONFIGURATION.md](./CONFIGURATION.md) | cluster.yaml and nodes.yaml reference | Initial setup, modifications |
-| [OPERATIONS.md](./OPERATIONS.md) | Day-2 operations and troubleshooting | Maintenance, debugging |
+| [OPERATIONS.md](./OPERATIONS.md) | Day-2 operations and maintenance | Maintenance, upgrades |
+| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Diagnostic flowcharts and fixes | When things break |
+| [CLI_REFERENCE.md](./CLI_REFERENCE.md) | Command reference for all tools | Daily operations |
+| [DIAGRAMS.md](./DIAGRAMS.md) | Mermaid architecture diagrams | Visual understanding |
 | [APPLICATIONS.md](./APPLICATIONS.md) | Included application details | Adding/modifying apps |
 
 ---
