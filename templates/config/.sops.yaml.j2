@@ -7,6 +7,9 @@ creation_rules:
     encrypted_regex: "^(data|stringData)$"
     mac_only_encrypted: true
     age: "#{ age_key('public') }#"
+  - path_regex: infrastructure/.*\.sops\.ya?ml
+    mac_only_encrypted: true
+    age: "#{ age_key('public') }#"
 stores:
   yaml:
     indent: 2

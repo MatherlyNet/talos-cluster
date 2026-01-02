@@ -43,6 +43,19 @@ task talos:upgrade-k8s            # Upgrade Kubernetes version
 task talos:reset                  # Reset cluster to maintenance
 ```
 
+### Infrastructure (OpenTofu)
+```bash
+task infra:init              # Initialize OpenTofu with R2 backend
+task infra:plan              # Create execution plan
+task infra:apply             # Apply saved plan
+task infra:apply-auto        # Apply with auto-approve
+task infra:destroy           # Destroy managed resources
+task infra:secrets-create    # Create secrets from template
+task infra:secrets-edit      # Edit encrypted secrets
+task infra:validate          # Validate configuration
+task infra:fmt               # Format configuration
+```
+
 ### Template Management
 ```bash
 task template:debug      # Gather cluster resource states
@@ -68,6 +81,7 @@ cilium status
 - `templates/config/bootstrap/` - Bootstrap resource templates
 - `kubernetes/` - GENERATED K8s manifests (after `task configure`)
 - `talos/` - GENERATED Talos configs (after `task configure`)
+- `infrastructure/` - OpenTofu IaC (R2 state backend, future Proxmox automation)
 - `docs/` - Comprehensive documentation
 
 ### Template Flow
@@ -121,6 +135,7 @@ templates/config/kubernetes/apps/<namespace>/<app>/
 | **AI assistants** | `.claude/` (agents, commands), `docs/ai-context/` |
 | **Cluster config** | `cluster.yaml` (network, cloudflare, repo) |
 | **Node config** | `nodes.yaml` (name, IP, disk, MAC, schematic) |
+| **Infrastructure** | `infrastructure/` (OpenTofu configs, R2 backend) |
 | **Template engine** | `makejinja.toml` |
 | **SOPS rules** | `.sops.yaml` (generated) |
 | Age encryption key | `age.key` (gitignored, NEVER commit) |
@@ -156,6 +171,7 @@ See `docs/CONFIGURATION.md` for complete schema reference.
 | `/flux-status` | Check Flux GitOps health |
 | `/flux-reconcile` | Force reconcile Flux resources |
 | `/talos-status` | Check Talos node health |
+| `/infra-status` | Check OpenTofu state/resources |
 | `/deploy-check` | Verify deployment status |
 | `/debug-network` | Network diagnostics |
 
@@ -167,6 +183,7 @@ See `docs/CONFIGURATION.md` for complete schema reference.
 | `flux-expert` | Flux troubleshooting, reconciliation issues |
 | `template-expert` | makejinja templates, Jinja2 patterns |
 | `network-debugger` | Cilium/Gateway debugging, connectivity |
+| `infra-expert` | OpenTofu/Proxmox IaC operations |
 
 ### Domain Documentation
 Deep context in `docs/ai-context/`:
@@ -174,6 +191,7 @@ Deep context in `docs/ai-context/`:
 - `talos-operations.md` - Talos workflows
 - `cilium-networking.md` - Cilium CNI patterns
 - `template-system.md` - makejinja templating
+- `infrastructure-opentofu.md` - OpenTofu IaC & R2 backend
 
 ## Troubleshooting Quick Reference
 
@@ -184,6 +202,8 @@ Deep context in `docs/ai-context/`:
 | Node not ready | `talosctl health -n <ip>` |
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Certificate issues | `kubectl get certificates -A` |
+| OpenTofu state lock | `task infra:force-unlock LOCK_ID=xxx` |
+| OpenTofu auth issues | `task infra:secrets-edit` (check credentials) |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

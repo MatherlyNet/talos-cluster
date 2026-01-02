@@ -43,6 +43,57 @@ This guide implements a **free, production-ready** OpenTofu state backend using:
 
 ---
 
+## Project Secrets Architecture
+
+This project uses a **two-tier secrets architecture**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    TEMPLATE-TIME SECRETS                                │
+│                    (Used during `task configure`)                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   cluster.yaml ─────┐                                                   │
+│   nodes.yaml ───────┤                                                   │
+│                     ├───► makejinja ───► kubernetes/*.sops.yaml         │
+│   External Files:   │        │           bootstrap/*.sops.yaml          │
+│   • age.key ────────┤        │                                          │
+│   • cloudflare-     │        │                                          │
+│     tunnel.json ────┘        │                                          │
+│                              ▼                                          │
+│                         plugin.py                                       │
+│                    (age_key, cloudflare_tunnel_*)                       │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    RUNTIME SECRETS                                      │
+│                    (Used during `task infra:*` commands)                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   infrastructure/secrets.sops.yaml                                      │
+│            │                                                            │
+│            ├───► task infra:init ───► TF_HTTP_USERNAME/PASSWORD         │
+│            ├───► task infra:plan                                        │
+│            └───► task infra:apply                                       │
+│                                                                         │
+│   NOTE: These secrets are NOT part of the template workflow.            │
+│         They're used by task commands at runtime.                       │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Why are infrastructure secrets separate from cluster.yaml?**
+
+| Aspect | cluster.yaml | infrastructure/secrets.sops.yaml |
+| -------- | ------------ | -------------------------------- |
+| **Used By** | makejinja templates | Task runner (tofu commands) |
+| **When** | Template generation | Runtime execution |
+| **Purpose** | K8s manifest generation | External tool auth |
+| **Examples** | `cloudflare_token` → K8s Secret | `tfstate_password` → CLI env var |
+
+---
+
 ## Prerequisites
 
 ### Required Tools
@@ -119,21 +170,41 @@ Created bucket 'matherlynet-tfstate'.
 
 ### Step 1.3: Store Credentials in SOPS
 
+> **Architecture Note:** Infrastructure secrets are stored separately from `cluster.yaml` because:
+> - They're **runtime secrets** used by task commands, not template-time secrets
+> - They're not needed in Kubernetes manifests (unlike `cloudflare_token`)
+> - This follows the project's two-tier secrets pattern:
+>   - `cluster.yaml` → K8s secrets via templating → SOPS-encrypted manifests
+>   - `infrastructure/secrets.sops.yaml` → Task commands at runtime
+
+**Prerequisites:**
+1. Ensure you have run `task configure` at least once (generates `.sops.yaml`)
+2. Ensure `age.key` exists in the project root
+
 ```bash
-# Create or edit the infrastructure secrets file
-sops infrastructure/secrets.sops.yaml
+# Create the secrets file from template (includes helpful comments)
+task infra:secrets-create
+
+# Edit to add your actual credentials
+task infra:secrets-edit
 ```
 
-Add the following (SOPS will encrypt on save):
+Update the following values (SOPS encrypts on save):
 
 ```yaml
 # infrastructure/secrets.sops.yaml
 cf_account_id: "your-cloudflare-account-id"
-r2_access_key_id: "your-r2-access-key-id"
-r2_secret_access_key: "your-r2-secret-access-key"
+
+# R2 API Token (optional - only needed for direct S3 API access)
+# r2_access_key_id: "your-r2-access-key-id"
+# r2_secret_access_key: "your-r2-secret-access-key"
+
+# tfstate-worker authentication (REQUIRED)
 tfstate_username: "terraform"
-tfstate_password: "your-strong-random-password"
+tfstate_password: "your-strong-random-password"  # Generate with: openssl rand -base64 32
 ```
+
+> **Tip:** Generate a secure password: `openssl rand -base64 32`
 
 ---
 
@@ -168,7 +239,7 @@ bucket_name = "matherlynet-tfstate"
 
 # Custom domain (recommended)
 # routes = [
-#   { pattern = "tfstate.matherlynet.io", custom_domain = true }
+#   { pattern = "tfstate.matherly.net", custom_domain = true }
 # ]
 
 # Or use workers.dev subdomain (simpler for testing)

@@ -15,7 +15,8 @@
     "dns": ["external-dns", "k8s-gateway"],
     "tunnel": "cloudflare",
     "secrets": "sops-age",
-    "templating": "makejinja"
+    "templating": "makejinja",
+    "iac": "opentofu"
   },
   "structure": {
     "root_files": [
@@ -42,6 +43,7 @@
         "description": "Task automation",
         "contents": [
           "bootstrap/Taskfile.yaml",
+          "infrastructure/Taskfile.yaml",
           "talos/Taskfile.yaml",
           "template/Taskfile.yaml"
         ]
@@ -67,7 +69,8 @@
     "bootstrap_talos": ".taskfiles/bootstrap/Taskfile.yaml",
     "bootstrap_apps": "scripts/bootstrap-apps.sh",
     "template_tasks": ".taskfiles/template/Taskfile.yaml",
-    "talos_tasks": ".taskfiles/talos/Taskfile.yaml"
+    "talos_tasks": ".taskfiles/talos/Taskfile.yaml",
+    "infrastructure_tasks": ".taskfiles/infrastructure/Taskfile.yaml"
   },
   "tasks": {
     "init": "Generate config files from samples",
@@ -80,7 +83,11 @@
     "talos:upgrade-k8s": "Upgrade Kubernetes version",
     "talos:reset": "Reset cluster to maintenance mode",
     "template:debug": "Gather cluster resources",
-    "template:tidy": "Archive template files post-setup"
+    "template:tidy": "Archive template files post-setup",
+    "infra:init": "Initialize OpenTofu with R2 backend",
+    "infra:plan": "Create OpenTofu execution plan",
+    "infra:apply": "Apply OpenTofu changes",
+    "infra:secrets-edit": "Edit infrastructure secrets"
   },
   "configuration": {
     "cluster_config": {
@@ -178,7 +185,8 @@
     "cloudflared": { "version": "2025.11.1", "purpose": "Cloudflare tunnel" },
     "kustomize": { "version": "5.8.0", "purpose": "Kustomize" },
     "kubeconform": { "version": "0.7.0", "purpose": "Manifest validation" },
-    "cue": { "version": "0.15.3", "purpose": "Schema validation" }
+    "cue": { "version": "0.15.3", "purpose": "Schema validation" },
+    "opentofu": { "version": "1.11.2", "purpose": "Infrastructure as Code" }
   },
   "workflows": {
     "flux-local.yaml": {

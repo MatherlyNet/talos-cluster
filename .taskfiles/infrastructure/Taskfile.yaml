@@ -1,0 +1,187 @@
+---
+version: "3"
+
+vars:
+  TOFU_DIR: "{{.ROOT_DIR}}/infrastructure/tofu"
+  SECRETS_FILE: "{{.ROOT_DIR}}/infrastructure/secrets.sops.yaml"
+
+env:
+  # R2 checksum workaround for OpenTofu 1.11+
+  AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+  AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+
+tasks:
+  init:
+    desc: Initialize OpenTofu with R2 backend
+    dir: "{{.TOFU_DIR}}"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu init {{.CLI_ARGS}}
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which tofu sops yq
+
+  plan:
+    desc: Run OpenTofu plan
+    dir: "{{.TOFU_DIR}}"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu plan -out=tfplan {{.CLI_ARGS}}
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which tofu sops yq
+
+  apply:
+    desc: Apply OpenTofu plan
+    dir: "{{.TOFU_DIR}}"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu apply tfplan
+    preconditions:
+      - test -f {{.TOFU_DIR}}/tfplan
+      - test -f {{.SECRETS_FILE}}
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which tofu sops yq
+
+  apply-auto:
+    desc: Apply OpenTofu changes without plan file (auto-approve)
+    dir: "{{.TOFU_DIR}}"
+    prompt: "This will apply changes without a saved plan. Continue?"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu apply -auto-approve {{.CLI_ARGS}}
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which tofu sops yq
+
+  destroy:
+    desc: Destroy OpenTofu-managed resources
+    dir: "{{.TOFU_DIR}}"
+    prompt: "This will DESTROY all managed infrastructure. Continue?"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu destroy {{.CLI_ARGS}}
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which tofu sops yq
+
+  output:
+    desc: Show OpenTofu outputs
+    dir: "{{.TOFU_DIR}}"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu output {{.CLI_ARGS}}
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - which tofu sops yq
+
+  state-list:
+    desc: List resources in OpenTofu state
+    dir: "{{.TOFU_DIR}}"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu state list
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - which tofu sops yq
+
+  force-unlock:
+    desc: Force unlock the state [LOCK_ID=required]
+    dir: "{{.TOFU_DIR}}"
+    prompt: "Force unlocking state can be dangerous. Continue?"
+    cmds:
+      - |
+        export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
+        export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        tofu force-unlock {{.LOCK_ID}}
+    requires:
+      vars: [LOCK_ID]
+    preconditions:
+      - test -f {{.SECRETS_FILE}}
+      - which tofu sops yq
+
+  validate:
+    desc: Validate OpenTofu configuration
+    dir: "{{.TOFU_DIR}}"
+    cmd: tofu validate
+    preconditions:
+      - which tofu
+
+  fmt:
+    desc: Format OpenTofu configuration
+    dir: "{{.TOFU_DIR}}"
+    cmd: tofu fmt -recursive
+    preconditions:
+      - which tofu
+
+  fmt-check:
+    desc: Check OpenTofu formatting
+    dir: "{{.TOFU_DIR}}"
+    cmd: tofu fmt -check -recursive
+    preconditions:
+      - which tofu
+
+  secrets-edit:
+    desc: Edit infrastructure secrets
+    cmd: sops {{.SECRETS_FILE}}
+    preconditions:
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which sops
+
+  secrets-create:
+    desc: Create infrastructure secrets file from template
+    cmds:
+      - |
+        if [ -f {{.SECRETS_FILE}} ]; then
+          echo "Secrets file already exists: {{.SECRETS_FILE}}"
+          exit 1
+        fi
+        cat > /tmp/secrets-template.yaml << 'EOF'
+        # Infrastructure Secrets for OpenTofu R2 Backend
+        # Edit these values, then this file will be encrypted with SOPS
+
+        # Cloudflare Account ID (Dashboard → Overview → Account ID)
+        cf_account_id: "your-cloudflare-account-id"
+
+        # R2 API Token (optional - only needed for direct S3 API access)
+        # r2_access_key_id: "your-r2-access-key-id"
+        # r2_secret_access_key: "your-r2-secret-access-key"
+
+        # tfstate-worker authentication
+        tfstate_username: "terraform"
+        tfstate_password: "CHANGE-ME-generate-with-openssl-rand-base64-32"
+
+        # State encryption passphrase (optional - for client-side encryption)
+        # state_encryption_passphrase: "CHANGE-ME-strong-passphrase"
+
+        # Proxmox API credentials (for future bpg/proxmox provider)
+        # proxmox_api_url: "https://proxmox.example.com:8006/api2/json"
+        # proxmox_api_token_id: "root@pam!terraform"
+        # proxmox_api_token_secret: "your-api-token-secret"
+        EOF
+        sops --encrypt /tmp/secrets-template.yaml > {{.SECRETS_FILE}}
+        rm /tmp/secrets-template.yaml
+        echo "Created encrypted secrets file: {{.SECRETS_FILE}}"
+        echo "Run 'task infra:secrets-edit' to update values"
+    preconditions:
+      - test -f {{.ROOT_DIR}}/.sops.yaml
+      - test -f {{.SOPS_AGE_KEY_FILE}}
+      - which sops

@@ -25,6 +25,7 @@ matherlynet-talos-cluster/
 │   └── tests/            # Test fixtures
 ├── .taskfiles/           # Task automation (go-task)
 │   ├── bootstrap/        # Cluster bootstrap tasks
+│   ├── infrastructure/   # OpenTofu/IaC tasks
 │   ├── talos/            # Talos node management
 │   └── template/         # Template rendering/validation
 ├── scripts/              # Shell scripts
@@ -51,6 +52,7 @@ matherlynet-talos-cluster/
 | Bootstrap Apps | `.taskfiles/bootstrap/Taskfile.yaml` | `task bootstrap:apps` |
 | Template Init | `.taskfiles/template/Taskfile.yaml` | `task init` / `task configure` |
 | Talos Mgmt | `.taskfiles/talos/Taskfile.yaml` | Node upgrades, config apply |
+| Infrastructure | `.taskfiles/infrastructure/Taskfile.yaml` | OpenTofu IaC operations |
 
 ## Key Tasks (go-task)
 
@@ -67,6 +69,10 @@ matherlynet-talos-cluster/
 | `task reconcile` | Force Flux Git sync |
 | `task template:debug` | Gather cluster resources |
 | `task template:tidy` | Archive template files post-setup |
+| `task infra:init` | Initialize OpenTofu with R2 backend |
+| `task infra:plan` | Create OpenTofu execution plan |
+| `task infra:apply` | Apply OpenTofu changes |
+| `task infra:secrets-edit` | Edit infrastructure secrets |
 
 ## Configuration Files
 
@@ -75,9 +81,10 @@ matherlynet-talos-cluster/
 | `cluster.yaml` | Main cluster config (network, cloudflare, repo) |
 | `nodes.yaml` | Node definitions (name, IP, disk, MAC, schematic) |
 | `makejinja.toml` | Template engine settings |
-| `.mise.toml` | Dev environment tools (kubectl, flux, talosctl, etc.) |
+| `.mise.toml` | Dev environment tools (kubectl, flux, talosctl, opentofu, etc.) |
 | `.sops.yaml` | SOPS encryption rules (generated) |
 | `age.key` | SOPS Age encryption key (generated) |
+| `infrastructure/secrets.sops.yaml` | Infrastructure secrets (R2/Proxmox credentials) |
 
 ## Included Applications
 
@@ -117,6 +124,7 @@ Managed via `mise` (.mise.toml):
 | kubeconform | 0.7.0 | Manifest validation |
 | cue | 0.15.3 | Schema validation |
 | yq/jq | latest | YAML/JSON processing |
+| opentofu | 1.11.2 | Infrastructure as Code |
 
 ## GitHub Workflows
 
@@ -186,3 +194,21 @@ Generated after `task configure`:
 - `kubernetes/` - Rendered K8s manifests
 - `talos/` - Rendered Talos configs
 - `bootstrap/` - Rendered bootstrap resources
+
+## Infrastructure (OpenTofu)
+
+The `infrastructure/` directory contains OpenTofu IaC configurations:
+
+```
+infrastructure/
+├── README.md              # Setup and usage guide
+├── secrets.sops.yaml      # Encrypted credentials (R2, Proxmox)
+└── tofu/
+    ├── backend.tf         # HTTP backend (R2 + Worker)
+    ├── versions.tf        # OpenTofu/provider versions
+    ├── providers.tf       # Provider configurations
+    ├── variables.tf       # Input variables
+    └── main.tf            # Resources
+```
+
+State is stored in Cloudflare R2 via a tfstate-worker HTTP backend with locking support. See `docs/guides/opentofu-r2-state-backend.md` for implementation details.

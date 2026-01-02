@@ -14,6 +14,7 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 | [talos-operations.md](./talos-operations.md) | Talos Linux | Node operations, upgrades, configuration changes |
 | [cilium-networking.md](./cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
 | [template-system.md](./template-system.md) | makejinja | Template syntax, adding variables, creating new templates |
+| [infrastructure-opentofu.md](./infrastructure-opentofu.md) | OpenTofu | IaC operations, R2 backend, Proxmox automation |
 
 ## Quick Reference
 
@@ -39,6 +40,12 @@ Agent: .claude/agents/network-debugger.md
 ```
 Read: docs/ai-context/template-system.md
 Agent: .claude/agents/template-expert.md
+```
+
+### For Infrastructure/IaC
+```
+Read: docs/ai-context/infrastructure-opentofu.md
+Agent: .claude/agents/infra-expert.md
 ```
 
 ## Complementary Documentation
