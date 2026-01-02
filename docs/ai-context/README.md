@@ -41,6 +41,14 @@ Read: docs/ai-context/template-system.md
 Agent: .claude/agents/template-expert.md
 ```
 
+## Complementary Documentation
+
+For quick reference during operations:
+- `docs/TROUBLESHOOTING.md` - Diagnostic flowcharts and decision trees
+- `docs/CLI_REFERENCE.md` - Complete command reference for all tools
+- `docs/QUICKSTART.md` - Step-by-step setup guide
+- `docs/DIAGRAMS.md` - Visual architecture diagrams (Mermaid)
+
 ## Token Efficiency
 
 These documents are designed for efficient context loading:

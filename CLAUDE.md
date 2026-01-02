@@ -184,3 +184,7 @@ Deep context in `docs/ai-context/`:
 | Node not ready | `talosctl health -n <ip>` |
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Certificate issues | `kubectl get certificates -A` |
+
+For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
+
+For complete CLI command reference, see `docs/CLI_REFERENCE.md`.
