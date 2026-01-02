@@ -1,0 +1,56 @@
+# AI Context Documentation
+
+> Domain-specific documentation for AI assistants working with this project.
+
+## Purpose
+
+These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.) when working on specific subsystems. They complement the main documentation with implementation details, troubleshooting flows, and contextual knowledge.
+
+## Documents
+
+| Document | Domain | Use When |
+| ---------- | -------- | ---------- |
+| [flux-gitops.md](./flux-gitops.md) | Flux CD | Adding apps, troubleshooting sync issues, understanding GitOps flow |
+| [talos-operations.md](./talos-operations.md) | Talos Linux | Node operations, upgrades, configuration changes |
+| [cilium-networking.md](./cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
+| [template-system.md](./template-system.md) | makejinja | Template syntax, adding variables, creating new templates |
+
+## Quick Reference
+
+### For GitOps Tasks
+```
+Read: docs/ai-context/flux-gitops.md
+Agent: .claude/agents/flux-expert.md
+```
+
+### For Node Operations
+```
+Read: docs/ai-context/talos-operations.md
+Agent: .claude/agents/talos-expert.md
+```
+
+### For Network Issues
+```
+Read: docs/ai-context/cilium-networking.md
+Agent: .claude/agents/network-debugger.md
+```
+
+### For Template Changes
+```
+Read: docs/ai-context/template-system.md
+Agent: .claude/agents/template-expert.md
+```
+
+## Token Efficiency
+
+These documents are designed for efficient context loading:
+- Each document focuses on one domain
+- Includes practical commands and examples
+- Avoids redundancy with main docs
+- Provides troubleshooting decision trees
+
+For minimal context loading, start with:
+1. `PROJECT_INDEX.json` (3KB)
+2. Relevant ai-context document (~8-12KB each)
+
+This is more efficient than loading full documentation (~64KB).
