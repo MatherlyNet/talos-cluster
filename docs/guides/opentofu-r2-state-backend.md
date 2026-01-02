@@ -50,7 +50,7 @@ This guide implements a **free, production-ready** OpenTofu state backend using:
 | Tool | Version | Purpose |
 | ------ | --------- | --------- |
 | **OpenTofu** | 1.11.2+ | Infrastructure as Code |
-| **Wrangler** | 3.x | Cloudflare Workers CLI |
+| **Wrangler** | 4.x | Cloudflare Workers CLI |
 | **Node.js** | 18+ | Required for Wrangler |
 | **SOPS** | 3.x | Secret encryption |
 | **Age** | 1.x | Encryption key management |
@@ -58,7 +58,7 @@ This guide implements a **free, production-ready** OpenTofu state backend using:
 ```bash
 # Verify installations
 tofu version      # OpenTofu v1.11.2+
-npx wrangler -v   # wrangler 3.x
+npx wrangler -v   # wrangler 4.x
 sops --version    # sops 3.x
 age --version     # age v1.x
 ```
