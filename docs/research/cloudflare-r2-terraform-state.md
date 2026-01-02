@@ -27,7 +27,7 @@ The availability of **free Cloudflare R2 storage** fundamentally changes the cos
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    REVISED INFRASTRUCTURE AUTOMATION STACK                   │
+│                    REVISED INFRASTRUCTURE AUTOMATION STACK                  │
 └─────────────────────────────────────────────────────────────────────────────┘
 
   PRIMARY: OpenTofu + Cloudflare R2 (S3-compatible backend)
@@ -58,6 +58,8 @@ The availability of **free Cloudflare R2 storage** fundamentally changes the cos
 | **Egress** | **Unlimited** | N/A |
 
 **Verdict:** A Terraform state file for this project will never exceed free tier limits. Even with 100 applies/day, you'd use <1% of the free operations quota.
+
+> **Note:** The free tier only applies to **Standard storage class**. Infrequent Access storage is not included in the free tier. For Terraform state (frequently accessed), Standard storage is the correct choice anyway.
 
 ### Comparison with AWS S3
 
@@ -247,10 +249,10 @@ terraform {
    │   Developer   │          │   Developer   │          │   GitHub      │
    │   Workstation │          │   Workstation │          │   Actions     │
    └───────┬───────┘          └───────┬───────┘          └───────┬───────┘
-           │                           │                           │
-           │ tofu plan/apply           │                           │
-           │                           │                           │
-           └───────────────────────────┼───────────────────────────┘
+           │                           │                         │
+           │ tofu plan/apply           │                         │
+           │                           │                         │
+           └───────────────────────────┼─────────────────────────┘
                                        │
                                        ▼
                     ┌──────────────────────────────────────┐
@@ -260,7 +262,7 @@ terraform {
                     │  │   (S3-compatible API)          │  │
                     │  │   terraform.tfstate            │  │
                     │  └────────────────────────────────┘  │
-                    │       ⚠️  No locking (coordinate)    │
+                    │       ⚠️  No locking (coordinate).   │
                     └──────────────────────────────────────┘
                                        │
                                       OR
@@ -400,7 +402,12 @@ jobs:
 
 2. **State Encryption is Client-Side:** OpenTofu encrypts before upload—R2 only stores the encrypted blob. Loss of encryption keys = permanent state loss.
 
-3. **No Default Versioning:** Unlike AWS S3, R2 buckets do NOT have versioning by default. Consider enabling it for disaster recovery.
+3. **R2 Has NO Object Versioning:** Unlike AWS S3, R2 does **not support object versioning** at all (as of Jan 2026). This means:
+   - Accidental overwrites or deletions are **permanent**
+   - Consider implementing your own backup strategy (e.g., periodic state copies to a separate bucket)
+   - Alternatively, use tfstate-worker which may support state history
+
+4. **API Token Secret Shown Once:** When creating R2 API tokens, the Secret Access Key is only displayed once. Store it immediately in SOPS or your secret manager.
 
 ### R2 API Token Permissions
 
@@ -408,9 +415,16 @@ Create a scoped API token with minimal permissions:
 
 ```bash
 # Via Cloudflare Dashboard: R2 > Manage R2 API Tokens
-# Permissions needed:
-# - Object Read & Write (for bucket: matherlynet-tfstate)
+# Available permission levels:
+#   - Admin Read & Write (full bucket + object management)
+#   - Admin Read only (list and view only)
+#   - Object Read & Write (recommended for Terraform state)
+#   - Object Read only
+#
+# For Terraform state: "Object Read & Write" scoped to bucket is sufficient
 ```
+
+> **Note:** Unauthorized requests to R2 are not charged, so a leaked token with wrong permissions won't incur costs—but still rotate it immediately.
 
 ### Secret Management Integration
 
@@ -448,7 +462,7 @@ tasks:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         MIGRATION PATH                                       │
+│                         MIGRATION PATH                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
   PHASE 1 (Current)              PHASE 2 (Transition)        PHASE 3 (Target)
