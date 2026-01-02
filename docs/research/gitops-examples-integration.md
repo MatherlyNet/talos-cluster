@@ -792,32 +792,132 @@ talosctl -n <control-plane-ip> cp /var/lib/etcd/member/snap/db ./etcd-backup.db
 
 ### Cross-Reference: Infrastructure Automation
 
-This research complements `docs/research/proxmox-vm-automation.md`:
+This research complements `docs/research/ansible-proxmox-automation.md` (the validated PRIMARY recommendation):
 
-| Aspect | proxmox-vm-automation.md | This Document |
-| -------- | ------------------------- | --------------- |
+| Aspect | ansible-proxmox-automation.md | This Document |
+| -------- | ----------------------------- | --------------- |
 | **Focus** | VM provisioning (before K8s) | K8s components (after bootstrap) |
-| **Tools** | OpenTofu, Packer, bpg provider | Helm charts, Flux, Karpenter |
+| **Tools** | Ansible + community.proxmox v1.5.0 | Helm charts, Flux, Karpenter |
 | **When to Use** | Initial cluster setup, manual scaling | Day-2 operations, auto-scaling |
+| **State** | Stateless (no state files) | Kubernetes etcd |
 
-**Decision Tree: Karpenter vs OpenTofu**
+**Decision Tree: Karpenter vs Ansible**
 
 ```
 Need to add nodes?
 ├── Is workload predictable/static?
-│   └── YES → Use OpenTofu (proxmox-vm-automation.md)
-│       - Declarative node count
-│       - Infrastructure as Code
+│   └── YES → Use Ansible (ansible-proxmox-automation.md)
+│       - Stateless VM provisioning
+│       - No state file management
 │       - Good for planned capacity
+│       - Run `task infrastructure:provision`
 │
 └── Is workload dynamic/bursty?
     └── YES → Use Karpenter (this document)
         - Auto-scaling based on pending pods
         - Scale to zero capability
         - Good for CI/CD runners, dev environments
+        - Requires VM templates created by Ansible
 ```
 
-**Note:** Karpenter requires Proxmox CCM and infrastructure templates (VM images) which can be created using the OpenTofu/Packer approach from proxmox-vm-automation.md.
+### Karpenter + Ansible Integration Strategy
+
+> **Updated January 2026:** Based on our decision to use Ansible + community.proxmox for VM automation instead of OpenTofu/Terraform.
+
+**Key Insight:** Karpenter Proxmox provider uses the **Proxmox API directly** - it does NOT require Terraform or OpenTofu. This makes it fully compatible with our Ansible-based approach.
+
+**How Karpenter Works with Ansible:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                ANSIBLE + KARPENTER INTEGRATION ARCHITECTURE                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  INITIAL PROVISIONING (Ansible)           DYNAMIC SCALING (Karpenter)
+  ───────────────────────────────          ─────────────────────────────
+
+  cluster.yaml + nodes.yaml                 Pod pending (unschedulable)
+         │                                           │
+         ▼                                           ▼
+  ┌─────────────────┐                      ┌─────────────────┐
+  │ Ansible Playbook│                      │   Karpenter     │
+  │ provision-vms   │                      │   Controller    │
+  └────────┬────────┘                      └────────┬────────┘
+           │                                        │
+           ▼                                        ▼
+  ┌─────────────────┐                      ┌─────────────────┐
+  │  Proxmox API    │◄─────────────────────│  Proxmox API    │
+  │  (direct calls) │                      │  (direct calls) │
+  └────────┬────────┘                      └────────┬────────┘
+           │                                        │
+           ▼                                        ▼
+  ┌─────────────────┐                      ┌─────────────────┐
+  │  Clone from     │                      │  Clone from     │
+  │  Talos Template │                      │  Talos Template │
+  │  (fixed nodes)  │                      │  (auto-scaled)  │
+  └─────────────────┘                      └─────────────────┘
+
+  USE CASE: Initial cluster setup          USE CASE: CI/CD runners, burst
+            Planned capacity changes                  Scale to zero workloads
+```
+
+**Shared Prerequisite: Talos VM Template**
+
+Both Ansible and Karpenter require a Talos VM template in Proxmox. Use the Ansible playbook to create it:
+
+```bash
+# Create Talos template (one-time setup)
+task infrastructure:template:create
+```
+
+This template is then referenced by:
+- **Ansible**: In `provision-vms.yaml` playbook (`talos_template` variable)
+- **Karpenter**: In `ProxmoxNodeClass` CR (`instanceTemplateRef` field)
+
+**Karpenter-Specific Requirements:**
+
+1. **Proxmox CCM** (mandatory) - Provides node lifecycle management
+2. **VM Template with cloud-init** - Uses NoCloud image from Talos Image Factory
+3. **Proxmox API credentials** - Same token as Ansible (stored in SOPS)
+
+**ProxmoxNodeClass Example for Talos:**
+
+```yaml
+apiVersion: karpenter.proxmox.sinextra.dev/v1alpha1
+kind: ProxmoxNodeClass
+metadata:
+  name: talos-workers
+spec:
+  tags:
+    - talos
+    - karpenter
+    - worker
+  instanceTemplateRef:
+    kind: ProxmoxTemplate
+    name: talos-1.12.0  # Same template used by Ansible
+  metadataOptions:
+    type: cdrom  # NoCloud cloud-init delivery
+    templatesRef:
+      name: talos-machine-config
+      namespace: kube-system
+  storage: local-zfs
+  memoryMB: 8192
+  cores: 4
+```
+
+**When to Use Each:**
+
+| Scenario | Use Ansible | Use Karpenter |
+| -------- | ----------- | ------------- |
+| Initial cluster bootstrap | ✅ | ❌ |
+| Add 2 permanent worker nodes | ✅ | ❌ |
+| CI/CD runners (scale to zero) | ❌ | ✅ |
+| GPU workloads on-demand | ❌ | ✅ |
+| Dev environments ephemeral | ❌ | ✅ |
+| Replace failed static node | ✅ | ❌ |
+| Handle traffic spike | ❌ | ✅ |
+
+**Note:** Karpenter requires Proxmox CCM and VM templates. The template can be created using the Ansible playbook from `ansible-proxmox-automation.md`.
 
 ### Renovate Configuration for OCI Charts
 
@@ -885,11 +985,30 @@ groups:
 
 ### S3 Storage Options for Talos Backup
 
-| Provider | Pros | Cons | Recommended For |
-| ---------- | ------ | ------ | ----------------- |
-| **Cloudflare R2** | No egress fees, already using CF | Newer service | Production (if using Cloudflare) |
-| **MinIO (self-hosted)** | Full control, local | Maintenance overhead | Air-gapped environments |
-| **Backblaze B2** | Cheap, S3-compatible | Egress fees | Budget-conscious |
-| **AWS S3** | Most mature, reliable | Egress fees, vendor lock-in | Enterprise/AWS shops |
+| Provider | Pros | Cons | Recommended For | Monthly Cost |
+| ---------- | ------ | ------ | ----------------- | ------------ |
+| **Cloudflare R2** | No egress fees, generous free tier | Newer service | Production (if using Cloudflare) | **$0** (free tier) |
+| **MinIO (self-hosted)** | Full control, local | Maintenance overhead | Air-gapped environments | Hardware only |
+| **Backblaze B2** | Cheap, S3-compatible | Egress fees | Budget-conscious | ~$0.005/GB |
+| **AWS S3** | Most mature, reliable | Egress fees, vendor lock-in | Enterprise/AWS shops | ~$0.023/GB + egress |
 
-**Recommendation:** Cloudflare R2 since the project already uses Cloudflare for DNS and tunnels.
+#### Cloudflare R2 Free Tier (Validated January 2026)
+
+> **Source:** [Cloudflare R2 Pricing](https://developers.cloudflare.com/r2/pricing/)
+
+| Resource | Free Allowance | Our Use Case | Status |
+| -------- | -------------- | ------------ | ------ |
+| **Storage** | 10 GB-month/month | ~1-2 GB etcd snapshots | ✅ Well within limit |
+| **Class A ops** (writes) | 1 million/month | ~180 backups/month (6-hourly) | ✅ Well within limit |
+| **Class B ops** (reads) | 10 million/month | Occasional restores | ✅ Well within limit |
+| **Egress** | **Always free** | Restore downloads | ✅ No fees ever |
+
+**Cost Estimate for Talos Backup:**
+- 6-hourly backups × 30 days = 180 snapshots/month
+- Each snapshot ~50-100 MB compressed
+- Total storage: ~2-3 GB
+- **Monthly cost: $0** (fits entirely within free tier)
+
+**Key Advantage:** Unlike AWS S3/Backblaze, R2 has **zero egress fees**. Restoring backups (even large ones) costs nothing.
+
+**Recommendation:** Cloudflare R2 is **free for our use case** and the project already uses Cloudflare for DNS and tunnels. No additional billing configuration required beyond enabling R2 in the Cloudflare dashboard.

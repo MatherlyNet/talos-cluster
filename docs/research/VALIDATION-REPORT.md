@@ -2,7 +2,7 @@
 
 > **Validation Date:** January 2, 2026
 > **Documents Validated:**
-> - `docs/research/ansible-proxmox-automation.md`
+> - `docs/research/ansible-proxmox-automation.md` (Focused Deep-Dive)
 > - `docs/research/crossplane-proxmox-automation.md`
 > **Cross-Referenced:** `docs/research/proxmox-vm-automation.md`
 
@@ -10,9 +10,9 @@
 
 ## Executive Summary
 
-**VALIDATION STATUS: CONFIRMED WITH CORRECTIONS**
+**VALIDATION STATUS: CONFIRMED WITH MINOR CORRECTIONS**
 
-The research documents are substantially accurate with high-quality analysis. Minor date corrections are needed, and key recommendations are validated by current source verification.
+The research documents are substantially accurate with high-quality analysis. The Ansible document received focused deep-dive validation with comprehensive source verification of all major claims.
 
 ### Key Findings
 
@@ -151,11 +151,142 @@ Based on validation research, the following updated priority is recommended:
 
 ---
 
+## Ansible Document Deep-Dive Validation
+
+This section provides comprehensive verification of all major claims in `ansible-proxmox-automation.md`.
+
+### 1. Module Count Verification
+
+**Documented Claim:** 35 modules total
+
+**Verified Result:** 37-38 modules (with v1.5.0 additions)
+
+| Verification Source | Module Count | Notes |
+| ------------------- | ------------ | ----- |
+| [Ansible Docs](https://docs.ansible.com/projects/ansible/latest/collections/community/proxmox/index.html) | 34 base | Core modules listed |
+| [v1.5.0 Changelog](https://github.com/ansible-collections/community.proxmox/blob/main/CHANGELOG.rst) | +4 new | proxmox_ceph_mds, proxmox_ceph_mgr, proxmox_ceph_mon, proxmox_sendkey |
+
+**Status:** ⚠️ MINOR DISCREPANCY - Document says 35, actual is 37-38. **Recommend updating to "35+" or exact count.**
+
+### 2. proxmoxer Library Verification
+
+**Documented Claim:** proxmoxer 2.0+
+
+**Verified Result:**
+
+| Attribute | Verified Value |
+| --------- | -------------- |
+| Latest Version | 2.2.0 |
+| Release Date | December 15, 2024 |
+| Python Support | 3.8 - 3.12 |
+| Status | Production/Stable |
+
+**Source:** [PyPI proxmoxer](https://pypi.org/project/proxmoxer/)
+
+**Status:** ✅ CONFIRMED - Version requirement accurate
+
+### 3. Talos NoCloud Requirements Verification
+
+**Documented Claims:**
+- Talos 1.8.0+ defaults to metal image (no cloud-init)
+- NoCloud image required from Image Factory
+- SMBIOS serial and CDROM methods available
+
+**Verified Result:**
+
+| Claim | Verification | Source |
+| ----- | ------------ | ------ |
+| Metal default (1.8+) | ✅ Confirmed | [GitHub Discussion #11175](https://github.com/siderolabs/talos/discussions/11175) |
+| NoCloud from Factory | ✅ Confirmed | [Talos NoCloud Docs](https://docs.siderolabs.com/talos/v1.12/platform-specific-installations/cloud-platforms/nocloud/) |
+| SMBIOS method | ✅ Confirmed | Official documentation |
+| CDROM/cicustom method | ✅ Confirmed | Official documentation |
+
+**Status:** ✅ CONFIRMED - All NoCloud claims verified
+
+### 4. proxmox_kvm Module Parameters Verification
+
+**Documented Parameters:**
+```yaml
+api_host, api_token_id, api_token_secret, node, name, clone,
+full, storage, cores, memory, net, scsihw, boot, bios, agent, tags, state
+```
+
+**Verified Result:** All parameters confirmed valid per [official module documentation](https://docs.ansible.com/projects/ansible/latest/collections/community/proxmox/proxmox_kvm_module.html).
+
+**Status:** ✅ CONFIRMED - All parameters exist and are correctly documented
+
+### 5. Known Limitations Verification
+
+#### Limitation 1: VM Hardware Updates
+
+**Documented:** "proxmox_kvm module has limitations updating existing VM hardware"
+
+**Verified:** ✅ CONFIRMED
+
+- [GitHub Issue #56600](https://github.com/ansible/ansible/issues/56600): `update` and `clone` are mutually exclusive
+- Memory, cores, disks may not update when using `update: yes` on cloned VMs
+- Workaround: Separate clone and update into distinct tasks
+
+#### Limitation 2: No Post-Boot Talos Configuration
+
+**Documented:** "Ansible cannot configure Talos after VM boot due to lack of SSH access"
+
+**Verified:** ✅ CONFIRMED - Talos is immutable, API-driven OS without SSH
+
+#### Limitation 3: Template Disk Import
+
+**Documented:** "Importing disk images requires host-level access"
+
+**Verified:** ✅ CONFIRMED - Proxmox API doesn't fully support disk import; requires `qm importdisk` on host
+
+#### Limitation 4: Concurrent Clone Issues
+
+**Documented:** "Running playbooks can cause lock errors when cloning VMs"
+
+**Verified:** ✅ CONFIRMED
+
+- [Proxmox Forum](https://forum.proxmox.com/threads/concurrent-cloning-of-vm.97549/): Lock held for 60s, no queuing
+- [Josh Noll Blog](https://joshrnoll.com/deploying-proxmox-vms-with-ansible-part-2/): Use `serial` keyword in Ansible
+- Alternative: Create multiple templates for parallel cloning
+
+**Status:** ✅ ALL LIMITATIONS ACCURATELY DOCUMENTED
+
+### 6. Playbook Pattern Verification
+
+**Reviewed Patterns:**
+
+| Pattern | Best Practice | Status |
+| ------- | ------------- | ------ |
+| `gather_facts: false` | ✅ Correct for API-only tasks | VALID |
+| `vars_files` for nodes.yaml | ✅ Standard practice | VALID |
+| Environment variable lookups | ✅ Secure credential handling | VALID |
+| `assert` for validation | ✅ Fail-fast pattern | VALID |
+| `loop_control` with `label` | ✅ Clean output | VALID |
+| `wait_for` Talos API port | ✅ Proper health check | VALID |
+| MAC address in net config | ✅ Required for DHCP reservations | VALID |
+
+**Status:** ✅ ALL PLAYBOOK PATTERNS FOLLOW BEST PRACTICES
+
+### 7. Go-Task Integration Verification
+
+**Reviewed Integration:**
+
+| Pattern | Status |
+| ------- | ------ |
+| SOPS decryption inline | ✅ Secure, no plaintext files |
+| Preconditions for dependencies | ✅ Fail-fast |
+| Environment variable export | ✅ Standard pattern |
+| Destructive task prompt | ✅ Safety guard |
+
+**Status:** ✅ TASK INTEGRATION PROPERLY DESIGNED
+
+---
+
 ## Accuracy Assessment
 
 ### Ansible Research Document
 
-**Score: 95/100**
+**Score: 96/100**
 
 | Category | Assessment |
 | -------- | ---------- |
@@ -163,9 +294,11 @@ Based on validation research, the following updated priority is recommended:
 | Technical depth | ✅ Comprehensive module coverage |
 | Example quality | ✅ Production-ready playbooks |
 | Talos specifics | ✅ Correctly identifies NoCloud requirement |
-| Limitations | ✅ Honest about post-boot limitations |
+| Limitations | ✅ Honest and accurate limitations |
+| Module count | ⚠️ Minor: says 35, actual 37-38 |
 
-**Minor Note:** The 35 modules count should be verified against current collection. The collection is actively developed and module count may change.
+**Corrections Needed:**
+1. Update module count from "35 total" to "37+ modules" (v1.5.0 added 4 new Ceph modules)
 
 ### Crossplane Research Document
 

@@ -90,7 +90,7 @@ Unlike Terraform/OpenTofu with state locking, Ansible doesn't block concurrent r
 ansible-galaxy collection install community.proxmox --upgrade
 ```
 
-### Available Modules (35 total)
+### Available Modules (37+ total)
 
 The [community.proxmox collection](https://docs.ansible.com/projects/ansible/latest/collections/community/proxmox/index.html) provides comprehensive Proxmox management:
 
