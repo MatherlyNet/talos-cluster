@@ -77,11 +77,12 @@ The availability of **free Cloudflare R2 storage** fundamentally changes the cos
 
 | Limit | Value | Impact |
 | ----- | ----- | ------ |
-| **Concurrent writes to same object** | 1/second | CI/CD parallel jobs may conflict |
+| **Per-bucket throughput** | ~5k PUTs/second | Practical limit, not hard cap |
 | **Bucket management ops** | 50/second | Negligible for state ops |
 | **Object size** | 5 TiB | State files are ~KB-MB |
+| **r2.dev endpoint** | Hundreds req/sec | Testing only, use custom domain |
 
-> **Note:** The 1/second concurrent write limit means simultaneous `tofu apply` operations on the same state file may trigger HTTP 429 errors. This reinforces the value of state locking for team environments.
+> **Note:** While R2 doesn't impose hard rate limits on the S3 API, simultaneous `tofu apply` operations on the same state file risk **state corruption** (not rate limiting). This reinforces the value of state locking for team environments or CI/CD pipelines.
 
 ---
 
@@ -122,6 +123,12 @@ terraform {
 **Cons:**
 - No state locking (concurrent applies could corrupt state)
 - Requires team coordination ("announce before applying")
+
+> **Important:** OpenTofu 1.11+ and Terraform 1.11+ have known checksum validation issues with R2. Add these environment variables:
+> ```bash
+> export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+> export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
+> ```
 
 ---
 
@@ -195,7 +202,7 @@ Similar functionality, written in Rust, uses pre-shared key authentication.
 
 **Best for:** Security-conscious environments, compliance requirements
 
-OpenTofu 1.9+ supports client-side state encryption, adding a layer of security regardless of locking:
+OpenTofu 1.7+ supports client-side state encryption, adding a layer of security regardless of locking:
 
 ```hcl
 # infrastructure/tofu/encryption.tf
@@ -225,7 +232,7 @@ terraform {
 - Secrets in state are protected even if R2 bucket is compromised
 - Works with any backend (R2, S3, local, etc.)
 
-**Source:** [OpenTofu State Encryption](https://opentofu.org/docs/v1.9/language/state/encryption/)
+**Source:** [OpenTofu State Encryption](https://opentofu.org/docs/language/state/encryption/)
 
 ---
 
@@ -426,6 +433,12 @@ Create a scoped API token with minimal permissions:
 
 > **Note:** Unauthorized requests to R2 are not charged, so a leaked token with wrong permissions won't incur costs—but still rotate it immediately.
 
+**Best Practices for CI/CD:**
+- Use **Account API tokens** (not User API tokens) for CI/CD pipelines — they survive user account changes
+- Scope tokens to specific buckets using "Object Read & Write" permission
+- Consider setting token expiration dates for security
+- For advanced use cases, temporary credentials are available via the `temp-access-credentials` API
+
 ### Secret Management Integration
 
 Integrate with project's existing SOPS/Age encryption:
@@ -606,10 +619,14 @@ The Ansible implementation from `proxmox-vm-automation.md` remains valid as:
 | Original | Corrected |
 | -------- | --------- |
 | bpg/proxmox v0.90.0 | v0.89.x (as of Jan 2026) |
+| OpenTofu 1.9+ state encryption | 1.7+ (feature introduced in v1.7.0) |
+| 1/second concurrent write limit | Removed - R2 has ~5k PUTs/sec practical limit |
 
 ### Additions from Validation
 
-1. **R2 concurrent write limit** (1/second) - Added to operational limits section
-2. **Maintenance status** of locking solutions - Added comparison note
-3. **Security warnings** - Added critical notes about Worker exposure and versioning
-4. **Client-side encryption** clarification - Added to security section
+1. **Rate limit clarification** - Updated operational limits with accurate R2 throughput info
+2. **S3 checksum workaround** - Added environment variables for OpenTofu/Terraform 1.11+
+3. **Account API token best practice** - Added CI/CD recommendations
+4. **Maintenance status** of locking solutions - Added comparison note
+5. **Security warnings** - Added critical notes about Worker exposure and versioning
+6. **Client-side encryption** clarification - Added to security section
