@@ -189,3 +189,18 @@
 | Upstream Template | https://github.com/onedr0p/cluster-template |
 | Home Operations Discord | https://discord.gg/home-operations |
 | Kubesearch | https://kubesearch.dev |
+
+---
+
+## Implementation Guides
+
+| Guide | Description | When to Read |
+| ----- | ----------- | ------------ |
+| [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
+
+## Research Documents
+
+| Document | Description | Status |
+| -------- | ----------- | ------ |
+| [Cloudflare R2 Terraform State](./research/cloudflare-r2-terraform-state.md) | R2 as Terraform/OpenTofu backend analysis | Validated Jan 2026 |
+| [Proxmox VM Automation](./research/proxmox-vm-automation.md) | Proxmox automation approaches | Complete |
