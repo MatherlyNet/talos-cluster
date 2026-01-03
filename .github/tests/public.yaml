@@ -25,6 +25,8 @@ cilium_bgp_hold_time: 30
 cilium_bgp_keepalive_time: 10
 cilium_bgp_graceful_restart: true
 cilium_bgp_graceful_restart_time: 120
+cilium_bgp_ecmp_max_paths: 3
+cilium_bgp_password: "test-bgp-password"
 # UniFi DNS Integration (optional - uncomment to test)
 # unifi_host: "https://10.10.10.1"
 # unifi_api_key: "test-api-key"

@@ -48,6 +48,8 @@ When all three required BGP fields are set, BGP Control Plane v2 is enabled and 
 | `cilium_bgp_keepalive_time` | int | `10` | BGP keepalive interval in seconds (1-100) |
 | `cilium_bgp_graceful_restart` | bool | `false` | Enable BGP graceful restart for smoother failover |
 | `cilium_bgp_graceful_restart_time` | int | `120` | Graceful restart timeout in seconds (30-600) |
+| `cilium_bgp_ecmp_max_paths` | int | `3` | Maximum ECMP paths for load balancing (1-16) |
+| `cilium_bgp_password` | string | - | BGP MD5 authentication password (RFC 2385, SOPS-encrypted) |
 
 **Note:** When BGP is enabled, `templates/config/unifi/bgp.conf.j2` generates FRR configuration for UniFi gateways
 

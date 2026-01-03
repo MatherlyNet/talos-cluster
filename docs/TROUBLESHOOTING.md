@@ -193,6 +193,95 @@ kubectl get ciliumloadbalancerippool -o yaml
 arping -I <interface> <loadbalancer-ip>
 ```
 
+### Symptom: BGP Peering Not Established
+
+> **Note:** BGP is optional. Skip this section if you're using L2 announcements (default).
+
+**Quick Check:**
+```bash
+cilium bgp peers
+kubectl get ciliumbgpclusterconfig -A
+kubectl get ciliumbgppeerconfig -A
+```
+
+**Decision Tree:**
+
+```
+BGP Session Not Establishing
+     │
+     ├── Session state: Active
+     │   └── Firewall blocking TCP 179 → Add firewall rule
+     │
+     ├── Session state: OpenSent
+     │   └── ASN mismatch → Verify ASNs match both sides
+     │
+     ├── Session flapping
+     │   └── MTU issues → Check path MTU, reduce if needed
+     │
+     └── No routes exchanged
+         └── Missing "no bgp ebgp-requires-policy" → Add to router config
+```
+
+**BGP Diagnostics:**
+
+```bash
+# Check BGP peer status (detailed)
+cilium bgp peers
+
+# View advertised routes
+cilium bgp routes advertised ipv4 unicast
+
+# View available/learned routes
+cilium bgp routes available ipv4 unicast
+
+# Check BGP CRDs
+kubectl get ciliumbgpclusterconfig -o yaml
+kubectl get ciliumbgppeerconfig -o yaml
+kubectl get ciliumbgpadvertisement -o yaml
+
+# Check Cilium agent BGP logs
+kubectl -n kube-system logs -l k8s-app=cilium | grep -i bgp
+
+# Check if LoadBalancer IPs are assigned
+kubectl get svc -A | grep LoadBalancer
+
+# Verify IP pool has available addresses
+kubectl get ciliumloadbalancerippool -o yaml
+```
+
+**UniFi Router Verification (SSH):**
+
+```bash
+# Check FRR service status
+service frr status
+
+# View running BGP config
+vtysh -c "show running-config"
+
+# Check BGP session status
+vtysh -c "show ip bgp summary"
+
+# View learned routes
+vtysh -c "show ip bgp"
+ip route show proto bgp
+
+# Check specific neighbor
+vtysh -c "show ip bgp neighbors <PEER_IP>"
+```
+
+**Common BGP Issues:**
+
+| Issue | Cause | Solution |
+| ------- | ------- | ---------- |
+| Session stuck in `Active` | Firewall blocking port 179 | Add firewall rule for TCP 179 |
+| Session stuck in `OpenSent` | ASN mismatch | Verify ASNs match on both sides |
+| Session flapping | MTU issues | Check path MTU, reduce if needed |
+| No routes exchanged | Missing policy config | Add `no bgp ebgp-requires-policy` |
+| LoadBalancer IP not advertised | IP pool exhausted | Check CiliumLoadBalancerIPPool |
+| Ping to LB IP fails | Expected behavior | Use `curl` - ICMP not supported |
+
+> **Note:** BGP-advertised LoadBalancer IPs will NOT respond to ICMP ping. This is a known Cilium limitation ([GitHub #14118](https://github.com/cilium/cilium/issues/14118)). Use `curl` or actual service connections to test reachability.
+
 ---
 
 ## Section 4: Flux Issues

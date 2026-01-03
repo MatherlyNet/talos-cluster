@@ -1,6 +1,7 @@
 # Envoy Gateway OIDC/OAuth2 Integration Research
 
 > **Research Date:** 2026-01-01
+> **Last Validated:** 2026-01-03
 > **Status:** Research Complete - Ready for Implementation Planning
 > **Priority:** High - Native Integration Approach Recommended
 
@@ -553,6 +554,10 @@ templates/config/kubernetes/apps/auth/
 - [GEP-1494: HTTP Auth in Gateway API](https://gateway-api.sigs.k8s.io/geps/gep-1494/) - Future standards
 - [Keycloak + Envoy Integration](https://www.jbw.codes/blog/Integrating-Keycloak-OIDC-with-Envoy-API-Gateway) - Keycloak patterns
 
+### Related Project Documentation
+
+- [Envoy Gateway Examples Analysis](./envoy-gateway-examples-analysis.md) - JWT SecurityPolicy templates, access logging, tracing configuration (v0.0.0-latest patterns)
+
 ---
 
 ## Next Steps
@@ -593,16 +598,22 @@ Given the GitOps approach and self-hosted nature, **Keycloak** or **Authentik** 
 ## Appendix B: January 2026 Updates & Considerations
 
 > **Added:** 2026-01-01 via `/sc:reflect` validation
+> **Last Validated:** 2026-01-03 via `/sc:research` comprehensive review
 
 ### Envoy Gateway Version Considerations
 
-#### Breaking Changes: v1.5 → v1.6
+> **Current Version in This Cluster: v0.0.0-latest** (for Kubernetes 1.35 compatibility)
+>
+> Note: Stable releases (v1.6.x) do not yet support Kubernetes 1.35. The `v0.0.0-latest` tag tracks the development branch with K8s 1.35 support.
+
+#### Breaking Changes: v1.5 → v1.6+
 
 | Change | Impact | Action Required |
 | ------ | ------ | --------------- |
 | **XDS Listener Naming** | EnvoyPatchPolicies break | Migrate before v1.6 (use `XDSNameSchemeV2` flag) |
 | **OIDC Token Refresh** | Now automatic via refresh tokens | Can disable if unwanted |
 | **Token Encryption** | Optional `DisableTokenEncryption` added | Review security posture |
+| **CSRFTokenTTL** | Configurable CSRF token lifetime | Better OAuth2 session control |
 
 #### OIDC-Specific Features in v1.5+
 
@@ -610,23 +621,38 @@ Given the GitOps approach and self-hosted nature, **Keycloak** or **Authentik** 
 - **OIDC/JWT Bypass**: Defer to JWT when `Authorization: Bearer` header present
 - **Secret-based Client ID**: Client ID can now come from Secret (not just inline)
 
+#### Recent Bug Fixes (included in v0.0.0-latest)
+
+- **OIDC Authorization Endpoint Fix**: Configured OIDC authorization endpoint no longer overridden by discovered endpoints from issuer's well-known URL
+- Security patches: CVE-2025-64527, CVE-2025-66220, CVE-2025-64763 (via Envoy 1.36.3)
+
 #### Known Issues to Monitor
 
-1. **Endpoint Override Bug** (Fixed in v1.5.6): If specifying `authorizationEndpoint`, you MUST also specify `tokenEndpoint` - otherwise both are ignored
-2. **Token Forwarding Limitation** ([Issue #7343](https://github.com/envoyproxy/gateway/issues/7343)): Cannot forward ID token to custom header (October 2025 - check if resolved)
+1. **Endpoint Override Bug** (✅ Fixed): If specifying `authorizationEndpoint`, you MUST also specify `tokenEndpoint` - otherwise both are ignored
+2. **Token Forwarding Limitation** ([Issue #7343](https://github.com/envoyproxy/gateway/issues/7343)): Cannot forward ID token to custom header - use JWT `claimToHeaders` as workaround
+
+#### Installation (v0.0.0-latest for K8s 1.35)
+
+```bash
+helm install eg oci://docker.io/envoyproxy/gateway-helm --version v0.0.0-latest -n envoy-gateway-system --create-namespace
+```
+
+> ⚠️ **Note:** When a stable release supporting Kubernetes 1.35 becomes available (likely v1.7.x), migrate to the stable version for production use.
 
 ### Gateway API v1.4 - GEP-1494 Now Experimental
 
-**Status Update**: GEP-1494 (HTTP External Auth) achieved **EXPERIMENTAL** status in Gateway API v1.4.0 (October 2025).
+**Status Update**: GEP-1494 (HTTP External Auth) achieved **EXPERIMENTAL** status in Gateway API v1.4.0 (October 6, 2025).
 
 **What This Means**:
 - Standard `ExternalAuth` filter now available in HTTPRoute
 - Uses Envoy's ext_authz protocol (community consensus from KubeCon London 2025)
+- API changes merged November 27, 2025 ([PR #4001](https://github.com/kubernetes-sigs/gateway-api/pull/4001))
 - Future: A Policy object for Gateway/HTTPRoute-level auth targeting
 
 **Implication for This Cluster**:
-- Current approach using Envoy Gateway's SecurityPolicy remains valid
-- Future option: Migrate to portable Gateway API `ExternalAuth` filter when it stabilizes
+- Current approach using Envoy Gateway's SecurityPolicy remains valid and recommended
+- Future option: Migrate to portable Gateway API `ExternalAuth` filter when it reaches stable status
+- Istio is also adding first-class support aligned with GEP-1494 semantics
 
 ### OIDC Provider Updates
 
@@ -647,12 +673,30 @@ Authentik has mature Flux/GitOps integration:
 - Official Helm chart at `charts.goauthentik.io`
 - Use `valuesFrom` for secret injection
 - Requires PostgreSQL (deploy separately or use operator)
+- **Authentik 2025.4+** now supports Gateway API HTTPRoute natively
+
+> ⚠️ **Important:** The `:latest` tag is **deprecated** and no longer supported. Use specific version tags like `:2025.10.3`. Helm chart dependencies (PostgreSQL and Redis) are updated with each release.
 
 Reference: [Setting up Authentik with FluxCD](https://timvw.be/2025/03/17/setting-up-authentik-with-kubernetes-and-fluxcd/)
 
 ### OAuth2-Proxy Security Updates
 
-**CVE-2025-64484** (Security Advisory): Review and update if using OAuth2-Proxy.
+> ⚠️ **CRITICAL: Minimum Version Requirement - v7.11.0+**
+
+**CVE-2025-54576** (CVSS 9.1 - CRITICAL): Authentication bypass vulnerability via query parameter manipulation.
+- Affects versions ≤ 7.10.0
+- `skip_auth_routes` regex patterns incorrectly match against full URI including query parameters
+- Attackers can bypass authentication by crafting query parameters that trigger regex matches
+- **Fixed in v7.11.0** - [Security Advisory](https://securityonline.info/critical-oauth2-proxy-flaw-cve-2025-54576-cvss-9-1-allows-authentication-bypass-via-query-parameters/)
+
+**Mitigation if patching is delayed:**
+- Audit all `skip_auth_routes` for overly permissive patterns
+- Replace wildcards with exact path matches
+- Anchor regex patterns with `^` and `$`
+
+**CVE-2025-64484** (GHSA-vjrc-mh2v-45x6): Request header smuggling vulnerability.
+- Fixed by stripping all normalized header variants
+- **Fixed in v7.11.0**
 
 **Session Validation Change**:
 - Now uses `access_token` (not `id_token`) for validating refreshed sessions
@@ -679,6 +723,7 @@ spec:
         issuer: "https://auth.example.com/realms/matherlynet"
         remoteJWKS:
           uri: "https://auth.example.com/realms/matherlynet/protocol/openid-connect/certs"
+          cacheDuration: 300s  # Cache JWKS for 5 minutes to reduce IdP load
         claimToHeaders:
           - claim: sub
             header: X-User-ID
@@ -715,21 +760,31 @@ authorization:
 
 This enables RBAC without external auth services.
 
-### Updated Recommendation Matrix
+### Updated Recommendation Matrix (January 2026)
 
-| Need | 2025 Recommendation | 2026 Recommendation |
-| ---- | ------------------- | ------------------- |
+| Need | 2025 Recommendation | January 2026 Recommendation |
+| ---- | ------------------- | --------------------------- |
 | **Simple auth, any OIDC** | SecurityPolicy OIDC | SecurityPolicy OIDC ✅ |
 | **Claims to backends** | OAuth2-Proxy ext_authz | **JWT claimToHeaders** (native) |
 | **Scope-based RBAC** | OAuth2-Proxy groups | **JWT authorization rules** (native) |
 | **MFA required** | Authelia | Authelia (or IdP-based MFA) |
 | **Complex ACLs** | Authelia | Authelia |
 
-### Pre-Implementation Checklist (Updated)
+#### OIDC Provider Recommendations (January 2026)
 
-- [ ] Verify Envoy Gateway version (recommend v1.5.6+ for OIDC fixes)
+| Provider | Status | Notes |
+| -------- | ------ | ----- |
+| **Keycloak (Operator)** | ✅ Recommended | Official operator + PostgreSQL operator |
+| **Authentik** | ✅ Recommended | Gateway API support in 2025.4+, use version tags |
+| **Keycloak (Bitnami)** | ❌ Deprecated | Subscription required since Aug 2025 |
+| **Auth0/Okta** | ✅ Valid | For quick setup without self-hosting |
+
+### Pre-Implementation Checklist (Updated January 2026)
+
+- [ ] Verify Envoy Gateway version (`v0.0.0-latest` for K8s 1.35, or `v1.6.1+` for K8s 1.34 and earlier)
 - [ ] Check for `XDSNameSchemeV2` migration if using EnvoyPatchPolicy
 - [ ] Avoid Bitnami Keycloak images - use official operator or community charts
-- [ ] Consider JWT claimToHeaders before adding OAuth2-Proxy
-- [ ] Review OAuth2-Proxy CVE-2025-64484 if using that approach
+- [ ] Consider JWT `claimToHeaders` before adding OAuth2-Proxy
+- [ ] **CRITICAL:** If using OAuth2-Proxy, require **v7.11.0+** (CVE-2025-54576, CVSS 9.1)
+- [ ] If using Authentik, use specific version tags (e.g., `:2025.10.3`), NOT `:latest`
 - [ ] Test OIDC endpoint override behavior (both endpoints required if either specified)

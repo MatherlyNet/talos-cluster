@@ -44,8 +44,10 @@ spec:
     k8sServicePort: 7445
     kubeProxyReplacement: true
     kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+    #% if not cilium_bgp_enabled %#
     l2announcements:
       enabled: true
+    #% endif %#
     loadBalancer:
       algorithm: maglev
       mode: "#{ cilium_loadbalancer_mode }#"

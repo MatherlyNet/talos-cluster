@@ -76,7 +76,7 @@ kind: Gateway
 metadata:
   name: envoy-internal
   annotations:
-    #| For UniFi DNS (A records), target is the LB IP; for CNAME-based DNS, use hostname |#
+    #| For UniFi DNS (A records), target is the LB IP; for CNAME-based DNS, use hostname #|
     external-dns.alpha.kubernetes.io/target: "#{ cluster_gateway_addr }#"
 spec:
   gatewayClassName: envoy

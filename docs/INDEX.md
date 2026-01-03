@@ -221,15 +221,19 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | Guide | Description | When to Read |
 | ----- | ----------- | ------------ |
 | [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
+| [BGP UniFi Cilium Implementation](./guides/bgp-unifi-cilium-implementation.md) | BGP peering between UniFi gateway and Cilium | Enabling BGP routing |
+| [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI | Adding cloud-native components |
 
 ## Research Documents
 
 | Document | Description | Status |
 | -------- | ----------- | ------ |
 | [Envoy Gateway Examples Analysis](./research/envoy-gateway-examples-analysis.md) | Examples analysis, v0.0.0-latest adoption for K8s 1.35 | Validated Jan 2026 |
-| [Envoy Gateway OIDC Integration](./research/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Complete |
+| [Envoy Gateway OIDC Integration](./research/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Validated Jan 2026 |
 | [External-DNS UniFi Integration](./research/external-dns-unifi-integration.md) | UniFi webhook for internal DNS (k8s_gateway replacement) | Validated Jan 2026 |
 | [Cloudflare R2 Terraform State](./research/cloudflare-r2-terraform-state.md) | R2 as Terraform/OpenTofu backend analysis | Validated Jan 2026 |
 | [Proxmox VM Automation](./research/proxmox-vm-automation.md) | Proxmox automation approaches | Complete |
+| [BGP UniFi Cilium Integration](./research/bgp-unifi-cilium-integration.md) | BGP peering between UniFi + Cilium | Validated Jan 2026 |
+| [GitOps Examples Integration](./research/gitops-examples-integration.md) | Cloud-native components for Proxmox + Talos | Validated Jan 2026 |
 | [k8s-at-home Patterns](./research/k8s-at-home-patterns-research.md) | Community patterns and practices | Complete |
 | [GitHub Actions Audit](./research/github-actions-audit.md) | Security audit of workflows | Complete |

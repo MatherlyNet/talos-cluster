@@ -9,7 +9,7 @@
 ## Version Context
 
 | Component | Version | Release Date | Notes |
-|-----------|---------|--------------|-------|
+| ----------- | --------- | -------------- | ------- |
 | **Envoy Gateway (target)** | v0.0.0-latest | Rolling | Required for K8s 1.35 |
 | **Envoy Gateway (stable)** | v1.6.1 | Dec 5, 2025 | K8s 1.30-1.33 only |
 | **Gateway API CRDs** | v1.4.1 | Dec 4, 2024 | Experimental channel |
@@ -24,13 +24,13 @@ This document provides a comprehensive analysis of the official Envoy Gateway ex
 ### Key Findings
 
 | Priority | Category | Recommendation |
-|----------|----------|----------------|
+| ---------- | ---------- | ---------------- |
 | **High** | Access Logging | Adopt JSON/OTel logging patterns (CEL filtering available in v1.6+) |
 | **High** | JWT Authentication | Adopt for service-to-service auth (JWKS cacheDuration configurable) |
 | **Medium** | Distributed Tracing | Adopt Zipkin/OTel patterns |
 | **Medium** | Merged Gateways | Evaluate for gateway consolidation |
 | **Low** | gRPC/TCP Routing | Adopt when needed (requires experimental channel) |
-| **Low** | Extension Server | Reference for custom extensions
+| **Low** | Extension Server | Reference for custom extensions |
 
 ---
 
@@ -66,7 +66,7 @@ templates/config/kubernetes/apps/network/envoy-gateway/app/
 ### Current Features Implemented
 
 | Feature | Status | Configuration |
-|---------|--------|---------------|
+| --------- | -------- | --------------- |
 | **EnvoyProxy** | ✅ Configured | 2 replicas, resource limits, drain timeout |
 | **GatewayClass** | ✅ Configured | `envoy` class with custom EnvoyProxy |
 | **External Gateway** | ✅ Configured | HTTPS with Cloudflare integration |
@@ -80,7 +80,7 @@ templates/config/kubernetes/apps/network/envoy-gateway/app/
 ### Current Gaps Identified
 
 | Gap | Impact | Priority |
-|-----|--------|----------|
+| ----- | -------- | ---------- |
 | Access Logging | No structured logging for traffic analysis | High |
 | Distributed Tracing | No request tracing capability | Medium |
 | JWT/OIDC Auth | No native authentication (see separate research) | High |
@@ -289,8 +289,9 @@ config:
 **Current project comparison:** ✅ Already implemented with similar patterns
 
 **Notable differences:**
+
 | Setting | Example | Current Project |
-|---------|---------|-----------------|
+| --------- | --------- | ----------------- |
 | Replicas | 2 | 2 ✅ |
 | CPU Request | 150m | 100m |
 | Memory Request | 640Mi | Not set |
@@ -453,7 +454,7 @@ spec:
 #### Available Patterns
 
 | File | Description | Adoption Priority |
-|------|-------------|-------------------|
+| ------ | ------------- | ------------------- |
 | `json-accesslog.yaml` | Structured JSON logging | **High** |
 | `otel-accesslog.yaml` | OpenTelemetry export | **High** |
 | `text-accesslog.yaml` | Plain text logging | Low |
@@ -464,7 +465,7 @@ spec:
 #### New in v1.6+: Advanced Logging Features
 
 | Feature | Description | Use Case |
-|---------|-------------|----------|
+| --------- | ------------- | ---------- |
 | **CEL Expression Filtering** | Filter logs using CEL | Conditional logging |
 | **Route/Listener-Specific** | Different formats per type | Debug unmatched traffic |
 | **ALS gRPC Backend** | Send logs to gRPC service | External log processing |
@@ -586,7 +587,7 @@ sinks:
 #### Available Patterns
 
 | File | Description | Current Status |
-|------|-------------|----------------|
+| ------ | ------------- | ---------------- |
 | `pod-monitor.yaml` | Prometheus PodMonitor | ✅ Implemented |
 | `otel-sink.yaml` | OTel metrics export | Not implemented |
 | `stats-compression.yaml` | Gzip compression | ✅ Implemented |
@@ -617,7 +618,7 @@ telemetry:
 #### Available Patterns
 
 | File | Description | Adoption Priority |
-|------|-------------|-------------------|
+| ------ | ------------- | ------------------- |
 | `zipkin.yaml` | Zipkin format to OTel | **Medium** |
 | `default.yaml` | Default tracing | Reference |
 
@@ -738,7 +739,7 @@ spec:
 ### Priority Matrix
 
 | Priority | Feature | Effort | Impact | Timeline |
-|----------|---------|--------|--------|----------|
+| ---------- | --------- | -------- | -------- | ---------- |
 | **P0** | JSON Access Logging | Low | High | Immediate |
 | **P0** | JWT SecurityPolicy | Medium | High | With OIDC |
 | **P1** | Distributed Tracing | Medium | Medium | Next sprint |
@@ -967,7 +968,7 @@ telemetry:
 ## Appendix: Feature Compatibility Matrix
 
 | Feature | v1.6 | v0.0.0-latest | Notes |
-|---------|------|---------------|-------|
+| --------- | ------ | --------------- | ------- |
 | HTTP Routing | ✅ | ✅ | Stable |
 | HTTPS/TLS | ✅ | ✅ | Stable |
 | gRPC Routing | ✅ | ✅ | Experimental channel |
@@ -993,7 +994,7 @@ telemetry:
 #### Envoy Gateway Release Timeline
 
 | Version | Release Date | Support Ends | K8s Support |
-|---------|--------------|--------------|-------------|
+| --------- | -------------- | -------------- | ------------- |
 | **v1.6.1** | Dec 5, 2025 | ~Jun 2026 | 1.30-1.33 |
 | v1.5.6 | Dec 5, 2025 | Feb 13, 2026 | 1.30-1.33 |
 | v1.4.6 | Nov 27, 2025 | Nov 13, 2025 (EOL) | 1.30-1.33 |
@@ -1004,7 +1005,7 @@ telemetry:
 #### Gateway API Status
 
 | Version | Release Date | Status |
-|---------|--------------|--------|
+| --------- | -------------- | -------- |
 | **v1.4.1** | Dec 4, 2024 | Current Stable |
 | v1.4.0 | Oct 6, 2024 | GEP-1494 Experimental |
 
@@ -1015,7 +1016,7 @@ telemetry:
 When upgrading from v1.5 to v1.6, be aware of these changes:
 
 | Change | Impact | Action |
-|--------|--------|--------|
+| -------- | -------- | -------- |
 | **OIDC Refresh Token** | Auto-enabled when issued by provider | Set `refreshToken: false` to retain old behavior |
 | **ALPN Protocols** | Default `[h2, http/1.1]` when not configured | Review TLS settings |
 | **TLS SNI** | Auto-detected from HTTP Host header | May affect Backend routing |
@@ -1024,7 +1025,7 @@ When upgrading from v1.5 to v1.6, be aware of these changes:
 ### New Features in v1.6 (Adoption Candidates)
 
 | Feature | Description | Priority |
-|---------|-------------|----------|
+| --------- | ------------- | ---------- |
 | **CEL Access Log Filtering** | Filter logs using CEL expressions | Medium |
 | **Route/Listener-Specific Logging** | Different log settings per type | Medium |
 | **JWKS Cache Duration** | Configurable `cacheDuration` for remoteJWKS | High |
@@ -1103,7 +1104,7 @@ values:
 Current template changes reviewed and validated:
 
 | File | Change | Status |
-|------|--------|--------|
+| ------ | -------- | -------- |
 | `ocirepository.yaml.j2` | `v1.6.1` → `v0.0.0-latest` | ✅ Correct |
 | `ocirepository.yaml.j2` | `mirror.gcr.io` → `docker.io` | ✅ Correct |
 | `00-crds.yaml.j2` | Using `gateway-crds-helm` | ✅ Correct |
@@ -1135,7 +1136,7 @@ Based on January 2026 validation:
 ## Changelog
 
 | Date | Change |
-|------|--------|
+| ------ | -------- |
 | 2026-01-02 | Initial research document created |
 | 2026-01-02 | Validated for January 2026 with inline updates throughout document |
 | 2026-01-02 | Updated: Version Context, Access Logging, JWT Auth, References, Implementation Templates |

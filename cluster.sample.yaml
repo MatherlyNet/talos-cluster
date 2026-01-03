@@ -124,6 +124,18 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: 120)
 # cilium_bgp_graceful_restart_time: 120
 
+# -- Maximum ECMP paths for load balancing across advertising nodes
+#    (OPTIONAL) / (DEFAULT: 3)
+#    NOTE: When multiple nodes advertise the same LoadBalancer IP, traffic is
+#    distributed across up to this many paths for better load distribution
+# cilium_bgp_ecmp_max_paths: 3
+
+# -- MD5 password for BGP session authentication (RFC 2385)
+#    (OPTIONAL) / Must match password configured in UniFi FRR config
+#    NOTE: When set, a Kubernetes Secret will be created and referenced by
+#    CiliumBGPPeerConfig for TCP MD5 authentication
+# cilium_bgp_password: ""
+
 # =============================================================================
 # UNIFI DNS INTEGRATION - Optional for internal DNS via external-dns webhook
 # =============================================================================

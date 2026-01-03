@@ -27,14 +27,14 @@ This research analyzes GitOps reference implementations to identify technologies
 
 ### Latest Chart Versions (January 2026)
 
-| Chart | Registry | Latest Version |
-| ------- | ---------- | ---------------- |
-| tuppr | `ghcr.io/home-operations/charts` | **0.0.51** |
-| talos-cloud-controller-manager | `ghcr.io/siderolabs/charts` | **0.5.2** |
-| talos-backup | `ghcr.io/sergelogvinov/charts` | **0.1.2** |
-| proxmox-csi-plugin | `ghcr.io/sergelogvinov/charts` | **0.5.3** |
-| proxmox-cloud-controller-manager | `ghcr.io/sergelogvinov/charts` | **0.2.22** |
-| karpenter-provider-proxmox | `ghcr.io/sergelogvinov/charts` | **0.4.1** |
+| Chart | Registry | Chart Version | App Version |
+| ------- | ---------- | --------------- | ------------- |
+| tuppr | `ghcr.io/home-operations/charts` | **0.0.51** | 0.0.51 |
+| talos-cloud-controller-manager | `ghcr.io/siderolabs/charts` | **0.5.2** | v1.11.0 |
+| talos-backup | `ghcr.io/sergelogvinov/charts` | **0.1.2** | 0.1.2 |
+| proxmox-csi-plugin | `ghcr.io/sergelogvinov/charts` | **0.5.4** | v0.17.1 |
+| proxmox-cloud-controller-manager | `ghcr.io/sergelogvinov/charts` | **0.2.23** | v0.12.3 |
+| karpenter-provider-proxmox | `ghcr.io/sergelogvinov/charts` | **0.4.1** | 0.4.1 |
 
 > **Note:** Chart versions may differ from application release versions on GitHub. To check for updates:
 >
@@ -80,6 +80,28 @@ spec:
       kind: Node
       expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
       timeout: 10m
+```
+
+**Advanced Health Checks Example (from billimek/k8s-gitops):**
+
+For clusters with storage replication or Ceph, add additional safety checks:
+```yaml
+  healthChecks:
+    # Ensure nodes are ready
+    - apiVersion: v1
+      kind: Node
+      expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+      timeout: 10m
+    # Ensure VolSync replication is not in progress (optional)
+    - apiVersion: volsync.backube/v1alpha1
+      kind: ReplicationSource
+      expr: status.conditions.exists(c, c.type == "Synchronizing" && c.status == "False")
+      timeout: 5m
+    # Ensure Ceph cluster is healthy (optional)
+    - apiVersion: ceph.rook.io/v1
+      kind: CephCluster
+      expr: status.ceph.health == "HEALTH_OK"
+      timeout: 5m
 ```
 
 **Helm Chart:**
@@ -224,6 +246,12 @@ spec:
 - Supports LVM, LVM-thin, ZFS, NFS storage backends
 - Provides topology-aware provisioning (volumes stay on same node as pod)
 - Enables volume snapshots and expansion
+- LUKS encryption support for sensitive data
+- Bandwidth control for storage I/O limits
+
+**Recent Changes (v0.17.x - January 2026):**
+- v0.17.1 removed the previously required `Sys.Audit` permission (breaking change from v0.16.0 now resolved)
+- Fixed storage topology and VM lock race conditions
 
 **Why We Might Need It:**
 When applications require persistent storage, options include:
@@ -267,7 +295,7 @@ spec:
 
 **Helm Chart:**
 - Repository: `oci://ghcr.io/sergelogvinov/charts/proxmox-csi-plugin`
-- Latest Version: **0.5.3** (as of January 2026)
+- Latest Version: **0.5.4** (as of January 2026)
 
 **Prerequisites:**
 - Proxmox API token with storage permissions
@@ -324,7 +352,7 @@ spec:
 
 **Helm Chart:**
 - Repository: `oci://ghcr.io/sergelogvinov/charts/proxmox-cloud-controller-manager`
-- Latest Version: **0.2.22** (as of January 2026)
+- Latest Version: **0.2.23** (as of January 2026)
 
 **Adoption Effort:** Medium - Overlaps with Talos CCM, careful coordination needed
 
@@ -679,6 +707,9 @@ oci://ghcr.io/home-operations/charts/<chart-name>
 ---
 
 ## Validation Summary
+
+> **Last Validated:** January 3, 2026
+> **Validation Method:** Serena MCP reflection tools, OCI registry verification, upstream GitHub release checks
 
 This research document has been validated against the project's conventions and structure:
 

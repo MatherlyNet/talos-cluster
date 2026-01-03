@@ -35,6 +35,8 @@ import (
 	cilium_bgp_keepalive_time?:       *10 | int & >=1 & <=100
 	cilium_bgp_graceful_restart?:     *false | bool
 	cilium_bgp_graceful_restart_time?: *120 | int & >=30 & <=600
+	cilium_bgp_ecmp_max_paths?:       *3 | int & >=1 & <=16
+	cilium_bgp_password?:             string & !=""
 
 	// UniFi DNS Integration - Optional for internal DNS via external-dns webhook
 	// Requires UniFi Network v9.0.0+ for API key authentication (current stable: 9.5.21)

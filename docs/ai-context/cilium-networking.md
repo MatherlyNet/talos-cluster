@@ -172,6 +172,8 @@ cilium_bgp_hold_time: 30                 # Hold timer seconds (3-300)
 cilium_bgp_keepalive_time: 10            # Keepalive interval seconds (1-100)
 cilium_bgp_graceful_restart: false       # Enable graceful restart
 cilium_bgp_graceful_restart_time: 120    # Graceful restart timeout (30-600)
+cilium_bgp_ecmp_max_paths: 3             # ECMP paths for load balancing (1-16)
+cilium_bgp_password: "secret"            # BGP MD5 authentication (RFC 2385, SOPS-encrypted)
 ```
 
 ### Generated CRDs
@@ -185,6 +187,7 @@ kind: CiliumBGPPeerConfig
 metadata:
   name: bgp-peer-config-v4
 spec:
+  authSecretRef: bgp-peer-password   # Only if password configured
   holdTimeSeconds: 30
   keepAliveTimeSeconds: 10
   gracefulRestart:           # Only if enabled
@@ -239,11 +242,21 @@ When BGP is enabled, `templates/config/unifi/bgp.conf.j2` generates FRR configur
 router bgp 64513
   bgp router-id 192.168.1.1
   no bgp ebgp-requires-policy
+  bgp bestpath as-path multipath-relax    # Enable ECMP
+  maximum-paths 3                          # Up to 3 ECMP paths
   neighbor TALOS peer-group
   neighbor TALOS remote-as 64514
   neighbor TALOS timers 10 30
-  neighbor 192.168.1.10 peer-group TALOS  # Per-node
+  neighbor TALOS password secret           # If password configured
+  neighbor TALOS graceful-restart          # If enabled
+  neighbor 192.168.1.10 peer-group TALOS   # Per-node
   neighbor 192.168.1.11 peer-group TALOS
+  address-family ipv4 unicast
+    neighbor TALOS activate
+    neighbor TALOS next-hop-self
+    neighbor TALOS soft-reconfiguration inbound
+    neighbor TALOS route-map ACCEPT-K8S in
+  exit-address-family
 ```
 
 ### BGP Debugging
@@ -276,6 +289,21 @@ kubectl -n kube-system logs -l k8s-app=cilium | grep -i bgp
 | Router support | Any | BGP-capable (UniFi 4.1.13+) |
 | Configuration | Simple | Requires FRR config |
 | externalTrafficPolicy | Works | Works with Local |
+
+### BFD Support Status
+
+> **BFD is NOT supported** in open-source Cilium (as of January 2026).
+
+BFD (Bidirectional Forwarding Detection) would enable sub-second failover, but:
+- GoBGP (Cilium's BGP backend) lacks BFD support
+- Cilium Enterprise added BFD in v1.16
+- No timeline for open-source availability ([GitHub #22394](https://github.com/cilium/cilium/issues/22394))
+
+**Workaround:** Tune BGP timers for ~9s failover:
+```yaml
+cilium_bgp_hold_time: 3        # Minimum
+cilium_bgp_keepalive_time: 1   # Minimum
+```
 
 ## Services in This Project
 
