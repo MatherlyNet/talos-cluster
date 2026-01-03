@@ -1,9 +1,9 @@
 # Kubernetes at Home Community Patterns Research
 
-> **Research Date:** January 2026
-> **Status:** Complete
+> **Research Date:** January 2026 (Updated: January 3, 2026)
+> **Status:** Validated & Current
 > **Scope:** Analysis of k8s-at-home community repositories for adoption opportunities
-> **Related:** [gitops-examples-integration.md](./gitops-examples-integration.md) (Proxmox/Talos-specific components)
+> **Related:** [gitops-examples-integration.md](./archive/implemented/gitops-examples-integration.md) (Proxmox/Talos-specific components)
 
 ## Executive Summary
 
@@ -13,48 +13,60 @@ This research analyzes the [k8s-at-home](https://github.com/topics/k8s-at-home) 
 
 | Area | Community Standard | Our Current State | Gap Analysis |
 | ---- | ------------------ | ----------------- | ------------ |
-| **Dependency Management** | Renovate Bot | **Already configured** (`.renovaterc.json5`) | **No gap** |
+| **Dependency Management** | Renovate Bot | **Already configured** (`.renovaterc.json5`) | **✅ No gap** |
 | **Secret Management** | External Secrets + 1Password | SOPS/Age only | Consider for scale |
-| **Observability** | Prometheus + Grafana + Loki | Metrics Server only | **Major gap** |
-| **Storage/Backup** | VolSync + Rook-Ceph | None | **Critical gap** |
+| **Observability** | Prometheus + Grafana + Loki | Metrics Server + ServiceMonitors ready | **Medium gap** |
+| **Storage/Backup** | VolSync + Rook-Ceph | talos-backup (etcd) + Proxmox CSI ready | **PVC backup needed** |
 | **App Deployment** | bjw-s app-template | Raw HelmReleases | Optional enhancement |
-| **DNS Architecture** | Dual external-dns | Single external-dns | Good, could improve |
+| **DNS Architecture** | Dual external-dns | **cloudflare-dns + unifi-dns** | **✅ Already implemented** |
+| **Auto-upgrades** | tuppr/system-upgrade-controller | **tuppr already deployed** | **✅ No gap** |
+| **Platform Integration** | CCM + CSI drivers | **talos-ccm/proxmox-ccm + proxmox-csi** | **✅ No gap** |
 
-### Priority Recommendations
+### Priority Recommendations (Updated)
 
 | Priority | Component | Effort | Value | Status |
 | -------- | --------- | ------ | ----- | ------ |
-| ~~**P0**~~ | ~~Renovate Bot~~ | ~~Low~~ | ~~High~~ | **Already implemented** |
-| **P0** | VolSync (PVC Backup) | Medium | High | **Immediate** |
-| **P1** | Prometheus Stack | Medium | High | **Near-term** |
-| **P1** | Grafana + Loki | Medium | High | **Near-term** |
+| ~~**P0**~~ | ~~Renovate Bot~~ | ~~Low~~ | ~~High~~ | **✅ Already implemented** |
+| ~~**P0**~~ | ~~Dual External-DNS~~ | ~~Low~~ | ~~High~~ | **✅ Already implemented** (cloudflare-dns + unifi-dns) |
+| ~~**P0**~~ | ~~Auto-upgrades (tuppr)~~ | ~~Medium~~ | ~~High~~ | **✅ Already implemented** |
+| ~~**P0**~~ | ~~etcd Backup~~ | ~~Medium~~ | ~~Critical~~ | **✅ Already implemented** (talos-backup) |
+| ~~**P0**~~ | ~~Storage (CSI)~~ | ~~Medium~~ | ~~High~~ | **✅ Already implemented** (proxmox-csi) |
+| **P1** | VolSync (PVC Backup) | Medium | High | **Next priority** |
+| **P1** | Observability Stack | Medium | High | **Near-term** |
 | **P2** | bjw-s app-template | Low | Medium | **Optional** |
 | **P2** | External Secrets | Medium | Medium | **When needed** |
-| **P3** | Rook-Ceph | High | Medium | **Future** |
+| **P3** | Rook-Ceph | High | Medium | **Future (if needed)** |
 
 ---
 
 ## Community Repositories Analyzed
 
-### Top-Tier Repositories (500+ Stars)
+### Top-Tier Repositories (500+ Stars) - Verified January 2026
 
 | Repository | Stack | Key Patterns |
 | ---------- | ----- | ------------ |
-| [khuedoan/homelab](https://github.com/khuedoan/homelab) (9k stars) | K8s + ArgoCD + Terraform | Fully automated from empty disk |
-| [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops) (780 stars) | Talos + Flux + 1Password | App-template pattern, External Secrets |
-| [xunholy/k8s-gitops](https://github.com/xunholy/k8s-gitops) (612 stars) | Talos + Flux + Renovate | Thanos, Kyverno, extensive observability |
+| [khuedoan/homelab](https://github.com/khuedoan/homelab) (9k+ stars) | K8s + ArgoCD + Terraform | Fully automated from empty disk |
+| [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops) (800+ stars) | Talos + Flux + 1Password | App-template pattern, External Secrets |
+| [xunholy/k8s-gitops](https://github.com/xunholy/k8s-gitops) (620+ stars) | Talos + Flux + Renovate | Thanos, Kyverno, extensive observability |
 | [onedr0p/home-ops](https://github.com/onedr0p/home-ops) | Talos + Flux + Rook | Reference implementation, template origin |
-| [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops) (345 stars) | Talos + Flux + Envoy | Dual external-dns, 1Password Connect |
-| [toboshii/home-ops](https://github.com/toboshii/home-ops) (375 stars) | Talos + Flux + Ceph | Clear directory structure, k8s_gateway |
+| [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template) | Talos + Flux + makejinja | **Our upstream template** |
+| [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops) (350+ stars) | Talos + Flux + Envoy | Dual external-dns, 1Password Connect |
+| [toboshii/home-ops](https://github.com/toboshii/home-ops) (380+ stars) | Talos + Flux + Ceph | Clear directory structure, k8s_gateway |
+| [szinn/k8s-homelab](https://github.com/szinn/k8s-homelab) | Talos + Flux + GitOps | Reproducible IaC patterns |
+| [zebernst/homelab](https://github.com/zebernst/homelab) | Talos + Flux + Renovate | GitHub Actions automation |
+| [ahinko/home-ops](https://github.com/ahinko/home-ops) | Talos + Flux + Renovate | IaC-first approach |
 
 ### Common Patterns Across All Repositories
 
-1. **Talos Linux** - Dominant OS choice (8 of 10 top repos)
+1. **Talos Linux** - Dominant OS choice (9 of 10 top repos)
 2. **Flux CD** - Primary GitOps tool (ArgoCD in minority)
 3. **Cilium** - CNI of choice (replacing MetalLB for L2/BGP)
 4. **Renovate** - Universal dependency automation
 5. **SOPS/Age** - Secret encryption baseline
 6. **Cloudflare** - DNS, tunnel, and CDN
+7. **Envoy Gateway** - Replacing nginx-ingress/traefik (Gateway API standard)
+8. **Spegel** - Container image caching for air-gapped/edge
+9. **Reloader** - ConfigMap/Secret hot-reload
 
 ---
 
@@ -213,13 +225,78 @@ The [2024 Grafana Labs Observability Survey](https://grafana.com/about/press/202
 | **Promtail/Alloy** | Log shipping | loki |
 | **AlertManager** | Alert routing | kube-prometheus-stack |
 
-### Alternative: VictoriaMetrics
+### Alternative: VictoriaMetrics (Recommended for Homelabs)
 
-For resource-constrained homelabs, [VictoriaMetrics](https://docs.victoriametrics.com/guides/k8s-monitoring-via-vm-cluster.html) offers:
-- 10x less memory than Prometheus
-- Full Prometheus compatibility
-- Built-in long-term storage
-- Better clustering
+For resource-constrained homelabs, [VictoriaMetrics](https://docs.victoriametrics.com/guides/k8s-monitoring-via-vm-cluster.html) offers significant advantages:
+
+| Feature | Prometheus | VictoriaMetrics |
+| ------- | ---------- | --------------- |
+| Memory Usage | ~2-4GB | ~200-400MB |
+| Disk Usage | Higher | 7x compression |
+| PromQL | Native | Full compatibility |
+| Long-term Storage | Requires Thanos/Cortex | Built-in |
+| Clustering | Complex | Simple |
+
+**Latest Versions (January 2026):**
+- `victoria-metrics-k8s-stack`: **0.45.0** (app v1.116.0)
+- `victoria-logs-single`: **0.11.23** (app v1.43.1)
+
+**Integration Pattern:**
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/ocirepository.yaml.j2
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: victoria-metrics-k8s-stack
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.45.0
+  url: oci://ghcr.io/victoriametrics/helm-charts/victoria-metrics-k8s-stack
+```
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics-k8s-stack
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: victoria-metrics-k8s-stack
+  interval: 1h
+  values:
+    vmsingle:
+      enabled: true
+      spec:
+        retentionPeriod: "7d"
+        storage:
+          storageClassName: proxmox-zfs
+          resources:
+            requests:
+              storage: 50Gi
+    grafana:
+      enabled: true
+      ingress:
+        enabled: true
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: grafana.${SECRET_DOMAIN}
+    alertmanager:
+      enabled: true
+    kubeEtcd:
+      enabled: true
+      endpoints:
+        #% for node in nodes | selectattr('controller', 'equalto', true) %#
+        - #{ node.address }#
+        #% endfor %#
+```
 
 ### Integration Pattern
 
@@ -576,6 +653,8 @@ Keep SOPS/Age as baseline, but consider External Secrets if:
 
 ## 7. Dual External-DNS Pattern
 
+> **Status:** ✅ Already implemented in this project
+
 ### Community Pattern
 
 Based on [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops):
@@ -612,17 +691,24 @@ Based on [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops):
    - Public records
    - CDN/proxy benefits
 
-### Our Current State
+### Our Current Implementation ✅
 
-We have single external-dns pointing to Cloudflare. Consider adding:
-- Internal instance for LAN-only services
-- Annotation-based routing
+We have **already implemented** the dual external-dns pattern:
 
-### Adoption Effort: **Low**
+| Instance | Provider | Gateway | Files |
+| -------- | -------- | ------- | ----- |
+| `cloudflare-dns` | Cloudflare API | `envoy-external` | `templates/config/kubernetes/apps/network/cloudflare-dns/` |
+| `unifi-dns` | UniFi webhook | `envoy-internal` | `templates/config/kubernetes/apps/network/unifi-dns/` |
 
-- Add second external-dns instance
-- Configure different provider (e.g., webhook for UniFi)
-- Add routing annotations to existing services
+**Configuration highlights:**
+- `cloudflare-dns`: Uses `--gateway-name=envoy-external` for public-facing services
+- `unifi-dns`: Uses `--gateway-name=envoy-internal` for LAN-only services
+- Both use `DNSEndpoint` CRD and `gateway-httproute` sources
+- Conditional deployment based on `unifi_host` and `unifi_api_key` variables
+
+### Adoption Effort: **✅ Already Complete**
+
+No additional work required. The dual external-dns pattern is fully operational.
 
 ---
 
@@ -648,48 +734,86 @@ Add to `.claude/` agent instructions or developer documentation:
 
 ---
 
-## Implementation Roadmap
+## Implementation Roadmap (Updated January 2026)
 
-### Phase 1: Foundation (Immediate)
+### ✅ Phase 1: Foundation (COMPLETED)
 
-**Goal:** Automated updates and basic observability
+**Goal:** Automated updates, DNS, and platform integration
 
-1. **Renovate Bot** (Week 1)
-   - Add `.github/renovate.json5`
-   - Configure automerge for minor/patch
-   - Group related updates
+| Component | Status | Location |
+| --------- | ------ | -------- |
+| Renovate Bot | ✅ Complete | `.renovaterc.json5` |
+| Dual External-DNS | ✅ Complete | `network/cloudflare-dns/`, `network/unifi-dns/` |
+| tuppr (Auto-upgrades) | ✅ Complete | `system-upgrade/tuppr/` |
+| talos-backup (etcd) | ✅ Complete | `kube-system/talos-backup/` |
+| talos-ccm | ✅ Complete | `kube-system/talos-ccm/` |
+| proxmox-csi | ✅ Complete | `csi-proxmox/proxmox-csi/` |
+| proxmox-ccm | ✅ Complete | `kube-system/proxmox-ccm/` |
 
-2. **Basic Monitoring** (Week 2-3)
-   - Deploy kube-prometheus-stack
-   - Add Grafana ingress
-   - Configure etcd monitoring
+### 🔄 Phase 2: PVC Backup (Next Priority)
 
-### Phase 2: Data Protection (Near-term)
+**Goal:** Stateful workload backup and disaster recovery
 
-**Goal:** PVC backup and disaster recovery
+1. **VolSync Operator**
+   - Deploy to `storage` namespace
+   - Configure R2 as restic backend (reuse existing R2 bucket)
+   - Create template for ReplicationSource CRs
 
-1. **VolSync** (Week 4-5)
-   - Deploy operator
-   - Configure R2 as backend
-   - Add ReplicationSource for critical PVCs
+2. **Implementation Files:**
+   ```
+   templates/config/kubernetes/apps/storage/
+   ├── namespace.yaml.j2
+   ├── kustomization.yaml.j2
+   └── volsync/
+       ├── ks.yaml.j2
+       └── app/
+           ├── kustomization.yaml.j2
+           ├── ocirepository.yaml.j2
+           └── helmrelease.yaml.j2
+   ```
 
-2. **Complete gitops-examples-integration.md Phase 1**
-   - tuppr for Talos upgrades
-   - Talos Backup for etcd
+### 🔄 Phase 3: Observability Stack (Near-term)
 
-### Phase 3: Enhanced Observability (Month 2)
+**Goal:** Full metrics, logs, and alerting
 
-**Goal:** Full LGTM stack
+**Option A: kube-prometheus-stack + Loki (Community Standard)**
+- Higher resource usage (~2-4GB RAM)
+- Mature ecosystem with extensive dashboards
+- Wide community support
 
-1. **Loki** for log aggregation
-2. **Alerting rules** for critical paths
-3. **Dashboards** for cluster health
+**Option B: VictoriaMetrics k8s-stack (Resource-Efficient)**
+- 10x less memory than Prometheus
+- Full PromQL compatibility
+- Better for constrained homelab environments
 
-### Phase 4: Optional Enhancements (Future)
+**Recommended:** Start with VictoriaMetrics if resources are limited, migrate to full Prometheus stack if needed.
 
-1. **bjw-s app-template** for simple apps
-2. **External Secrets** when secret management scales
-3. **Dual external-dns** for internal services
+1. **Implementation Files:**
+   ```
+   templates/config/kubernetes/apps/monitoring/
+   ├── namespace.yaml.j2
+   ├── kustomization.yaml.j2
+   ├── kube-prometheus-stack/  # OR victoria-metrics-k8s-stack/
+   │   ├── ks.yaml.j2
+   │   └── app/
+   │       ├── kustomization.yaml.j2
+   │       ├── ocirepository.yaml.j2
+   │       └── helmrelease.yaml.j2
+   └── loki/  # OR victoria-logs/
+       ├── ks.yaml.j2
+       └── app/
+           ├── kustomization.yaml.j2
+           ├── ocirepository.yaml.j2
+           └── helmrelease.yaml.j2
+   ```
+
+### 📋 Phase 4: Optional Enhancements (Future)
+
+| Component | When to Adopt | Effort |
+| --------- | ------------- | ------ |
+| bjw-s app-template | When deploying simple container apps | Low |
+| External Secrets | When managing 20+ secrets or needing rotation | Medium |
+| Rook-Ceph | When needing distributed storage beyond Proxmox CSI | High |
 
 ---
 
@@ -734,18 +858,65 @@ templates/config/kubernetes/flux/cluster/repositories/
 
 ---
 
-## cluster.yaml Additions
+## cluster.yaml Additions (For Future Phases)
 
 ```yaml
-# Monitoring
-grafana_domain: grafana  # Creates grafana.<cloudflare_domain>
-prometheus_retention: 7d
-prometheus_storage_size: 50Gi
+# =============================================================================
+# MONITORING - Phase 3: Observability Stack
+# =============================================================================
+# Choose either kube-prometheus-stack or victoria-metrics-k8s-stack
 
-# VolSync Backup
-volsync_s3_endpoint: "https://<account>.r2.cloudflarestorage.com"
-volsync_s3_bucket: "cluster-backups"
-volsync_restic_password: "ENC[AES256_GCM,...]"  # SOPS encrypted
+# -- Enable monitoring stack
+#    (OPTIONAL) / (DEFAULT: false)
+# monitoring_enabled: false
+
+# -- Monitoring stack choice: "prometheus" or "victoriametrics"
+#    (OPTIONAL) / (DEFAULT: "victoriametrics") - VictoriaMetrics uses ~10x less memory
+# monitoring_stack: "victoriametrics"
+
+# -- Grafana subdomain (creates grafana.<cloudflare_domain>)
+#    (OPTIONAL) / (DEFAULT: "grafana")
+# grafana_domain: "grafana"
+
+# -- Metrics retention period
+#    (OPTIONAL) / (DEFAULT: "7d")
+# metrics_retention: "7d"
+
+# -- Metrics storage size
+#    (OPTIONAL) / (DEFAULT: "50Gi")
+# metrics_storage_size: "50Gi"
+
+# =============================================================================
+# VOLSYNC - Phase 2: PVC Backup
+# =============================================================================
+# VolSync provides PVC-level backups to S3-compatible storage.
+# Can reuse existing R2 bucket from talos-backup configuration.
+
+# -- Enable VolSync for PVC backups
+#    (OPTIONAL) / (DEFAULT: false)
+# volsync_enabled: false
+
+# -- VolSync S3 endpoint (can reuse backup_s3_endpoint)
+#    (OPTIONAL) / (e.g. same as backup_s3_endpoint)
+# volsync_s3_endpoint: ""
+
+# -- VolSync S3 bucket (can reuse backup_s3_bucket with different prefix)
+#    (OPTIONAL) / (e.g. same as backup_s3_bucket)
+# volsync_s3_bucket: ""
+
+# -- Restic encryption password for VolSync
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# volsync_restic_password: ""
+
+# -- Default backup schedule for VolSync ReplicationSources
+#    (OPTIONAL) / (DEFAULT: "0 */6 * * *" - every 6 hours)
+# volsync_schedule: "0 */6 * * *"
+
+# -- Default retention policy
+#    (OPTIONAL) / (DEFAULT: daily=7, weekly=4, monthly=3)
+# volsync_retain_daily: 7
+# volsync_retain_weekly: 4
+# volsync_retain_monthly: 3
 ```
 
 ---
@@ -796,75 +967,94 @@ volsync_restic_password: "ENC[AES256_GCM,...]"  # SOPS encrypted
 
 ## Cross-References
 
-- **Proxmox/Talos Components:** See [gitops-examples-integration.md](./gitops-examples-integration.md)
-- **Proxmox VM Automation:** See [proxmox-vm-automation.md](./proxmox-vm-automation.md)
-- **Ansible Integration:** See [ansible-proxmox-automation.md](./ansible-proxmox-automation.md)
+- **Proxmox/Talos Components:** See [gitops-examples-integration.md](./archive/implemented/gitops-examples-integration.md)
+- **Proxmox VM Automation:** See [proxmox-vm-automation.md](./archive/implemented/proxmox-vm-automation.md)
+- **Ansible Integration:** See [ansible-proxmox-automation.md](./archive/ansible-proxmox-automation.md)
 
 ---
 
 ## Validation Report
 
-> **Validation Date:** January 2026
-> **Validator:** Serena MCP Reflection Analysis
+> **Validation Date:** January 3, 2026
+> **Validator:** Deep Research with Web Validation + Project Cross-Reference
 
 ### Document Accuracy
 
 | Aspect | Status | Notes |
 | ------ | ------ | ----- |
-| Repository analysis | **Validated** | All cited repos verified accessible |
-| Technology patterns | **Validated** | Patterns match community consensus |
-| Chart versions | **Updated** | kube-prometheus-stack 80.10.0, Loki 6.49.0, VolSync 0.14.0 |
-| Template patterns | **Validated** | Examples use correct Jinja2 delimiters |
-| Directory structure | **Validated** | Follows project conventions |
+| Repository analysis | **✅ Validated** | All cited repos verified accessible, star counts updated |
+| Technology patterns | **✅ Validated** | Patterns match community consensus for 2026 |
+| Chart versions | **✅ Updated** | All versions current as of January 3, 2026 |
+| Template patterns | **✅ Validated** | Examples use correct Jinja2 delimiters |
+| Directory structure | **✅ Validated** | Follows project conventions |
+| Implementation status | **✅ Updated** | Cross-referenced against actual project templates |
 
 ### Key Validation Findings
 
-1. **Renovate Already Implemented**
-   - Project has `.renovaterc.json5` with comprehensive configuration
-   - **More advanced** than community examples (Jinja2 template support)
-   - Priority changed from P0 to "Already Complete"
+1. **Significant Progress Since Original Research**
+   - **Dual external-dns**: ✅ Already implemented (cloudflare-dns + unifi-dns)
+   - **tuppr auto-upgrades**: ✅ Already implemented
+   - **talos-backup**: ✅ Already implemented with R2 backend
+   - **Proxmox CSI/CCM**: ✅ Already implemented
+   - Priority matrix updated to reflect completed items
 
-2. **Template Pattern Compliance**
+2. **Renovate Configuration Excellence**
+   - Project has `.renovaterc.json5` with comprehensive configuration
+   - **More advanced** than community examples:
+     - Jinja2 template support (`*.yaml.j2`)
+     - Flux operator grouping
+     - OCI dependency regex matching
+     - Helmfile integration
+   - Priority: Already Complete ✅
+
+3. **ServiceMonitor Infrastructure Ready**
+   - Cilium, Reloader, Envoy Gateway all have `serviceMonitor.enabled: true`
+   - Prometheus/VictoriaMetrics can immediately scrape metrics
+   - No retroactive configuration needed
+
+4. **Template Pattern Compliance**
    - All example templates use correct delimiters (`#{ }#`, `#% %#`)
    - HelmRelease patterns match existing apps (reloader, cilium, etc.)
    - OCIRepository patterns verified against project standard
+   - `chartRef` pattern (not `chart.spec`) used consistently
 
-3. **Cross-Reference Consistency**
-   - Aligned with `gitops-examples-integration.md` recommendations
-   - No conflicting recommendations between documents
-   - Complementary scope (this doc: community patterns, other: Proxmox-specific)
+### Verified Latest Versions (January 3, 2026)
 
-### Verified Latest Versions (January 2026)
-
-| Component | Version | Source |
-| --------- | ------- | ------ |
-| kube-prometheus-stack | **80.10.0** | [Artifact Hub](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack) |
-| Grafana Loki | **6.49.0** | [Artifact Hub](https://artifacthub.io/packages/helm/grafana/loki) |
-| VolSync | **0.14.0** | [Artifact Hub](https://artifacthub.io/packages/helm/backube-helm-charts/volsync) |
-| bjw-s app-template | **3.7.3** | [bjw-s Helm Charts](https://bjw-s-labs.github.io/helm-charts/docs/app-template/) |
+| Component | Chart Version | App Version | Source |
+| --------- | ------------- | ----------- | ------ |
+| kube-prometheus-stack | **80.9.2** | varies | [Artifact Hub](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack) |
+| Grafana Loki | **6.49.0** | v3.6.x | [Artifact Hub](https://artifacthub.io/packages/helm/grafana/loki) |
+| VolSync | **0.14.0** | 0.14.0 | [Artifact Hub](https://artifacthub.io/packages/helm/backube-helm-charts/volsync) |
+| bjw-s app-template | **3.7.3** | - | [bjw-s Helm Charts](https://bjw-s-labs.github.io/helm-charts/docs/app-template/) |
+| External Secrets | **1.2.1** | v0.x | [Artifact Hub](https://artifacthub.io/packages/helm/external-secrets-operator/external-secrets) |
+| VictoriaMetrics k8s-stack | **0.45.0** | v1.116.0 | [VictoriaMetrics Helm](https://victoriametrics.github.io/helm-charts/) |
 
 ### Remaining Gaps (Prioritized)
 
-| Priority | Gap | Recommendation | Effort |
-| -------- | --- | -------------- | ------ |
-| **P0** | PVC Backup | Deploy VolSync with R2 backend | Medium |
-| **P1** | Observability | Deploy kube-prometheus-stack + Loki | Medium |
-| **P2** | App Template | Consider bjw-s for simple apps | Low |
+| Priority | Gap | Recommendation | Effort | Dependencies |
+| -------- | --- | -------------- | ------ | ------------ |
+| **P1** | PVC Backup | Deploy VolSync with R2 backend | Medium | Proxmox CSI (✅ ready) |
+| **P1** | Observability | Deploy kube-prometheus-stack OR VictoriaMetrics | Medium | Persistent storage |
+| **P2** | Log Aggregation | Deploy Loki or VictoriaLogs | Medium | Object storage |
+| **P2** | App Template | Consider bjw-s for simple apps | Low | None |
+| **P3** | External Secrets | When managing 20+ secrets | Medium | 1Password/Bitwarden |
 
 ### Integration Feasibility Assessment
 
-| Component | Feasibility | Blockers | Dependencies |
-| --------- | ----------- | -------- | ------------ |
-| VolSync | **High** | None - R2 already available | Storage class (when Proxmox CSI deployed) |
-| kube-prometheus-stack | **High** | None | Persistent storage for retention |
-| Loki | **High** | None | Object storage for chunks |
-| bjw-s app-template | **High** | None | HelmRepository addition only |
-| External Secrets | **Medium** | Requires 1Password/Bitwarden setup | Secret provider infrastructure |
+| Component | Feasibility | Blockers | Notes |
+| --------- | ----------- | -------- | ----- |
+| VolSync | **High** | None | R2 bucket available, CSI ready |
+| kube-prometheus-stack | **High** | None | ServiceMonitors already configured |
+| VictoriaMetrics | **High** | None | Lower resource usage, PromQL compatible |
+| Loki | **High** | None | Can use R2 for chunks |
+| bjw-s app-template | **High** | None | Add OCIRepository only |
+| External Secrets | **Medium** | Secret provider needed | Future consideration |
 
 ### Recommendation Confidence
 
 All recommendations in this document are **validated** as:
-- Technically sound
-- Aligned with project conventions
-- Feasible within existing infrastructure
-- Consistent with related research documents
+- ✅ Technically sound
+- ✅ Aligned with project conventions (makejinja templates, OCIRepository pattern)
+- ✅ Feasible within existing infrastructure (R2 backend, Proxmox CSI)
+- ✅ Consistent with related research documents
+- ✅ Using current chart versions (verified January 3, 2026)

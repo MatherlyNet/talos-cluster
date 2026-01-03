@@ -1,8 +1,8 @@
 # Envoy Gateway Examples Analysis & Adoption Recommendations
 
 > **Research Date:** 2026-01-02
-> **Last Validated:** 2026-01-02
-> **Status:** Research Complete - Validated
+> **Last Validated:** 2026-01-03
+> **Status:** Research Complete - Validated ✅
 > **Source:** https://github.com/envoyproxy/gateway/tree/main/examples
 > **Target Version:** v0.0.0-latest (K8s 1.35 compatible)
 
@@ -10,12 +10,12 @@
 
 | Component | Version | Release Date | Notes |
 | ----------- | --------- | -------------- | ------- |
-| **Envoy Gateway (target)** | v0.0.0-latest | Rolling | Required for K8s 1.35 |
+| **Envoy Gateway (in use)** | v0.0.0-latest | Rolling | ✅ Active - K8s 1.35 support |
 | **Envoy Gateway (stable)** | v1.6.1 | Dec 5, 2025 | K8s 1.30-1.33 only |
 | **Gateway API CRDs** | v1.4.1 | Dec 4, 2024 | Experimental channel |
 | **Kubernetes** | v1.35.0 | - | Project target |
 
-**Why v0.0.0-latest?** No stable release (v1.7+) supports K8s 1.35 yet. K8s 1.35 tests were added Dec 30, 2025 in preparation for future releases. Monitor [Envoy Gateway Releases](https://github.com/envoyproxy/gateway/releases) for v1.7.
+**Why v0.0.0-latest?** This project uses `v0.0.0-latest` because no stable release supports K8s 1.35 yet. As of January 3, 2026, v1.7 has not been released. K8s 1.35 tests were added Dec 30, 2025 in preparation for future releases. When v1.7 releases with K8s 1.35 support, migration to stable is recommended. Monitor [Envoy Gateway Releases](https://github.com/envoyproxy/gateway/releases).
 
 ## Executive Summary
 
@@ -510,7 +510,7 @@ spec:
               x-forwarded-for: "%REQ(X-FORWARDED-FOR)%"
               user-agent: "%REQ(USER-AGENT)%"
               x-request-id: "%REQ(X-REQUEST-ID)%"
-              authority: "%REQ(:AUTHORITY)%"
+              ":authority": "%REQ(:AUTHORITY)%"
               upstream_host: "%UPSTREAM_HOST%"
               upstream_cluster: "%UPSTREAM_CLUSTER%"
               upstream_local_address: "%UPSTREAM_LOCAL_ADDRESS%"
@@ -850,7 +850,7 @@ spec:
               x-forwarded-for: "%REQ(X-FORWARDED-FOR)%"
               user-agent: "%REQ(USER-AGENT)%"
               x-request-id: "%REQ(X-REQUEST-ID)%"
-              authority: "%REQ(:AUTHORITY)%"
+              ":authority": "%REQ(:AUTHORITY)%"
               upstream_host: "%UPSTREAM_HOST%"
               upstream_cluster: "%UPSTREAM_CLUSTER%"
               upstream_local_address: "%UPSTREAM_LOCAL_ADDRESS%"
@@ -870,6 +870,8 @@ spec:
 
 ### JWT SecurityPolicy Template
 
+> **Updated:** 2026-01-03 - Added `targetSelectors` alternative and TCPRoute limitations
+
 ```yaml
 # securitypolicy-jwt.yaml.j2
 ---
@@ -879,10 +881,17 @@ metadata:
   name: jwt-auth
   namespace: network
 spec:
+  # Option 1: Direct reference by name (original pattern)
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: api-routes
+  # Option 2: Label-based selection (alternative - uncomment to use)
+  # targetSelectors:
+  #   - group: gateway.networking.k8s.io
+  #     kind: HTTPRoute
+  #     matchLabels:
+  #       security: jwt-protected
   jwt:
     providers:
       - name: #{ oidc_provider_name | default('keycloak') }#
@@ -899,7 +908,28 @@ spec:
             header: X-User-Groups
 ```
 
+#### SecurityPolicy Targeting Options
+
+| Method | Use Case | Syntax |
+| -------- | ---------- | -------- |
+| `targetRefs` | Explicit named resources | `name: my-route` |
+| `targetSelectors` | Label-based matching | `matchLabels: {key: value}` |
+
+**Important Limitations:**
+- SecurityPolicy can only target resources **in the same namespace** as the policy
+- `targetSelectors` cannot match resources across namespaces
+- TCPRoute targets are limited to IP-based authorization only (see below)
+
+#### TCPRoute Authentication Limitations
+
+> **Critical:** Per [SecurityPolicy docs](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/):
+> "TCPRoute support is limited to authorization using client IP allow/deny lists. JWT, API Key, Basic Auth, or OIDC are **not applicable** to TCPRoute targets."
+
+This affects Phase 2 gRPC routing if using TCP-level routing instead of GRPCRoute.
+
 ### Distributed Tracing Template
+
+> **Updated:** 2026-01-03 - Uses `backendRefs` syntax (current API)
 
 ```yaml
 # Add to EnvoyProxy spec.telemetry
@@ -907,8 +937,10 @@ telemetry:
   tracing:
     samplingRate: #{ tracing_sample_rate | default(10) }#
     provider:
-      host: otel-collector.#{ observability_namespace | default('monitoring') }#.svc.cluster.local
-      port: 9411
+      backendRefs:
+        - name: otel-collector
+          namespace: #{ observability_namespace | default('monitoring') }#
+          port: 9411
       type: Zipkin
       zipkin:
         enable128BitTraceId: true
@@ -921,6 +953,11 @@ telemetry:
         type: Literal
         literal:
           value: "#{ environment | default('production') }#"
+      "k8s.pod.name":
+        type: Environment
+        environment:
+          name: ENVOY_POD_NAME
+          defaultValue: "-"
 ```
 
 ---
@@ -986,8 +1023,9 @@ telemetry:
 
 ## Appendix B: January 2026 Reflection & Validation
 
-> **Validated:** 2026-01-02 via `/sc:reflect`
-> **Sources:** [Envoy Gateway Releases](https://github.com/envoyproxy/gateway/releases), [Gateway API v1.4](https://kubernetes.io/blog/2025/11/06/gateway-api-v1-4/), [Compatibility Matrix](https://gateway.envoyproxy.io/news/releases/matrix/)
+> **Validated:** 2026-01-03 via `/sc:reflect` and `/sc:research`
+> **Last Updated:** 2026-01-03
+> **Sources:** [Envoy Gateway Releases](https://github.com/envoyproxy/gateway/releases), [Gateway API v1.4](https://kubernetes.io/blog/2025/11/06/gateway-api-v1-4/), [Compatibility Matrix](https://gateway.envoyproxy.io/news/releases/matrix/), [SecurityPolicy Docs](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/)
 
 ### Version Status Verification
 
@@ -1113,13 +1151,17 @@ Current template changes reviewed and validated:
 
 ### Recommendations Update
 
-Based on January 2026 validation:
+Based on January 2026 validation (updated 2026-01-03):
 
 1. **v0.0.0-latest is necessary** for K8s 1.35 until v1.7 releases
-2. **Experimental channel required** for GRPCRoute, TCPRoute, TLSRoute
-3. **Consider v1.6 stable features** when v1.7 adds K8s 1.35 support
-4. **Access logging templates updated** with official default format
-5. **OIDC refresh token behavior** changed - document if using OIDC
+2. **v1.7 not yet released** - As of January 3, 2026, no v1.7 release exists
+3. **Experimental channel required** for GRPCRoute, TCPRoute, TLSRoute
+4. **Consider v1.6 stable features** when v1.7 adds K8s 1.35 support
+5. **Access logging templates updated** with official default format (`:authority` key)
+6. **OIDC refresh token behavior** changed - document if using OIDC
+7. **Tracing uses `backendRefs`** - Not `host`/`port` syntax
+8. **SecurityPolicy `targetSelectors`** now available as alternative to `targetRefs`
+9. **TCPRoute auth limitations** - Only IP-based authorization supported
 
 ### Source References
 
@@ -1140,3 +1182,9 @@ Based on January 2026 validation:
 | 2026-01-02 | Initial research document created |
 | 2026-01-02 | Validated for January 2026 with inline updates throughout document |
 | 2026-01-02 | Updated: Version Context, Access Logging, JWT Auth, References, Implementation Templates |
+| 2026-01-03 | Validated via `/sc:reflect` - Confirmed v1.7 not yet released |
+| 2026-01-03 | Updated: Tracing template to use `backendRefs` syntax (current API) |
+| 2026-01-03 | Updated: JSON access log field name from `authority` to `:authority` |
+| 2026-01-03 | Added: SecurityPolicy `targetSelectors` alternative to `targetRefs` |
+| 2026-01-03 | Added: TCPRoute authentication limitations documentation |
+| 2026-01-03 | Added: SecurityPolicy namespace limitations note |
