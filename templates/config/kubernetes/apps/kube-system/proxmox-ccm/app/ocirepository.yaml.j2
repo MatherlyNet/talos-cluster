@@ -1,0 +1,15 @@
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: proxmox-ccm
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.2.23
+  url: oci://ghcr.io/sergelogvinov/charts/proxmox-cloud-controller-manager
+#% endif %#

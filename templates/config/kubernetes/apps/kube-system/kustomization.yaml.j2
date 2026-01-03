@@ -12,7 +12,11 @@ resources:
   - ./coredns/ks.yaml
   - ./metrics-server/ks.yaml
   - ./reloader/ks.yaml
+  #% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+  - ./proxmox-ccm/ks.yaml
+  #% else %#
   - ./talos-ccm/ks.yaml
+  #% endif %#
   #% if spegel_enabled %#
   - ./spegel/ks.yaml
   #% endif %#

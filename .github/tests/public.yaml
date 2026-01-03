@@ -36,10 +36,23 @@ cilium_bgp_password: "test-bgp-password"
 # Talos Upgrade Controller (tuppr) - Automated OS/K8s upgrades
 talos_version: "1.12.0"
 kubernetes_version: "1.35.0"
-
 # Talos Backup (optional - uncomment to test)
 # backup_s3_endpoint: "https://test.r2.cloudflarestorage.com"
 # backup_s3_bucket: "test-backup"
 # backup_s3_access_key: "test-access-key"
 # backup_s3_secret_key: "test-secret-key"
 # backup_age_public_key: "age1testpublickey00000000000000000000000000000000000000000000"
+
+# Proxmox CSI Configuration (optional - uncomment to test)
+# proxmox_csi_enabled: true
+# proxmox_endpoint: "https://pve.example.com:8006"
+# proxmox_csi_token_id: "kubernetes-csi@pve!csi"
+# proxmox_csi_token_secret: "test-csi-secret"
+# proxmox_csi_storage: "local-zfs"
+# proxmox_region: "pve"
+
+# Proxmox CCM Configuration (optional - uncomment to test)
+# NOTE: Mutually exclusive with Talos CCM
+# proxmox_ccm_enabled: true
+# proxmox_ccm_token_id: "kubernetes-ccm@pve!ccm"
+# proxmox_ccm_token_secret: "test-ccm-secret"

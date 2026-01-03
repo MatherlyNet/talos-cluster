@@ -21,6 +21,10 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 **Optional Features (Jan 2026):**
 - Cilium BGP Control Plane v2 for multi-VLAN routing
 - UniFi DNS Integration via external-dns webhook
+- tuppr (Talos Upgrade Controller) for automated OS/K8s upgrades
+- Talos Backup for automated etcd snapshots to S3
+- Proxmox CSI for persistent storage on Proxmox VMs
+- Proxmox CCM for node lifecycle management on Proxmox infrastructure
 
 **Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
 
@@ -115,8 +119,10 @@ matherlynet-talos-cluster/
 | `network` | k8s-gateway | Split DNS fallback (if no UniFi) |
 | `default` | echo | Test application |
 | `kube-system` | reloader | Secret/ConfigMap reload |
-| `kube-system` | talos-ccm | Node lifecycle management |
+| `kube-system` | talos-ccm | Node lifecycle management (default) |
+| `kube-system` | proxmox-ccm | Node lifecycle on Proxmox (optional, replaces talos-ccm) |
 | `kube-system` | talos-backup | Automated etcd backups (optional) |
+| `csi-proxmox` | proxmox-csi | Persistent storage on Proxmox (optional) |
 | `system-upgrade` | tuppr | Automated Talos/K8s upgrades |
 
 ## Tool Dependencies

@@ -56,6 +56,22 @@ import (
 	backup_s3_secret_key?:  string & !=""
 	backup_age_public_key?: string & =~"^age1"
 
+	// Proxmox CSI Configuration - Optional for persistent storage
+	// Requires Proxmox API token with storage permissions
+	proxmox_csi_enabled?:      *false | bool
+	proxmox_endpoint?:         string & =~"^https?://"
+	proxmox_csi_token_id?:     string & =~"^.+@.+!.+$"  // format: user@realm!token-name
+	proxmox_csi_token_secret?: string & !=""
+	proxmox_csi_storage?:      string & !=""
+	proxmox_region?:           *"pve" | string & !=""
+
+	// Proxmox CCM Configuration - Optional for node labeling/lifecycle
+	// Use Proxmox CCM instead of Talos CCM when running on Proxmox infrastructure
+	// NOTE: Talos CCM and Proxmox CCM are mutually exclusive
+	proxmox_ccm_enabled?:      *false | bool
+	proxmox_ccm_token_id?:     string & =~"^.+@.+!.+$"  // format: user@realm!token-name
+	proxmox_ccm_token_secret?: string & !=""
+
 	// Infrastructure (OpenTofu/Proxmox) - Optional for VM deployments
 	proxmox_api_url?:      string & =~"^https?://"
 	proxmox_node?:         string & !=""

@@ -25,3 +25,7 @@ cloudflare_gateway_addr: "10.10.10.251"
 # cilium_bgp_graceful_restart: false
 # cilium_bgp_graceful_restart_time: 120
 # cilium_loadbalancer_mode: ""
+
+# Proxmox CSI/CCM Configuration (optional)
+# proxmox_csi_enabled: false
+# proxmox_ccm_enabled: false

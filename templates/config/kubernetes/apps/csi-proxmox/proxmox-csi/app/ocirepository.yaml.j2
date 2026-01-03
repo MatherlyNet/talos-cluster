@@ -1,0 +1,15 @@
+#% if proxmox_csi_enabled is defined and proxmox_csi_enabled %#
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: proxmox-csi
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.5.4
+  url: oci://ghcr.io/sergelogvinov/charts/proxmox-csi-plugin
+#% endif %#

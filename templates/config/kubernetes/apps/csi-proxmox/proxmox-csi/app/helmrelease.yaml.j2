@@ -1,0 +1,24 @@
+#% if proxmox_csi_enabled is defined and proxmox_csi_enabled %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmox-csi-plugin
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: proxmox-csi
+  interval: 1h
+  values:
+    replicaCount: 1
+    metrics:
+      enabled: true
+    storageClass:
+      - name: proxmox-zfs
+        storage: "#{ proxmox_csi_storage }#"
+        reclaimPolicy: Delete
+        fstype: ext4
+        ssd: true
+    existingConfigSecret: proxmox-csi-config
+    existingConfigSecretKey: config.yaml
+#% endif %#

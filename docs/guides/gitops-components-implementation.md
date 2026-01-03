@@ -1317,38 +1317,38 @@ templates/config/
 
 ### Phase 1: Essential Operations
 
-- [ ] **tuppr (Talos Upgrade Controller)**
-  - [ ] Create `machine-talos-api.yaml.j2` Talos patch (includes both `os:admin` and `os:etcd:backup` roles)
-  - [ ] Create `system-upgrade` namespace templates
-  - [ ] Create tuppr HelmRelease and CRs
-  - [ ] Add `talos_version` and `kubernetes_version` to cluster.yaml
+- [x] **tuppr (Talos Upgrade Controller)**
+  - [x] Create `machine-talos-api.yaml.j2` Talos patch (includes both `os:admin` and `os:etcd:backup` roles)
+  - [x] Create `system-upgrade` namespace templates
+  - [x] Create tuppr HelmRelease and CRs
+  - [x] Add `talos_version` and `kubernetes_version` to cluster.yaml
   - [ ] Apply Talos patches to all nodes
   - [ ] Deploy and verify
 
-- [ ] **Talos Backup**
+- [x] **Talos Backup**
   - [ ] Configure S3 storage (Cloudflare R2 recommended)
-  - [ ] Create talos-backup templates in kube-system (includes Talos ServiceAccount)
-  - [ ] Add backup configuration to cluster.yaml
+  - [x] Create talos-backup templates in kube-system (includes Talos ServiceAccount)
+  - [x] Add backup configuration to cluster.yaml
   - [ ] Deploy and test backup job
 
 ### Phase 2: Cloud Integration
 
-- [ ] **Talos CCM**
-  - [ ] Create talos-ccm templates in kube-system
+- [x] **Talos CCM**
+  - [x] Create talos-ccm templates in kube-system
   - [ ] Deploy and verify node labels
 
-- [ ] **Proxmox CSI** (when persistent storage needed)
+- [x] **Proxmox CSI** (when persistent storage needed)
   - [ ] Create Proxmox API token with storage permissions
-  - [ ] Create `csi-proxmox` namespace with privileged PSS
-  - [ ] Create proxmox-csi templates
-  - [ ] Add Proxmox configuration to cluster.yaml
+  - [x] Create `csi-proxmox` namespace with privileged PSS
+  - [x] Create proxmox-csi templates
+  - [x] Add Proxmox configuration to cluster.yaml
   - [ ] Deploy and test PVC creation
 
-- [ ] **Proxmox CCM** (when topology labels needed)
+- [x] **Proxmox CCM** (when topology labels needed)
   - [ ] Create Proxmox API token with audit permissions
-  - [ ] Create proxmox-ccm templates in kube-system
-  - [ ] Add Proxmox CCM configuration to cluster.yaml
-  - [ ] Optional: Add external cloud provider Talos patch
+  - [x] Create proxmox-ccm templates in kube-system
+  - [x] Add Proxmox CCM configuration to cluster.yaml
+  - [x] Add external cloud provider Talos patch
   - [ ] Deploy and verify node labels
 
 ---
@@ -1365,7 +1365,7 @@ templates/config/
 
 ### Project Documentation
 
-- [Research: GitOps Examples Integration](../research/gitops-examples-integration.md) - Source research document
+- [Research: GitOps Examples Integration](../research/archive/implemented/gitops-examples-integration.md) - Source research document
 - [Architecture](../ARCHITECTURE.md) - System design
 - [Configuration](../CONFIGURATION.md) - Schema reference
 - [Talos Operations](../ai-context/talos-operations.md) - Talos patterns

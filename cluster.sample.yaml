@@ -199,6 +199,56 @@ cloudflare_gateway_addr: ""
 # backup_age_public_key: ""
 
 # =============================================================================
+# PROXMOX CSI CONFIGURATION - Optional for persistent storage
+# =============================================================================
+# Proxmox CSI provisions PersistentVolumes directly on Proxmox storage.
+# Requires Proxmox API token with storage permissions.
+
+# -- Enable Proxmox CSI for persistent storage
+#    (OPTIONAL) / (DEFAULT: false)
+# proxmox_csi_enabled: false
+
+# -- Proxmox API endpoint (shared with other Proxmox integrations)
+#    (OPTIONAL) / (e.g. "https://pve.example.com:8006")
+# proxmox_endpoint: ""
+
+# -- Proxmox CSI API token ID (format: user@realm!token-name)
+#    (OPTIONAL) / (e.g. "kubernetes-csi@pve!csi")
+# proxmox_csi_token_id: ""
+
+# -- Proxmox CSI API token secret
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# proxmox_csi_token_secret: ""
+
+# -- Proxmox storage pool for PVs
+#    (OPTIONAL) / (e.g. "local-zfs")
+# proxmox_csi_storage: ""
+
+# -- Proxmox region identifier (cluster name)
+#    (OPTIONAL) / (DEFAULT: "pve")
+# proxmox_region: "pve"
+
+# =============================================================================
+# PROXMOX CCM CONFIGURATION - Optional for node labeling/lifecycle
+# =============================================================================
+# Proxmox CCM provides node labeling, lifecycle management, and topology awareness.
+# Use Proxmox CCM instead of Talos CCM when running on Proxmox infrastructure.
+# NOTE: Talos CCM and Proxmox CCM are mutually exclusive - only one can be enabled.
+
+# -- Enable Proxmox CCM (disables Talos CCM)
+#    (OPTIONAL) / (DEFAULT: false)
+# proxmox_ccm_enabled: false
+
+# -- Proxmox CCM API token ID (format: user@realm!token-name)
+#    (OPTIONAL) / (e.g. "kubernetes-ccm@pve!ccm")
+#    NOTE: Use separate token from CSI for least-privilege principle
+# proxmox_ccm_token_id: ""
+
+# -- Proxmox CCM API token secret
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# proxmox_ccm_token_secret: ""
+
+# =============================================================================
 # INFRASTRUCTURE (OpenTofu/Proxmox) - Optional for VM deployments
 # =============================================================================
 
