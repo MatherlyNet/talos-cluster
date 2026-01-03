@@ -519,7 +519,9 @@ See [Disaster Recovery: Talos Backup Restore Procedure](../research/gitops-examp
 
 ### 2.1 Talos Cloud Controller Manager
 
-Talos CCM provides node labeling, lifecycle management, and topology awareness.
+Talos CCM provides node labeling, lifecycle management, and topology awareness for Talos Linux clusters.
+
+> **Talos CCM vs Proxmox CCM:** Use **Talos CCM** (this section) for generic/multi-cloud Talos deployments. Use **Proxmox CCM** (section 2.3) when you need Proxmox-specific features like VM ID-based provider IDs, automatic zone detection from hypervisor hostname, or integration with Proxmox CSI for storage topology. Both CCMs should NOT run simultaneously.
 
 #### Step 1: Create Directory Structure
 
@@ -651,8 +653,60 @@ Proxmox CSI provisions PersistentVolumes directly on Proxmox storage.
 
 #### Prerequisites
 
-1. **Proxmox API Token** - With storage permissions
+1. **Proxmox API Token** - With storage permissions (see below)
 2. **Privileged Namespace** - CSI requires privileged pod security
+
+##### Create Proxmox CSI Role and Token (Proxmox v8/v9)
+
+Run these commands on any Proxmox node via SSH or the web console Shell:
+
+**Step 1: Create CSI Role with Required Permissions**
+
+```bash
+# Basic CSI permissions (standard storage operations)
+pveum role add CSI -privs "Sys.Audit VM.Audit VM.Config.Disk Datastore.Allocate Datastore.AllocateSpace Datastore.Audit"
+```
+
+**Extended permissions** (if using ZFS replication or VM migration):
+
+```bash
+# Extended CSI permissions (includes VM operations for ZFS replication)
+pveum role add CSI -privs "Sys.Audit VM.Audit VM.Allocate VM.Clone VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Options VM.Migrate VM.PowerMgmt Datastore.Allocate Datastore.AllocateSpace Datastore.Audit"
+```
+
+**Step 2: Create Dedicated User**
+
+```bash
+# Create user for CSI (realm: pve = Proxmox VE authentication)
+pveum user add kubernetes-csi@pve
+```
+
+**Step 3: Assign Role to User**
+
+```bash
+# Grant CSI role cluster-wide (/ = root path)
+pveum aclmod / -user kubernetes-csi@pve -role CSI
+```
+
+**Step 4: Create API Token**
+
+```bash
+# Create API token (privsep=0 means token inherits user permissions)
+pveum user token add kubernetes-csi@pve csi -privsep 0
+```
+
+> **Important:** Save the token output! The secret is only shown once. Format: `kubernetes-csi@pve!csi` (token_id) and a UUID secret.
+
+**Permission Reference:**
+
+| Permission | Purpose |
+| ------------ | --------- |
+| `Sys.Audit` | Read system configuration |
+| `VM.Audit` | Read VM configuration |
+| `VM.Config.Disk` | Attach/detach disks to VMs |
+| `Datastore.Allocate` | Create volumes on datastore |
+| `Datastore.AllocateSpace` | Allocate space on datastore |
+| `Datastore.Audit` | Read datastore configuration |
 
 #### Step 1: Create Directory Structure
 
@@ -813,7 +867,7 @@ proxmox_csi_enabled: true
 proxmox_endpoint: "https://pve.example.com:8006"
 
 # Proxmox API token (format: user@realm!token-name)
-proxmox_token_id: "kubernetes@pve!csi"
+proxmox_token_id: "kubernetes-csi@pve!csi"
 proxmox_token_secret: "ENC[AES256_GCM,...]"  # SOPS encrypted
 
 # Proxmox storage pool for PVs
@@ -878,6 +932,290 @@ kubectl delete pvc test-pvc
 
 ---
 
+### 2.3 Proxmox Cloud Controller Manager
+
+Proxmox CCM provides node labeling, lifecycle management, and topology awareness for Kubernetes clusters running on Proxmox infrastructure.
+
+#### Features
+
+- **Node Initialization**: Automatically initializes new nodes when they join the cluster
+- **Label Assignment**: Applies topology and instance-type labels based on Proxmox VM configuration
+- **Node Cleanup**: Removes node resources when VMs are deleted from Proxmox
+- **Multi-cluster Support**: Supports single Kubernetes cluster spanning multiple Proxmox clusters
+- **Provider ID**: Sets `providerID` in format `proxmox://region/vmid`
+
+**Labels Applied:**
+- `topology.kubernetes.io/region` - Proxmox cluster name
+- `topology.kubernetes.io/zone` - Proxmox hypervisor hostname
+- `node.kubernetes.io/instance-type` - Generated from CPU/RAM configuration
+
+#### Prerequisites
+
+1. **Proxmox API Token** - With audit permissions (see below)
+2. **Talos Configuration** - External cloud provider enabled (optional but recommended)
+
+##### Create Proxmox CCM Role and Token (Proxmox v8/v9)
+
+Run these commands on any Proxmox node via SSH or the web console Shell:
+
+**Step 1: Create CCM Role with Required Permissions**
+
+```bash
+# CCM only needs audit permissions (read-only)
+pveum role add CCM -privs "VM.Audit Sys.Audit"
+```
+
+**Step 2: Create Dedicated User**
+
+```bash
+# Create user for CCM (realm: pve = Proxmox VE authentication)
+pveum user add kubernetes-ccm@pve
+```
+
+**Step 3: Assign Role to User**
+
+```bash
+# Grant CCM role cluster-wide (/ = root path)
+pveum aclmod / -user kubernetes-ccm@pve -role CCM
+```
+
+**Step 4: Create API Token**
+
+```bash
+# Create API token (privsep=0 means token inherits user permissions)
+pveum user token add kubernetes-ccm@pve ccm -privsep 0
+```
+
+> **Important:** Save the token output! The secret is only shown once. Format: `kubernetes-ccm@pve!ccm` (token_id) and a UUID secret.
+
+**Permission Reference:**
+
+| Permission | Purpose |
+| ------------ | --------- |
+| `VM.Audit` | Read VM configuration and metadata |
+| `Sys.Audit` | Read system/cluster configuration |
+
+> **Note:** CCM permissions are read-only unlike CSI which needs storage write permissions.
+
+##### Optional: Enable External Cloud Provider in Talos
+
+For full integration, add a Talos machine patch to enable external cloud provider mode:
+
+**File:** `templates/config/talos/patches/global/machine-cloud-provider.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+cluster:
+  externalCloudProvider:
+    enabled: true
+#% endif %#
+```
+
+> **Note:** This patch tells kubelet to wait for CCM to initialize node labels before scheduling workloads. Without it, nodes may briefly schedule pods before labels are applied.
+
+#### Step 1: Create Directory Structure
+
+```bash
+mkdir -p templates/config/kubernetes/apps/kube-system/proxmox-ccm/app
+```
+
+#### Step 2: Create Template Files
+
+**File:** `templates/config/kubernetes/apps/kube-system/proxmox-ccm/ks.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: proxmox-ccm
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/kube-system/proxmox-ccm/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: kube-system
+  wait: false
+#% endif %#
+```
+
+**File:** `templates/config/kubernetes/apps/kube-system/proxmox-ccm/app/kustomization.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./helmrelease.yaml
+  - ./ocirepository.yaml
+  - ./secret.sops.yaml
+#% endif %#
+```
+
+**File:** `templates/config/kubernetes/apps/kube-system/proxmox-ccm/app/ocirepository.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: proxmox-ccm
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.2.23
+  url: oci://ghcr.io/sergelogvinov/charts/proxmox-cloud-controller-manager
+#% endif %#
+```
+
+**File:** `templates/config/kubernetes/apps/kube-system/proxmox-ccm/app/helmrelease.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmox-cloud-controller-manager
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: proxmox-ccm
+  interval: 1h
+  values:
+    logVerbosityLevel: 2
+    useDaemonSet: true
+    enabledControllers:
+      - cloud-node
+      - cloud-node-lifecycle
+    existingConfigSecret: proxmox-ccm-config
+    existingConfigSecretKey: config.yaml
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoSchedule
+        key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
+#% endif %#
+```
+
+**File:** `templates/config/kubernetes/apps/kube-system/proxmox-ccm/app/secret.sops.yaml.j2`
+
+```yaml
+#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxmox-ccm-config
+type: Opaque
+stringData:
+  config.yaml: |
+    clusters:
+      - url: "#{ proxmox_endpoint }#/api2/json"
+        insecure: false
+        token_id: "#{ proxmox_ccm_token_id }#"
+        token_secret: "#{ proxmox_ccm_token_secret }#"
+        region: "#{ proxmox_region | default('pve') }#"
+#% endif %#
+```
+
+#### Step 3: Add cluster.yaml Variables
+
+Add to `cluster.yaml`:
+
+```yaml
+# =============================================================================
+# Proxmox CCM Configuration (Optional)
+# =============================================================================
+# Enable Proxmox CCM for node labeling and lifecycle management
+proxmox_ccm_enabled: true
+
+# Proxmox API endpoint (shared with CSI if both enabled)
+proxmox_endpoint: "https://pve.example.com:8006"
+
+# Proxmox CCM API token (format: user@realm!token-name)
+# Note: Use separate token from CSI for least-privilege principle
+proxmox_ccm_token_id: "kubernetes-ccm@pve!ccm"
+proxmox_ccm_token_secret: "ENC[AES256_GCM,...]"  # SOPS encrypted
+
+# Proxmox region identifier (cluster name)
+proxmox_region: "pve"
+```
+
+#### Step 4: Update kube-system Kustomization
+
+**Edit:** `templates/config/kubernetes/apps/kube-system/kustomization.yaml.j2`
+
+Add to resources list:
+
+```yaml
+resources:
+  # ... existing entries ...
+  #% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+  - ./proxmox-ccm/ks.yaml
+  #% endif %#
+```
+
+#### Step 5: Deploy
+
+```bash
+task configure
+git add -A
+git commit -m "feat: add Proxmox CCM for node labeling and lifecycle"
+git push
+task reconcile
+```
+
+#### Verification
+
+```bash
+# Check CCM deployment
+kubectl -n kube-system get pods -l app.kubernetes.io/name=proxmox-cloud-controller-manager
+
+# Verify node labels
+kubectl get nodes -o yaml | grep -A10 "labels:"
+
+# Expected labels:
+# - topology.kubernetes.io/region: pve
+# - topology.kubernetes.io/zone: <proxmox-host>
+# - node.kubernetes.io/instance-type: <cpu-ram-based>
+
+# Check provider ID
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.providerID}{"\n"}{end}'
+# Expected format: proxmox://pve/100 (where 100 is VM ID)
+
+# View CCM logs
+kubectl -n kube-system logs -l app.kubernetes.io/name=proxmox-cloud-controller-manager -f
+```
+
+#### Troubleshooting
+
+| Issue | Solution |
+| ------- | --------- |
+| Nodes not getting labels | Check CCM logs for API errors, verify token permissions |
+| `node.cloudprovider.kubernetes.io/uninitialized` taint persists | CCM not running or cannot reach Proxmox API |
+| Wrong region/zone labels | ProviderID is immutable; delete node resource and restart kubelet |
+| Multiple CCM pods fighting | Ensure only one CCM deployment (Talos CCM vs Proxmox CCM) |
+
+---
+
 ## Configuration Reference
 
 ### cluster.yaml Additions Summary
@@ -903,10 +1241,19 @@ backup_age_public_key: "age1..."
 # =============================================================================
 proxmox_csi_enabled: false  # Set to true when needed
 proxmox_endpoint: "https://pve.example.com:8006"
-proxmox_token_id: "kubernetes@pve!csi"
+proxmox_token_id: "kubernetes-csi@pve!csi"
 proxmox_token_secret: "ENC[AES256_GCM,...]"
 proxmox_csi_storage: "local-zfs"
 proxmox_region: "pve"
+
+# =============================================================================
+# Proxmox CCM Configuration (Optional)
+# =============================================================================
+proxmox_ccm_enabled: false  # Set to true when needed
+# proxmox_endpoint shared with CSI above
+proxmox_ccm_token_id: "kubernetes-ccm@pve!ccm"
+proxmox_ccm_token_secret: "ENC[AES256_GCM,...]"
+# proxmox_region shared with CSI above
 ```
 
 ### Template Directory Structure
@@ -934,13 +1281,21 @@ templates/config/
 │   │   │       ├── kustomization.yaml.j2
 │   │   │       ├── ocirepository.yaml.j2
 │   │   │       ├── helmrelease.yaml.j2
+│   │   │       ├── serviceaccount.yaml.j2
 │   │   │       └── secret.sops.yaml.j2
-│   │   └── talos-ccm/
+│   │   ├── talos-ccm/
+│   │   │   ├── ks.yaml.j2
+│   │   │   └── app/
+│   │   │       ├── kustomization.yaml.j2
+│   │   │       ├── ocirepository.yaml.j2
+│   │   │       └── helmrelease.yaml.j2
+│   │   └── proxmox-ccm/
 │   │       ├── ks.yaml.j2
 │   │       └── app/
 │   │           ├── kustomization.yaml.j2
 │   │           ├── ocirepository.yaml.j2
-│   │           └── helmrelease.yaml.j2
+│   │           ├── helmrelease.yaml.j2
+│   │           └── secret.sops.yaml.j2
 │   └── csi-proxmox/
 │       ├── namespace.yaml.j2
 │       ├── kustomization.yaml.j2
@@ -952,7 +1307,8 @@ templates/config/
 │               ├── helmrelease.yaml.j2
 │               └── secret.sops.yaml.j2
 └── talos/patches/global/
-    └── machine-talos-api.yaml.j2
+    ├── machine-talos-api.yaml.j2
+    └── machine-cloud-provider.yaml.j2  # Optional: for Proxmox CCM
 ```
 
 ---
@@ -988,6 +1344,13 @@ templates/config/
   - [ ] Add Proxmox configuration to cluster.yaml
   - [ ] Deploy and test PVC creation
 
+- [ ] **Proxmox CCM** (when topology labels needed)
+  - [ ] Create Proxmox API token with audit permissions
+  - [ ] Create proxmox-ccm templates in kube-system
+  - [ ] Add Proxmox CCM configuration to cluster.yaml
+  - [ ] Optional: Add external cloud provider Talos patch
+  - [ ] Deploy and verify node labels
+
 ---
 
 ## References
@@ -998,6 +1361,7 @@ templates/config/
 - [Talos CCM](https://github.com/siderolabs/talos-cloud-controller-manager) - Official Talos Cloud Controller Manager
 - [talos-backup](https://github.com/sergelogvinov/helm-charts/tree/master/charts/talos-backup) - Talos etcd Backup
 - [Proxmox CSI](https://github.com/sergelogvinov/proxmox-csi-plugin) - Proxmox CSI Driver
+- [Proxmox CCM](https://github.com/sergelogvinov/proxmox-cloud-controller-manager) - Proxmox Cloud Controller Manager
 
 ### Project Documentation
 
