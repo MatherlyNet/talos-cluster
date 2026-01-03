@@ -1,0 +1,92 @@
+#% if monitoring_enabled is defined and monitoring_enabled and tracing_enabled | default(false) %#
+---
+# Note: Tempo's Helm chart does not support OCI registry (GitHub Issue #3068).
+# Using HelmRepository (grafana) from Alloy deployment.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+spec:
+  chart:
+    spec:
+      chart: tempo
+      version: "1.24.1"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: monitoring
+  interval: 1h
+  timeout: 10m
+  values:
+    # ==========================================================================
+    # TEMPO SINGLE BINARY MODE (Recommended for homelab)
+    # ==========================================================================
+    # For production/scale: use tempo-distributed chart instead
+    tempo:
+      # Server configuration
+      server:
+        http_listen_port: 3200
+        grpc_listen_port: 9095
+
+      # Storage configuration (filesystem for homelab)
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /var/tempo/traces
+          wal:
+            path: /var/tempo/wal
+
+      # Retention
+      compactor:
+        compaction:
+          block_retention: "#{ trace_retention | default('72h') }#"
+
+      # Distributor - receive traces
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: "0.0.0.0:4317"
+              http:
+                endpoint: "0.0.0.0:4318"
+          # Zipkin receiver for Envoy Gateway (alternative to OTLP)
+          zipkin:
+            endpoint: "0.0.0.0:9411"
+
+      # Query frontend
+      query_frontend:
+        search:
+          max_duration: 0
+
+      # Metrics generation from traces
+      metrics_generator:
+        enabled: true
+        registry:
+          external_labels:
+            source: tempo
+            cluster: "#{ cluster_name | default('matherlynet') }#"
+        storage:
+          path: /var/tempo/metrics-generator/wal
+          remote_write:
+            - url: http://vmsingle-victoria-metrics-k8s-stack:8429/api/v1/write
+              send_exemplars: true
+
+    # Persistence
+    persistence:
+      enabled: true
+      size: "#{ trace_storage_size | default('10Gi') }#"
+
+    # Resources (homelab-appropriate)
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+
+    # ServiceMonitor for VictoriaMetrics to scrape Tempo metrics
+    serviceMonitor:
+      enabled: true
+#% endif %#

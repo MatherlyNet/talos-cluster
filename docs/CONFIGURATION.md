@@ -91,6 +91,98 @@ Automated etcd snapshots with S3 storage and Age encryption. All fields required
 
 **Note:** When `backup_s3_endpoint` and `backup_s3_bucket` are both configured, talos-backup is deployed with a CronJob for periodic etcd snapshots.
 
+### Observability Configuration (Optional)
+
+Full-stack observability with metrics, logs, and distributed tracing.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `monitoring_enabled` | bool | `false` | Enable monitoring stack (VictoriaMetrics + Grafana + AlertManager) |
+| `monitoring_stack` | enum | `victoriametrics` | `victoriametrics` or `prometheus` |
+| `hubble_enabled` | bool | `false` | Enable Cilium Hubble network observability |
+| `hubble_ui_enabled` | bool | `false` | Enable Hubble UI web interface |
+| `grafana_subdomain` | string | `grafana` | Subdomain for Grafana (creates `grafana.<cloudflare_domain>`) |
+| `metrics_retention` | string | `7d` | Metrics retention period (e.g., `7d`, `14d`, `30d`) |
+| `metrics_storage_size` | string | `50Gi` | PV size for metrics storage |
+| `storage_class` | string | `local-path` | Storage class for monitoring PVs |
+
+#### Log Aggregation (Loki + Alloy)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `loki_enabled` | bool | `false` | Enable log aggregation (requires `monitoring_enabled`) |
+| `logs_retention` | string | `7d` | Log retention period |
+| `logs_storage_size` | string | `50Gi` | PV size for log storage |
+
+#### Infrastructure Alerts (PrometheusRule)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `monitoring_alerts_enabled` | bool | `true` | Enable infrastructure alerting rules |
+| `node_memory_threshold` | int | `90` | Memory utilization % threshold for alerts |
+| `node_cpu_threshold` | int | `90` | CPU utilization % threshold for alerts |
+
+#### Distributed Tracing (Tempo)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `tracing_enabled` | bool | `false` | Enable distributed tracing (requires `monitoring_enabled`) |
+| `tracing_sample_rate` | int | `10` | Trace sample percentage (1-100) |
+| `trace_retention` | string | `72h` | Trace retention period |
+| `trace_storage_size` | string | `10Gi` | PV size for trace storage |
+| `cluster_name` | string | `matherlynet` | Cluster name for trace metadata |
+| `observability_namespace` | string | `monitoring` | Namespace for monitoring components |
+| `environment` | string | `production` | Environment tag for traces (`production`, `staging`, `development`) |
+
+**Note:** See `docs/guides/observability-stack-implementation.md` for deployment details and component architecture.
+
+#### OIDC/JWT Authentication (Envoy Gateway SecurityPolicy)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `oidc_provider_name` | string | `keycloak` | Provider name in SecurityPolicy |
+| `oidc_issuer_url` | string | - | JWT issuer URL (must match token `iss` claim) |
+| `oidc_jwks_uri` | string | - | JWKS endpoint for JWT validation |
+| `oidc_additional_claims` | list | `[]` | Additional claims to extract to headers |
+
+When `oidc_issuer_url` and `oidc_jwks_uri` are both set, a SecurityPolicy is created targeting HTTPRoutes with label `security: jwt-protected`.
+
+**Note:** See `docs/guides/envoy-gateway-observability-security.md` for implementation details.
+
+### VolSync PVC Backup (Optional)
+
+Automated PVC backups with restic to S3-compatible storage.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `volsync_enabled` | bool | `false` | Enable VolSync PVC backup |
+| `volsync_s3_endpoint` | string | - | S3-compatible endpoint URL |
+| `volsync_s3_bucket` | string | - | Bucket name for PVC backups |
+| `volsync_restic_password` | string | - | Restic repository password (SOPS-encrypted) |
+| `volsync_schedule` | string | `0 */6 * * *` | Backup schedule (cron format) |
+| `volsync_copy_method` | enum | `Clone` | `Clone` or `Snapshot` |
+| `volsync_retain_daily` | int | `7` | Daily backup retention count |
+| `volsync_retain_weekly` | int | `4` | Weekly backup retention count |
+| `volsync_retain_monthly` | int | `3` | Monthly backup retention count |
+
+**Copy Method Selection:**
+- `Clone`: Works with any CSI driver supporting volume cloning (e.g., Proxmox CSI)
+- `Snapshot`: Requires CSI driver with VolumeSnapshot support (e.g., Longhorn, Rook-Ceph)
+
+**Note:** See `docs/guides/k8s-at-home-remaining-implementation.md` for implementation details.
+
+### External Secrets Operator (Optional)
+
+Sync secrets from external secret management providers.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `external_secrets_enabled` | bool | `false` | Enable External Secrets Operator |
+| `external_secrets_provider` | enum | `1password` | `1password`, `bitwarden`, or `vault` |
+| `onepassword_connect_host` | string | - | 1Password Connect host URL |
+
+**Note:** See `docs/guides/k8s-at-home-remaining-implementation.md` for implementation details.
+
 ### IP Address Constraints
 
 All LoadBalancer IPs must be:

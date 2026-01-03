@@ -1,0 +1,41 @@
+#% if oidc_issuer_url is defined and oidc_jwks_uri is defined %#
+---
+# SecurityPolicy for JWT-based API authentication
+# REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
+# REF: docs/guides/envoy-gateway-observability-security.md
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: jwt-auth
+  namespace: network
+spec:
+  # Target HTTPRoutes with the security: jwt-protected label
+  # NOTE: SecurityPolicy can only target resources in the same namespace
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        security: jwt-protected
+  jwt:
+    providers:
+      - name: #{ oidc_provider_name | default('keycloak') }#
+        issuer: "#{ oidc_issuer_url }#"
+        remoteJWKS:
+          uri: "#{ oidc_jwks_uri }#"
+          # Cache JWKS for 5 minutes (adjust for security/performance balance)
+          cacheDuration: 300s
+        # Extract claims to headers for backend services
+        claimToHeaders:
+          - claim: sub
+            header: X-User-ID
+          - claim: email
+            header: X-User-Email
+          - claim: groups
+            header: X-User-Groups
+          #% if oidc_additional_claims is defined %#
+          #% for claim in oidc_additional_claims %#
+          - claim: #{ claim.name }#
+            header: #{ claim.header }#
+          #% endfor %#
+          #% endif %#
+#% endif %#

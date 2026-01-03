@@ -223,6 +223,7 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
 | [BGP UniFi Cilium Implementation](./guides/bgp-unifi-cilium-implementation.md) | BGP peering between UniFi gateway and Cilium | Enabling BGP routing |
 | [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI | Adding cloud-native components |
+| [Observability Stack Implementation](./guides/observability-stack-implementation.md) | VictoriaMetrics, Loki, Tempo, PrometheusRule alerts | Enabling monitoring/alerting |
 
 ## Research Documents
 

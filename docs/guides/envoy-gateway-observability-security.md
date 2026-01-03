@@ -2,7 +2,7 @@
 
 > **Created:** 2026-01-03
 > **Based on:** [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md)
-> **Status:** Ready for Implementation
+> **Status:** ✅ Implemented (Phases 1-3 templates complete, pending `task configure`)
 > **Version:** Envoy Gateway v0.0.0-latest (K8s 1.35 compatible)
 
 ## Overview
@@ -22,7 +22,10 @@ This guide provides step-by-step implementation instructions for enhancing the E
 - Envoy Gateway deployed with `v0.0.0-latest` (for K8s 1.35 support)
 - Gateway API CRDs v1.4.1 (experimental channel)
 - Existing `envoy-external` and `envoy-internal` gateways configured
-- Prometheus/Grafana stack for metrics visualization (kube-prometheus-stack)
+- **Prometheus Operator CRDs installed** (via `00-crds.yaml.j2` line 33-36, kube-prometheus-stack v80.10.0)
+- **Recommended:** Full observability stack deployed (see [observability-stack-implementation.md](./observability-stack-implementation.md) for the unified VictoriaMetrics + Loki + Grafana platform)
+
+> **Note:** This project installs kube-prometheus-stack **CRDs only** during bootstrap (PodMonitor, ServiceMonitor, etc.). The full observability platform (VictoriaMetrics, Grafana, Loki, Alloy) is documented in [observability-stack-implementation.md](./observability-stack-implementation.md). The existing Envoy `PodMonitor` works with any Prometheus-compatible scraper.
 
 ---
 
@@ -30,7 +33,9 @@ This guide provides step-by-step implementation instructions for enhancing the E
 
 ### Purpose
 
-Enable structured JSON access logging for traffic analysis, debugging, and compliance. Logs are written to stdout and collected by the existing log aggregation system.
+Enable structured JSON access logging for traffic analysis, debugging, and compliance. Logs are written to stdout and collected by the log aggregation system.
+
+> **Integration:** When the [observability stack](./observability-stack-implementation.md) is deployed, Alloy collects these JSON logs from pod stdout and forwards them to Loki. Query logs in Grafana using LogQL: `{namespace="network", app="envoy"}`
 
 ### Current State
 
@@ -151,12 +156,47 @@ accessLog:
             path: /dev/stdout
 ```
 
+### Optional: Access Log Types (v1.6+)
+
+Envoy Gateway v1.6+ introduces granular control over which traffic generates logs:
+
+```yaml
+accessLog:
+  settings:
+    - type: Route      # Only log routed requests (excludes health checks, etc.)
+      format:
+        type: JSON
+        json:
+          # ... format fields ...
+      sinks:
+        - type: File
+          file:
+            path: /dev/stdout
+    - type: Listener   # Log all listener-level events (connection errors, etc.)
+      format:
+        type: JSON
+        json:
+          event: "%RESPONSE_FLAGS%"
+          downstream_remote_address: "%DOWNSTREAM_REMOTE_ADDRESS%"
+      sinks:
+        - type: File
+          file:
+            path: /dev/stdout
+```
+
+| Type | Use Case |
+| ---- | -------- |
+| `Route` | Application traffic logging (most common) |
+| `Listener` | Connection-level debugging, security auditing |
+| (both) | Complete visibility (default if type omitted) |
+
 ### Verification Checklist
 
 - [ ] EnvoyProxy shows `accessLog` configuration in spec
 - [ ] Envoy pods emit JSON-formatted logs to stdout
 - [ ] Logs contain expected fields (method, response_code, duration, etc.)
-- [ ] Log aggregation system (Loki/Promtail) successfully parses JSON
+- [ ] Loki receives logs via Alloy (if observability stack deployed)
+- [ ] Grafana LogQL query returns Envoy access logs
 
 ---
 
@@ -323,9 +363,12 @@ Enable request tracing across services for latency analysis, dependency mapping,
 
 ### Prerequisites
 
-- OpenTelemetry Collector deployed in the cluster
-- Trace storage backend (Tempo, Jaeger, or similar)
-- Grafana configured for trace visualization
+> **Note:** Distributed tracing is now fully documented in the [observability stack](./observability-stack-implementation.md#phase-5-tempo-for-distributed-tracing). Enable `tracing_enabled: true` in `cluster.yaml`.
+
+- [Observability stack](./observability-stack-implementation.md) deployed with `tracing_enabled: true`
+- Alloy deployed (receives OTLP traces, forwards to Tempo)
+- Tempo deployed (stores traces, queries from Grafana)
+- Grafana configured with Tempo datasource (automatic when stack deployed)
 
 ### Implementation
 
@@ -357,7 +400,37 @@ Add to `cluster.yaml`:
 
 #### Step 2: Update EnvoyProxy Configuration
 
-Add tracing configuration to the existing EnvoyProxy in `envoy.yaml.j2`:
+Add tracing configuration to the existing EnvoyProxy in `envoy.yaml.j2`.
+
+> **Integration Note:** Envoy Gateway supports three tracing providers: **Zipkin**, **OpenTelemetry**, and **Datadog**. Choose based on your backend infrastructure.
+
+### Tracing Provider Options
+
+| Provider | Backend | Port | Use Case |
+| -------- | ------- | ---- | -------- |
+| **Zipkin** | Tempo (direct) | 9411 | Simplest setup, direct to Tempo |
+| **OpenTelemetry** | Alloy → Tempo | 4317 | Additional processing, multi-destination |
+| **Datadog** | Datadog Agent | 8126 | Datadog APM users (requires Datadog subscription) |
+
+### Sampling Configuration
+
+**Percentage-based (1-100%):**
+```yaml
+tracing:
+  samplingRate: 10  # Sample 10% of requests
+```
+
+**Fractional sampling (for rates below 1%):**
+```yaml
+tracing:
+  samplingFraction:
+    numerator: 1
+    denominator: 1000  # Sample 0.1% of requests
+```
+
+> **Tip:** Use `samplingRate: 100` during debugging, then reduce to 1-10% for production to balance visibility with storage costs.
+
+**Option A: Direct to Tempo (Simpler)**
 
 ```yaml
 spec:
@@ -367,8 +440,9 @@ spec:
       samplingRate: #{ tracing_sample_rate | default(10) }#
       provider:
         backendRefs:
-          - name: otel-collector
-            namespace: #{ observability_namespace | default('monitoring') }#
+          # Tempo exposes Zipkin receiver on port 9411
+          - name: tempo
+            namespace: monitoring
             port: 9411
         type: Zipkin
         zipkin:
@@ -396,25 +470,54 @@ spec:
           type: Gzip
 ```
 
-#### Step 3: Ensure OTel Collector Service Exists
-
-The tracing configuration references `otel-collector` service. Ensure it exposes Zipkin port:
+**Option B: Via Alloy (For additional processing/routing)**
 
 ```yaml
-# Example OTel Collector service (for reference)
-apiVersion: v1
-kind: Service
-metadata:
-  name: otel-collector
-  namespace: monitoring
 spec:
-  ports:
-    - name: zipkin
-      port: 9411
-      targetPort: 9411
-  selector:
-    app: otel-collector
+  telemetry:
+    #% if tracing_enabled is defined and tracing_enabled %#
+    tracing:
+      samplingRate: #{ tracing_sample_rate | default(10) }#
+      provider:
+        backendRefs:
+          # Alloy receives OTLP and forwards to Tempo
+          - name: alloy
+            namespace: monitoring
+            port: 4317
+        type: OpenTelemetry
+      customTags:
+        cluster:
+          type: Literal
+          literal:
+            value: "#{ cluster_name | default('matherlynet') }#"
+        environment:
+          type: Literal
+          literal:
+            value: "#{ environment | default('production') }#"
+        "k8s.pod.name":
+          type: Environment
+          environment:
+            name: ENVOY_POD_NAME
+            defaultValue: "-"
+    #% endif %#
+    accessLog:
+      # ... existing access log config ...
+    metrics:
+      prometheus:
+        compression:
+          type: Gzip
 ```
+
+#### Step 3: Verify Trace Flow
+
+The trace flow depends on which option you chose:
+
+```
+Option A: Envoy → Tempo (port 9411/Zipkin) → Grafana
+Option B: Envoy → Alloy (port 4317/OTLP) → Tempo → Grafana
+```
+
+Both options result in traces being queryable in Grafana via the Tempo datasource.
 
 #### Step 4: Apply and Verify
 
@@ -542,7 +645,13 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 
 ## References
 
+### Project Documentation
+- [Observability Stack Implementation](./observability-stack-implementation.md) - **Primary** - Unified VictoriaMetrics + Loki + Grafana platform
 - [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md) - Source research document
+- [k8s-at-home Patterns Implementation](./k8s-at-home-patterns-implementation.md) - General k8s-at-home patterns
+- [Bootstrap CRDs](../../templates/config/bootstrap/helmfile.d/00-crds.yaml.j2) - kube-prometheus-stack CRD installation
+
+### External Documentation
 - [Proxy Access Logs](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-accesslog/) - Official docs
 - [SecurityPolicy Reference](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/) - JWT/OIDC patterns
 - [Observability Tracing](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-tracing/) - Tracing setup
@@ -554,4 +663,17 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-03 | **IMPLEMENTED**: Phase 1 JSON Access Logging in `envoy.yaml.j2` |
+| 2026-01-03 | **IMPLEMENTED**: Phase 2 JWT SecurityPolicy template (`securitypolicy-jwt.yaml.j2`) |
+| 2026-01-03 | **IMPLEMENTED**: Phase 3 Distributed Tracing (conditional on `tracing_enabled`) |
+| 2026-01-03 | **IMPLEMENTED**: CUE schema validation for all new variables |
+| 2026-01-03 | **IMPLEMENTED**: cluster.sample.yaml with OIDC/JWT configuration section |
+| 2026-01-03 | Added v1.6 Access Log Types (Route/Listener) documentation to Phase 1 |
+| 2026-01-03 | Added fractional sampling (`samplingFraction`) for sub-1% trace rates |
+| 2026-01-03 | Added Datadog as optional third tracing provider (requires subscription) |
+| 2026-01-03 | Added tracing provider comparison table (Zipkin/OpenTelemetry/Datadog) |
+| 2026-01-03 | Updated Phase 3 tracing: Now uses Tempo directly or via Alloy (no longer "future enhancement") |
+| 2026-01-03 | Updated cross-references to unified observability-stack-implementation.md |
+| 2026-01-03 | Added Loki/Alloy integration notes for JSON access logging |
+| 2026-01-03 | Clarified kube-prometheus-stack CRD-only installation and linked to monitoring stack options |
 | 2026-01-03 | Initial implementation guide created from research findings |

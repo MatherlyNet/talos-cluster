@@ -22,6 +22,11 @@
 | `network` | [unifi-dns](#unifi-dns) | Internal DNS (UniFi) | Flux (optional) |
 | `network` | [k8s-gateway](#k8s-gateway) | Split DNS Fallback | Flux (if no UniFi) |
 | `network` | [Cloudflare Tunnel](#cloudflare-tunnel) | External Access | Flux |
+| `monitoring` | [VictoriaMetrics](#victoriametrics) | Metrics + Grafana + AlertManager | Flux (optional) |
+| `monitoring` | [Loki](#loki) | Log Aggregation | VictoriaMetrics (optional) |
+| `monitoring` | [Alloy](#alloy) | Unified Telemetry Collector | Loki (optional) |
+| `monitoring` | [Tempo](#tempo) | Distributed Tracing | VictoriaMetrics (optional) |
+| `kube-system` | [Hubble](#hubble) | Network Observability (Cilium) | Cilium (optional) |
 | `default` | [Echo](#echo) | Test Application | Envoy Gateway |
 
 ---
@@ -382,6 +387,18 @@ spec:
 - Managed by cert-manager
 - Shared across all routes
 
+**Observability Features:**
+- **JSON Access Logging**: Always enabled, logs to stdout for Alloy/Loki collection
+- **Distributed Tracing**: Conditional on `tracing_enabled`, sends Zipkin spans to Tempo (port 9411)
+- **Prometheus Metrics**: PodMonitor scrapes Envoy metrics for VictoriaMetrics
+
+**Security Features (Optional):**
+- **JWT SecurityPolicy**: Enabled when `oidc_issuer_url` and `oidc_jwks_uri` are set
+- Targets HTTPRoutes with label `security: jwt-protected`
+- Extracts claims to X-User-* headers for backend services
+
+See `docs/guides/envoy-gateway-observability-security.md` for implementation details.
+
 ---
 
 ### cloudflare-dns
@@ -487,6 +504,195 @@ spec:
 | ---------- | ------- |
 | `cloudflare_domain` | Tunnel hostname |
 | `cloudflare_gateway_addr` | Ingress destination |
+
+---
+
+## monitoring Namespace
+
+### VictoriaMetrics
+
+**Purpose:** Full-stack metrics with Grafana, AlertManager, and infrastructure alerting (VictoriaMetrics is 10x more memory-efficient than Prometheus).
+
+**Template:** `templates/config/kubernetes/apps/monitoring/victoria-metrics/`
+
+**Condition:** Only enabled when `monitoring_enabled: true` in `cluster.yaml`
+
+**Components:**
+- VictoriaMetrics Single (metrics storage)
+- Grafana (visualization with pre-configured dashboards)
+- AlertManager (alerting)
+- VMAgent (metric collection)
+- PrometheusRule (infrastructure alerts - auto-converted to VMRule)
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `monitoring_enabled` | Enable monitoring stack | `false` |
+| `monitoring_stack` | Backend choice (`victoriametrics` or `prometheus`) | `victoriametrics` |
+| `grafana_subdomain` | Grafana subdomain | `grafana` |
+| `metrics_retention` | Retention period | `7d` |
+| `metrics_storage_size` | PV size | `50Gi` |
+| `storage_class` | Storage class | `local-path` |
+| `monitoring_alerts_enabled` | Enable infrastructure alerts | `true` |
+| `node_memory_threshold` | Memory % threshold for alerts | `90` |
+| `node_cpu_threshold` | CPU % threshold for alerts | `90` |
+
+**Infrastructure Alerts:**
+
+When `monitoring_alerts_enabled: true` (default), a PrometheusRule with 30+ alerts is created covering:
+- Node health (memory, CPU, disk, filesystem, network)
+- Control Plane (API server, scheduler, controller-manager)
+- etcd (membership, health, latency)
+- Cilium (agent health, endpoint issues, policy errors)
+- CoreDNS (health, query latency)
+- Envoy Gateway (connection issues, config errors)
+- Certificates (expiration warnings)
+- Flux GitOps (reconciliation failures)
+- Workloads (pod crashes, deployment issues)
+- Storage (PV usage)
+
+**Note:** VictoriaMetrics Operator auto-converts PrometheusRule to VMRule - no special labels required.
+
+**Troubleshooting:**
+```bash
+flux get hr -n monitoring victoria-metrics-k8s-stack
+kubectl -n monitoring get pods
+kubectl -n monitoring port-forward svc/vmsingle-victoria-metrics-k8s-stack 8429:8429
+# Visit http://localhost:8429 for VictoriaMetrics UI
+kubectl -n monitoring port-forward svc/victoria-metrics-k8s-stack-grafana 3000:80
+# Visit http://localhost:3000 for Grafana (admin/admin)
+```
+
+---
+
+### Loki
+
+**Purpose:** Log aggregation using SimpleScalable mode (homelab-appropriate).
+
+**Template:** `templates/config/kubernetes/apps/monitoring/loki/`
+
+**Condition:** Only enabled when `monitoring_enabled: true` AND `loki_enabled: true`
+
+**Features:**
+- SimpleScalable mode (read/write/backend separation)
+- Filesystem storage (no object storage required)
+- Grafana datasource auto-configured
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `loki_enabled` | Enable log aggregation | `false` |
+| `logs_retention` | Retention period | `7d` |
+| `logs_storage_size` | PV size | `50Gi` |
+
+**Troubleshooting:**
+```bash
+flux get hr -n monitoring loki
+kubectl -n monitoring get pods -l app.kubernetes.io/name=loki
+kubectl -n monitoring logs -l app.kubernetes.io/name=loki-read
+```
+
+---
+
+### Alloy
+
+**Purpose:** Unified telemetry collector (replaces deprecated Promtail and Grafana Agent).
+
+**Template:** `templates/config/kubernetes/apps/monitoring/alloy/`
+
+**Condition:** Only enabled when `loki_enabled: true` (requires Loki as destination)
+
+**Note:** Alloy uses HelmRepository (not OCI) as the Grafana Helm chart doesn't support OCI registry.
+
+**Features:**
+- Collects logs from all pods
+- Discovers Kubernetes metadata
+- Forwards to Loki
+
+**Troubleshooting:**
+```bash
+flux get hr -n monitoring alloy
+kubectl -n monitoring get pods -l app.kubernetes.io/name=alloy
+kubectl -n monitoring logs ds/alloy
+```
+
+---
+
+### Tempo
+
+**Purpose:** Distributed tracing in single binary mode (homelab-appropriate).
+
+**Template:** `templates/config/kubernetes/apps/monitoring/tempo/`
+
+**Condition:** Only enabled when `monitoring_enabled: true` AND `tracing_enabled: true`
+
+**Note:** Tempo uses HelmRepository (not OCI) as the Grafana Helm chart doesn't support OCI registry.
+
+**Features:**
+- OTLP gRPC/HTTP receivers (ports 4317/4318)
+- Zipkin receiver (port 9411, for Envoy Gateway)
+- Metrics generation (RED metrics from traces)
+- Grafana datasource auto-configured
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `tracing_enabled` | Enable tracing | `false` |
+| `tracing_sample_rate` | Sample percentage | `10` |
+| `trace_retention` | Retention period | `72h` |
+| `trace_storage_size` | PV size | `10Gi` |
+| `cluster_name` | Cluster identifier | `matherlynet` |
+
+**Troubleshooting:**
+```bash
+flux get hr -n monitoring tempo
+kubectl -n monitoring get pods -l app.kubernetes.io/name=tempo
+kubectl -n monitoring port-forward svc/tempo 3200:3200
+# Visit http://localhost:3200 for Tempo API
+```
+
+---
+
+### Hubble
+
+**Purpose:** Network observability for Cilium with flow visibility.
+
+**Template:** Integrated into `templates/config/kubernetes/apps/kube-system/cilium/app/helmrelease.yaml.j2`
+
+**Condition:** Only enabled when `hubble_enabled: true` in `cluster.yaml`
+
+**Components:**
+- Hubble Relay (aggregates flows from all nodes)
+- Hubble UI (optional, enabled with `hubble_ui_enabled: true`)
+- Hubble metrics (exported to VictoriaMetrics when monitoring enabled)
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `hubble_enabled` | Enable Hubble | `false` |
+| `hubble_ui_enabled` | Enable Hubble UI | `false` |
+
+**Features:**
+- Real-time network flow visibility
+- DNS query tracking
+- Drop reason analysis
+- TCP/HTTP flow metrics
+
+**Troubleshooting:**
+```bash
+hubble status
+hubble observe --namespace default
+hubble observe --verdict DROPPED
+kubectl -n kube-system port-forward svc/hubble-relay 4245:80
+kubectl -n kube-system port-forward svc/hubble-ui 12000:80
+# Visit http://localhost:12000 for Hubble UI
+```
+
+**Reference:** See `docs/guides/observability-stack-implementation.md` for full implementation guide.
 
 ---
 

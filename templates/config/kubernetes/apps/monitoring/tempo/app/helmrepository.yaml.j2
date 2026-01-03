@@ -1,0 +1,15 @@
+#% if monitoring_enabled is defined and monitoring_enabled and tracing_enabled | default(false) %#
+#% if not loki_enabled | default(false) %#
+---
+# Note: Tempo's Helm chart does not support OCI registry (GitHub Issue #3068).
+# When Loki/Alloy is enabled, uses the shared grafana HelmRepository from Alloy.
+# When Loki is disabled, Tempo creates its own HelmRepository.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana
+spec:
+  interval: 1h
+  url: https://grafana.github.io/helm-charts
+#% endif %#
+#% endif %#

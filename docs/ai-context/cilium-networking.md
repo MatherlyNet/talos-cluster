@@ -431,27 +431,55 @@ DNS (Split Horizon)
 └─────────────────────────┘
 ```
 
-## Hubble (Optional)
+## Hubble Network Observability (Optional)
 
-Cilium's observability layer. Not enabled by default in this project.
+Cilium's observability layer providing deep visibility into network flows.
 
-To enable:
+### Configuration
+
+Enable via `cluster.yaml`:
 ```yaml
-# Add to Cilium HelmRelease values
-hubble:
-  enabled: true
-  relay:
-    enabled: true
-  ui:
-    enabled: true
+hubble_enabled: true        # Enable Hubble relay and metrics
+hubble_ui_enabled: true     # Enable Hubble UI (optional)
 ```
 
-Commands:
+### Features When Enabled
+
+- **Hubble Relay**: Aggregates flows from all nodes
+- **Hubble UI**: Web interface for flow visualization
+- **Metrics Export**: Prometheus/VictoriaMetrics integration via ServiceMonitor
+- **Flow Types**: DNS, TCP, HTTP, ICMP, drop events
+
+### Commands
+
 ```bash
-hubble observe
-hubble observe --pod <pod-name>
+# CLI status (requires port-forward or Hubble CLI installed)
 hubble status
+hubble observe
+
+# Flow queries
+hubble observe --namespace <ns>
+hubble observe --pod <pod-name>
+hubble observe --protocol tcp
+hubble observe --verdict DROPPED
+
+# Port-forward for Hubble CLI access
+kubectl -n kube-system port-forward svc/hubble-relay 4245:80
+
+# Hubble UI access (if enabled)
+kubectl -n kube-system port-forward svc/hubble-ui 12000:80
+# Visit http://localhost:12000
+
+# Check from Cilium agent
+kubectl -n kube-system exec -it ds/cilium -- hubble observe
 ```
+
+### Integration with Observability Stack
+
+When `monitoring_enabled: true` and `hubble_enabled: true`:
+- Hubble metrics are scraped by VictoriaMetrics
+- Grafana dashboards are automatically provisioned
+- Metrics include: dns queries, drops, tcp flows, http requests
 
 ## CLI Reference
 

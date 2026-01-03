@@ -289,3 +289,201 @@ cloudflare_gateway_addr: ""
 #   disk_discard: true        # Enable TRIM/discard
 #   disk_ssd: true            # SSD emulation
 #   tags: ["kubernetes", "linux", "talos"]  # VM tags
+
+# =============================================================================
+# OBSERVABILITY - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
+# =============================================================================
+# Full-stack observability with metrics, logs, and distributed tracing.
+# VictoriaMetrics is recommended for homelab (10x less memory than Prometheus).
+
+# -- Enable monitoring stack (VictoriaMetrics/Prometheus + Grafana + AlertManager)
+#    (OPTIONAL) / (DEFAULT: false)
+# monitoring_enabled: false
+
+# -- Monitoring stack choice: "victoriametrics" or "prometheus"
+#    VictoriaMetrics uses ~10x less memory, recommended for homelabs
+#    (OPTIONAL) / (DEFAULT: "victoriametrics")
+# monitoring_stack: "victoriametrics"
+
+# -- Enable Hubble network observability (requires monitoring_enabled)
+#    Provides network flow visibility via Cilium
+#    (OPTIONAL) / (DEFAULT: false)
+# hubble_enabled: false
+
+# -- Enable Hubble UI web interface
+#    (OPTIONAL) / (DEFAULT: false)
+# hubble_ui_enabled: false
+
+# -- Grafana subdomain (creates grafana.<cloudflare_domain>)
+#    (OPTIONAL) / (DEFAULT: "grafana")
+# grafana_subdomain: "grafana"
+
+# -- Metrics retention period
+#    (OPTIONAL) / (DEFAULT: "7d")
+# metrics_retention: "7d"
+
+# -- Metrics storage size
+#    (OPTIONAL) / (DEFAULT: "50Gi")
+# metrics_storage_size: "50Gi"
+
+# -- Storage class for monitoring (uses proxmox-zfs if available)
+#    (OPTIONAL) / (DEFAULT: "local-path")
+# storage_class: "local-path"
+
+# -- Enable infrastructure alerting rules (PrometheusRule)
+#    Generates alerts for: Node health, Control Plane, etcd, Cilium, CoreDNS,
+#    Envoy Gateway, Certificates, Flux GitOps, Workloads, Storage
+#    (OPTIONAL) / (DEFAULT: true)
+# monitoring_alerts_enabled: true
+
+# -- Memory utilization % threshold for NodeMemoryHighUtilization alert
+#    (OPTIONAL) / (DEFAULT: 90) / (Range: 50-99)
+# node_memory_threshold: 90
+
+# -- CPU utilization % threshold for NodeCPUHighUtilization alert
+#    (OPTIONAL) / (DEFAULT: 90) / (Range: 50-99)
+# node_cpu_threshold: 90
+
+# -- Enable log aggregation with Loki
+#    (OPTIONAL) / (DEFAULT: false)
+# loki_enabled: false
+
+# -- Log retention period
+#    (OPTIONAL) / (DEFAULT: "7d")
+# logs_retention: "7d"
+
+# -- Log storage size
+#    (OPTIONAL) / (DEFAULT: "50Gi")
+# logs_storage_size: "50Gi"
+
+# =============================================================================
+# OBSERVABILITY - Distributed Tracing (Optional)
+# =============================================================================
+# Tempo for distributed tracing with Alloy as the unified collector.
+
+# -- Enable distributed tracing with Tempo
+#    Requires monitoring_enabled: true
+#    (OPTIONAL) / (DEFAULT: false)
+# tracing_enabled: false
+
+# -- Tracing sample rate (percentage, 1-100)
+#    100 = trace all requests; 10 = trace 10% of requests
+#    (OPTIONAL) / (DEFAULT: 10)
+# tracing_sample_rate: 10
+
+# -- Trace retention period
+#    (OPTIONAL) / (DEFAULT: "72h")
+# trace_retention: "72h"
+
+# -- Trace storage size
+#    (OPTIONAL) / (DEFAULT: "10Gi")
+# trace_storage_size: "10Gi"
+
+# -- Cluster name for trace metadata
+#    (OPTIONAL) / (DEFAULT: "matherlynet")
+# cluster_name: "matherlynet"
+
+# -- Observability namespace for Tempo, Alloy, and other monitoring components
+#    (OPTIONAL) / (DEFAULT: "monitoring")
+# observability_namespace: "monitoring"
+
+# -- Environment tag for traces and logs (production, staging, development)
+#    (OPTIONAL) / (DEFAULT: "production")
+# environment: "production"
+
+# =============================================================================
+# OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
+# =============================================================================
+# JWT-based authentication for API endpoints, validating tokens against JWKS.
+# When configured, creates a SecurityPolicy targeting HTTPRoutes with
+# label "security: jwt-protected".
+# REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
+# REF: docs/guides/envoy-gateway-observability-security.md
+
+# -- OIDC provider name (used in SecurityPolicy)
+#    (OPTIONAL) / (DEFAULT: "keycloak")
+# oidc_provider_name: "keycloak"
+
+# -- OIDC issuer URL (JWT token issuer - must match "iss" claim in tokens)
+#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm")
+# oidc_issuer_url: ""
+
+# -- OIDC JWKS URI for JWT validation (public keys endpoint)
+#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs")
+# oidc_jwks_uri: ""
+
+# -- Additional claims to extract from JWT and pass as headers
+#    (OPTIONAL) / Headers must start with "X-"
+#    Example:
+#    oidc_additional_claims:
+#      - name: "preferred_username"
+#        header: "X-Username"
+#      - name: "realm_access.roles"
+#        header: "X-User-Roles"
+# oidc_additional_claims: []
+
+# =============================================================================
+# VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3
+# =============================================================================
+# VolSync provides restic-based PVC backups to S3-compatible storage.
+# Enables point-in-time recovery for stateful applications.
+# REF: https://volsync.readthedocs.io/en/stable/
+# REF: docs/guides/k8s-at-home-remaining-implementation.md
+
+# -- Enable VolSync PVC backup
+#    (OPTIONAL) / (DEFAULT: false)
+# volsync_enabled: false
+
+# -- S3-compatible endpoint for backups (Cloudflare R2 recommended)
+#    (OPTIONAL) / (e.g. "https://<account-id>.r2.cloudflarestorage.com")
+# volsync_s3_endpoint: ""
+
+# -- S3 bucket name for VolSync backups
+#    (OPTIONAL) / (e.g. "cluster-pvc-backups")
+# volsync_s3_bucket: ""
+
+# -- Restic repository password for encryption
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# volsync_restic_password: ""
+
+# -- Backup schedule (cron format)
+#    (OPTIONAL) / (DEFAULT: "0 */6 * * *" - every 6 hours)
+# volsync_schedule: "0 */6 * * *"
+
+# -- Copy method for creating backups: "Clone" or "Snapshot"
+#    Clone: Works with any CSI driver supporting volume cloning (Proxmox CSI)
+#    Snapshot: Requires CSI driver with VolumeSnapshot support
+#    (OPTIONAL) / (DEFAULT: "Clone")
+# volsync_copy_method: "Clone"
+
+# -- Daily backup retention count
+#    (OPTIONAL) / (DEFAULT: 7)
+# volsync_retain_daily: 7
+
+# -- Weekly backup retention count
+#    (OPTIONAL) / (DEFAULT: 4)
+# volsync_retain_weekly: 4
+
+# -- Monthly backup retention count
+#    (OPTIONAL) / (DEFAULT: 3)
+# volsync_retain_monthly: 3
+
+# =============================================================================
+# EXTERNAL SECRETS OPERATOR - Sync secrets from external providers
+# =============================================================================
+# External Secrets Operator syncs secrets from external secret stores.
+# Supported providers: 1Password, Bitwarden, HashiCorp Vault
+# REF: https://external-secrets.io/
+# REF: docs/guides/k8s-at-home-remaining-implementation.md
+
+# -- Enable External Secrets Operator
+#    (OPTIONAL) / (DEFAULT: false)
+# external_secrets_enabled: false
+
+# -- External secrets provider: "1password", "bitwarden", or "vault"
+#    (OPTIONAL) / (DEFAULT: "1password")
+# external_secrets_provider: "1password"
+
+# -- 1Password Connect host URL (required when provider is "1password")
+#    (OPTIONAL) / (e.g. "http://onepassword-connect:8080")
+# onepassword_connect_host: ""

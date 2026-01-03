@@ -35,8 +35,37 @@ spec:
       enabled: false
     gatewayAPI:
       enabled: false
+    # Hubble - Network Observability
     hubble:
-      enabled: false
+      enabled: #{ hubble_enabled | default(false) | lower }#
+#% if hubble_enabled | default(false) %#
+      relay:
+        enabled: true
+        replicas: 1
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+      ui:
+        enabled: #{ hubble_ui_enabled | default(false) | lower }#
+        replicas: 1
+      metrics:
+        enabled:
+          - dns:query;ignoreAAAA
+          - drop
+          - tcp
+          - flow
+          - icmp
+          - http
+        enableOpenMetrics: true
+        serviceMonitor:
+          enabled: true
+        dashboards:
+          enabled: true
+          namespace: monitoring
+#% endif %#
     ipam:
       mode: kubernetes
     ipv4NativeRoutingCIDR: "#{ cluster_pod_cidr }#"

@@ -1,0 +1,88 @@
+#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+---
+# Alloy is Grafana's distribution of the OpenTelemetry Collector.
+# It replaces Promtail (EOL March 2026) and Grafana Agent (EOL November 2025).
+# Unified collector for logs (to Loki), metrics (to VictoriaMetrics), and traces (to Tempo).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+spec:
+  chart:
+    spec:
+      chart: alloy
+      version: "1.1.2"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+  interval: 1h
+  values:
+    alloy:
+      configMap:
+        content: |
+          // =========================================================================
+          // LOGS PIPELINE: Kubernetes pods -> Loki
+          // =========================================================================
+          loki.source.kubernetes "pods" {
+            targets    = discovery.kubernetes.pods.targets
+            forward_to = [loki.write.default.receiver]
+          }
+
+          discovery.kubernetes "pods" {
+            role = "pod"
+          }
+
+          loki.write "default" {
+            endpoint {
+              url = "http://loki:3100/loki/api/v1/push"
+            }
+          }
+
+#% if tracing_enabled | default(false) %#
+          // =========================================================================
+          // TRACES PIPELINE: OTLP -> Tempo (when tracing enabled)
+          // =========================================================================
+          // Receive traces via OTLP (from Envoy Gateway, applications, etc.)
+          otelcol.receiver.otlp "default" {
+            grpc {
+              endpoint = "0.0.0.0:4317"
+            }
+            http {
+              endpoint = "0.0.0.0:4318"
+            }
+            output {
+              traces = [otelcol.processor.batch.default.input]
+            }
+          }
+
+          // Batch processor for efficiency
+          otelcol.processor.batch "default" {
+            output {
+              traces = [otelcol.exporter.otlp.tempo.input]
+            }
+          }
+
+          // Export to Tempo
+          otelcol.exporter.otlp "tempo" {
+            client {
+              endpoint = "tempo:4317"
+              tls {
+                insecure = true
+              }
+            }
+          }
+#% endif %#
+    controller:
+      type: daemonset
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+#% if tracing_enabled | default(false) %#
+    # Service for receiving OTLP traces
+    service:
+      enabled: true
+#% endif %#
+#% endif %#

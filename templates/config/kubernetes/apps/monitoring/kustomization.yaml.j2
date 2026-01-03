@@ -1,0 +1,22 @@
+#% if monitoring_enabled is defined and monitoring_enabled %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+
+components:
+  - ../../components/sops
+
+resources:
+  - ./namespace.yaml
+#% if monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+  - ./victoria-metrics/ks.yaml
+#% endif %#
+#% if loki_enabled | default(false) %#
+  - ./loki/ks.yaml
+  - ./alloy/ks.yaml
+#% endif %#
+#% if tracing_enabled | default(false) %#
+  - ./tempo/ks.yaml
+#% endif %#
+#% endif %#

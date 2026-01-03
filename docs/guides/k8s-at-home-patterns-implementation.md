@@ -2,8 +2,9 @@
 
 > **Guide Version:** 1.0.0
 > **Last Updated:** January 2026
-> **Status:** Ready for Implementation
+> **Status:** Partially Implemented (Phase 1 Complete, Phase 3A Enhanced)
 > **Source Research:** [k8s-at-home-patterns-research.md](../research/k8s-at-home-patterns-research.md)
+> **Remaining Phases:** [k8s-at-home-remaining-implementation.md](./k8s-at-home-remaining-implementation.md)
 
 ---
 
@@ -15,10 +16,11 @@ This guide provides step-by-step implementation instructions for integrating com
 
 | Phase | Components | Status | Value |
 | ----- | ---------- | ------ | ----- |
-| **Phase 1** | ✅ Already Complete | Done | Foundation |
-| **Phase 2** | VolSync (PVC Backup) | Ready | High - DR for stateful apps |
-| **Phase 3** | Observability Stack | Ready | High - Metrics/Logs/Alerts |
-| **Phase 4** | Optional Enhancements | Future | Medium - As needed |
+| **Phase 1** | ✅ Already Complete | ✅ Done | Foundation |
+| **Phase 2** | VolSync (PVC Backup) | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-2-volsync-pvc-backup) | High - DR for stateful apps |
+| **Phase 3A** | VictoriaMetrics + Loki + Alloy + Tempo | ✅ Enhanced | High - Full observability |
+| **Phase 3B** | kube-prometheus-stack Alternative | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-3-option-b-kube-prometheus-stack-alternative) | Alternative option |
+| **Phase 4** | bjw-s, External Secrets | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-4-optional-enhancements) | Medium - As needed |
 
 ### Phase 1 Status (Already Implemented)
 

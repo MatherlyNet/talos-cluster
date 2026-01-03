@@ -1,0 +1,12 @@
+#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+---
+# Note: Alloy's Helm chart does not support OCI registry (GitHub Issue #3068).
+# Using HelmRepository instead.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana
+spec:
+  interval: 1h
+  url: https://grafana.github.io/helm-charts
+#% endif %#

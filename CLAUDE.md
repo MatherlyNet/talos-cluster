@@ -172,6 +172,13 @@ Optional Cilium BGP Control Plane v2 (for multi-VLAN routing):
 - Optional: `cilium_lb_pool_cidr`, `cilium_bgp_hold_time`, `cilium_bgp_keepalive_time`, `cilium_bgp_graceful_restart`
 - See `docs/guides/bgp-unifi-cilium-implementation.md` for setup guide
 
+Optional Observability Stack (metrics, logs, traces):
+- `monitoring_enabled` - Enable VictoriaMetrics + Grafana + AlertManager
+- `hubble_enabled` - Enable Cilium Hubble network observability
+- `loki_enabled` - Enable log aggregation with Loki + Alloy
+- `tracing_enabled` - Enable distributed tracing with Tempo
+- See `docs/guides/observability-stack-implementation.md` for setup guide
+
 See `docs/CONFIGURATION.md` for complete schema reference.
 
 ## AI Assistants
@@ -218,6 +225,8 @@ Deep context in `docs/ai-context/`:
 | Certificate issues | `kubectl get certificates -A` |
 | OpenTofu state lock | `task infra:force-unlock LOCK_ID=xxx` |
 | OpenTofu auth issues | `task infra:secrets-edit` (check credentials) |
+| Monitoring not working | `flux get hr -n monitoring`, `kubectl -n monitoring get pods` |
+| Hubble not visible | `hubble status`, `kubectl -n kube-system port-forward svc/hubble-relay 4245:80` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

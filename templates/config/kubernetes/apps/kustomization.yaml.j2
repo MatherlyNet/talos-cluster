@@ -9,5 +9,8 @@ resources:
   - ./default
   - ./flux-system
   - ./kube-system
+  #% if monitoring_enabled is defined and monitoring_enabled %#
+  - ./monitoring
+  #% endif %#
   - ./network
   - ./system-upgrade

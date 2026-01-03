@@ -96,6 +96,64 @@ import (
 		disk_ssd?:     *true | bool
 		tags?: [...string]
 	}
+
+	// Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
+	// Full-stack observability with metrics, logs, and distributed tracing
+	monitoring_enabled?:    *false | bool
+	monitoring_stack?:      *"victoriametrics" | "prometheus"
+	hubble_enabled?:        *false | bool
+	hubble_ui_enabled?:     *false | bool
+	grafana_subdomain?:     *"grafana" | string & !=""
+	metrics_retention?:     *"7d" | string & =~"^[0-9]+[dhw]$"
+	metrics_storage_size?:  *"50Gi" | string & =~"^[0-9]+[KMGT]i$"
+	storage_class?:         *"local-path" | string & !=""
+
+	// Observability - Infrastructure Alerts (PrometheusRule)
+	monitoring_alerts_enabled?: *true | bool
+	node_memory_threshold?:     *90 | int & >=50 & <=99
+	node_cpu_threshold?:        *90 | int & >=50 & <=99
+
+	// Observability - Log Aggregation (Loki + Alloy)
+	loki_enabled?:       *false | bool
+	logs_retention?:     *"7d" | string & =~"^[0-9]+[dhw]$"
+	logs_storage_size?:  *"50Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// Observability - Distributed Tracing (Tempo)
+	tracing_enabled?:        *false | bool
+	tracing_sample_rate?:    *10 | int & >=1 & <=100
+	trace_retention?:        *"72h" | string & =~"^[0-9]+[hd]$"
+	trace_storage_size?:     *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
+	cluster_name?:           *"matherlynet" | string & !=""
+	observability_namespace?: *"monitoring" | string & !=""
+	environment?:            *"production" | "staging" | "development"
+
+	// OIDC/JWT Configuration - Optional for API authentication via SecurityPolicy
+	// REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
+	oidc_provider_name?: *"keycloak" | string & !=""
+	oidc_issuer_url?:    string & =~"^https?://"
+	oidc_jwks_uri?:      string & =~"^https?://"
+	oidc_additional_claims?: [...{
+		name:   string & !=""
+		header: string & =~"^X-"
+	}]
+
+	// VolSync - PVC Backup with restic to S3-compatible storage
+	// REF: https://volsync.readthedocs.io/en/stable/
+	volsync_enabled?:         *false | bool
+	volsync_s3_endpoint?:     string & =~"^https?://"
+	volsync_s3_bucket?:       string & !=""
+	volsync_restic_password?: string & !=""
+	volsync_schedule?:        *"0 */6 * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+	volsync_copy_method?:     *"Clone" | "Snapshot"
+	volsync_retain_daily?:    *7 | int & >=1 & <=365
+	volsync_retain_weekly?:   *4 | int & >=1 & <=52
+	volsync_retain_monthly?:  *3 | int & >=1 & <=24
+
+	// External Secrets Operator - Sync secrets from external providers
+	// REF: https://external-secrets.io/
+	external_secrets_enabled?:  *false | bool
+	external_secrets_provider?: *"1password" | "bitwarden" | "vault"
+	onepassword_connect_host?:  string & =~"^https?://"
 }
 
 #Config

@@ -1,0 +1,380 @@
+#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' and monitoring_alerts_enabled | default(true) %#
+---
+# Infrastructure Alerts - Critical monitoring rules for cluster health
+# These alerts are designed for homelab infrastructure and Talos Linux clusters.
+# Disable with: monitoring_alerts_enabled: false in cluster.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: infrastructure-alerts
+  labels:
+    app.kubernetes.io/name: infrastructure-alerts
+    app.kubernetes.io/component: alerting
+spec:
+  groups:
+    # =========================================================================
+    # NODE HEALTH ALERTS
+    # =========================================================================
+    - name: node.rules
+      rules:
+        - alert: NodeDown
+          expr: up{job="node-exporter"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.instance }} is down"
+            description: "Node exporter on {{ $labels.instance }} has been unreachable for 5 minutes."
+            runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/node/nodedown"
+
+        - alert: NodeMemoryHighUtilization
+          expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > #{ node_memory_threshold | default(90) }#
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.instance }} memory utilization above #{ node_memory_threshold | default(90) }#%"
+            description: "Memory utilization on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}%."
+
+        - alert: NodeCPUHighUtilization
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > #{ node_cpu_threshold | default(90) }#
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} CPU utilization above #{ node_cpu_threshold | default(90) }#%"
+            description: "CPU utilization on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}%."
+
+        - alert: NodeFilesystemSpaceFillingUp
+          expr: |
+            (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} * 100 < 15)
+            and predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}[6h], 4*60*60) < 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Filesystem on {{ $labels.instance }} predicted to run out of space"
+            description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has {{ $value | printf \"%.1f\" }}% free and is predicted to fill within 4 hours."
+
+        - alert: NodeFilesystemAlmostOutOfSpace
+          expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} * 100 < 5
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Filesystem on {{ $labels.instance }} has less than 5% space left"
+            description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has only {{ $value | printf \"%.1f\" }}% free."
+
+    # =========================================================================
+    # KUBERNETES CONTROL PLANE ALERTS
+    # =========================================================================
+    - name: kubernetes-control-plane.rules
+      rules:
+        - alert: KubeAPIDown
+          expr: absent(up{job="apiserver"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes API server is unreachable"
+            description: "The Kubernetes API server has been unreachable for 5 minutes."
+            runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeapidown"
+
+        - alert: KubeAPILatencyHigh
+          expr: histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{verb!~"WATCH|CONNECT"}[5m])) by (le, verb)) > 4
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kubernetes API server latency is high"
+            description: "99th percentile latency for {{ $labels.verb }} requests is {{ $value | printf \"%.2f\" }}s."
+
+        - alert: KubeControllerManagerDown
+          expr: absent(up{job=~".*controller-manager.*"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes Controller Manager is down"
+            description: "The Kubernetes Controller Manager has been unreachable for 5 minutes."
+
+        - alert: KubeSchedulerDown
+          expr: absent(up{job=~".*scheduler.*"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes Scheduler is down"
+            description: "The Kubernetes Scheduler has been unreachable for 5 minutes."
+
+    # =========================================================================
+    # ETCD ALERTS (Critical for Talos Linux)
+    # =========================================================================
+    - name: etcd.rules
+      rules:
+        - alert: etcdMemberUnhealthy
+          expr: etcd_server_health_success < 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "etcd cluster member unhealthy"
+            description: "etcd member {{ $labels.instance }} reports unhealthy status."
+            runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/etcd/etcdmembersdown"
+
+        - alert: etcdNoLeader
+          expr: etcd_server_has_leader == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "etcd cluster has no leader"
+            description: "etcd member {{ $labels.instance }} has no leader."
+            runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/etcd/etcdnoleader"
+
+        - alert: etcdHighCommitDurations
+          expr: histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])) > 0.25
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "etcd commit durations are high"
+            description: "etcd member {{ $labels.instance }} 99th percentile commit duration is {{ $value | printf \"%.3f\" }}s."
+
+        - alert: etcdHighFsyncDurations
+          expr: histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "etcd WAL fsync durations are high"
+            description: "etcd member {{ $labels.instance }} 99th percentile WAL fsync duration is {{ $value | printf \"%.3f\" }}s."
+
+    # =========================================================================
+    # NETWORK / CNI ALERTS (Cilium)
+    # =========================================================================
+    - name: cilium.rules
+      rules:
+        - alert: CiliumAgentDown
+          expr: up{job="cilium-agent"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Cilium agent on {{ $labels.instance }} is down"
+            description: "Cilium agent has been unreachable for 5 minutes on {{ $labels.instance }}."
+
+        - alert: CiliumEndpointNotReady
+          expr: sum(cilium_endpoint_state{endpoint_state!="ready"}) by (endpoint_state) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cilium endpoints not ready"
+            description: "{{ $value }} Cilium endpoints are in {{ $labels.endpoint_state }} state."
+
+        - alert: CiliumPolicyImportErrors
+          expr: sum(rate(cilium_policy_import_errors_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Cilium network policy import errors"
+            description: "Cilium is experiencing policy import errors."
+
+    # =========================================================================
+    # DNS ALERTS (CoreDNS)
+    # =========================================================================
+    - name: coredns.rules
+      rules:
+        - alert: CoreDNSDown
+          expr: absent(up{job="coredns"} == 1)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "CoreDNS is unreachable"
+            description: "CoreDNS has been unreachable for 2 minutes. DNS resolution will fail."
+            runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/coredns/corednsdown"
+
+        - alert: CoreDNSHighErrorRate
+          expr: |
+            sum(rate(coredns_dns_responses_total{rcode=~"SERVFAIL|REFUSED"}[5m]))
+            / sum(rate(coredns_dns_responses_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CoreDNS error rate above 5%"
+            description: "CoreDNS is returning errors for {{ $value | printf \"%.1f\" }}% of queries."
+
+        - alert: CoreDNSHighLatency
+          expr: histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket[5m])) by (le)) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CoreDNS 99th percentile latency is high"
+            description: "CoreDNS 99th percentile request latency is {{ $value | printf \"%.3f\" }}s."
+
+    # =========================================================================
+    # GATEWAY / INGRESS ALERTS (Envoy Gateway)
+    # =========================================================================
+    - name: envoy-gateway.rules
+      rules:
+        - alert: EnvoyGatewayDown
+          expr: absent(up{job=~".*envoy.*"}) or sum(up{job=~".*envoy.*"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Envoy Gateway proxy is not running"
+            description: "No Envoy Gateway proxies are responding. External traffic will be blocked."
+
+        - alert: EnvoyHighErrorRate
+          expr: |
+            sum(rate(envoy_http_downstream_rq_5xx[5m]))
+            / sum(rate(envoy_http_downstream_rq_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Envoy Gateway 5xx error rate above 5%"
+            description: "Envoy is returning 5xx errors for {{ $value | printf \"%.1f\" }}% of requests."
+
+        - alert: EnvoyHighLatency
+          expr: histogram_quantile(0.99, sum(rate(envoy_http_downstream_rq_time_bucket[5m])) by (le)) > 5000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Envoy Gateway 99th percentile latency above 5s"
+            description: "Envoy 99th percentile request latency is {{ $value | printf \"%.0f\" }}ms."
+
+    # =========================================================================
+    # CERTIFICATE ALERTS (cert-manager)
+    # =========================================================================
+    - name: certificates.rules
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 604800
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} expires in less than 7 days"
+            description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}."
+
+        - alert: CertificateExpiryCritical
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 86400
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "Certificate {{ $labels.name }} expires in less than 24 hours"
+            description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}. Immediate action required."
+
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} is not ready"
+            description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} has been in not-ready state for 15 minutes."
+
+    # =========================================================================
+    # GITOPS / FLUX ALERTS
+    # =========================================================================
+    - name: flux.rules
+      rules:
+        - alert: FluxReconciliationFailure
+          expr: gotk_reconcile_condition{status="False",type="Ready"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Flux resource {{ $labels.name }} reconciliation failing"
+            description: "Flux {{ $labels.kind }} '{{ $labels.name }}' in namespace {{ $labels.namespace }} has been failing to reconcile for 15 minutes."
+
+        - alert: FluxSuspended
+          expr: gotk_suspend_status == 1
+          for: 24h
+          labels:
+            severity: info
+          annotations:
+            summary: "Flux resource {{ $labels.name }} is suspended"
+            description: "Flux {{ $labels.kind }} '{{ $labels.name }}' in namespace {{ $labels.namespace }} has been suspended for more than 24 hours."
+
+        - alert: FluxSourceNotReady
+          expr: gotk_resource_info{ready="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Flux source {{ $labels.name }} is not ready"
+            description: "Flux {{ $labels.kind }} '{{ $labels.name }}' in namespace {{ $labels.namespace }} is not ready."
+
+    # =========================================================================
+    # POD / WORKLOAD ALERTS
+    # =========================================================================
+    - name: kubernetes-workloads.rules
+      rules:
+        - alert: KubePodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 5 > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}) is restarting {{ $value | printf \"%.2f\" }} times per 5 minutes."
+
+        - alert: KubePodNotReady
+          expr: |
+            sum by (namespace, pod) (
+              max by(namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown"}) * on(namespace, pod) group_left(owner_kind) topk by(namespace, pod) (1, max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"}))
+            ) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been not ready for 15 minutes"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is in {{ $labels.phase }} state."
+
+        - alert: KubeDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replicas mismatch"
+            description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} replicas available, expected {{ $labels.spec_replicas }}."
+
+    # =========================================================================
+    # PERSISTENT VOLUME ALERTS
+    # =========================================================================
+    - name: persistent-volumes.rules
+      rules:
+        - alert: PersistentVolumeFillingUp
+          expr: |
+            (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.15
+            and kubelet_volume_stats_used_bytes > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "PersistentVolume {{ $labels.persistentvolumeclaim }} is filling up"
+            description: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has {{ $value | printf \"%.1f\" }}% space remaining."
+
+        - alert: PersistentVolumeAlmostFull
+          expr: |
+            (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.05
+            and kubelet_volume_stats_used_bytes > 0
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "PersistentVolume {{ $labels.persistentvolumeclaim }} is almost full"
+            description: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has only {{ $value | printf \"%.1f\" }}% space remaining."
+#% endif %#

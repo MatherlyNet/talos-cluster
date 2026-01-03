@@ -1,6 +1,6 @@
 # Project Index: matherlynet-talos-cluster
 
-> Generated: 2026-01-02
+> Generated: 2026-01-03
 > Token-efficient repository index for AI-assisted development
 > **AI Assistant Files:** `AGENTS.md`, `CLAUDE.md`, `PROJECT_INDEX.md`, `PROJECT_INDEX.json`
 
@@ -25,6 +25,7 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 - Talos Backup for automated etcd snapshots to S3
 - Proxmox CSI for persistent storage on Proxmox VMs
 - Proxmox CCM for node lifecycle management on Proxmox infrastructure
+- Full observability stack (VictoriaMetrics, Loki, Alloy, Tempo, Hubble, PrometheusRule alerts)
 
 **Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
 
@@ -124,6 +125,11 @@ matherlynet-talos-cluster/
 | `kube-system` | talos-backup | Automated etcd backups (optional) |
 | `csi-proxmox` | proxmox-csi | Persistent storage on Proxmox (optional) |
 | `system-upgrade` | tuppr | Automated Talos/K8s upgrades |
+| `monitoring` | victoria-metrics | Metrics + Grafana + AlertManager + PrometheusRule alerts (optional) |
+| `monitoring` | loki | Log aggregation (optional) |
+| `monitoring` | alloy | Unified telemetry collector (optional) |
+| `monitoring` | tempo | Distributed tracing (optional) |
+| `kube-system` | hubble | Network observability via Cilium (optional) |
 
 ## Tool Dependencies
 

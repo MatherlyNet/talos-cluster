@@ -2,7 +2,7 @@
 
 > **Guide Version:** 2.0.0
 > **Last Updated:** January 2026
-> **Status:** Validated for Cilium 1.19.0-pre.3+ and UniFi OS 4.1.13+ (4.4.6 recommended)
+> **Status:** Implemented | Validated for Cilium 1.19.0-pre.3+ and UniFi OS 4.1.13+ (4.4.6 recommended)
 
 ---
 

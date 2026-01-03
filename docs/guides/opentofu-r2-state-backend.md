@@ -2,6 +2,7 @@
 
 > **Implementation Guide** | Based on [cloudflare-r2-terraform-state.md](../research/cloudflare-r2-terraform-state.md)
 > **Last Updated:** January 2026
+> **Status:** Implemented
 > **Approach:** Option B - R2 + Worker-based Locking (Recommended for Teams)
 
 ---

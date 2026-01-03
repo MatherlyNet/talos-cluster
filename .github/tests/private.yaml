@@ -29,3 +29,6 @@ cloudflare_gateway_addr: "10.10.10.251"
 # Proxmox CSI/CCM Configuration (optional)
 # proxmox_csi_enabled: false
 # proxmox_ccm_enabled: false
+
+# Observability Configuration (optional)
+# monitoring_enabled: false

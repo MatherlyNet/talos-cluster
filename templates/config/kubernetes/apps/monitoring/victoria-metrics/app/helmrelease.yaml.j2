@@ -1,0 +1,268 @@
+#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics-k8s-stack
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: victoria-metrics-k8s-stack
+  interval: 1h
+  values:
+    # VictoriaMetrics Single (lightweight, recommended for homelab)
+    vmsingle:
+      enabled: true
+      spec:
+        retentionPeriod: "#{ metrics_retention | default('7d') }#"
+        storage:
+          storageClassName: "#{ storage_class | default('local-path') }#"
+          resources:
+            requests:
+              storage: "#{ metrics_storage_size | default('50Gi') }#"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+
+    # VMAgent for scraping
+    vmagent:
+      enabled: true
+      spec:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+
+    # Grafana
+    grafana:
+      enabled: true
+      ingress:
+        enabled: true
+        ingressClassName: ""
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "#{ cluster_gateway_addr }#"
+        hosts:
+          - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+        tls:
+          - secretName: ${SECRET_DOMAIN/./-}-production-tls
+            hosts:
+              - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+      persistence:
+        enabled: true
+        size: 5Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      # Dashboard provisioning
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+            - name: infrastructure
+              folder: Infrastructure
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/infrastructure
+            - name: network
+              folder: Network
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/network
+            - name: gitops
+              folder: GitOps
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/gitops
+      dashboards:
+        infrastructure:
+          # Kubernetes Core (dotdc collection)
+          kubernetes-global:
+            gnetId: 15757
+            revision: 43
+            datasource: VictoriaMetrics
+          kubernetes-nodes:
+            gnetId: 15759
+            revision: 32
+            datasource: VictoriaMetrics
+          kubernetes-pods:
+            gnetId: 15760
+            revision: 36
+            datasource: VictoriaMetrics
+          # Node metrics
+          node-exporter-full:
+            gnetId: 1860
+            revision: 37
+            datasource: VictoriaMetrics
+          # Control plane
+          kubernetes-etcd:
+            gnetId: 20330
+            revision: 1
+            datasource: VictoriaMetrics
+          # CoreDNS
+          kubernetes-coredns:
+            gnetId: 15762
+            revision: 18
+            datasource: VictoriaMetrics
+          # cert-manager
+          cert-manager:
+            gnetId: 11001
+            revision: 1
+            datasource: VictoriaMetrics
+        network:
+          # Cilium
+          cilium-agent:
+            gnetId: 16612
+            revision: 1
+            datasource: VictoriaMetrics
+          cilium-hubble:
+            gnetId: 16613
+            revision: 1
+            datasource: VictoriaMetrics
+          # Envoy Gateway
+          envoy-gateway:
+            gnetId: 24460
+            revision: 1
+            datasource: VictoriaMetrics
+          envoy-proxy:
+            gnetId: 21329
+            revision: 1
+            datasource: VictoriaMetrics
+        gitops:
+          flux2:
+            gnetId: 16714
+            revision: 1
+            datasource: VictoriaMetrics
+      # Additional datasources for unified observability
+      additionalDataSources:
+#% if loki_enabled | default(false) %#
+        - name: Loki
+          type: loki
+          url: http://loki:3100
+          access: proxy
+          isDefault: false
+          jsonData:
+            maxLines: 1000
+#% endif %#
+#% if tracing_enabled | default(false) %#
+        - name: Tempo
+          type: tempo
+          url: http://tempo:3200
+          access: proxy
+          isDefault: false
+          jsonData:
+            tracesToLogs:
+              datasourceUid: loki
+              tags: ['namespace', 'pod']
+              mappedTags: [{ key: 'service.name', value: 'service' }]
+              mapTagNamesEnabled: true
+              filterByTraceID: true
+              filterBySpanID: true
+            tracesToMetrics:
+              datasourceUid: VictoriaMetrics
+              tags: [{ key: 'service.name', value: 'service' }]
+              queries:
+                - name: 'Request Rate'
+                  query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
+            serviceMap:
+              datasourceUid: VictoriaMetrics
+            nodeGraph:
+              enabled: true
+            search:
+              hide: false
+            lokiSearch:
+              datasourceUid: loki
+#% endif %#
+
+    # AlertManager
+    alertmanager:
+      enabled: true
+      spec:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+      config:
+        global:
+          resolve_timeout: 5m
+        route:
+          group_by: ['alertname', 'namespace', 'severity']
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: 'null'
+          routes:
+            - match:
+                alertname: Watchdog
+              receiver: 'null'
+            - match:
+                severity: critical
+              receiver: 'null'
+        receivers:
+          - name: 'null'
+
+    # Node Exporter
+    prometheus-node-exporter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 20m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+
+    # kube-state-metrics
+    kube-state-metrics:
+      enabled: true
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+
+    # kubelet scraping
+    kubelet:
+      enabled: true
+      spec:
+        # For Talos Linux
+        metricRelabelConfigs:
+          - action: labeldrop
+            regex: (uid)
+          - action: labeldrop
+            regex: (id|name)
+          - action: drop
+            source_labels: ["__name__"]
+            regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
+
+    # etcd monitoring (Talos requires explicit endpoints)
+    kubeEtcd:
+      enabled: true
+
+    # API Server
+    kubeApiServer:
+      enabled: true
+
+    # Controller Manager
+    kubeControllerManager:
+      enabled: true
+
+    # Scheduler
+    kubeScheduler:
+      enabled: true
+#% endif %#

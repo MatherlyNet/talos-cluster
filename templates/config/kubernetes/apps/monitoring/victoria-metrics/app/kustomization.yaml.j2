@@ -1,0 +1,11 @@
+#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+#% if monitoring_alerts_enabled | default(true) %#
+  - ./prometheusrule.yaml
+#% endif %#
+#% endif %#

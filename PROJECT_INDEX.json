@@ -2,8 +2,8 @@
   "metadata": {
     "name": "matherlynet-talos-cluster",
     "type": "kubernetes-gitops",
-    "generated": "2026-01-02",
-    "version": "1.1.0",
+    "generated": "2026-01-03",
+    "version": "1.2.0",
     "ai_assistant_files": [
       "AGENTS.md",
       "CLAUDE.md",
@@ -204,6 +204,36 @@
       "namespace": "system-upgrade",
       "name": "tuppr",
       "purpose": "Automated Talos/K8s upgrades"
+    },
+    {
+      "namespace": "monitoring",
+      "name": "victoria-metrics",
+      "purpose": "Metrics + Grafana + AlertManager",
+      "conditional": "monitoring_enabled"
+    },
+    {
+      "namespace": "monitoring",
+      "name": "loki",
+      "purpose": "Log aggregation",
+      "conditional": "monitoring_enabled && loki_enabled"
+    },
+    {
+      "namespace": "monitoring",
+      "name": "alloy",
+      "purpose": "Unified telemetry collector",
+      "conditional": "monitoring_enabled && loki_enabled"
+    },
+    {
+      "namespace": "monitoring",
+      "name": "tempo",
+      "purpose": "Distributed tracing",
+      "conditional": "monitoring_enabled && tracing_enabled"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "hubble",
+      "purpose": "Network observability via Cilium",
+      "conditional": "hubble_enabled"
     }
   ],
   "tools": {
@@ -288,7 +318,9 @@
       "directory": "docs/guides/",
       "files": [
         "bgp-unifi-cilium-implementation.md",
-        "opentofu-r2-state-backend.md"
+        "opentofu-r2-state-backend.md",
+        "observability-stack-implementation.md",
+        "k8s-at-home-remaining-implementation.md"
       ]
     },
     "research": {

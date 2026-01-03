@@ -56,3 +56,52 @@ kubernetes_version: "1.35.0"
 # proxmox_ccm_enabled: true
 # proxmox_ccm_token_id: "kubernetes-ccm@pve!ccm"
 # proxmox_ccm_token_secret: "test-ccm-secret"
+
+# Observability Configuration (optional - uncomment to test)
+# monitoring_enabled: true
+# monitoring_stack: "victoriametrics"
+# hubble_enabled: true
+# hubble_ui_enabled: true
+# grafana_subdomain: "grafana"
+# metrics_retention: "7d"
+# metrics_storage_size: "50Gi"
+# storage_class: "local-path"
+# monitoring_alerts_enabled: true
+# node_memory_threshold: 90
+# node_cpu_threshold: 90
+# loki_enabled: true
+# logs_retention: "7d"
+# logs_storage_size: "50Gi"
+# tracing_enabled: true
+# tracing_sample_rate: 10
+# trace_retention: "72h"
+# trace_storage_size: "10Gi"
+# cluster_name: "matherlynet"
+# observability_namespace: "monitoring"
+# environment: "production"
+
+# OIDC/JWT Configuration (optional - uncomment to test SecurityPolicy)
+# oidc_provider_name: "keycloak"
+# oidc_issuer_url: "https://auth.example.com/realms/myrealm"
+# oidc_jwks_uri: "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs"
+# oidc_additional_claims:
+#   - name: "preferred_username"
+#     header: "X-Username"
+
+# VolSync PVC Backup (optional - uncomment to test)
+# REF: docs/guides/k8s-at-home-remaining-implementation.md
+# volsync_enabled: true
+# volsync_s3_endpoint: "https://test.r2.cloudflarestorage.com"
+# volsync_s3_bucket: "test-volsync"
+# volsync_restic_password: "test-restic-password"
+# volsync_schedule: "0 */6 * * *"
+# volsync_copy_method: "Clone"
+# volsync_retain_daily: 7
+# volsync_retain_weekly: 4
+# volsync_retain_monthly: 3
+
+# External Secrets Operator (optional - uncomment to test)
+# REF: docs/guides/k8s-at-home-remaining-implementation.md
+# external_secrets_enabled: true
+# external_secrets_provider: "1password"
+# onepassword_connect_host: "http://onepassword-connect:8080"
