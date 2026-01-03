@@ -32,3 +32,8 @@ cloudflare_gateway_addr: "10.10.10.251"
 
 # Observability Configuration (optional)
 # monitoring_enabled: false
+# monitoring_stack: "victoriametrics"  # or "prometheus" for kube-prometheus-stack
+
+# External Secrets Operator (optional)
+# external_secrets_enabled: false
+# external_secrets_provider: "1password"

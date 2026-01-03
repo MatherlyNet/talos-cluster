@@ -1,0 +1,293 @@
+#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack == 'prometheus' %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kube-prometheus-stack
+  interval: 1h
+  values:
+    # Prometheus
+    prometheus:
+      prometheusSpec:
+        retention: "#{ metrics_retention | default('7d') }#"
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "#{ storage_class | default('local-path') }#"
+              resources:
+                requests:
+                  storage: "#{ metrics_storage_size | default('50Gi') }#"
+        # Scrape all ServiceMonitors/PodMonitors regardless of labels
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+        # Talos Linux specific: kubelet metrics relabeling
+        additionalScrapeConfigs: []
+
+    # Grafana
+    grafana:
+      enabled: true
+      ingress:
+        enabled: true
+        ingressClassName: ""
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "#{ cluster_gateway_addr }#"
+        hosts:
+          - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+        tls:
+          - secretName: ${SECRET_DOMAIN/./-}-production-tls
+            hosts:
+              - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+      persistence:
+        enabled: true
+        storageClassName: "#{ storage_class | default('local-path') }#"
+        size: 5Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      # Dashboard provisioning
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+            - name: infrastructure
+              folder: Infrastructure
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/infrastructure
+            - name: network
+              folder: Network
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/network
+            - name: gitops
+              folder: GitOps
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/gitops
+      dashboards:
+        infrastructure:
+          # Kubernetes Core (dotdc collection)
+          kubernetes-global:
+            gnetId: 15757
+            revision: 43
+            datasource: Prometheus
+          kubernetes-nodes:
+            gnetId: 15759
+            revision: 32
+            datasource: Prometheus
+          kubernetes-pods:
+            gnetId: 15760
+            revision: 36
+            datasource: Prometheus
+          # Node metrics
+          node-exporter-full:
+            gnetId: 1860
+            revision: 37
+            datasource: Prometheus
+          # Control plane
+          kubernetes-etcd:
+            gnetId: 20330
+            revision: 1
+            datasource: Prometheus
+          # CoreDNS
+          kubernetes-coredns:
+            gnetId: 15762
+            revision: 18
+            datasource: Prometheus
+          # cert-manager
+          cert-manager:
+            gnetId: 11001
+            revision: 1
+            datasource: Prometheus
+        network:
+          # Cilium
+          cilium-agent:
+            gnetId: 16612
+            revision: 1
+            datasource: Prometheus
+          cilium-hubble:
+            gnetId: 16613
+            revision: 1
+            datasource: Prometheus
+          # Envoy Gateway
+          envoy-gateway:
+            gnetId: 24460
+            revision: 1
+            datasource: Prometheus
+          envoy-proxy:
+            gnetId: 21329
+            revision: 1
+            datasource: Prometheus
+        gitops:
+          flux2:
+            gnetId: 16714
+            revision: 1
+            datasource: Prometheus
+      # Additional datasources for unified observability
+      additionalDataSources:
+#% if loki_enabled | default(false) %#
+        - name: Loki
+          type: loki
+          url: http://loki:3100
+          access: proxy
+          isDefault: false
+          jsonData:
+            maxLines: 1000
+#% endif %#
+#% if tracing_enabled | default(false) %#
+        - name: Tempo
+          type: tempo
+          url: http://tempo:3200
+          access: proxy
+          isDefault: false
+          jsonData:
+            tracesToLogs:
+              datasourceUid: loki
+              tags: ['namespace', 'pod']
+              mappedTags: [{ key: 'service.name', value: 'service' }]
+              mapTagNamesEnabled: true
+              filterByTraceID: true
+              filterBySpanID: true
+            tracesToMetrics:
+              datasourceUid: Prometheus
+              tags: [{ key: 'service.name', value: 'service' }]
+              queries:
+                - name: 'Request Rate'
+                  query: 'sum(rate(http_server_requests_seconds_count{$$__tags}[5m]))'
+            serviceMap:
+              datasourceUid: Prometheus
+            nodeGraph:
+              enabled: true
+            search:
+              hide: false
+            lokiSearch:
+              datasourceUid: loki
+#% endif %#
+
+    # AlertManager
+    alertmanager:
+      enabled: true
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "#{ storage_class | default('local-path') }#"
+              resources:
+                requests:
+                  storage: 1Gi
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+    # Default alerting rules - disabled, use custom PrometheusRule instead
+    defaultRules:
+      create: true
+      rules:
+        alertmanager: true
+        etcd: true
+        configReloaders: true
+        general: true
+        k8sContainerCpuUsageSecondsTotal: true
+        k8sContainerMemoryCache: true
+        k8sContainerMemoryRss: true
+        k8sContainerMemorySwap: true
+        k8sContainerResource: true
+        k8sContainerMemoryWorkingSetBytes: true
+        k8sPodOwner: true
+        kubeApiserverAvailability: true
+        kubeApiserverBurnrate: true
+        kubeApiserverHistogram: true
+        kubeApiserverSlos: true
+        kubeControllerManager: true
+        kubelet: true
+        kubeProxy: true
+        kubePrometheusGeneral: true
+        kubePrometheusNodeRecording: true
+        kubernetesApps: true
+        kubernetesResources: true
+        kubernetesStorage: true
+        kubernetesSystem: true
+        kubeSchedulerAlerting: true
+        kubeSchedulerRecording: true
+        kubeStateMetrics: true
+        network: true
+        node: true
+        nodeExporterAlerting: true
+        nodeExporterRecording: true
+        prometheus: true
+        prometheusOperator: true
+        windows: false
+
+    # Node Exporter
+    prometheus-node-exporter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 20m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+
+    # kube-state-metrics
+    kube-state-metrics:
+      enabled: true
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+
+    # kubelet scraping
+    kubelet:
+      enabled: true
+
+    # etcd monitoring (Talos Linux requires explicit endpoints)
+    kubeEtcd:
+      enabled: true
+
+    # API Server
+    kubeApiServer:
+      enabled: true
+
+    # Controller Manager
+    kubeControllerManager:
+      enabled: true
+
+    # Scheduler
+    kubeScheduler:
+      enabled: true
+
+    # Prometheus Operator
+    prometheusOperator:
+      enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+#% endif %#

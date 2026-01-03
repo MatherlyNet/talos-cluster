@@ -3,7 +3,7 @@
     "name": "matherlynet-talos-cluster",
     "type": "kubernetes-gitops",
     "generated": "2026-01-03",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "ai_assistant_files": [
       "AGENTS.md",
       "CLAUDE.md",
@@ -192,7 +192,14 @@
     {
       "namespace": "kube-system",
       "name": "talos-ccm",
-      "purpose": "Node lifecycle management"
+      "purpose": "Node lifecycle management (default)",
+      "conditional": "!proxmox_ccm_enabled"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "proxmox-ccm",
+      "purpose": "Node lifecycle on Proxmox (replaces talos-ccm)",
+      "conditional": "proxmox_ccm_enabled"
     },
     {
       "namespace": "kube-system",
@@ -208,8 +215,14 @@
     {
       "namespace": "monitoring",
       "name": "victoria-metrics",
-      "purpose": "Metrics + Grafana + AlertManager",
-      "conditional": "monitoring_enabled"
+      "purpose": "Metrics + Grafana + AlertManager + PrometheusRule alerts",
+      "conditional": "monitoring_enabled && monitoring_stack == 'victoriametrics'"
+    },
+    {
+      "namespace": "monitoring",
+      "name": "kube-prometheus-stack",
+      "purpose": "Prometheus-based metrics (alternative to VictoriaMetrics)",
+      "conditional": "monitoring_enabled && monitoring_stack == 'prometheus'"
     },
     {
       "namespace": "monitoring",
@@ -234,6 +247,12 @@
       "name": "hubble",
       "purpose": "Network observability via Cilium",
       "conditional": "hubble_enabled"
+    },
+    {
+      "namespace": "external-secrets",
+      "name": "external-secrets",
+      "purpose": "External secret management (1Password/Bitwarden/Vault)",
+      "conditional": "external_secrets_enabled"
     }
   ],
   "tools": {
@@ -250,7 +269,14 @@
     "kustomize": { "version": "5.8.0", "purpose": "Kustomize" },
     "kubeconform": { "version": "0.7.0", "purpose": "Manifest validation" },
     "cue": { "version": "0.15.3", "purpose": "Schema validation" },
-    "opentofu": { "version": "1.11.2", "purpose": "Infrastructure as Code" }
+    "opentofu": { "version": "1.11.2", "purpose": "Infrastructure as Code" },
+    "yq": { "version": "4.50.1", "purpose": "YAML processing" },
+    "jq": { "version": "1.8.1", "purpose": "JSON processing" },
+    "gh": { "version": "2.83.2", "purpose": "GitHub CLI" },
+    "makejinja": { "version": "2.8.2", "purpose": "Template engine" },
+    "go-task": { "version": "3.46.4", "purpose": "Task runner" },
+    "wrangler": { "version": "4.54.0", "purpose": "Cloudflare Worker CLI" },
+    "python": { "version": "3.14.2", "purpose": "Python runtime" }
   },
   "workflows": {
     "flux-local.yaml": {
@@ -319,7 +345,10 @@
       "files": [
         "bgp-unifi-cilium-implementation.md",
         "opentofu-r2-state-backend.md",
+        "gitops-components-implementation.md",
         "observability-stack-implementation.md",
+        "envoy-gateway-observability-security.md",
+        "k8s-at-home-patterns-implementation.md",
         "k8s-at-home-remaining-implementation.md"
       ]
     },

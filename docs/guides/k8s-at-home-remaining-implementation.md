@@ -1,8 +1,8 @@
 # K8s-at-Home Patterns: Remaining Implementation Guide
 
-> **Guide Version:** 1.1.0
+> **Guide Version:** 1.2.0
 > **Last Updated:** January 2026
-> **Status:** Ready for Implementation (Validated)
+> **Status:** Partially Implemented
 > **Parent Guide:** [k8s-at-home-patterns-implementation.md](./k8s-at-home-patterns-implementation.md)
 
 ---
@@ -18,9 +18,9 @@ This guide covers the **remaining phases** from the k8s-at-home patterns impleme
 | **Phase 1** | Renovate, External-DNS, tuppr, talos-backup, Proxmox CSI/CCM | ✅ **Complete** | See [gitops-components-implementation.md](./gitops-components-implementation.md) |
 | **Phase 2** | VolSync (PVC Backup) | ❌ **Not Implemented** | This guide |
 | **Phase 3 Option A** | VictoriaMetrics | ✅ **Complete + Enhanced** | Includes Loki, Alloy, Tempo |
-| **Phase 3 Option B** | kube-prometheus-stack | ❌ **Not Implemented** | This guide (optional) |
+| **Phase 3 Option B** | kube-prometheus-stack | ✅ **Complete** | `monitoring_stack: "prometheus"` to enable |
 | **Phase 4** | bjw-s App Template | ❌ **Not Implemented** | This guide |
-| **Phase 4** | External Secrets Operator | ❌ **Not Implemented** | This guide |
+| **Phase 4** | External Secrets Operator | ✅ **Complete** | `external_secrets_enabled: true` to enable |
 
 ### What's Already Enhanced Beyond Original Guide
 

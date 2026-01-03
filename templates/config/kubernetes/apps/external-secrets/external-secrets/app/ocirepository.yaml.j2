@@ -1,0 +1,15 @@
+#% if external_secrets_enabled is defined and external_secrets_enabled %#
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: external-secrets
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: "1.2.1"
+  url: oci://ghcr.io/external-secrets/charts/external-secrets
+#% endif %#

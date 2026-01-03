@@ -1,0 +1,8 @@
+#% if external_secrets_enabled is defined and external_secrets_enabled %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+#% endif %#

@@ -23,10 +23,12 @@
 | `network` | [k8s-gateway](#k8s-gateway) | Split DNS Fallback | Flux (if no UniFi) |
 | `network` | [Cloudflare Tunnel](#cloudflare-tunnel) | External Access | Flux |
 | `monitoring` | [VictoriaMetrics](#victoriametrics) | Metrics + Grafana + AlertManager | Flux (optional) |
+| `monitoring` | [kube-prometheus-stack](#kube-prometheus-stack) | Prometheus-based Metrics (alt) | Flux (optional) |
 | `monitoring` | [Loki](#loki) | Log Aggregation | VictoriaMetrics (optional) |
 | `monitoring` | [Alloy](#alloy) | Unified Telemetry Collector | Loki (optional) |
 | `monitoring` | [Tempo](#tempo) | Distributed Tracing | VictoriaMetrics (optional) |
 | `kube-system` | [Hubble](#hubble) | Network Observability (Cilium) | Cilium (optional) |
+| `external-secrets` | [External Secrets](#external-secrets) | Secret sync from external providers | Flux (optional) |
 | `default` | [Echo](#echo) | Test Application | Envoy Gateway |
 
 ---
@@ -566,6 +568,56 @@ kubectl -n monitoring port-forward svc/victoria-metrics-k8s-stack-grafana 3000:8
 
 ---
 
+### kube-prometheus-stack
+
+**Purpose:** Full-stack Prometheus monitoring with Grafana and AlertManager (alternative to VictoriaMetrics).
+
+**Template:** `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/`
+
+**Condition:** Only enabled when `monitoring_enabled: true` AND `monitoring_stack: "prometheus"` in `cluster.yaml`
+
+**Components:**
+- Prometheus Operator
+- Prometheus Server (metrics storage)
+- Grafana (visualization with pre-configured dashboards)
+- AlertManager (alerting)
+- Node Exporter (node metrics)
+- kube-state-metrics (Kubernetes object metrics)
+- Default PrometheusRules (30+ alerting rules)
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `monitoring_enabled` | Enable monitoring stack | `false` |
+| `monitoring_stack` | Set to `prometheus` | `victoriametrics` |
+| `grafana_subdomain` | Grafana subdomain | `grafana` |
+| `metrics_retention` | Retention period | `7d` |
+| `metrics_storage_size` | PV size | `50Gi` |
+| `storage_class` | Storage class | `local-path` |
+
+**Pre-configured Grafana Dashboards:**
+- **Infrastructure:** Kubernetes Global, Nodes, Pods, etcd, CoreDNS, Node Exporter, cert-manager
+- **Network:** Cilium Agent, Cilium Hubble, Envoy Gateway, Envoy Proxy
+- **GitOps:** Flux2
+
+**Integration with Loki/Tempo:**
+When `loki_enabled` or `tracing_enabled` are set, Grafana automatically includes datasources for:
+- Loki (log aggregation)
+- Tempo (distributed tracing with traces-to-logs correlation)
+
+**Troubleshooting:**
+```bash
+flux get hr -n monitoring kube-prometheus-stack
+kubectl -n monitoring get pods
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
+# Visit http://localhost:9090 for Prometheus UI
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+# Visit http://localhost:3000 for Grafana (admin/prom-operator)
+```
+
+---
+
 ### Loki
 
 **Purpose:** Log aggregation using SimpleScalable mode (homelab-appropriate).
@@ -693,6 +745,98 @@ kubectl -n kube-system port-forward svc/hubble-ui 12000:80
 ```
 
 **Reference:** See `docs/guides/observability-stack-implementation.md` for full implementation guide.
+
+---
+
+## external-secrets Namespace
+
+### External Secrets
+
+**Purpose:** Sync secrets from external providers (1Password, Bitwarden, Vault) into Kubernetes secrets.
+
+**Template:** `templates/config/kubernetes/apps/external-secrets/external-secrets/`
+
+**Condition:** Only enabled when `external_secrets_enabled: true` in `cluster.yaml`
+
+**Components:**
+- External Secrets Operator (controller)
+- Webhook (validation/mutation webhooks)
+- Cert Controller (certificate management)
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `external_secrets_enabled` | Enable operator | `false` |
+| `external_secrets_provider` | Provider type | `1password` |
+| `onepassword_connect_host` | 1Password Connect URL | - |
+
+**Supported Providers:**
+- **1Password** - Via 1Password Connect server
+- **Bitwarden** - Via Bitwarden Secrets Manager
+- **HashiCorp Vault** - Direct Vault integration
+
+**Usage - Creating an ExternalSecret:**
+
+1. First, create a SecretStore (cluster-scoped or namespace-scoped):
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: onepassword
+spec:
+  provider:
+    onepassword:
+      connectHost: http://onepassword-connect:8080
+      vaults:
+        my-vault: 1
+      auth:
+        secretRef:
+          connectTokenSecretRef:
+            name: onepassword-connect-token
+            namespace: external-secrets
+            key: token
+```
+
+2. Then create ExternalSecrets that sync from your provider:
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: my-app-secrets
+  namespace: my-namespace
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: my-app-secrets
+    creationPolicy: Owner
+  data:
+    - secretKey: database-password
+      remoteRef:
+        key: my-app
+        property: database-password
+```
+
+**Integration with Monitoring:**
+When `monitoring_enabled: true`, ServiceMonitors are automatically created for:
+- Main controller metrics
+- Webhook metrics
+- Cert controller metrics
+
+**Troubleshooting:**
+```bash
+flux get hr -n external-secrets external-secrets
+kubectl -n external-secrets get pods
+kubectl get externalsecrets -A
+kubectl get secretstores -A
+kubectl get clustersecretstores
+kubectl -n external-secrets logs deploy/external-secrets
+```
+
+**Reference:** See `docs/guides/k8s-at-home-remaining-implementation.md` for provider-specific setup guides.
 
 ---
 

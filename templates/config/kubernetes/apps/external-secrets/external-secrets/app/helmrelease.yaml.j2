@@ -1,0 +1,65 @@
+#% if external_secrets_enabled is defined and external_secrets_enabled %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-secrets
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: external-secrets
+  interval: 1h
+  values:
+    # Install CRDs with the helm chart
+    installCRDs: true
+
+    # Enable ServiceMonitor for Prometheus/VictoriaMetrics
+    serviceMonitor:
+      enabled: #{ monitoring_enabled | default(false) | lower }#
+
+    # Webhook configuration
+    webhook:
+      serviceMonitor:
+        enabled: #{ monitoring_enabled | default(false) | lower }#
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+
+    # Cert Controller configuration
+    certController:
+      serviceMonitor:
+        enabled: #{ monitoring_enabled | default(false) | lower }#
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+
+    # Main controller resources
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Pod security context
+    podSecurityContext:
+      fsGroup: 65534
+
+    # Tolerations for control plane nodes if needed
+    tolerations: []
+
+    # Node selector
+    nodeSelector: {}
+#% endif %#

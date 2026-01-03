@@ -80,6 +80,14 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | unifi-dns | [APPLICATIONS.md](./APPLICATIONS.md#unifi-dns) | network (optional) |
 | k8s-gateway | [APPLICATIONS.md](./APPLICATIONS.md#k8s-gateway) | network |
 | Cloudflare Tunnel | [APPLICATIONS.md](./APPLICATIONS.md#cloudflare-tunnel) | network |
+| VictoriaMetrics | [APPLICATIONS.md](./APPLICATIONS.md#victoriametrics) | monitoring (optional) |
+| Loki | [APPLICATIONS.md](./APPLICATIONS.md#loki) | monitoring (optional) |
+| Alloy | [APPLICATIONS.md](./APPLICATIONS.md#alloy) | monitoring (optional) |
+| Tempo | [APPLICATIONS.md](./APPLICATIONS.md#tempo) | monitoring (optional) |
+| Hubble | [APPLICATIONS.md](./APPLICATIONS.md#hubble) | kube-system (optional) |
+| tuppr | [APPLICATIONS.md](./APPLICATIONS.md#tuppr) | system-upgrade |
+| Talos CCM | [APPLICATIONS.md](./APPLICATIONS.md#talos-ccm) | kube-system |
+| Talos Backup | [APPLICATIONS.md](./APPLICATIONS.md#talos-backup) | kube-system (optional) |
 
 ---
 
@@ -154,10 +162,22 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | Variable | Used In | Docs |
 | ---------- | --------- | ------ |
 | `cilium_loadbalancer_mode` | Cilium LB | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
-| `cilium_bgp_enabled` | Cilium BGP | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
 | `cilium_bgp_router_addr` | Cilium BGP | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
 | `cilium_bgp_router_asn` | Cilium BGP | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
 | `cilium_bgp_node_asn` | Cilium BGP | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
+
+### Observability Variables (Optional)
+
+| Variable | Used In | Docs |
+| ---------- | --------- | ------ |
+| `monitoring_enabled` | VictoriaMetrics stack | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
+| `monitoring_stack` | VictoriaMetrics/Prometheus choice | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
+| `monitoring_alerts_enabled` | PrometheusRule alerts | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
+| `node_memory_threshold` | Alert thresholds | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
+| `node_cpu_threshold` | Alert thresholds | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
+| `loki_enabled` | Log aggregation | [CONFIGURATION.md](./CONFIGURATION.md#observability-log-aggregation) |
+| `tracing_enabled` | Distributed tracing | [CONFIGURATION.md](./CONFIGURATION.md#observability-distributed-tracing) |
+| `hubble_enabled` | Network observability | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
 
 ---
 
@@ -181,6 +201,7 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | `kubernetes/` | K8s manifests | `task configure` |
 | `talos/` | Talos configs | `task configure` |
 | `bootstrap/` | Bootstrap resources | `task configure` |
+| `infrastructure/` | OpenTofu configs | `task configure` |
 
 ### Secret Files (Local Only)
 
@@ -222,19 +243,38 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | ----- | ----------- | ------------ |
 | [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
 | [BGP UniFi Cilium Implementation](./guides/bgp-unifi-cilium-implementation.md) | BGP peering between UniFi gateway and Cilium | Enabling BGP routing |
-| [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI | Adding cloud-native components |
+| [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI/CCM | Adding cloud-native components |
 | [Observability Stack Implementation](./guides/observability-stack-implementation.md) | VictoriaMetrics, Loki, Tempo, PrometheusRule alerts | Enabling monitoring/alerting |
+| [Envoy Gateway Observability & Security](./guides/envoy-gateway-observability-security.md) | Tracing, metrics, JWT authentication | Gateway observability/security |
+| [k8s-at-home Patterns Implementation](./guides/k8s-at-home-patterns-implementation.md) | Community patterns (Phase 1 + 3A) | Adopting k8s-at-home patterns |
+| [k8s-at-home Remaining Implementation](./guides/k8s-at-home-remaining-implementation.md) | VolSync, External Secrets, Descheduler | Future enhancements |
 
 ## Research Documents
+
+### Active Research
 
 | Document | Description | Status |
 | -------- | ----------- | ------ |
 | [Envoy Gateway Examples Analysis](./research/envoy-gateway-examples-analysis.md) | Examples analysis, v0.0.0-latest adoption for K8s 1.35 | Validated Jan 2026 |
 | [Envoy Gateway OIDC Integration](./research/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Validated Jan 2026 |
-| [External-DNS UniFi Integration](./research/external-dns-unifi-integration.md) | UniFi webhook for internal DNS (k8s_gateway replacement) | Validated Jan 2026 |
-| [Cloudflare R2 Terraform State](./research/cloudflare-r2-terraform-state.md) | R2 as Terraform/OpenTofu backend analysis | Validated Jan 2026 |
-| [Proxmox VM Automation](./research/proxmox-vm-automation.md) | Proxmox automation approaches | Complete |
-| [BGP UniFi Cilium Integration](./research/bgp-unifi-cilium-integration.md) | BGP peering between UniFi + Cilium | Validated Jan 2026 |
-| [GitOps Examples Integration](./research/gitops-examples-integration.md) | Cloud-native components for Proxmox + Talos | Validated Jan 2026 |
 | [k8s-at-home Patterns](./research/k8s-at-home-patterns-research.md) | Community patterns and practices | Complete |
-| [GitHub Actions Audit](./research/github-actions-audit.md) | Security audit of workflows | Complete |
+
+### Archived (Implemented)
+
+Research documents that have been fully implemented and archived:
+
+| Document | Description | Status |
+| -------- | ----------- | ------ |
+| [External-DNS UniFi Integration](./research/archive/implemented/external-dns-unifi-integration.md) | UniFi webhook for internal DNS | Implemented |
+| [Cloudflare R2 Terraform State](./research/archive/implemented/cloudflare-r2-terraform-state.md) | R2 as OpenTofu backend | Implemented |
+| [Proxmox VM Automation](./research/archive/implemented/proxmox-vm-automation.md) | Proxmox automation via OpenTofu | Implemented |
+| [BGP UniFi Cilium Integration](./research/archive/implemented/bgp-unifi-cilium-integration.md) | BGP peering between UniFi + Cilium | Implemented |
+| [GitOps Examples Integration](./research/archive/implemented/gitops-examples-integration.md) | Cloud-native components for Proxmox + Talos | Implemented |
+
+### Archived (Reference Only)
+
+| Document | Description | Status |
+| -------- | ----------- | ------ |
+| [GitHub Actions Audit](./research/archive/github-actions-audit.md) | Security audit of workflows | Complete |
+| [Crossplane Proxmox Automation](./research/archive/crossplane-proxmox-automation.md) | Crossplane approach (not adopted) | Reference |
+| [Ansible Proxmox Automation](./research/archive/ansible-proxmox-automation.md) | Ansible approach (not adopted) | Reference |

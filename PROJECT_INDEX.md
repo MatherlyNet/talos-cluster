@@ -126,10 +126,12 @@ matherlynet-talos-cluster/
 | `csi-proxmox` | proxmox-csi | Persistent storage on Proxmox (optional) |
 | `system-upgrade` | tuppr | Automated Talos/K8s upgrades |
 | `monitoring` | victoria-metrics | Metrics + Grafana + AlertManager + PrometheusRule alerts (optional) |
+| `monitoring` | kube-prometheus-stack | Prometheus-based metrics (alternative to VictoriaMetrics, optional) |
 | `monitoring` | loki | Log aggregation (optional) |
 | `monitoring` | alloy | Unified telemetry collector (optional) |
 | `monitoring` | tempo | Distributed tracing (optional) |
 | `kube-system` | hubble | Network observability via Cilium (optional) |
+| `external-secrets` | external-secrets | External secret management - 1Password/Bitwarden/Vault (optional) |
 
 ## Tool Dependencies
 
