@@ -11,4 +11,12 @@ nodes:
   #   secureboot: false   # (ADVANCED/OPTIONAL) SecureBoot mode on UEFI platforms. Ref: https://www.talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot
   #   encrypt_disk: false # (ADVANCED/OPTIONAL) TPM-based disk encryption. Ref: https://www.talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot
   #   kernel_modules: []  # (ADVANCED/OPTIONAL) Only applicable if the `schematic_id` you've provided contains system extensions that require kernel modules to correctly load - Example: ["nvidia", "nvidia_uvm", "nvidia_drm", "nvidia_modeset", "zfs"]
+  #
+  # VM-specific settings (only used when provisioning via OpenTofu)
+  #   vm_cores: 4         # (VM/OPTIONAL) CPU cores. Overrides proxmox_vm_defaults.cores
+  #   vm_sockets: 1       # (VM/OPTIONAL) CPU sockets. Overrides proxmox_vm_defaults.sockets
+  #   vm_memory: 8192     # (VM/OPTIONAL) Memory in MB. Overrides proxmox_vm_defaults.memory
+  #   vm_disk_size: 128   # (VM/OPTIONAL) Disk size in GB. Overrides proxmox_vm_defaults.disk_size
+  #   vm_startup_order: 4 # (VM/OPTIONAL) Boot order (lower = earlier)
+  #   vm_startup_delay: 15 # (VM/OPTIONAL) Seconds to wait before starting next VM
   # ...

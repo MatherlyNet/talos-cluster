@@ -6,9 +6,13 @@ This file provides guidance to Claude Code when working with this repository.
 
 GitOps-driven Kubernetes cluster template on Talos Linux with Flux CD. All cluster state is declarative YAML generated from Jinja2 templates and reconciled via GitOps.
 
-**Stack:** Talos Linux v1.12.0, Kubernetes v1.35.0, Flux CD, Cilium CNI (kube-proxy replacement), Gateway API + Envoy, SOPS/Age encryption, Cloudflare (DNS + Tunnel), makejinja templating
+**Stack:** Talos Linux v1.12.0, Kubernetes v1.35.0, Flux CD, Cilium CNI (kube-proxy replacement, BGP Control Plane v2 optional), Gateway API + Envoy, SOPS/Age encryption, Cloudflare (DNS + Tunnel), UniFi DNS (optional internal), makejinja templating, OpenTofu v1.11+ (IaC)
 
 **Upstream:** Based on [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template)
+
+**Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
+
+**Control Plane:** Does NOT run workloads by default (`allowSchedulingOnControlPlanes: false`); dedicated workers recommended
 
 ## Quick Context Loading
 
@@ -50,7 +54,6 @@ task infra:plan              # Create execution plan
 task infra:apply             # Apply saved plan
 task infra:apply-auto        # Apply with auto-approve
 task infra:destroy           # Destroy managed resources
-task infra:secrets-create    # Create secrets from template
 task infra:secrets-edit      # Edit encrypted secrets
 task infra:validate          # Validate configuration
 task infra:fmt               # Format configuration
@@ -79,14 +82,15 @@ cilium status
 - `templates/config/kubernetes/apps/<namespace>/<app>/` - Jinja2 templates for K8s manifests
 - `templates/config/talos/` - Talos configuration templates
 - `templates/config/bootstrap/` - Bootstrap resource templates
+- `templates/config/infrastructure/` - OpenTofu/IaC templates
 - `kubernetes/` - GENERATED K8s manifests (after `task configure`)
 - `talos/` - GENERATED Talos configs (after `task configure`)
-- `infrastructure/` - OpenTofu IaC (R2 state backend, future Proxmox automation)
+- `infrastructure/` - GENERATED OpenTofu configs (after `task configure`)
 - `docs/` - Comprehensive documentation
 
 ### Template Flow
 ```
-cluster.yaml + nodes.yaml → makejinja → kubernetes/ + talos/ + bootstrap/
+cluster.yaml + nodes.yaml → makejinja → kubernetes/ + talos/ + bootstrap/ + infrastructure/
                                             ↓
                               task bootstrap:talos → Nodes ready
                                             ↓
@@ -145,7 +149,7 @@ templates/config/kubernetes/apps/<namespace>/<app>/
 
 ### Configuration
 - Edit `cluster.yaml` and `nodes.yaml` for cluster settings
-- NEVER edit files in `kubernetes/`, `talos/`, or `bootstrap/` directly - they are generated
+- NEVER edit files in `kubernetes/`, `talos/`, `bootstrap/`, or `infrastructure/` directly - they are generated
 - After changes: `task configure` to regenerate
 
 ### Kubernetes/GitOps
@@ -158,6 +162,15 @@ Required variables in `cluster.yaml`:
 - `node_cidr`, `cluster_api_addr`, `cluster_gateway_addr`
 - `cloudflare_domain`, `cloudflare_token`, `cloudflare_gateway_addr`
 - `repository_name`
+
+Optional UniFi DNS (replaces k8s_gateway):
+- `unifi_host`, `unifi_api_key` (requires UniFi Network v9.0.0+)
+- See `docs/research/external-dns-unifi-integration.md` for setup guide
+
+Optional Cilium BGP Control Plane v2 (for multi-VLAN routing):
+- `cilium_bgp_router_addr`, `cilium_bgp_router_asn`, `cilium_bgp_node_asn` (all three required)
+- Optional: `cilium_lb_pool_cidr`, `cilium_bgp_hold_time`, `cilium_bgp_keepalive_time`, `cilium_bgp_graceful_restart`
+- See `docs/guides/bgp-unifi-cilium-implementation.md` for setup guide
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -201,6 +214,7 @@ Deep context in `docs/ai-context/`:
 | Flux not syncing | `flux get ks -A`, `task reconcile` |
 | Node not ready | `talosctl health -n <ip>` |
 | CNI issues | `cilium status`, `cilium connectivity test` |
+| BGP issues | `cilium bgp peers`, `kubectl get ciliumbgpclusterconfig -A` |
 | Certificate issues | `kubectl get certificates -A` |
 | OpenTofu state lock | `task infra:force-unlock LOCK_ID=xxx` |
 | OpenTofu auth issues | `task infra:secrets-edit` (check credentials) |

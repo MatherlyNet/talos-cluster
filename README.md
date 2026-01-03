@@ -11,8 +11,9 @@ A GitOps-driven Kubernetes cluster on Talos Linux, forked from [onedr0p/cluster-
 - **[SOPS/Age](https://github.com/getsops/sops)** - Secret encryption at rest
 - **[Cloudflare](https://www.cloudflare.com/)** - DNS, tunnels, and external access
 - **[OpenTofu](https://opentofu.org/)** - Infrastructure as Code (optional)
+- **[UniFi DNS](https://github.com/kashalls/external-dns-unifi-webhook)** - Native UniFi DNS integration (optional)
 
-**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared
+**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns)
 
 **Other features:**
 - Dev environment managed with [mise](https://mise.jdx.dev/)
@@ -81,24 +82,68 @@ For a **stable** and **high-availability** production Kubernetes cluster, hardwa
    nmap -Pn -n -p 50000 192.168.1.0/24 -vv | grep 'Discovered'
    ```
 
-### Option B: VM Deployment (Proxmox)
+### Option B: VM Deployment (Proxmox via OpenTofu)
 
-If using OpenTofu for VM provisioning (see [Stage 5](#stage-5-infrastructure-optional)):
+If using OpenTofu for automated VM provisioning, configuration follows the same templating pattern as the rest of the project.
 
-1. **Prepare Talos Template**: Upload Talos image to Proxmox and create a VM template with your required extensions.
+1. **Configure Infrastructure Settings** in `cluster.yaml`:
+   ```yaml
+   # -- Proxmox API endpoint
+   #    (REQUIRED for VM deployment)
+   proxmox_api_url: "https://pve.example.com:8006/api2/json"
 
-2. **Configure Infrastructure**: Define VMs in `infrastructure/tofu/main.tf` with CPU, memory, disk, and network settings.
+   # -- Proxmox node name to create VMs on
+   #    (REQUIRED for VM deployment)
+   proxmox_node: "pve"
 
-3. **Provision VMs**: OpenTofu will create and boot VMs automatically:
-   ```sh
-   task infra:plan
-   task infra:apply
+   # -- Default VM resources (can be overridden per-node)
+   proxmox_vm_defaults:
+     cores: 4
+     memory: 8192      # MB
+     disk_size: 128    # GB
    ```
 
-4. **Verify Network Access**:
+2. **Configure Node VM Specs** in `nodes.yaml`:
+   ```yaml
+   nodes:
+     - name: cp-1
+       address: 192.168.1.10
+       controller: true
+       schematic_id: "your-schematic-id"
+       mac_addr: "BC:24:11:xx:xx:xx"
+       disk: /dev/sda
+       # VM-specific overrides (optional)
+       vm_cores: 4
+       vm_memory: 8192
+       vm_disk_size: 128
+   ```
+
+   > **Note:** The `schematic_id`, `address`, and `mac_addr` from `nodes.yaml` are used by both Talos configuration AND OpenTofu VM provisioning.
+
+3. **Render Templates** (generates infrastructure alongside kubernetes/talos):
+   ```sh
+   task configure
+   ```
+
+4. **Provision Infrastructure**:
+   ```sh
+   task infra:plan    # Review what will be created
+   task infra:apply   # Provision VMs
+   ```
+
+   This automatically:
+   - Downloads Talos ISO from Image Factory using your schematic ID
+   - Uploads ISO to Proxmox storage
+   - Creates VMs with specified resources
+   - Attaches ISO and configures boot order
+   - Boots VMs into Talos maintenance mode
+
+5. **Verify Network Access**:
    ```sh
    nmap -Pn -n -p 50000 192.168.1.0/24 -vv | grep 'Discovered'
    ```
+
+> **Note:** Continue to [Stage 5](#stage-5-infrastructure-optional) for R2 backend setup (one-time), then [Stage 6](#stage-6-cluster-configuration) for cluster configuration.
 
 ---
 
@@ -137,7 +182,9 @@ If using OpenTofu for VM provisioning (see [Stage 5](#stage-5-infrastructure-opt
    - Go to Cloudflare Dashboard > API Tokens
    - Use "Edit zone DNS" template
    - Name it `kubernetes`
-   - Add permissions: `Zone - DNS - Edit`, `Account - Cloudflare Tunnel - Read`
+   - Add permissions:
+     - `Zone - DNS - Edit`
+     - `Account - Cloudflare Tunnel - Read`
    - Save the token securely
 
 2. **Create Cloudflare Tunnel**:
@@ -198,30 +245,39 @@ Complete these in Cloudflare before proceeding:
 
 ### Setup
 
-1. **Create Secrets File**:
+1. **Initialize Config Files** (if not done already):
    ```sh
-   task infra:secrets-create
+   task init
    ```
 
-2. **Configure Credentials**:
+2. **Edit Configuration**:
+   - `cluster.yaml` - Add `proxmox_api_url` and `proxmox_node` to enable infrastructure
+   - `nodes.yaml` - Add VM specs per node (`vm_cores`, `vm_memory`, etc.)
+
+3. **Render Templates** (generates infrastructure configs):
+   ```sh
+   task configure
+   ```
+
+4. **Configure Credentials**:
    ```sh
    task infra:secrets-edit
    ```
    Update `tfstate_username` and `tfstate_password` to match your worker secrets.
 
-3. **Initialize Backend**:
+5. **Initialize Backend**:
    ```sh
    task infra:init
    ```
 
-4. **Verify Connection**:
+6. **Verify Connection**:
    ```sh
    task infra:plan
    ```
 
 ### Backend Configuration
 
-The HTTP backend is pre-configured in `infrastructure/tofu/backend.tf`:
+The HTTP backend is configured via template and generated to `infrastructure/tofu/backend.tf`:
 
 ```hcl
 terraform {
@@ -250,7 +306,7 @@ terraform {
 | `task infra:state-list` | List managed resources |
 | `task infra:secrets-edit` | Edit encrypted secrets |
 
-> **See also:** [infrastructure/README.md](./infrastructure/README.md) for detailed documentation.
+> **See also:** [templates/config/infrastructure/README.md](./templates/config/infrastructure/README.md) for detailed documentation.
 
 ---
 
@@ -258,7 +314,7 @@ terraform {
 
 ### Steps
 
-1. **Initialize Config Files**:
+1. **Initialize Config Files** (skip if done in Stage 5):
    ```sh
    task init
    ```
@@ -276,7 +332,7 @@ terraform {
 4. **Verify Encryption**:
    ```sh
    # All *.sops.* files should be encrypted
-   find kubernetes talos bootstrap -name "*.sops.*" -exec sops filestatus {} \;
+   find kubernetes talos bootstrap infrastructure -name "*.sops.*" -exec sops filestatus {} \;
    ```
 
 5. **Commit and Push**:
@@ -401,8 +457,9 @@ task talos:upgrade-k8s
 ### Infrastructure Changes
 
 ```sh
-# Edit OpenTofu configuration
-vim infrastructure/tofu/main.tf
+# Edit OpenTofu templates, then regenerate
+vim templates/config/infrastructure/tofu/main.tf.j2
+task configure
 
 # Validate and plan
 task infra:validate
@@ -450,7 +507,7 @@ See [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) for comprehensive diagn
 | [OPERATIONS.md](./docs/OPERATIONS.md) | Day-2 operations |
 | [QUICKSTART.md](./docs/QUICKSTART.md) | Step-by-step setup guide |
 | [CLI_REFERENCE.md](./docs/CLI_REFERENCE.md) | Complete command reference |
-| [infrastructure/README.md](./infrastructure/README.md) | OpenTofu setup details |
+| [infrastructure/README.md](./templates/config/infrastructure/README.md) | OpenTofu setup details |
 
 ---
 

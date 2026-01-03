@@ -79,7 +79,7 @@ values:
 Tells Cilium which IPs to announce via ARP:
 
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumL2AnnouncementPolicy
 metadata:
   name: default-policy
@@ -97,7 +97,7 @@ spec:
 Defines available IPs for LoadBalancer services:
 
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: main-pool
@@ -147,35 +147,135 @@ Configuration:
 cilium_loadbalancer_mode: "snat"  # or "dsr"
 ```
 
-## BGP Integration (Optional)
+## BGP Control Plane v2 (Optional)
 
-For advanced routing with upstream routers:
+For multi-VLAN environments requiring cross-subnet LoadBalancer access. When enabled, L2 announcements are disabled in favor of BGP route advertisements.
+
+### When to Use BGP
+
+- Multi-VLAN environment requiring cross-subnet service access
+- Faster failover needed (~9s with tuned timers vs ARP cache timeout)
+- Source IP preservation with `externalTrafficPolicy: Local`
+- UniFi gateway with UniFi OS 4.1.13+ (or UXG-Enterprise 4.1.8+)
+
+### Configuration
 
 ```yaml
-# cluster.yaml
-cilium_bgp_enabled: true  # Auto-detected from keys
-cilium_bgp_router_addr: "192.168.1.1"
-cilium_bgp_router_asn: "64512"
-cilium_bgp_node_asn: "64513"
+# cluster.yaml - Required fields (all must be set)
+cilium_bgp_router_addr: "192.168.1.1"    # Gateway IP on node VLAN
+cilium_bgp_router_asn: "64513"           # Gateway ASN (private: 64512-65534)
+cilium_bgp_node_asn: "64514"             # K8s node ASN (must differ for eBGP)
+
+# cluster.yaml - Optional fields
+cilium_lb_pool_cidr: "172.20.10.0/24"    # Dedicated LB pool (default: node_cidr)
+cilium_bgp_hold_time: 30                 # Hold timer seconds (3-300)
+cilium_bgp_keepalive_time: 10            # Keepalive interval seconds (1-100)
+cilium_bgp_graceful_restart: false       # Enable graceful restart
+cilium_bgp_graceful_restart_time: 120    # Graceful restart timeout (30-600)
 ```
 
-### BGP Peer Config
+### Generated CRDs
+
+When BGP is enabled, these CRDs are generated in `networks.yaml.j2`:
 
 ```yaml
-apiVersion: cilium.io/v2alpha1
-kind: CiliumBGPPeeringPolicy
+# CiliumBGPPeerConfig - Timer and session configuration
+apiVersion: cilium.io/v2
+kind: CiliumBGPPeerConfig
 metadata:
-  name: bgp-peering
+  name: bgp-peer-config-v4
+spec:
+  holdTimeSeconds: 30
+  keepAliveTimeSeconds: 10
+  gracefulRestart:           # Only if enabled
+    enabled: true
+    restartTimeSeconds: 120
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          advertise: bgp
+
+# CiliumBGPClusterConfig - Per-node BGP instances
+apiVersion: cilium.io/v2
+kind: CiliumBGPClusterConfig
+metadata:
+  name: bgp-cluster-config
 spec:
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
-  virtualRouters:
-    - localASN: 64513
-      neighbors:
-        - peerAddress: 192.168.1.1/32
-          peerASN: 64512
+  bgpInstances:
+    - name: instance-64514
+      localASN: 64514
+      peers:
+        - name: peer-64513-v4
+          peerASN: 64513
+          peerAddress: 192.168.1.1
+          peerConfigRef:
+            name: bgp-peer-config-v4
+
+# CiliumBGPAdvertisement - What to advertise
+apiVersion: cilium.io/v2
+kind: CiliumBGPAdvertisement
+metadata:
+  name: bgp-advertisement-config
+spec:
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
 ```
+
+### UniFi Gateway Configuration
+
+When BGP is enabled, `templates/config/unifi/bgp.conf.j2` generates FRR configuration for UniFi gateways:
+
+```bash
+# Generated in unifi/bgp.conf after task configure
+# Upload to UniFi: Settings → Routing → BGP → Add Configuration
+router bgp 64513
+  bgp router-id 192.168.1.1
+  no bgp ebgp-requires-policy
+  neighbor TALOS peer-group
+  neighbor TALOS remote-as 64514
+  neighbor TALOS timers 10 30
+  neighbor 192.168.1.10 peer-group TALOS  # Per-node
+  neighbor 192.168.1.11 peer-group TALOS
+```
+
+### BGP Debugging
+
+```bash
+# Check peering status
+cilium bgp peers
+
+# Verify routes advertised
+cilium bgp routes advertised ipv4 unicast
+
+# Check from Cilium agent
+kubectl -n kube-system exec -it ds/cilium -- cilium bgp peers
+
+# Check BGP CRDs
+kubectl get ciliumbgpclusterconfig -A
+kubectl get ciliumbgppeerconfig -A
+kubectl get ciliumbgpadvertisement -A
+
+# Cilium agent logs
+kubectl -n kube-system logs -l k8s-app=cilium | grep -i bgp
+```
+
+### BGP vs L2 Comparison
+
+| Feature | L2 (Default) | BGP |
+| ------- | ------------ | --- |
+| Network scope | Single VLAN | Multi-VLAN |
+| Failover time | ~30s (ARP timeout) | ~9s (with tuned timers) |
+| Router support | Any | BGP-capable (UniFi 4.1.13+) |
+| Configuration | Simple | Requires FRR config |
+| externalTrafficPolicy | Works | Works with Local |
 
 ## Services in This Project
 

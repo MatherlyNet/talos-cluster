@@ -2,8 +2,14 @@
   "metadata": {
     "name": "matherlynet-talos-cluster",
     "type": "kubernetes-gitops",
-    "generated": "2026-01-01",
-    "version": "1.0.0"
+    "generated": "2026-01-02",
+    "version": "1.1.0",
+    "ai_assistant_files": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "PROJECT_INDEX.md",
+      "PROJECT_INDEX.json"
+    ]
   },
   "description": "Talos Linux Kubernetes cluster template with Flux GitOps for home/bare-metal deployments",
   "upstream": "onedr0p/cluster-template",
@@ -12,7 +18,7 @@
     "gitops": "flux-cd",
     "cni": "cilium",
     "ingress": "envoy-gateway",
-    "dns": ["external-dns", "k8s-gateway"],
+    "dns": ["cloudflare-dns", "unifi-dns", "k8s-gateway"],
     "tunnel": "cloudflare",
     "secrets": "sops-age",
     "templating": "makejinja",
@@ -53,16 +59,17 @@
         "contents": ["bootstrap-apps.sh", "lib/common.sh"]
       },
       "templates": {
-        "description": "Jinja2 templates (93 files)",
+        "description": "Jinja2 templates (100 files)",
         "contents": [
           "config/kubernetes/",
           "config/talos/",
           "config/bootstrap/",
+          "config/infrastructure/",
           "overrides/"
         ]
       }
     },
-    "generated_dirs": ["kubernetes/", "talos/", "bootstrap/"]
+    "generated_dirs": ["kubernetes/", "talos/", "bootstrap/", "infrastructure/"]
   },
   "entry_points": {
     "main_taskfile": "Taskfile.yaml",
@@ -156,15 +163,26 @@
     },
     {
       "namespace": "network",
-      "name": "external-dns",
-      "purpose": "DNS automation"
+      "name": "cloudflare-dns",
+      "purpose": "External DNS (Cloudflare)"
+    },
+    {
+      "namespace": "network",
+      "name": "unifi-dns",
+      "purpose": "Internal DNS (UniFi webhook) - optional",
+      "conditional": "unifi_host && unifi_api_key"
     },
     {
       "namespace": "network",
       "name": "cloudflare-tunnel",
       "purpose": "External access"
     },
-    { "namespace": "network", "name": "k8s-gateway", "purpose": "Split DNS" },
+    {
+      "namespace": "network",
+      "name": "k8s-gateway",
+      "purpose": "Split DNS fallback (if no UniFi)",
+      "conditional": "!(unifi_host && unifi_api_key)"
+    },
     { "namespace": "default", "name": "echo", "purpose": "Test application" },
     {
       "namespace": "kube-system",
@@ -212,7 +230,7 @@
       "comment": ["#|", "#|"]
     },
     "data_sources": ["cluster.yaml", "nodes.yaml"],
-    "template_count": 93
+    "template_count": 100
   },
   "bootstrap_sequence": [
     "mise trust && mise install",
@@ -224,5 +242,50 @@
     "git add -A && git commit -m 'Initial config' && git push",
     "task bootstrap:talos",
     "task bootstrap:apps"
-  ]
+  ],
+  "documentation": {
+    "ai_context": {
+      "directory": "docs/ai-context/",
+      "files": [
+        "flux-gitops.md",
+        "talos-operations.md",
+        "cilium-networking.md",
+        "template-system.md",
+        "infrastructure-opentofu.md"
+      ]
+    },
+    "main_docs": {
+      "directory": "docs/",
+      "files": [
+        "ARCHITECTURE.md",
+        "CONFIGURATION.md",
+        "OPERATIONS.md",
+        "TROUBLESHOOTING.md",
+        "CLI_REFERENCE.md",
+        "QUICKSTART.md",
+        "APPLICATIONS.md",
+        "DIAGRAMS.md",
+        "INDEX.md"
+      ]
+    },
+    "guides": {
+      "directory": "docs/guides/",
+      "files": [
+        "bgp-unifi-cilium-implementation.md",
+        "opentofu-r2-state-backend.md"
+      ]
+    },
+    "research": {
+      "directory": "docs/research/",
+      "count": 11,
+      "topics": [
+        "envoy-gateway",
+        "external-dns-unifi",
+        "cloudflare-r2-terraform",
+        "proxmox-automation",
+        "k8s-at-home-patterns",
+        "github-actions-audit"
+      ]
+    }
+  }
 }

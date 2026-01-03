@@ -97,7 +97,7 @@ tasks:
           fi
     vars:
       SECRET_FILES:
-        sh: find "{{.BOOTSTRAP_DIR}}" "{{.KUBERNETES_DIR}}" "{{.TALOS_DIR}}" -type f -name "*.sops.*" -print
+        sh: find "{{.BOOTSTRAP_DIR}}" "{{.INFRASTRUCTURE_DIR}}" "{{.KUBERNETES_DIR}}" "{{.TALOS_DIR}}" -type f -name "*.sops.*" -print
     preconditions:
       - test -f {{.SOPS_AGE_KEY_FILE}}
       - test -f {{.ROOT_DIR}}/.sops.yaml
@@ -175,6 +175,7 @@ tasks:
     prompt: Remove all templated files and directories... continue?
     cmds:
       - rm -rf {{.BOOTSTRAP_DIR}}
+      - rm -rf {{.INFRASTRUCTURE_DIR}}
       - rm -rf {{.KUBERNETES_DIR}}
       - rm -rf {{.TALOS_DIR}}
       - rm -rf {{.ROOT_DIR}}/.sops.yaml

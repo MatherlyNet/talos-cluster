@@ -177,13 +177,21 @@ Created bucket 'matherlynet-tfstate'.
 >   - `cluster.yaml` → K8s secrets via templating → SOPS-encrypted manifests
 >   - `infrastructure/secrets.sops.yaml` → Task commands at runtime
 
+The infrastructure secrets file is **auto-generated** from a template during `task configure`, following the same pattern as other project secrets.
+
+**Template:** `templates/config/infrastructure/secrets.sops.yaml.j2`
+**Generated:** `infrastructure/secrets.sops.yaml`
+
 **Prerequisites:**
-1. Ensure you have run `task configure` at least once (generates `.sops.yaml`)
-2. Ensure `age.key` exists in the project root
+1. Ensure `age.key` exists (created by `task init`)
+2. Ensure you have run `task configure` (generates and encrypts secrets)
 
 ```bash
-# Create the secrets file from template (includes helpful comments)
-task infra:secrets-create
+# Initialize config files if not done (creates age.key, cluster.yaml, nodes.yaml)
+task init
+
+# Generate config files including infrastructure secrets
+task configure
 
 # Edit to add your actual credentials
 task infra:secrets-edit
@@ -202,9 +210,15 @@ cf_account_id: "your-cloudflare-account-id"
 # tfstate-worker authentication (REQUIRED)
 tfstate_username: "terraform"
 tfstate_password: "your-strong-random-password"  # Generate with: openssl rand -base64 32
+
+# Proxmox credentials (if infrastructure_enabled in cluster.yaml)
+proxmox_api_token_id: "root@pam!terraform"
+proxmox_api_token_secret: "your-api-token-secret"
 ```
 
 > **Tip:** Generate a secure password: `openssl rand -base64 32`
+>
+> **Note:** Proxmox credentials are conditionally included in the template based on `infrastructure_enabled` (when `proxmox_api_url` and `proxmox_node` are set in `cluster.yaml`).
 
 ---
 
@@ -289,10 +303,10 @@ For production, use a custom domain instead of `workers.dev`:
 
 ### Step 3.1: Create Backend Configuration
 
-Create `infrastructure/tofu/backend.tf`:
+The backend is defined in `templates/config/infrastructure/tofu/backend.tf.j2` and generated to `infrastructure/tofu/backend.tf` by `task configure`:
 
 ```hcl
-# infrastructure/tofu/backend.tf
+# Generated: infrastructure/tofu/backend.tf
 terraform {
   backend "http" {
     # State endpoint

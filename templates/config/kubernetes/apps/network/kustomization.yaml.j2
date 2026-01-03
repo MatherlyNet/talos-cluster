@@ -11,4 +11,9 @@ resources:
   - ./cloudflare-dns/ks.yaml
   - ./cloudflare-tunnel/ks.yaml
   - ./envoy-gateway/ks.yaml
+  #% if unifi_host is defined and unifi_api_key is defined %#
+  - ./unifi-dns/ks.yaml
+  #% endif %#
+  #% if not (unifi_host is defined and unifi_api_key is defined) %#
   - ./k8s-gateway/ks.yaml
+  #% endif %#

@@ -70,14 +70,120 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "dsr") / (NOTE: accepted values are 'dsr' or 'snat') / (REF: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
 # cilium_loadbalancer_mode: ""
 
-# -- The IP address of the BGP router, to keep things simple, node network will be used for BGP peering.
-# (OPTIONAL) / (e.g. "192.168.1.1") / (REF: https://docs.cilium.io/en/latest/network/bgp-control-plane/bgp-control-plane/)
+# =============================================================================
+# CILIUM BGP CONFIGURATION - Optional for multi-VLAN environments
+# =============================================================================
+# Enable BGP peering between Cilium and your router for dynamic routing.
+# This allows LoadBalancer IPs to be advertised via BGP instead of L2/ARP.
+#
+# When to use BGP:
+# - Multi-VLAN environment requiring cross-subnet service access
+# - Faster failover needed (~9s with tuned timers vs ARP cache timeout)
+# - Source IP preservation with externalTrafficPolicy: Local
+#
+# Requirements:
+# - UniFi gateway with UniFi OS 4.1.13+ (or UXG-Enterprise 4.1.8+)
+# - FRR config uploaded to gateway (generated in unifi/bgp.conf after configure)
+#
+# REF: https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-v2/
+# REF: docs/guides/bgp-unifi-cilium-implementation.md
+
+# -- The IP address of the BGP router (your gateway on the node network)
+#    (OPTIONAL) / (e.g. "192.168.1.1" or VLAN gateway like "192.168.23.254")
+#    NOTE: Use the gateway IP on the same VLAN as your nodes, not the management IP
 # cilium_bgp_router_addr: ""
 
-# -- The BGP router ASN
-# (OPTIONAL) / (e.g. "64513")
+# -- The BGP ASN for your router (use private range 64512-65534)
+#    (OPTIONAL) / (e.g. "64513")
 # cilium_bgp_router_asn: ""
 
-# -- The BGP node ASN
-# (OPTIONAL) / (e.g. "64514")
+# -- The BGP ASN for Kubernetes nodes (must differ from router ASN for eBGP)
+#    (OPTIONAL) / (e.g. "64514")
 # cilium_bgp_node_asn: ""
+
+# -- Dedicated CIDR for LoadBalancer IPs (separate from node_cidr)
+#    (OPTIONAL) / (e.g. "172.20.10.0/24")
+#    NOTE: If set, update UniFi prefix-list to match this CIDR
+# cilium_lb_pool_cidr: ""
+
+# -- BGP Hold Time in seconds (failure detection = 3x keepalive or hold timeout)
+#    (OPTIONAL) / (DEFAULT: 30) / (Minimum: 3)
+#    NOTE: Lower values = faster failure detection, but more BGP traffic
+# cilium_bgp_hold_time: 30
+
+# -- BGP Keepalive Time in seconds (sent every N seconds to peer)
+#    (OPTIONAL) / (DEFAULT: 10) / (Minimum: 1)
+# cilium_bgp_keepalive_time: 10
+
+# -- Enable BGP Graceful Restart for smoother failover during Cilium restarts
+#    (OPTIONAL) / (DEFAULT: false)
+#    NOTE: Requires UniFi FRR config to also enable graceful-restart
+# cilium_bgp_graceful_restart: false
+
+# -- Graceful Restart timeout in seconds
+#    (OPTIONAL) / (DEFAULT: 120)
+# cilium_bgp_graceful_restart_time: 120
+
+# =============================================================================
+# UNIFI DNS INTEGRATION - Optional for internal DNS via external-dns webhook
+# =============================================================================
+# When configured, replaces k8s_gateway with native UniFi DNS record management.
+# Requires UniFi Network v9.0.0+ for API key authentication (current stable: 9.5.21)
+
+# -- The UniFi controller host URL
+#    (OPTIONAL) / (e.g. "https://192.168.1.1")
+# unifi_host: ""
+
+# -- The UniFi API key for DNS management
+#    (OPTIONAL) / (Created in UniFi Admin → Control Plane → Integrations)
+# unifi_api_key: ""
+
+# -- The UniFi site identifier
+#    (OPTIONAL) / (DEFAULT: "default")
+# unifi_site: ""
+
+# -- Whether using non-UDM hardware (Cloud Key, self-hosted controller)
+#    (OPTIONAL) / (DEFAULT: false)
+# unifi_external_controller: false
+
+# =============================================================================
+# INFRASTRUCTURE (OpenTofu/Proxmox) - Optional for VM deployments
+# =============================================================================
+
+# -- Proxmox API endpoint
+#    (OPTIONAL) / (e.g. "https://pve.example.com:8006/api2/json")
+#    Required only for automated VM provisioning via OpenTofu
+# proxmox_api_url: ""
+
+# -- Proxmox node name to create VMs on
+#    (OPTIONAL) / (e.g. "pve")
+# proxmox_node: ""
+
+# -- Proxmox storage for ISO images
+#    (OPTIONAL) / (DEFAULT: "local")
+# proxmox_iso_storage: ""
+
+# -- Proxmox storage for VM disks
+#    (OPTIONAL) / (DEFAULT: "local-lvm")
+# proxmox_disk_storage: ""
+
+# -- Default VM resources (can be overridden per-node in nodes.yaml)
+# proxmox_vm_defaults:
+#   cores: 4           # CPU cores
+#   sockets: 1         # CPU sockets
+#   memory: 8192       # Memory in MB
+#   disk_size: 128     # Disk size in GB
+#
+# -- Advanced VM settings (Talos-optimized defaults)
+# proxmox_vm_advanced:
+#   bios: "ovmf"              # UEFI boot (required for Talos)
+#   machine: "q35"            # Modern chipset
+#   cpu_type: "host"          # CPU type (host = passthrough)
+#   scsi_hw: "virtio-scsi-pci"# SCSI controller
+#   balloon: 0                # Memory ballooning disabled (K8s)
+#   numa: true                # NUMA enabled
+#   qemu_agent: true          # QEMU guest agent
+#   net_queues: 4             # Multi-queue networking
+#   disk_discard: true        # Enable TRIM/discard
+#   disk_ssd: true            # SSD emulation
+#   tags: ["kubernetes", "linux", "talos"]  # VM tags

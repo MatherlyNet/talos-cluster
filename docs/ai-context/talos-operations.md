@@ -17,8 +17,15 @@ Talos Linux v1.12.0 is an immutable, API-driven Kubernetes OS. There is no SSH, 
 
 ### Node Types
 
-- **Controller**: Runs control plane (etcd, API server, scheduler, controller-manager)
-- **Worker**: Runs workloads only (optional in this project)
+- **Controller**: Runs control plane (etcd, API server, scheduler, controller-manager); does NOT run workloads by default
+- **Worker**: Runs workloads only; recommended for production deployments
+
+### Control Plane Scheduling
+
+Control plane nodes are configured with `allowSchedulingOnControlPlanes: false` by default. This means:
+- Workloads will NOT be scheduled on control plane nodes
+- Dedicated worker nodes are required for running applications
+- Configurable via `templates/config/talos/patches/controller/cluster.yaml.j2`
 
 ## Configuration Generation
 

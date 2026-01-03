@@ -4,6 +4,10 @@
 *.json5 linguist-detectable linguist-language=JSON5
 *.md linguist-detectable linguist-language=MARKDOWN
 *.sh linguist-detectable linguist-language=SHELL
+*.tf linguist-detectable linguist-language=HCL
+*.tf.j2 linguist-detectable linguist-language=HCL
+*.tfvars linguist-detectable linguist-language=HCL
+*.tfvars.j2 linguist-detectable linguist-language=HCL
 *.toml linguist-detectable linguist-language=TOML
 *.yml linguist-detectable linguist-language=YAML
 *.yaml linguist-detectable linguist-language=YAML

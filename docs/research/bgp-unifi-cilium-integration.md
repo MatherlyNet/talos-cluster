@@ -195,7 +195,7 @@ When BGP is enabled, `networks.yaml.j2` generates:
 
 #### CiliumLoadBalancerIPPool
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: pool
@@ -211,7 +211,7 @@ spec:
 
 **Current Template (matches all services):**
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisement-config
@@ -230,7 +230,7 @@ spec:
 
 **Recommended Approach (explicit labels):**
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
   name: loadbalancer-services
@@ -257,7 +257,7 @@ metadata:
 
 #### CiliumBGPPeerConfig
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPPeerConfig
 metadata:
   name: bgp-peer-config-v4
@@ -277,7 +277,7 @@ spec:
 
 #### CiliumBGPClusterConfig
 ```yaml
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPClusterConfig
 metadata:
   name: bgp-cluster-config

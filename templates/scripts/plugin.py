@@ -120,6 +120,36 @@ def talos_patches(value: str) -> list[str]:
     return [str(f) for f in sorted(path.glob("*.yaml.j2")) if f.is_file()]
 
 
+# Check if infrastructure provisioning is enabled (Proxmox)
+def infrastructure_enabled(data: dict[str, Any]) -> bool:
+    """Check if Proxmox infrastructure provisioning is configured."""
+    return bool(data.get("proxmox_api_url") and data.get("proxmox_node"))
+
+
+# Default VM settings for Proxmox (Talos-optimized)
+PROXMOX_VM_DEFAULTS = {
+    "cores": 4,
+    "sockets": 1,
+    "memory": 8192,
+    "disk_size": 128,
+}
+
+# Advanced VM settings for Proxmox (Talos-optimized)
+PROXMOX_VM_ADVANCED = {
+    "bios": "ovmf",
+    "machine": "q35",
+    "cpu_type": "host",
+    "scsi_hw": "virtio-scsi-pci",
+    "balloon": 0,
+    "numa": True,
+    "qemu_agent": True,
+    "net_queues": 4,
+    "disk_discard": True,
+    "disk_ssd": True,
+    "tags": ["kubernetes", "linux", "talos"],
+}
+
+
 class Plugin(makejinja.plugin.Plugin):
     def __init__(self, data: dict[str, Any]):
         self._data = data
@@ -150,6 +180,25 @@ class Plugin(makejinja.plugin.Plugin):
         spegel_enabled = len(data.get("nodes")) > 1
         data.setdefault("spegel_enabled", spegel_enabled)
 
+        # Infrastructure (OpenTofu/Proxmox) defaults
+        # Check if infrastructure provisioning is enabled
+        data["infrastructure_enabled"] = infrastructure_enabled(data)
+
+        if data["infrastructure_enabled"]:
+            # Set Proxmox storage defaults
+            data.setdefault("proxmox_iso_storage", "local")
+            data.setdefault("proxmox_disk_storage", "local-lvm")
+
+            # Merge user-provided vm_defaults with our defaults
+            user_vm_defaults = data.get("proxmox_vm_defaults", {})
+            merged_vm_defaults = {**PROXMOX_VM_DEFAULTS, **user_vm_defaults}
+            data["proxmox_vm_defaults"] = merged_vm_defaults
+
+            # Merge user-provided vm_advanced with our defaults
+            user_vm_advanced = data.get("proxmox_vm_advanced", {})
+            merged_vm_advanced = {**PROXMOX_VM_ADVANCED, **user_vm_advanced}
+            data["proxmox_vm_advanced"] = merged_vm_advanced
+
         return data
 
     def filters(self) -> makejinja.plugin.Filters:
@@ -163,4 +212,5 @@ class Plugin(makejinja.plugin.Plugin):
             github_deploy_key,
             github_push_token,
             talos_patches,
+            infrastructure_enabled,
         ]

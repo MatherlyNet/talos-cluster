@@ -33,9 +33,36 @@ Configuration validated by CUE schema at `.taskfiles/template/resources/cluster.
 | `repository_branch` | string | `main` | Git branch to track |
 | `repository_visibility` | enum | `public` | `public` or `private` |
 | `cilium_loadbalancer_mode` | enum | `dsr` | `dsr` or `snat` |
-| `cilium_bgp_router_addr` | IPv4 | - | BGP router peer address |
-| `cilium_bgp_router_asn` | string | - | BGP router ASN |
-| `cilium_bgp_node_asn` | string | - | BGP node ASN |
+
+### Cilium BGP Configuration (Optional)
+
+When all three required BGP fields are set, BGP Control Plane v2 is enabled and L2 announcements are disabled.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `cilium_bgp_router_addr` | IPv4 | - | BGP router peer address (gateway on node VLAN) |
+| `cilium_bgp_router_asn` | string | - | BGP router ASN (private range: 64512-65534) |
+| `cilium_bgp_node_asn` | string | - | BGP node ASN (must differ from router ASN for eBGP) |
+| `cilium_lb_pool_cidr` | CIDR | - | Dedicated LoadBalancer IP pool (separate from node_cidr) |
+| `cilium_bgp_hold_time` | int | `30` | BGP hold time in seconds (3-300) |
+| `cilium_bgp_keepalive_time` | int | `10` | BGP keepalive interval in seconds (1-100) |
+| `cilium_bgp_graceful_restart` | bool | `false` | Enable BGP graceful restart for smoother failover |
+| `cilium_bgp_graceful_restart_time` | int | `120` | Graceful restart timeout in seconds (30-600) |
+
+**Note:** When BGP is enabled, `templates/config/unifi/bgp.conf.j2` generates FRR configuration for UniFi gateways
+
+### UniFi DNS Integration (Optional)
+
+When configured, replaces k8s-gateway with native UniFi DNS record management. Requires UniFi Network v9.0.0+ for API key authentication.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `unifi_host` | string | - | UniFi controller URL (e.g., `https://192.168.1.1`) |
+| `unifi_api_key` | string | - | API key from UniFi Admin → Control Plane → Integrations |
+| `unifi_site` | string | `default` | UniFi site identifier |
+| `unifi_external_controller` | bool | `false` | Set `true` for Cloud Key/self-hosted controller |
+
+**Note:** When `unifi_host` and `unifi_api_key` are both configured, unifi-dns is deployed and k8s-gateway is disabled.
 
 ### IP Address Constraints
 

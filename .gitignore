@@ -13,6 +13,19 @@
 # Kubernetes
 kubeconfig
 talosconfig
+# OpenTofu/Terraform
+infrastructure/tofu/.terraform/
+infrastructure/tofu/.terraform.lock.hcl
+infrastructure/tofu/tfplan
+infrastructure/tofu/*.tfplan
+infrastructure/tofu/*.tfstate
+infrastructure/tofu/*.tfstate.*
+infrastructure/tofu/crash.log
+infrastructure/tofu/crash.*.log
+infrastructure/tofu/override.tf
+infrastructure/tofu/override.tf.json
+infrastructure/tofu/*_override.tf
+infrastructure/tofu/*_override.tf.json
 # Misc.
 .private/
 .task/
@@ -24,3 +37,4 @@ Thumbs.db
 .serena/
 # IDE
 local_docs/
+templates/scripts/__pycache__/

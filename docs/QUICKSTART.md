@@ -235,9 +235,13 @@ flux get ks -A
 
 ---
 
-## Step 8: Configure Home DNS (Optional)
+## Step 8: Configure Internal DNS (Optional)
 
-For internal access to services, configure your home router/DNS:
+For internal access to services, you have two options:
+
+### Option A: k8s-gateway (Default)
+
+Configure your home router/DNS to forward queries to k8s-gateway:
 
 **Forward these domains to `cluster_dns_gateway_addr`:**
 ```
@@ -249,6 +253,29 @@ For internal access to services, configure your home router/DNS:
 # Custom DNS rules
 your-domain.com 192.168.1.102
 ```
+
+### Option B: UniFi DNS Integration
+
+If you have a UniFi controller (v9.0.0+), configure native DNS record management:
+
+1. **Add to cluster.yaml:**
+   ```yaml
+   # UniFi DNS Integration (replaces k8s-gateway)
+   unifi_host: "https://192.168.1.1"      # Controller URL
+   unifi_api_key: "your-api-key"          # Admin → Control Plane → Integrations
+   # unifi_site: "default"                # Optional: site identifier
+   # unifi_external_controller: false     # Set true for Cloud Key
+   ```
+
+2. **Re-render and push:**
+   ```bash
+   task configure
+   git add -A && git commit -m "Enable UniFi DNS" && git push
+   ```
+
+DNS records are automatically created in UniFi Dashboard → Settings → DNS Records.
+
+> **Note:** When UniFi is configured, k8s-gateway is disabled and unifi-dns takes over internal DNS management.
 
 ---
 

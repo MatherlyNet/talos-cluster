@@ -6,6 +6,7 @@
 
 | Document | Description | When to Read |
 | -------- | ----------- | ------------ |
+| [AGENTS.md](../AGENTS.md) | **AI assistant instructions (Windsurf/GitHub Copilot)** | **Every session start** |
 | [PROJECT_INDEX.md](../PROJECT_INDEX.md) | Token-efficient project summary | Every session start |
 | [QUICKSTART.md](./QUICKSTART.md) | Step-by-step setup guide | First-time setup |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and component layers | Understanding the system |
@@ -22,9 +23,22 @@
 
 ### Getting Started
 
-1. Read [PROJECT_INDEX.md](../PROJECT_INDEX.md) for overview
-2. Review [CONFIGURATION.md](./CONFIGURATION.md) for setup
-3. Follow [README.md](../README.md) step-by-step guide
+1. Read [AGENTS.md](../AGENTS.md) for AI assistant context (if using Windsurf/GitHub Copilot)
+2. Read [PROJECT_INDEX.md](../PROJECT_INDEX.md) for overview
+3. Review [CONFIGURATION.md](./CONFIGURATION.md) for setup
+4. Follow [README.md](../README.md) step-by-step guide
+
+### AI Context Documentation
+
+For AI assistants working on specific subsystems, see `ai-context/` directory:
+
+| Document | Domain | Use When |
+| -------- | ------ | -------- |
+| [flux-gitops.md](./ai-context/flux-gitops.md) | Flux CD | Adding apps, troubleshooting sync issues |
+| [talos-operations.md](./ai-context/talos-operations.md) | Talos Linux | Node operations, upgrades, configuration |
+| [cilium-networking.md](./ai-context/cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer, BGP |
+| [template-system.md](./ai-context/template-system.md) | makejinja | Template syntax, variables, new templates |
+| [infrastructure-opentofu.md](./ai-context/infrastructure-opentofu.md) | OpenTofu | IaC operations, R2 backend, Proxmox |
 
 ### Understanding the System
 
@@ -62,7 +76,8 @@
 | Flux | [APPLICATIONS.md](./APPLICATIONS.md#flux-instance) | flux-system |
 | cert-manager | [APPLICATIONS.md](./APPLICATIONS.md#cert-manager) | cert-manager |
 | Envoy Gateway | [APPLICATIONS.md](./APPLICATIONS.md#envoy-gateway) | network |
-| external-dns | [APPLICATIONS.md](./APPLICATIONS.md#external-dns) | network |
+| cloudflare-dns | [APPLICATIONS.md](./APPLICATIONS.md#cloudflare-dns) | network |
+| unifi-dns | [APPLICATIONS.md](./APPLICATIONS.md#unifi-dns) | network (optional) |
 | k8s-gateway | [APPLICATIONS.md](./APPLICATIONS.md#k8s-gateway) | network |
 | Cloudflare Tunnel | [APPLICATIONS.md](./APPLICATIONS.md#cloudflare-tunnel) | network |
 
@@ -114,8 +129,17 @@
 
 | Variable | Used In | Docs |
 | ---------- | --------- | ------ |
-| `cloudflare_domain` | cert-manager, external-dns, tunnel | [CONFIGURATION.md](./CONFIGURATION.md#required-fields) |
-| `cloudflare_token` | cert-manager, external-dns | [CONFIGURATION.md](./CONFIGURATION.md#required-fields) |
+| `cloudflare_domain` | cert-manager, cloudflare-dns, tunnel | [CONFIGURATION.md](./CONFIGURATION.md#required-fields) |
+| `cloudflare_token` | cert-manager, cloudflare-dns | [CONFIGURATION.md](./CONFIGURATION.md#required-fields) |
+
+### UniFi Variables (Optional)
+
+| Variable | Used In | Docs |
+| ---------- | --------- | ------ |
+| `unifi_host` | unifi-dns | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
+| `unifi_api_key` | unifi-dns | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
+| `unifi_site` | unifi-dns | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
+| `unifi_external_controller` | unifi-dns | [CONFIGURATION.md](./CONFIGURATION.md#optional-fields) |
 
 ### Repository Variables
 
@@ -202,5 +226,10 @@
 
 | Document | Description | Status |
 | -------- | ----------- | ------ |
+| [Envoy Gateway Examples Analysis](./research/envoy-gateway-examples-analysis.md) | Examples analysis, v0.0.0-latest adoption for K8s 1.35 | Validated Jan 2026 |
+| [Envoy Gateway OIDC Integration](./research/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Complete |
+| [External-DNS UniFi Integration](./research/external-dns-unifi-integration.md) | UniFi webhook for internal DNS (k8s_gateway replacement) | Validated Jan 2026 |
 | [Cloudflare R2 Terraform State](./research/cloudflare-r2-terraform-state.md) | R2 as Terraform/OpenTofu backend analysis | Validated Jan 2026 |
 | [Proxmox VM Automation](./research/proxmox-vm-automation.md) | Proxmox automation approaches | Complete |
+| [k8s-at-home Patterns](./research/k8s-at-home-patterns-research.md) | Community patterns and practices | Complete |
+| [GitHub Actions Audit](./research/github-actions-audit.md) | Security audit of workflows | Complete |

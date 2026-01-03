@@ -813,7 +813,7 @@ volsync_restic_password: "ENC[AES256_GCM,...]"  # SOPS encrypted
 | ------ | ------ | ----- |
 | Repository analysis | **Validated** | All cited repos verified accessible |
 | Technology patterns | **Validated** | Patterns match community consensus |
-| Chart versions | **Updated** | kube-prometheus-stack 80.9.2, Loki 6.49.0, VolSync 0.14.0 |
+| Chart versions | **Updated** | kube-prometheus-stack 80.10.0, Loki 6.49.0, VolSync 0.14.0 |
 | Template patterns | **Validated** | Examples use correct Jinja2 delimiters |
 | Directory structure | **Validated** | Follows project conventions |
 
@@ -838,7 +838,7 @@ volsync_restic_password: "ENC[AES256_GCM,...]"  # SOPS encrypted
 
 | Component | Version | Source |
 | --------- | ------- | ------ |
-| kube-prometheus-stack | **80.9.2** | [Artifact Hub](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack) |
+| kube-prometheus-stack | **80.10.0** | [Artifact Hub](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack) |
 | Grafana Loki | **6.49.0** | [Artifact Hub](https://artifacthub.io/packages/helm/grafana/loki) |
 | VolSync | **0.14.0** | [Artifact Hub](https://artifacthub.io/packages/helm/backube-helm-charts/volsync) |
 | bjw-s app-template | **3.7.3** | [bjw-s Helm Charts](https://bjw-s-labs.github.io/helm-charts/docs/app-template/) |

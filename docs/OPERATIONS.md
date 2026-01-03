@@ -270,11 +270,24 @@ kubectl -n kube-system logs deploy/coredns
 kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
 ```
 
-**External DNS (k8s-gateway)**
+**Split DNS (k8s-gateway) - Default**
 ```bash
 kubectl -n network logs deploy/k8s-gateway
 # Test from outside cluster:
 dig @<cluster_dns_gateway_addr> echo.<cloudflare_domain>
+```
+
+**Split DNS (unifi-dns) - When UniFi configured**
+```bash
+kubectl -n network logs deploy/unifi-dns-external-dns
+# Check UniFi controller for DNS records
+# Records are written directly to UniFi Dashboard → Settings → DNS Records
+```
+
+**External DNS (cloudflare-dns)**
+```bash
+kubectl -n network logs deploy/cloudflare-dns-external-dns
+# Verify Cloudflare DNS records via dashboard or API
 ```
 
 ---

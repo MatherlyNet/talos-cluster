@@ -40,8 +40,8 @@
         │  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐  │
         │  │                                          Infrastructure Layer                                           │  │
         │  │    ┌───────────┐  ┌───────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────────────┐  │  │
-        │  │    │  Cilium   │  │  CoreDNS  │  │   Spegel   │  │  Reloader  │  │ k8s-gateway│  │   cert-manager     │  │  │
-        │  │    │   (CNI)   │  │   (DNS)   │  │  (images)  │  │ (reload)   │  │ (split DNS)│  │   (TLS certs)      │  │  │
+        │  │    │  Cilium   │  │  CoreDNS  │  │   Spegel   │  │  Reloader  │  │ split DNS  │  │   cert-manager     │  │  │
+        │  │    │   (CNI)   │  │   (DNS)   │  │  (images)  │  │ (reload)   │  │(k8s-gw/unifi)│  │   (TLS certs)      │  │  │
         │  │    └───────────┘  └───────────┘  └────────────┘  └────────────┘  └────────────┘  └────────────────────┘  │  │
         │  └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │
         │                                                                                                               │
@@ -100,7 +100,7 @@ Cilium provides advanced networking with eBPF:
 **Key IPs:**
 - `cluster_gateway_addr` → envoy-internal LB
 - `cloudflare_gateway_addr` → envoy-external LB
-- `cluster_dns_gateway_addr` → k8s-gateway LB
+- `cluster_dns_gateway_addr` → k8s-gateway or unifi-dns LB
 
 ### Layer 3: Ingress (Envoy Gateway)
 
@@ -259,7 +259,7 @@ plaintext → sops encrypt → *.sops.yaml → git push → Flux → sops decryp
 │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────┐  │
 │  │cluster_gateway_addr   │  │cloudflare_gateway_addr │  │cluster_dns_gw  │  │
 │  │ 192.168.1.101         │  │ 192.168.1.102          │  │ 192.168.1.103  │  │
-│  │ (envoy-internal)      │  │ (envoy-external)       │  │ (k8s-gateway)  │  │
+│  │ (envoy-internal)      │  │ (envoy-external)       │  │(k8s-gw/unifi)  │  │
 │  └───────────────────────┘  └────────────────────────┘  └────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -281,8 +281,14 @@ User → Cloudflare DNS → cloudflared tunnel → envoy-external → Service
 ### Split DNS (Internal)
 
 ```
+# Using k8s-gateway (default):
 Internal Device → Home DNS → k8s-gateway → Service (via envoy-internal)
+
+# Using unifi-dns (when unifi_host + unifi_api_key configured):
+Internal Device → UniFi Controller DNS → Service (via envoy-internal)
 ```
+
+**Note:** When UniFi DNS is configured, k8s-gateway is disabled and DNS records are written directly to the UniFi controller.
 
 **Home DNS Configuration:**
 Forward `cloudflare_domain` queries to `cluster_dns_gateway_addr`.

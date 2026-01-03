@@ -1,7 +1,8 @@
 # Project Index: matherlynet-talos-cluster
 
-> Generated: 2026-01-01
+> Generated: 2026-01-02
 > Token-efficient repository index for AI-assisted development
+> **AI Assistant Files:** `AGENTS.md`, `CLAUDE.md`, `PROJECT_INDEX.md`, `PROJECT_INDEX.json`
 
 ## Project Overview
 
@@ -10,11 +11,20 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 **Core Stack:**
 - **OS:** Talos Linux (immutable Kubernetes-native OS)
 - **GitOps:** Flux CD with SOPS encryption
-- **CNI:** Cilium
-- **Ingress:** Envoy Gateway
-- **DNS:** external-dns + k8s_gateway
+- **CNI:** Cilium (kube-proxy replacement, BGP Control Plane v2 optional)
+- **Ingress:** Envoy Gateway (Gateway API)
+- **DNS:** external-dns (Cloudflare external, UniFi internal) + k8s_gateway fallback
 - **Tunnel:** Cloudflare cloudflared
 - **Templating:** makejinja (Jinja2 templates)
+- **IaC:** OpenTofu v1.11+ with Cloudflare R2 state backend
+
+**Optional Features (Jan 2026):**
+- Cilium BGP Control Plane v2 for multi-VLAN routing
+- UniFi DNS Integration via external-dns webhook
+
+**Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
+
+**Control Plane:** Does NOT run workloads by default; dedicated workers recommended
 
 ## Project Structure
 
@@ -31,11 +41,12 @@ matherlynet-talos-cluster/
 ├── scripts/              # Shell scripts
 │   ├── bootstrap-apps.sh # Main bootstrap orchestrator
 │   └── lib/common.sh     # Shared shell utilities
-├── templates/            # Jinja2 templates (93 files)
+├── templates/            # Jinja2 templates (100 files)
 │   ├── config/           # Main configuration templates
 │   │   ├── kubernetes/   # K8s manifests (apps, flux, components)
 │   │   ├── talos/        # Talos config (talconfig, patches)
-│   │   └── bootstrap/    # Bootstrap resources (helmfile, secrets)
+│   │   ├── bootstrap/    # Bootstrap resources (helmfile, secrets)
+│   │   └── infrastructure/  # OpenTofu vars (terraform.tfvars)
 │   └── overrides/        # Template overrides
 ├── cluster.sample.yaml   # Cluster configuration template
 ├── nodes.sample.yaml     # Node definitions template
@@ -98,9 +109,10 @@ matherlynet-talos-cluster/
 | `flux-system` | flux-instance | Flux config |
 | `cert-manager` | cert-manager | TLS certificates |
 | `network` | envoy-gateway | Ingress/Gateway API |
-| `network` | external-dns | DNS record automation |
+| `network` | cloudflare-dns | External DNS (Cloudflare) |
+| `network` | unifi-dns | Internal DNS (UniFi webhook) - optional |
 | `network` | cloudflare-tunnel | External access |
-| `network` | k8s-gateway | Split DNS |
+| `network` | k8s-gateway | Split DNS fallback (if no UniFi) |
 | `default` | echo | Test application |
 | `kube-system` | reloader | Secret/ConfigMap reload |
 
@@ -179,6 +191,7 @@ Key template paths:
 - `templates/config/kubernetes/apps/` - Application manifests
 - `templates/config/talos/` - Talos machine config
 - `templates/config/bootstrap/` - Bootstrap resources
+- `templates/config/infrastructure/` - OpenTofu configs and secrets
 
 ## Environment Variables
 
@@ -194,21 +207,50 @@ Generated after `task configure`:
 - `kubernetes/` - Rendered K8s manifests
 - `talos/` - Rendered Talos configs
 - `bootstrap/` - Rendered bootstrap resources
+- `infrastructure/` - Rendered OpenTofu configs, secrets, and variables
 
 ## Infrastructure (OpenTofu)
 
-The `infrastructure/` directory contains OpenTofu IaC configurations:
+The `infrastructure/` directory is **fully generated** by `task configure`:
 
 ```
-infrastructure/
-├── README.md              # Setup and usage guide
-├── secrets.sops.yaml      # Encrypted credentials (R2, Proxmox)
+infrastructure/                      # GENERATED directory
+├── README.md                        # Documentation (copied)
+├── secrets.sops.yaml                # Encrypted credentials
 └── tofu/
-    ├── backend.tf         # HTTP backend (R2 + Worker)
-    ├── versions.tf        # OpenTofu/provider versions
-    ├── providers.tf       # Provider configurations
-    ├── variables.tf       # Input variables
-    └── main.tf            # Resources
+    ├── backend.tf                   # HTTP backend (R2 + Worker)
+    ├── versions.tf                  # OpenTofu/provider versions
+    ├── providers.tf                 # Provider configs (conditional)
+    ├── variables.tf                 # Input variables
+    ├── main.tf                      # Resources (conditional)
+    └── terraform.tfvars             # VM/node configuration
+
+templates/config/infrastructure/     # Source templates
+├── README.md                        # Copied as-is
+├── secrets.sops.yaml.j2             # Secrets template
+└── tofu/*.tf.j2                     # All .tf templates
 ```
 
-State is stored in Cloudflare R2 via a tfstate-worker HTTP backend with locking support. See `docs/guides/opentofu-r2-state-backend.md` for implementation details.
+**Features:**
+- State stored in Cloudflare R2 via tfstate-worker HTTP backend with locking
+- Automated Proxmox VM provisioning (ISO download, upload, VM creation)
+- Talos Image Factory integration for schematic IDs
+- Two deployment paths: Bare Metal (manual) or Proxmox VM (automated)
+- All files auto-generated from templates via makejinja
+- Conditional rendering based on `infrastructure_enabled`
+
+See `docs/ai-context/infrastructure-opentofu.md` for deep-dive documentation.
+
+## AI Context Documentation
+
+The `docs/ai-context/` directory provides domain-specific deep-dive documentation for AI assistants:
+
+| Document | Domain | Use When |
+| -------- | ------ | -------- |
+| `flux-gitops.md` | Flux CD | Adding apps, troubleshooting sync issues, understanding GitOps flow |
+| `talos-operations.md` | Talos Linux | Node operations, upgrades, configuration changes |
+| `cilium-networking.md` | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
+| `template-system.md` | makejinja | Template syntax, adding variables, creating new templates |
+| `infrastructure-opentofu.md` | OpenTofu | IaC operations, R2 backend, Proxmox automation |
+
+**Token Efficiency:** Each document focuses on one domain (~8-12KB each), more efficient than loading full documentation (~64KB).

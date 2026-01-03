@@ -396,8 +396,14 @@ cilium connectivity test
 # DNS
 kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
 
-# External DNS
+# Split DNS (k8s-gateway or unifi-dns)
 dig @<cluster_dns_gateway_addr> <domain>
+
+# If using unifi-dns
+kubectl -n network logs deploy/unifi-dns-external-dns
+
+# If using k8s-gateway (default)
+kubectl -n network logs deploy/k8s-gateway
 ```
 
 ### GitOps Stack

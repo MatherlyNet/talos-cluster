@@ -15,8 +15,9 @@
 | `flux-system` | [Flux Instance](#flux-instance) | GitOps Configuration | Flux Operator |
 | `cert-manager` | [cert-manager](#cert-manager) | TLS Certificates | Flux |
 | `network` | [Envoy Gateway](#envoy-gateway) | Gateway API Ingress | cert-manager |
-| `network` | [external-dns](#external-dns) | Public DNS Records | Flux |
-| `network` | [k8s-gateway](#k8s-gateway) | Split DNS | Flux |
+| `network` | [cloudflare-dns](#cloudflare-dns) | Public DNS Records | Flux |
+| `network` | [unifi-dns](#unifi-dns) | Internal DNS (UniFi) | Flux (optional) |
+| `network` | [k8s-gateway](#k8s-gateway) | Split DNS Fallback | Flux (if no UniFi) |
 | `network` | [Cloudflare Tunnel](#cloudflare-tunnel) | External Access | Flux |
 | `default` | [Echo](#echo) | Test Application | Envoy Gateway |
 
@@ -255,7 +256,7 @@ spec:
 
 ---
 
-### external-dns
+### cloudflare-dns
 
 **Purpose:** Automatically manages public DNS records in Cloudflare.
 
@@ -275,11 +276,53 @@ spec:
 
 ---
 
+### unifi-dns
+
+**Purpose:** Automatically manages internal DNS records in UniFi Network controller.
+
+**Template:** `templates/config/kubernetes/apps/network/unifi-dns/`
+
+**Condition:** Only enabled when `unifi_host` AND `unifi_api_key` are defined in `cluster.yaml`
+
+**How it works:**
+1. Watches HTTPRoutes with `envoy-internal` parent
+2. Creates/updates DNS records directly in UniFi controller
+3. Points to `cluster_gateway_addr` (internal LoadBalancer IP)
+4. Uses [external-dns-unifi-webhook](https://github.com/kashalls/external-dns-unifi-webhook) v0.8.0
+
+**Requirements:**
+- UniFi Network v9.0.0+ (for API key authentication)
+- API key created in UniFi Admin → Control Plane → Integrations
+
+**Configuration Variables:**
+
+| Variable | Usage | Required |
+| ---------- | ------- | -------- |
+| `unifi_host` | Controller URL (e.g., `https://192.168.1.1`) | Yes |
+| `unifi_api_key` | API key for authentication | Yes |
+| `unifi_site` | Site identifier (default: `default`) | No |
+| `unifi_external_controller` | `true` for Cloud Key/self-hosted | No |
+
+**Advantages over k8s-gateway:**
+- Native UniFi DNS integration (no split-DNS router config)
+- Persistent records (survives cluster restarts)
+- Visible in UniFi Dashboard
+
+**Limitations:**
+- No wildcard DNS support (UniFi uses dnsmasq)
+- No duplicate CNAME records
+
+**Reference:** See `docs/research/external-dns-unifi-integration.md` for detailed setup guide.
+
+---
+
 ### k8s-gateway
 
-**Purpose:** Split-horizon DNS for internal service discovery.
+**Purpose:** Split-horizon DNS for internal service discovery (fallback when UniFi not configured).
 
 **Template:** `templates/config/kubernetes/apps/network/k8s-gateway/`
+
+**Condition:** Only enabled when `unifi_host` OR `unifi_api_key` are NOT defined
 
 **How it works:**
 1. Runs as DNS server on `cluster_dns_gateway_addr`
@@ -291,6 +334,8 @@ spec:
 # In your home router/Pi-hole/AdGuard:
 # Forward cloudflare_domain → cluster_dns_gateway_addr
 ```
+
+**Note:** Consider migrating to [unifi-dns](#unifi-dns) for cleaner integration if using UniFi Network.
 
 ---
 

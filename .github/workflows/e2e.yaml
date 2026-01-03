@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   configure:
-    if: ${{ github.repository == 'onedr0p/cluster-template' }}
+    if: ${{ github.repository == 'MatherlyNet/talos-cluster' }}
     name: configure
     runs-on: ubuntu-latest
     strategy:

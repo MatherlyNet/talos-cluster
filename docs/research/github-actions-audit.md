@@ -114,7 +114,7 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 - `flux-local:v8.1.0` (SHA pinned) :white_check_mark:
 
 **Configuration:**
-- Only runs on `onedr0p/cluster-template` repository (upstream template)
+- Configured to run on `MatherlyNet/talos-cluster` repository
 - Uses matrix strategy for `public` and `private` test configs
 - Proper concurrency control with cancel-in-progress
 

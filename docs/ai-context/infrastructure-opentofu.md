@@ -55,21 +55,83 @@ This project uses OpenTofu v1.11+ for infrastructure as code, with Cloudflare R2
 
 ## Directory Structure
 
+All infrastructure files are **generated** by `task configure` from templates:
+
 ```
-infrastructure/
-├── README.md                    # Setup and operations guide
-├── secrets.sops.yaml            # Encrypted credentials
-├── .gitignore                   # Ignore patterns
+templates/config/infrastructure/          # SOURCE templates
+├── README.md                             # Documentation (copied as-is)
+├── secrets.sops.yaml.j2                  # Secrets template (conditional)
 └── tofu/
-    ├── backend.tf               # HTTP backend config
-    ├── versions.tf              # OpenTofu/provider requirements
-    ├── providers.tf             # Provider configurations
-    ├── variables.tf             # Input variable definitions
-    ├── main.tf                  # Resource definitions
-    ├── tfplan                   # Generated plan (gitignored)
-    ├── .terraform/              # Provider cache (gitignored)
-    └── .gitignore               # Tofu-specific ignores
+    ├── backend.tf.j2                     # HTTP backend config
+    ├── versions.tf.j2                    # OpenTofu/provider versions
+    ├── providers.tf.j2                   # Provider configurations (conditional)
+    ├── variables.tf.j2                   # Input variable definitions
+    ├── main.tf.j2                        # Resource definitions (conditional)
+    └── terraform.tfvars.j2               # VM/node configuration
+
+infrastructure/                           # GENERATED directory
+├── README.md                             # Copied from templates
+├── secrets.sops.yaml                     # Encrypted credentials
+└── tofu/
+    ├── backend.tf                        # HTTP backend config
+    ├── versions.tf                       # OpenTofu/provider versions
+    ├── providers.tf                      # Provider configurations
+    ├── variables.tf                      # Input variable definitions
+    ├── main.tf                           # Resource definitions
+    ├── terraform.tfvars                  # VM/node configuration
+    ├── tfplan                            # Generated plan (gitignored)
+    └── .terraform/                       # Provider cache (gitignored)
 ```
+
+**Important:** Never edit files in `infrastructure/` directly. Edit templates and run `task configure`.
+
+## Template Generation
+
+The `terraform.tfvars` file is **auto-generated** by makejinja from:
+- `cluster.yaml` - Proxmox connection settings, VM defaults, network configuration
+- `nodes.yaml` - Per-node specifications (cores, memory, disk, startup order)
+
+### Enabling Infrastructure Provisioning
+
+Infrastructure templating is conditional. To enable, add to `cluster.yaml`:
+
+```yaml
+proxmox_api_url: "https://pve.example.com:8006/api2/json"
+proxmox_node: "pve"
+```
+
+When both are present, `task configure` generates `infrastructure/tofu/terraform.tfvars`.
+
+### Template Variables
+
+**From cluster.yaml:**
+- `proxmox_api_url`, `proxmox_node` - Required for enabling
+- `proxmox_iso_storage` (default: "local")
+- `proxmox_disk_storage` (default: "local-lvm")
+- `proxmox_vm_defaults` - Default VM resources
+- `proxmox_vm_advanced` - Talos-optimized VM settings
+
+**From nodes.yaml (per-node overrides):**
+- `vm_cores`, `vm_sockets`, `vm_memory`, `vm_disk_size`
+- `vm_startup_order`, `vm_startup_delay`
+
+### Default VM Settings (Talos-optimized)
+
+Defined in `templates/scripts/plugin.py`:
+
+```python
+PROXMOX_VM_DEFAULTS = {
+    "cores": 4, "sockets": 1, "memory": 8192, "disk_size": 128
+}
+PROXMOX_VM_ADVANCED = {
+    "bios": "ovmf", "machine": "q35", "cpu_type": "host",
+    "scsi_hw": "virtio-scsi-pci", "balloon": 0, "numa": True,
+    "qemu_agent": True, "net_queues": 4, "disk_discard": True,
+    "disk_ssd": True, "tags": ["kubernetes", "linux", "talos"]
+}
+```
+
+**Important:** Never edit `terraform.tfvars` directly. Edit `cluster.yaml`/`nodes.yaml` and run `task configure`.
 
 ## Configuration Files
 
@@ -165,12 +227,30 @@ This project separates secrets by lifecycle:
 │  ├─────────────────────────┤  ├─────────────────────────────┤  │
 │  │ Examples:                │  │ Examples:                   │  │
 │  │ - cloudflare_token       │  │ - tfstate_username          │  │
-│  │ - cluster secrets        │  │ - tfstate_password          │  │
-│  │                          │  │ - proxmox_api_token         │  │
+│  │ - proxmox_api_url        │  │ - tfstate_password          │  │
+│  │ - proxmox_vm_defaults    │  │ - proxmox_api_token_*       │  │
 │  └─────────────────────────┘  └─────────────────────────────┘  │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Configuration Sources
+
+Infrastructure follows the same templating pattern as kubernetes/talos:
+
+| Source | Purpose | Contents |
+| ------ | ------- | -------- |
+| `cluster.yaml` | Non-sensitive config | `proxmox_api_url`, `proxmox_node`, `proxmox_vm_defaults` |
+| `nodes.yaml` | Per-node VM specs | `vm_cores`, `vm_memory`, `vm_disk_size` |
+
+### Secrets Template
+
+The infrastructure secrets file is **auto-generated** from a template:
+
+**Template:** `templates/config/infrastructure/secrets.sops.yaml.j2`
+**Generated:** `infrastructure/secrets.sops.yaml`
+
+The template conditionally includes Proxmox credentials based on `infrastructure_enabled`.
 
 ### secrets.sops.yaml Schema
 
@@ -180,14 +260,15 @@ cf_account_id: "abc123..."           # Cloudflare account
 tfstate_username: "terraform"        # HTTP backend auth
 tfstate_password: "secret..."        # HTTP backend auth
 
-# Optional (when Proxmox is enabled)
-proxmox_api_url: "https://pve.local:8006/api2/json"
+# Proxmox credentials (sensitive only)
 proxmox_api_token_id: "root@pam!terraform"
 proxmox_api_token_secret: "xxx-yyy-zzz"
 
 # Optional (for client-side state encryption)
 state_encryption_passphrase: "..."
 ```
+
+> **Note:** Non-sensitive Proxmox config (`proxmox_api_url`, `proxmox_node`, storage settings) goes in `cluster.yaml`, not here.
 
 ### SOPS Configuration
 
@@ -216,7 +297,6 @@ Handled by `.sops.yaml` rule:
 | `task infra:validate` | Validate configuration |
 | `task infra:fmt` | Format HCL files |
 | `task infra:fmt-check` | Check formatting |
-| `task infra:secrets-create` | Create secrets template |
 | `task infra:secrets-edit` | Edit encrypted secrets |
 
 ### How Tasks Handle Secrets
@@ -256,9 +336,17 @@ OpenTofu 1.11+ is required for:
 - Provider-defined functions
 - Improved state encryption options
 
-## Future: Proxmox Integration
+## Proxmox VM Automation
 
-### Planned Resources
+OpenTofu automates the complete VM lifecycle for Proxmox-based deployments:
+
+1. **Talos ISO Management**: Downloads Talos ISO from Image Factory using schematic ID
+2. **ISO Upload**: Uploads ISO to Proxmox storage
+3. **VM Creation**: Creates VMs with specified resources (cores, memory, disk)
+4. **Boot Configuration**: Attaches ISO and configures boot order
+5. **Node Provisioning**: Boots VMs into Talos maintenance mode
+
+### Resources
 
 ```hcl
 # VM for Talos node
@@ -292,11 +380,18 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 
 ### Integration with Talos
 
-The infrastructure layer will:
-1. Create VMs from Talos image template
-2. Configure networking (MAC addresses for DHCP)
-3. Wait for nodes to be accessible
-4. Trigger Talos bootstrap
+The infrastructure layer:
+1. Creates VMs from Talos ISO (downloaded from Image Factory)
+2. Configures networking (MAC addresses for static IP assignment)
+3. Boots nodes into Talos maintenance mode
+4. Ready for `task bootstrap:talos` to complete installation
+
+### Deployment Paths
+
+| Path | Use Case | Infrastructure Step |
+| ---- | -------- | ------------------- |
+| Bare Metal | Physical servers | Skip OpenTofu, manual ISO boot |
+| Proxmox VM | Virtualized cluster | `task infra:apply` automates everything |
 
 ## Troubleshooting
 
