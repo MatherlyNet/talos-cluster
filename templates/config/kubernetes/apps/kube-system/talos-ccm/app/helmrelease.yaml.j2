@@ -1,0 +1,19 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: talos-cloud-controller-manager
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: talos-ccm
+  interval: 1h
+  values:
+    logVerbosityLevel: 2
+    useDaemonSet: true
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists

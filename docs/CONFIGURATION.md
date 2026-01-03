@@ -66,6 +66,31 @@ When configured, replaces k8s-gateway with native UniFi DNS record management. R
 
 **Note:** When `unifi_host` and `unifi_api_key` are both configured, unifi-dns is deployed and k8s-gateway is disabled.
 
+### Talos Upgrade Controller (tuppr) Configuration
+
+Automated Talos OS and Kubernetes version management via GitOps.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `talos_version` | string | `1.12.0` | Target Talos OS version for automated upgrades |
+| `kubernetes_version` | string | `1.35.0` | Target Kubernetes version for automated upgrades |
+
+**Note:** Update these values and run `task configure` to trigger automated rolling upgrades via tuppr.
+
+### Talos Backup Configuration (Optional)
+
+Automated etcd snapshots with S3 storage and Age encryption. All fields required when enabling backup.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `backup_s3_endpoint` | string | - | S3-compatible endpoint URL (e.g., `https://<account>.r2.cloudflarestorage.com`) |
+| `backup_s3_bucket` | string | - | Bucket name for backup storage |
+| `backup_s3_access_key` | string | - | S3 access key ID (SOPS-encrypted after configure) |
+| `backup_s3_secret_key` | string | - | S3 secret access key (SOPS-encrypted after configure) |
+| `backup_age_public_key` | string | - | Age public key for backup encryption (e.g., `age1...`) |
+
+**Note:** When `backup_s3_endpoint` and `backup_s3_bucket` are both configured, talos-backup is deployed with a CronJob for periodic etcd snapshots.
+
 ### IP Address Constraints
 
 All LoadBalancer IPs must be:

@@ -12,6 +12,10 @@ resources:
   - ./coredns/ks.yaml
   - ./metrics-server/ks.yaml
   - ./reloader/ks.yaml
+  - ./talos-ccm/ks.yaml
   #% if spegel_enabled %#
   - ./spegel/ks.yaml
+  #% endif %#
+  #% if backup_s3_endpoint is defined and backup_s3_bucket is defined %#
+  - ./talos-backup/ks.yaml
   #% endif %#

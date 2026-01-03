@@ -45,6 +45,17 @@ import (
 	unifi_site?:                *"default" | string & !=""
 	unifi_external_controller?: *false | bool
 
+	// Talos Upgrade Controller (tuppr) - Automated OS/K8s upgrades
+	talos_version?:      *"1.12.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	kubernetes_version?: *"1.35.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+	// Talos Backup - Automated etcd snapshots with S3 storage
+	backup_s3_endpoint?:    string & =~"^https?://"
+	backup_s3_bucket?:      string & !=""
+	backup_s3_access_key?:  string & !=""
+	backup_s3_secret_key?:  string & !=""
+	backup_age_public_key?: string & =~"^age1"
+
 	// Infrastructure (OpenTofu/Proxmox) - Optional for VM deployments
 	proxmox_api_url?:      string & =~"^https?://"
 	proxmox_node?:         string & !=""

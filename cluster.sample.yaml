@@ -159,6 +159,46 @@ cloudflare_gateway_addr: ""
 # unifi_external_controller: false
 
 # =============================================================================
+# TALOS UPGRADE CONTROLLER (tuppr) - Automated OS/K8s upgrades
+# =============================================================================
+# tuppr manages Talos OS and Kubernetes upgrades through GitOps-driven CRs.
+# Update these versions to trigger automated rolling upgrades.
+
+# -- Talos OS version for automated upgrades
+#    (OPTIONAL) / (DEFAULT: "1.12.0")
+# talos_version: "1.12.0"
+
+# -- Kubernetes version for automated upgrades
+#    (OPTIONAL) / (DEFAULT: "1.35.0")
+# kubernetes_version: "1.35.0"
+
+# =============================================================================
+# TALOS BACKUP - Automated etcd snapshots with S3 storage
+# =============================================================================
+# Talos Backup creates periodic etcd snapshots and uploads them to S3-compatible
+# storage with Age encryption. Required for disaster recovery.
+
+# -- S3-compatible endpoint for backups (Cloudflare R2 recommended)
+#    (OPTIONAL) / (e.g. "https://<account-id>.r2.cloudflarestorage.com")
+# backup_s3_endpoint: ""
+
+# -- S3 bucket name for backups
+#    (OPTIONAL) / (e.g. "cluster-backups")
+# backup_s3_bucket: ""
+
+# -- S3 access key ID
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# backup_s3_access_key: ""
+
+# -- S3 secret access key
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# backup_s3_secret_key: ""
+
+# -- Age public key for backup encryption (use same as cluster Age key)
+#    (OPTIONAL) / (e.g. "age1...")
+# backup_age_public_key: ""
+
+# =============================================================================
 # INFRASTRUCTURE (OpenTofu/Proxmox) - Optional for VM deployments
 # =============================================================================
 

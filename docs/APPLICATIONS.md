@@ -11,6 +11,9 @@
 | `kube-system` | [Spegel](#spegel) | P2P Image Distribution | Cilium |
 | `kube-system` | [Metrics Server](#metrics-server) | Resource Metrics | Cilium |
 | `kube-system` | [Reloader](#reloader) | ConfigMap/Secret Reload | Cilium |
+| `kube-system` | [Talos CCM](#talos-ccm) | Node Lifecycle Management | Cilium |
+| `kube-system` | [Talos Backup](#talos-backup) | Automated etcd Backups | Cilium (optional) |
+| `system-upgrade` | [tuppr](#tuppr) | Automated Talos/K8s Upgrades | Flux |
 | `flux-system` | [Flux Operator](#flux-operator) | Flux Installation | Cilium, CoreDNS |
 | `flux-system` | [Flux Instance](#flux-instance) | GitOps Configuration | Flux Operator |
 | `cert-manager` | [cert-manager](#cert-manager) | TLS Certificates | Flux |
@@ -123,6 +126,131 @@ kubectl top pods -A
 metadata:
   annotations:
     reloader.stakater.com/auto: "true"
+```
+
+---
+
+### Talos CCM
+
+**Purpose:** Talos Cloud Controller Manager for node lifecycle management.
+
+**Template:** `templates/config/kubernetes/apps/kube-system/talos-ccm/`
+
+**What it does:**
+- Labels nodes with Talos-specific metadata
+- Manages node lifecycle events
+- Provides cloud provider integration for Talos
+
+**Helm Values Highlights:**
+```yaml
+logVerbosityLevel: 2
+useDaemonSet: true
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+```
+
+**Troubleshooting:**
+```bash
+kubectl -n kube-system logs ds/talos-cloud-controller-manager
+kubectl get nodes --show-labels | grep talos
+```
+
+---
+
+### Talos Backup
+
+**Purpose:** Automated etcd snapshots with S3 storage and Age encryption.
+
+**Template:** `templates/config/kubernetes/apps/kube-system/talos-backup/`
+
+**Condition:** Only enabled when `backup_s3_endpoint` AND `backup_s3_bucket` are defined in `cluster.yaml`
+
+**Requirements:**
+- S3-compatible storage (Cloudflare R2 recommended)
+- Age public key for encryption (same as cluster SOPS key)
+- Talos API access enabled via machine patch
+
+**Configuration Variables:**
+
+| Variable | Usage | Required |
+| ---------- | ------- | -------- |
+| `backup_s3_endpoint` | S3 endpoint URL | Yes |
+| `backup_s3_bucket` | Bucket name | Yes |
+| `backup_s3_access_key` | S3 access key | Yes |
+| `backup_s3_secret_key` | S3 secret key | Yes |
+| `backup_age_public_key` | Age encryption key | Yes |
+
+**How it works:**
+1. Runs as a CronJob in kube-system
+2. Uses Talos API to create etcd snapshots
+3. Encrypts snapshots with Age
+4. Uploads to S3-compatible storage
+
+**Troubleshooting:**
+```bash
+kubectl -n kube-system get cronjob talos-backup
+kubectl -n kube-system logs job/talos-backup-<timestamp>
+```
+
+---
+
+## system-upgrade Namespace
+
+### tuppr
+
+**Purpose:** Talos Upgrade Controller for automated OS and Kubernetes upgrades.
+
+**Template:** `templates/config/kubernetes/apps/system-upgrade/tuppr/`
+
+**What it does:**
+- Manages Talos OS version upgrades via `TalosUpgrade` CRs
+- Manages Kubernetes version upgrades via `KubernetesUpgrade` CRs
+- Performs rolling upgrades with proper drain/cordon
+- Integrates with Talos Image Factory for schematic-based images
+
+**Configuration Variables:**
+
+| Variable | Usage | Default |
+| ---------- | ------- | ------- |
+| `talos_version` | Target Talos OS version | `1.12.0` |
+| `kubernetes_version` | Target Kubernetes version | `1.35.0` |
+
+**Custom Resources:**
+
+```yaml
+# TalosUpgrade - Manages Talos OS version
+apiVersion: tuppr.io/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: talos-upgrade
+spec:
+  version: "1.12.0"
+
+# KubernetesUpgrade - Manages Kubernetes version
+apiVersion: tuppr.io/v1alpha1
+kind: KubernetesUpgrade
+metadata:
+  name: kubernetes-upgrade
+spec:
+  version: "1.35.0"
+```
+
+**Upgrade Workflow:**
+1. Update `talos_version` or `kubernetes_version` in `cluster.yaml`
+2. Run `task configure` to regenerate manifests
+3. Commit and push to Git
+4. tuppr detects CR changes and initiates rolling upgrade
+
+**Troubleshooting:**
+```bash
+kubectl -n system-upgrade get talosupgrade
+kubectl -n system-upgrade get kubernetesupgrade
+kubectl -n system-upgrade logs deploy/tuppr
+kubectl get nodes -o wide  # Check node versions
 ```
 
 ---

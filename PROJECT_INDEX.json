@@ -188,6 +188,22 @@
       "namespace": "kube-system",
       "name": "reloader",
       "purpose": "Secret/ConfigMap reload"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "talos-ccm",
+      "purpose": "Node lifecycle management"
+    },
+    {
+      "namespace": "kube-system",
+      "name": "talos-backup",
+      "purpose": "Automated etcd backups",
+      "conditional": "backup_s3_endpoint && backup_s3_bucket"
+    },
+    {
+      "namespace": "system-upgrade",
+      "name": "tuppr",
+      "purpose": "Automated Talos/K8s upgrades"
     }
   ],
   "tools": {

@@ -115,6 +115,9 @@ matherlynet-talos-cluster/
 | `network` | k8s-gateway | Split DNS fallback (if no UniFi) |
 | `default` | echo | Test application |
 | `kube-system` | reloader | Secret/ConfigMap reload |
+| `kube-system` | talos-ccm | Node lifecycle management |
+| `kube-system` | talos-backup | Automated etcd backups (optional) |
+| `system-upgrade` | tuppr | Automated Talos/K8s upgrades |
 
 ## Tool Dependencies
 

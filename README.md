@@ -13,7 +13,7 @@ A GitOps-driven Kubernetes cluster on Talos Linux, forked from [onedr0p/cluster-
 - **[OpenTofu](https://opentofu.org/)** - Infrastructure as Code (optional)
 - **[UniFi DNS](https://github.com/kashalls/external-dns-unifi-webhook)** - Native UniFi DNS integration (optional)
 
-**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns)
+**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns), talos-ccm, tuppr, talos-backup (optional)
 
 **Other features:**
 - Dev environment managed with [mise](https://mise.jdx.dev/)
@@ -434,6 +434,20 @@ task talos:apply-node IP=10.10.10.10 MODE=auto
 ```
 
 ### Version Upgrades
+
+**Option A: Automated via tuppr (Recommended)**
+
+Update version in `cluster.yaml` and let GitOps handle the upgrade:
+```sh
+# Edit cluster.yaml:
+#   talos_version: "1.12.1"
+#   kubernetes_version: "1.35.1"
+task configure
+git add -A && git commit -m "chore: upgrade versions" && git push
+# tuppr performs rolling upgrade automatically
+```
+
+**Option B: Manual Upgrade**
 
 ```sh
 # Upgrade Talos (update talenv.yaml first)
