@@ -29,16 +29,15 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:01"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.101/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
-            vip:
-              ip: "192.168.22.100"
+        dhcp: false
+        addresses:
+          - "192.168.22.101/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
+        vip:
+          ip: "192.168.22.100"
   - hostname: "matherlynet-cp-2"
     ipAddress: "192.168.22.102"
     installDiskSelector:
@@ -50,16 +49,15 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:02"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.102/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
-            vip:
-              ip: "192.168.22.100"
+        dhcp: false
+        addresses:
+          - "192.168.22.102/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
+        vip:
+          ip: "192.168.22.100"
   - hostname: "matherlynet-cp-3"
     ipAddress: "192.168.22.103"
     installDisk: "/dev/sda"
@@ -70,16 +68,15 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:03"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.103/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
-            vip:
-              ip: "192.168.22.100"
+        dhcp: false
+        addresses:
+          - "192.168.22.103/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
+        vip:
+          ip: "192.168.22.100"
   - hostname: "matherlynet-wrkr-1"
     ipAddress: "192.168.22.111"
     installDisk: "/dev/sda"
@@ -90,14 +87,13 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:04"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.111/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
+        dhcp: false
+        addresses:
+          - "192.168.22.111/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
   - hostname: "matherlynet-wrkr-2"
     ipAddress: "192.168.22.112"
     installDisk: "/dev/sda"
@@ -108,14 +104,13 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:05"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.112/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
+        dhcp: false
+        addresses:
+          - "192.168.22.112/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
   - hostname: "matherlynet-wrkr-3"
     ipAddress: "192.168.22.113"
     installDisk: "/dev/sda"
@@ -126,14 +121,13 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:62:36:06"
-        vlans:
-          - vlanId: 7
-            addresses:
-              - "192.168.22.113/22"
-            mtu: 1500
-            routes:
-              - network: "0.0.0.0/0"
-                gateway: "192.168.23.254"
+        dhcp: false
+        addresses:
+          - "192.168.22.113/22"
+        routes:
+          - network: "0.0.0.0/0"
+            gateway: "192.168.23.254"
+        mtu: 1500
 
 # Global patches
 patches:

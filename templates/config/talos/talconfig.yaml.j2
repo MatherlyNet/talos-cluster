@@ -37,7 +37,8 @@ nodes:
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "#{ item.mac_addr | lower }#"
-        #% if node_vlan_tag %#
+        #% if node_vlan_tag and not proxmox_vlan_mode | default(false) %#
+        #| VLAN tagging at Talos level (trunk port / bare-metal mode) #|
         vlans:
           - vlanId: #{ node_vlan_tag }#
             addresses:
@@ -51,6 +52,7 @@ nodes:
               ip: "#{ cluster_api_addr }#"
             #% endif %#
         #% else %#
+        #| Direct interface (Proxmox handles VLAN tagging or no VLAN) #|
         dhcp: false
         addresses:
           - "#{ item.address }#/#{ node_cidr.split('/') | last }#"

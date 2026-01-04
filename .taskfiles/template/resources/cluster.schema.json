@@ -34,6 +34,11 @@
       "type": "string",
       "minLength": 1
     },
+    "proxmox_vlan_mode": {
+      "default": false,
+      "type": "boolean",
+      "description": "When true, Proxmox handles VLAN tagging (access port mode) and Talos sees untagged traffic When false (default), Talos creates VLAN sub-interfaces (trunk port / bare-metal mode)"
+    },
     "cluster_pod_cidr": {
       "default": "10.42.0.0/16",
       "type": "string",

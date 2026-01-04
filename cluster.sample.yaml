@@ -20,6 +20,12 @@ node_cidr: ""
 #    (OPTIONAL) / (REF: https://www.talos.dev/latest/advanced/advanced-networking/#vlans)
 # node_vlan_tag: ""
 
+# -- When true, Proxmox handles VLAN tagging (access port mode) and Talos sees untagged traffic.
+#    When false (default), Talos creates VLAN sub-interfaces (trunk port / bare-metal mode).
+#    Set to true when using OpenTofu/Proxmox VM provisioning with node_vlan_tag.
+#    (OPTIONAL) / (DEFAULT: false)
+# proxmox_vlan_mode: false
+
 # -- The IP address of the Kube API.
 #    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
 cluster_api_addr: ""

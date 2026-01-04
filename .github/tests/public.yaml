@@ -2,6 +2,9 @@
 node_cidr: "10.10.10.0/24"
 node_default_gateway: "10.10.10.1"
 node_vlan_tag: "100"
+# When true, Proxmox handles VLAN tagging (access port mode) - Talos uses direct interface
+# When false (default), Talos creates VLAN sub-interfaces (trunk port / bare-metal mode)
+# proxmox_vlan_mode: true
 cluster_pod_cidr: "10.42.0.0/16"
 cluster_svc_cidr: "10.43.0.0/16"
 node_dns_servers: ["1.1.1.1"]

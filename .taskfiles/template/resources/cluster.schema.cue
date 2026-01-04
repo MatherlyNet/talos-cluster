@@ -10,6 +10,9 @@ import (
 	node_ntp_servers?: [...net.IPv4]
 	node_default_gateway?: net.IPv4 & !=""
 	node_vlan_tag?: string & !=""
+	// When true, Proxmox handles VLAN tagging (access port mode) and Talos sees untagged traffic
+	// When false (default), Talos creates VLAN sub-interfaces (trunk port / bare-metal mode)
+	proxmox_vlan_mode?: *false | bool
 	cluster_pod_cidr: *"10.42.0.0/16" | net.IPCIDR & !=node_cidr & !=cluster_svc_cidr
 	cluster_svc_cidr: *"10.43.0.0/16" | net.IPCIDR & !=node_cidr & !=cluster_pod_cidr
 	cluster_api_addr: net.IPv4
