@@ -164,12 +164,18 @@ function main() {
     # Phase 1: Wait for nodes (required before anything else)
     wait_for_nodes
 
-    # Phase 2: Apply namespaces and secrets in parallel (independent operations)
-    log info "Phase 2: Applying namespaces and secrets in parallel"
-    run_parallel "namespaces" apply_namespaces
-    run_parallel "secrets" apply_sops_secrets
-    if ! wait_parallel; then
-        log error "Phase 2 failed: namespaces or secrets application failed"
+    # Phase 2a: Apply namespaces first (secrets depend on namespaces existing)
+    log info "Phase 2a: Applying namespaces"
+    if ! apply_namespaces; then
+        log error "Phase 2a failed: namespace application failed"
+        exit 1
+    fi
+
+    # Phase 2b: Apply secrets (requires namespaces to exist)
+    log info "Phase 2b: Applying secrets"
+    if ! apply_sops_secrets; then
+        log error "Phase 2b failed: secrets application failed"
+        exit 1
     fi
     log info "Phase 2 complete: namespaces and secrets applied"
 
