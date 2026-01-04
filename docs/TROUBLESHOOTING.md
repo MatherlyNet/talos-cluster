@@ -549,6 +549,74 @@ Run `task configure` to regenerate infrastructure files with the boot_order fix,
 
 ---
 
+### Symptom: Bootstrap Node Stuck in MAINTENANCE
+
+**Console/logs show:**
+```
+Node still in MAINTENANCE stage after config apply
+```
+
+**Quick Check:**
+```bash
+# Check node stage
+talosctl get machineconfig -n <node-ip> --insecure
+
+# Check if config was applied
+talosctl dmesg -n <node-ip> --insecure | tail -50
+```
+
+**Decision Tree:**
+
+```
+Node Stuck in MAINTENANCE
+     │
+     ├── Config never applied
+     │   └── Bootstrap apply failed silently
+     │       └── FIX: Use enhanced bootstrap with retry logic
+     │
+     ├── Config applied but node not transitioning
+     │   ├── Disk detection issue → Check installDiskSelector
+     │   └── Network configuration error → Check node IP/gateway
+     │
+     └── Multiple nodes stuck
+         └── Network connectivity issue during apply
+             └── Check firewall rules, port 50000
+```
+
+**Root Cause:**
+The original `task bootstrap:talos` used semicolon-separated commands that continue even if individual nodes fail, causing silent failures.
+
+**Enhanced Bootstrap (Now Default):**
+```bash
+# Full bootstrap with pre-flight checks, per-node retry, and verification
+task bootstrap:talos
+
+# Or run individual phases:
+task bootstrap:preflight        # Verify all nodes reachable
+task bootstrap:apply-sequential # Apply configs with retry
+task bootstrap:verify           # Confirm nodes transitioned
+```
+
+**Recovery for Stuck Nodes:**
+```bash
+# 1. Check which nodes failed
+talosctl get machineconfig -n <node-ip> --insecure
+
+# 2. Apply config to specific node manually
+task talos:apply-node IP=<node-ip>
+
+# 3. Monitor node boot progress
+talosctl dmesg -n <node-ip> --insecure -f
+
+# 4. If still stuck, reset and retry
+talosctl reset -n <node-ip> --insecure --graceful=false
+task bootstrap:preflight
+task bootstrap:apply-sequential
+task bootstrap:verify
+```
+
+---
+
 ### etcd Problems
 
 ```bash
