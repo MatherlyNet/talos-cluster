@@ -189,7 +189,8 @@ task infra:apply
 | `age.key` | Encryption key (gitignored, never commit) |
 | `cloudflare-tunnel.json` | Tunnel credentials (gitignored) |
 | `infrastructure/tofu/` | Generated OpenTofu configs |
-| `unifi/bgp.conf` | Generated UniFi BGP config (upload to gateway) |
+| `unifi/bgp.conf` | Generated UniFi BGP config (gitignored, upload to gateway) |
+| `unifi/bgp.conf.sample` | Sample BGP config structure (committed) |
 
 ## Reset
 
