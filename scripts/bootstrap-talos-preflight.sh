@@ -123,14 +123,16 @@ function main() {
 
     local failed_nodes=()
     local failed_reasons=()
+    local warned_nodes=()
 
     for node_ip in "${nodes[@]}"; do
         log info "Checking node" "ip=${node_ip}"
 
         # Check 1: Node is reachable
         if ! check_node_reachable "${node_ip}"; then
-            failed_nodes+=("${node_ip}")
-            failed_reasons+=("Node unreachable after ${NODE_REACHABILITY_RETRIES} attempts")
+            # Unreachable nodes are warnings, not failures - they may be rebooting
+            # The apply script will handle retries
+            warned_nodes+=("${node_ip}")
             continue
         fi
 
@@ -157,6 +159,15 @@ function main() {
 
     # Summary
     local summary_status="PASS"
+    local passed_count=$((${#nodes[@]} - ${#failed_nodes[@]} - ${#warned_nodes[@]}))
+
+    # Report warnings (unreachable nodes - may be rebooting)
+    if [[ ${#warned_nodes[@]} -gt 0 ]]; then
+        log warn "Some nodes unreachable (may be rebooting, apply will retry)" \
+            "nodes=${warned_nodes[*]}" "count=${#warned_nodes[@]}"
+    fi
+
+    # Report failures (only true failures, not warnings)
     if [[ ${#failed_nodes[@]} -gt 0 ]]; then
         summary_status="FAIL"
         log error "Pre-flight check FAILED for nodes: ${failed_nodes[*]}"
@@ -166,10 +177,17 @@ function main() {
         return 1
     fi
 
+    # Only fail if ALL nodes are unreachable (no nodes passed)
+    if [[ $passed_count -eq 0 ]] && [[ ${#warned_nodes[@]} -gt 0 ]]; then
+        log error "All nodes unreachable - cannot proceed with bootstrap"
+        return 1
+    fi
+
     log info "Pre-flight check COMPLETE" \
         "status=${summary_status}" \
         "total_nodes=${#nodes[@]}" \
-        "passed=${#nodes[@]}" \
+        "passed=${passed_count}" \
+        "warned=${#warned_nodes[@]}" \
         "failed=${#failed_nodes[@]}"
     return 0
 }
