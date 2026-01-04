@@ -24,10 +24,16 @@ cloudflared tunnel create --credentials-file cloudflare-tunnel.json kubernetes
 # 3. Initialize configuration
 task init
 
+# ⚠️ CRITICAL: Backup age.key immediately! This key encrypts ALL secrets.
+# Store it securely (password manager, offline backup). If lost, encrypted
+# secrets cannot be recovered and you'll need to regenerate everything.
+cp age.key ~/secure-backup/  # Or your preferred backup location
+
 # 4. Edit configuration files
 # - cluster.yaml: network settings, cloudflare, credentials
 #   For VM provisioning: proxmox_api_url, proxmox_node, proxmox_api_token_id, proxmox_api_token_secret
 #   For state backend: tfstate_username, tfstate_password
+#   For BGP (optional): cilium_bgp_router_addr, cilium_bgp_router_asn, cilium_bgp_node_asn
 # - nodes.yaml: node names, IPs, disks, MACs, schematic IDs
 
 # 5. Render templates, validate, and auto-init infrastructure
@@ -53,7 +59,10 @@ task infra:plan
 task infra:apply
 
 # VMs are now in Talos maintenance mode (port 50000)
-# Verify nodes are accessible before proceeding to Bootstrap
+# Verify ALL nodes are accessible before proceeding to Bootstrap:
+for ip in 192.168.x.x 192.168.x.y 192.168.x.z; do
+  talosctl -n $ip disks --insecure && echo "✓ $ip ready"
+done
 ```
 
 **First-time setup (new state backend):**
