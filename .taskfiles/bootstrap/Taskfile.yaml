@@ -6,16 +6,58 @@ tasks:
     desc: Bootstrap the Talos cluster
     dir: "{{.TALOS_DIR}}"
     cmds:
+      # Step 1: Generate secrets if needed
       - "[ -f talsecret.sops.yaml ] || talhelper gensecret | sops --filename-override talos/talsecret.sops.yaml --encrypt /dev/stdin > talsecret.sops.yaml"
+      # Step 2: Generate Talos configurations
       - talhelper genconfig
-      - talhelper gencommand apply --extra-flags="--insecure" | bash
+      # Step 3: Pre-flight health checks (verify all nodes reachable and in MAINTENANCE)
+      - bash {{.SCRIPTS_DIR}}/bootstrap-talos-preflight.sh
+      # Step 4: Apply configs with per-node error handling and retry logic
+      - bash {{.SCRIPTS_DIR}}/bootstrap-talos-apply.sh "{{.TALOS_DIR}}/clusterconfig" sequential
+      # Step 5: Verify all nodes transitioned from MAINTENANCE stage
+      - bash {{.SCRIPTS_DIR}}/bootstrap-talos-verify.sh
+      # Step 6: Bootstrap etcd cluster (retries every 10s if not ready)
       - until talhelper gencommand bootstrap | bash; do sleep 10; done
+      # Step 7: Generate kubeconfig
       - until talhelper gencommand kubeconfig --extra-flags="{{.ROOT_DIR}} --force" | bash; do sleep 10; done
     preconditions:
       - test -f {{.ROOT_DIR}}/.sops.yaml
       - test -f {{.SOPS_AGE_KEY_FILE}}
       - test -f {{.TALOS_DIR}}/talconfig.yaml
-      - which talhelper talosctl sops
+      - which talhelper talosctl sops bash yq
+
+  preflight:
+    desc: Run pre-flight health checks on all nodes
+    cmd: bash {{.SCRIPTS_DIR}}/bootstrap-talos-preflight.sh
+    preconditions:
+      - test -f {{.TALOS_DIR}}/talconfig.yaml
+      - which talosctl yq
+
+  apply-sequential:
+    desc: Apply Talos config to all nodes sequentially with error handling
+    dir: "{{.TALOS_DIR}}"
+    cmd: bash {{.SCRIPTS_DIR}}/bootstrap-talos-apply.sh "{{.TALOS_DIR}}/clusterconfig" sequential
+    preconditions:
+      - test -f {{.TALOSCONFIG}}
+      - test -f {{.TALOS_DIR}}/clusterconfig/talosconfig
+      - which talhelper talosctl
+
+  apply-parallel:
+    desc: Apply Talos config to all nodes in parallel (max 2 concurrent)
+    dir: "{{.TALOS_DIR}}"
+    cmd: bash {{.SCRIPTS_DIR}}/bootstrap-talos-apply.sh "{{.TALOS_DIR}}/clusterconfig" parallel
+    preconditions:
+      - test -f {{.TALOSCONFIG}}
+      - test -f {{.TALOS_DIR}}/clusterconfig/talosconfig
+      - which talhelper talosctl
+
+  verify:
+    desc: Verify all nodes transitioned from MAINTENANCE stage
+    cmd: bash {{.SCRIPTS_DIR}}/bootstrap-talos-verify.sh
+    preconditions:
+      - test -f {{.TALOSCONFIG}}
+      - test -f {{.TALOS_DIR}}/talconfig.yaml
+      - which talosctl yq
 
   apps:
     desc: Bootstrap apps into the Talos cluster
