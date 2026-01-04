@@ -80,7 +80,7 @@ nodes = [
     address          = "192.168.22.101"
     controller       = true
     mac_addr         = "bc:24:11:62:36:01"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 4
@@ -102,7 +102,7 @@ nodes = [
     address          = "192.168.22.102"
     controller       = true
     mac_addr         = "bc:24:11:62:36:02"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "S4EVNF0M123456"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 4
@@ -124,7 +124,7 @@ nodes = [
     address          = "192.168.22.103"
     controller       = true
     mac_addr         = "bc:24:11:62:36:03"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 4
@@ -146,7 +146,7 @@ nodes = [
     address          = "192.168.22.111"
     controller       = false
     mac_addr         = "bc:24:11:62:36:04"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 8
@@ -168,7 +168,7 @@ nodes = [
     address          = "192.168.22.112"
     controller       = false
     mac_addr         = "bc:24:11:62:36:05"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 8
@@ -190,7 +190,7 @@ nodes = [
     address          = "192.168.22.113"
     controller       = false
     mac_addr         = "bc:24:11:62:36:06"
-    schematic_id     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+    schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
     disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 8
