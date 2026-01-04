@@ -142,11 +142,11 @@ patches:
   - "@./patches/global/machine-kubelet.yaml"
   - "@./patches/global/machine-network.yaml"
   - "@./patches/global/machine-sysctls.yaml"
-  - "@./patches/global/machine-talos-api.yaml"
   - "@./patches/global/machine-time.yaml"
 
 # Controller patches
 controlPlane:
   patches:
     - "@./patches/controller/cluster.yaml"
+    - "@./patches/controller/machine-talos-api.yaml"
 
