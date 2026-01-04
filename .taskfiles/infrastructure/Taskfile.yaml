@@ -31,6 +31,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu plan -out=tfplan {{.CLI_ARGS}}
     preconditions:
       - test -f {{.SECRETS_FILE}}
@@ -44,6 +46,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu apply {{.CLI_ARGS}} tfplan
     preconditions:
       - test -f {{.TOFU_DIR}}/tfplan
@@ -59,6 +63,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu apply -auto-approve {{.CLI_ARGS}}
     preconditions:
       - test -f {{.SECRETS_FILE}}
@@ -73,6 +79,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu destroy {{.CLI_ARGS}}
     preconditions:
       - test -f {{.SECRETS_FILE}}
@@ -86,6 +94,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu output {{.CLI_ARGS}}
     preconditions:
       - test -f {{.SECRETS_FILE}}
@@ -98,6 +108,8 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
+        export TF_VAR_proxmox_api_token_id=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_id // ""')
+        export TF_VAR_proxmox_api_token_secret=$(sops -d {{.SECRETS_FILE}} | yq -r '.proxmox_api_token_secret // ""')
         tofu state list
     preconditions:
       - test -f {{.SECRETS_FILE}}
