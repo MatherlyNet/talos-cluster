@@ -188,6 +188,7 @@ task infra:apply
 | Template errors | `task configure` (check output) |
 | Flux not syncing | `flux get ks -A`, `task reconcile` |
 | Node not ready | `talosctl health -n <ip>` |
+| Bootstrap node stuck | `task bootstrap:preflight`, then `task bootstrap:verify` |
 | CNI issues | `cilium status` |
 | Infra 404 on lock | Use `-- -lock=false` (new state, see above) |
 | Infra state lock stuck | `task infra:force-unlock LOCK_ID=<id>` |
@@ -197,6 +198,27 @@ task infra:apply
 | Nodes not accessible | `task infra:verify-nodes`, check VM power state, network/firewall |
 | ISO download 403 | Add Proxmox API permissions: see Infrastructure section above |
 | BGP not established | Check `cilium bgp peers`, verify ASNs match, ensure UniFi config uploaded |
+
+### Bootstrap Recovery
+
+If `task bootstrap:talos` fails partway, use the granular tasks:
+
+```bash
+# Check node reachability
+task bootstrap:preflight
+
+# Apply configs with retry (sequential, safe)
+task bootstrap:apply-sequential
+
+# Apply configs (parallel, faster)
+task bootstrap:apply-parallel
+
+# Verify nodes transitioned from MAINTENANCE
+task bootstrap:verify
+
+# Apply to specific stuck node
+task talos:apply-node IP=<node-ip>
+```
 
 ## Key Files
 

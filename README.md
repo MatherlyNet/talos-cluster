@@ -504,6 +504,7 @@ task talos:reset
 | Template errors | `task configure` (check output) |
 | Flux not syncing | `flux get ks -A`, `task reconcile` |
 | Node not ready | `talosctl health -n <ip>` |
+| Bootstrap node stuck | `task bootstrap:preflight`, `task bootstrap:verify` |
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Certificate issues | `kubectl get certificates -A` |
 | Infrastructure state lock | `task infra:force-unlock LOCK_ID=<id>` |
