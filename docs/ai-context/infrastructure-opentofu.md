@@ -432,6 +432,10 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     vlan_id = var.node_vlan_tag  # Optional VLAN tagging
     mtu     = each.value.mtu     # Optional per-node MTU
   }
+
+  # Boot order: disk first, then CD-ROM for initial install
+  # Prevents "halt_if_installed" error after Talos installation
+  boot_order = ["scsi0", "ide2"]
 }
 ```
 

@@ -494,6 +494,61 @@ kubectl -n network logs deploy/external-dns
 
 ## Section 6: Talos-Specific Issues
 
+### Symptom: VM Boots from ISO After Talos Install (Proxmox)
+
+**Console shows:**
+```
+[talos] task haltIfInstalled (1/1): Talos is already installed to disk but booted from another media and talos.halt_if_installed kernel parameter is set. Please reboot from the disk.
+```
+
+**Quick Check:**
+```bash
+# Check VM boot order in Proxmox
+qm config <VMID> | grep boot
+```
+
+**Decision Tree:**
+
+```
+Talos halt_if_installed Error
+     │
+     ├── Boot order incorrect
+     │   └── VM booting from ISO (ide2) before disk (scsi0)
+     │       └── FIXED: boot_order = ["scsi0", "ide2"] in OpenTofu templates
+     │
+     └── ISO still attached after install
+         └── Expected - ISO can remain, boot order ensures disk priority
+```
+
+**Root Cause:**
+The Proxmox VM was booting from the ISO (ide2) instead of the installed disk (scsi0). Talos detects it's already installed and halts to prevent accidental reinstallation.
+
+**Fix Applied:**
+The `boot_order` configuration in `templates/config/infrastructure/tofu/main.tf.j2` ensures:
+1. Initial boot: Empty disk fails → falls back to ISO → Talos installs
+2. After install: Boots from disk automatically (Talos on scsi0)
+
+```hcl
+boot_order = ["scsi0", "ide2"]
+```
+
+**For Existing VMs (manual fix):**
+```bash
+# Option 1: Change boot order
+qm set <VMID> -boot order=scsi0,ide2
+
+# Option 2: Remove ISO entirely
+qm set <VMID> -ide2 none
+
+# Then restart the VM
+qm start <VMID>
+```
+
+**For New VMs:**
+Run `task configure` to regenerate infrastructure files with the boot_order fix, then `task infra:apply`.
+
+---
+
 ### etcd Problems
 
 ```bash
@@ -599,6 +654,7 @@ talosctl logs kubelet -n <ip>
 
 | Error | Likely Cause | Solution |
 | ------- | -------------- | ---------- |
+| `halt_if_installed kernel parameter is set` | VM booting from ISO instead of disk | Change boot order to disk first (see §6) |
 | `no nodes available to schedule pods` | All nodes tainted or full | Check node taints, resource limits |
 | `container runtime network not ready` | Cilium not running | Check Cilium pods, restart |
 | `failed to pull image` | Registry auth, rate limit | Check imagePullSecrets, Spegel |

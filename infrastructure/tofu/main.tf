@@ -179,6 +179,13 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     type = "std"
   }
 
+  # Boot order: disk first (scsi0), then CD-ROM (ide2) for initial install
+  # This ensures VMs boot from installed disk after Talos installation completes,
+  # preventing the "halt_if_installed" error when ISO is still attached.
+  # Initial boot: empty disk fails → falls back to ISO → Talos installs
+  # After install: boots from disk automatically
+  boot_order = ["scsi0", "ide2"]
+
   # Lifecycle: Ignore changes to started state after creation
   lifecycle {
     ignore_changes = [
