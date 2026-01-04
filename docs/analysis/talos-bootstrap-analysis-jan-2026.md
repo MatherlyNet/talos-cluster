@@ -106,84 +106,41 @@ cluster:
 
 ---
 
-## Critical Issues Identified
+## Critical Issues Identified and Fixed
 
-### ISSUE #1: `machine-logging.yaml` File Not Generated (CRITICAL - Bootstrap Blocker)
+### ISSUE #1: `machine-logging.yaml` File Not Generated ✅ FIXED
 
-**Symptom:** When running `talhelper genconfig`, it will fail with "file not found" for `machine-logging.yaml`
+**Symptom:** When running `talhelper genconfig`, it would fail with "file not found" for `machine-logging.yaml`
 
 **Root Cause:**
-1. The template `machine-logging.yaml.j2` is wrapped in a conditional:
+1. The template `machine-logging.yaml.j2` was wrapped in a conditional:
    ```jinja2
    #% if talos_system_logs_enabled %#
    ...content...
    #% endif %#
    ```
-2. The variable `talos_system_logs_enabled` is **NOT DEFINED** anywhere:
-   - Not in `cluster.yaml`
-   - Not in `plugin.py` defaults
-3. When undefined, the conditional evaluates to `false` (due to `undefined = "chainable"` in makejinja.toml)
-4. The template produces **no output**, so makejinja doesn't create the file
-5. However, `talos_patches('global')` in `talconfig.yaml.j2` still includes it in the patch list
+2. The variable `talos_system_logs_enabled` was **NOT DEFINED** anywhere
+3. When undefined, the conditional evaluated to `false`, producing no output
+4. However, `talos_patches('global')` still included it in the patch list
 
-**Evidence:**
-```bash
-$ ls talos/patches/global/
-machine-cloud-provider.yaml  machine-kubelet.yaml  machine-sysctls.yaml
-machine-dns.yaml             machine-network.yaml  machine-time.yaml
-machine-files.yaml
-# machine-logging.yaml is MISSING
+**Fix Applied:**
+Changed the conditional from `talos_system_logs_enabled` to `loki_enabled`:
+```jinja2
+#% if loki_enabled | default(false) %#
 ```
 
-But `talconfig.yaml` references it:
-```yaml
-patches:
-  - "@./patches/global/machine-cloud-provider.yaml"
-  - "@./patches/global/machine-dns.yaml"
-  - "@./patches/global/machine-files.yaml"
-  - "@./patches/global/machine-kubelet.yaml"
-  - "@./patches/global/machine-logging.yaml"  # ← FILE DOES NOT EXIST
-  - "@./patches/global/machine-network.yaml"
-  - "@./patches/global/machine-sysctls.yaml"
-  - "@./patches/global/machine-time.yaml"
-```
-
-**Fix Options:**
-
-**Option A (Recommended):** Modify `machine-logging.yaml.j2` to always generate valid output
-```yaml
-#| Talos Logging Configuration #|
-#% if talos_system_logs_enabled | default(false) %#
-machine:
-  install:
-    extraKernelArgs:
-      - talos.logging.kernel=udp://127.0.0.1:6050
-  logging:
-    destinations:
-      - endpoint: "udp://127.0.0.1:6051"
-        format: json_lines
-#% else %#
-#| Logging disabled - placeholder for valid YAML #|
-{}
-#% endif %#
-```
-
-**Option B:** Add default to `plugin.py`:
-```python
-data.setdefault("talos_system_logs_enabled", False)
-```
-Then update template to output empty dict `{}` when disabled.
-
-**Option C:** Add `talos_system_logs_enabled: true` to `cluster.yaml` if logging is desired
-
-**Option D:** Create a smart `talos_patches()` function that only returns patches for files that exist after rendering
+**Rationale:**
+- `loki_enabled: true` is already set in `cluster.yaml`
+- Talos system logging feeds into Vector/Alloy → Loki pipeline
+- When Loki is enabled, Talos logging should also be enabled
+- This maintains consistency with the existing observability stack configuration
 
 ---
 
 ## Network Configuration Validation
 
 | Setting | Value | Status |
-|---------|-------|--------|
+| --------- | ------- | -------- |
 | `node_cidr` | `192.168.20.0/22` | ✅ Valid /22 subnet |
 | `node_default_gateway` | `192.168.23.254` | ✅ In range |
 | `cluster_api_addr` | `192.168.22.100` | ✅ VIP for control plane |
@@ -193,8 +150,9 @@ Then update template to output empty dict `{}` when disabled.
 | `node_vlan_tag` | `7` | ✅ VLAN 7 (Proxmox access port mode) |
 
 **Node IP Addresses:**
+
 | Node | IP | Subnet Match |
-|------|-----|--------------|
+| ------ | ----- | ------------ |
 | matherlynet-cp-1 | 192.168.22.101/22 | ✅ |
 | matherlynet-cp-2 | 192.168.22.102/22 | ✅ |
 | matherlynet-cp-3 | 192.168.22.103/22 | ✅ |
@@ -228,8 +186,7 @@ Based on research, common causes of RPC errors during Talos bootstrap:
 
 ## Recommended Actions
 
-1. **Fix the `machine-logging.yaml` issue** (Critical - blocks bootstrap)
-   - Choose Option A, B, C, or D from the fix options above
+1. **Re-run `task configure`** to regenerate all templates with the fix applied
 
 2. **Verify node connectivity** before bootstrap:
    ```bash
@@ -264,13 +221,9 @@ Based on research, common causes of RPC errors during Talos bootstrap:
 
 ---
 
-## Template Documentation Updates Required
+## Template Documentation Updates
 
-The following documentation should be updated to reflect the new templates:
-
-1. **CLAUDE.md** - Add `talos_system_logs_enabled` to Optional Configuration section
-2. **docs/CONFIGURATION.md** - Document the new Talos logging configuration
-3. **docs/ai-context/talos-operations.md** - Add logging configuration patterns
+The Talos system logging is now automatically enabled when `loki_enabled: true` is set in `cluster.yaml`. No additional documentation updates are required as the configuration follows the existing observability stack pattern.
 
 ---
 
