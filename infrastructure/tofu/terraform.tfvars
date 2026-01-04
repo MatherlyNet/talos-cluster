@@ -103,7 +103,7 @@ nodes = [
     controller       = true
     mac_addr         = "bc:24:11:62:36:02"
     schematic_id     = "a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca"
-    disk             = "S4EVNF0M123456"
+    disk             = "/dev/sda"
     # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
     vm_cores         = 4
     vm_sockets       = 1

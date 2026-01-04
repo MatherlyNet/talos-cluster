@@ -40,8 +40,7 @@ nodes:
           ip: "192.168.22.100"
   - hostname: "matherlynet-cp-2"
     ipAddress: "192.168.22.102"
-    installDiskSelector:
-      serial: "S4EVNF0M123456"
+    installDisk: "/dev/sda"
     machineSpec:
       secureboot: true
     talosImageURL: factory.talos.dev/installer-secureboot/a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca
