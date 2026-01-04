@@ -267,55 +267,6 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "local-lvm")
 # proxmox_disk_storage: ""
 
-# -- Global VM resource defaults (fallback for all nodes)
-#    Can be overridden by role-specific defaults or per-node in nodes.yaml
-#    Fallback chain: per-node -> role-defaults -> global-defaults
-# proxmox_vm_defaults:
-#   cores: 4           # CPU cores
-#   sockets: 1         # CPU sockets
-#   memory: 8192       # Memory in MB
-#   disk_size: 128     # Disk size in GB
-#
-# -- Controller node VM defaults (optimized for etcd and control plane)
-#    Controllers run etcd, API server, scheduler, and controller-manager
-#    When allowSchedulingOnControlPlanes: false (default), no workloads run here
-#    Fallback chain: per-node -> controller-defaults -> global-defaults
-# proxmox_vm_controller_defaults:
-#   cores: 4           # CPU cores (etcd is single-threaded, 4 is plenty)
-#   sockets: 1         # CPU sockets
-#   memory: 8192       # Memory in MB (8GB sufficient for control plane)
-#   disk_size: 64      # Disk size in GB (etcd only, no workloads)
-#
-# -- Worker node VM defaults (optimized for running workloads)
-#    Workers run application pods, require more resources
-#    Fallback chain: per-node -> worker-defaults -> global-defaults
-# proxmox_vm_worker_defaults:
-#   cores: 8           # CPU cores (more for workload scheduling)
-#   sockets: 1         # CPU sockets
-#   memory: 16384      # Memory in MB (16GB for application pods)
-#   disk_size: 256     # Disk size in GB (container images + workloads)
-#
-# -- Advanced VM settings (Talos-optimized defaults)
-# proxmox_vm_advanced:
-#   bios: "ovmf"              # UEFI boot (required for Talos)
-#   machine: "q35"            # Modern chipset
-#   cpu_type: "host"          # CPU type (host = passthrough)
-#   scsi_hw: "virtio-scsi-pci"# SCSI controller
-#   balloon: 0                # Memory ballooning disabled (K8s)
-#   numa: true                # NUMA enabled
-#   qemu_agent: true          # QEMU guest agent
-#   net_queues: 4             # Multi-queue networking
-#   disk_discard: true        # Enable TRIM/discard
-#   disk_ssd: true            # SSD emulation
-#   tags: ["kubernetes", "linux", "talos"]  # VM tags
-#   # Network configuration
-#   network_bridge: "vmbr0"   # Proxmox bridge interface for VM networking
-#   # Guest OS configuration
-#   ostype: "l26"             # Linux 2.6/3.x/4.x/5.x/6.x kernel
-#   # Storage flags (Talos-optimized: immutable OS, K8s handles HA)
-#   disk_backup: false        # Exclude from Proxmox backup jobs
-#   disk_replicate: false     # Disable Proxmox replication
-
 # -- Proxmox API token for OpenTofu VM provisioning
 #    Create at: Datacenter → Permissions → API Tokens → Add
 #    Format: user@realm!token-name (e.g., root@pam!terraform)
@@ -564,3 +515,56 @@ cloudflare_gateway_addr: ""
 # -- Monthly backup retention count
 #    (OPTIONAL) / (DEFAULT: 3)
 # volsync_retain_monthly: 3
+
+# =============================================================================
+# GLOBAL VM DEFAULTS (OpenTofu/Proxmox) - Optional for VM deployments
+# =============================================================================
+
+# -- Global VM resource defaults (fallback for all nodes)
+#    Can be overridden by role-specific defaults or per-node in nodes.yaml
+#    Fallback chain: per-node -> role-defaults -> global-defaults
+# proxmox_vm_defaults:
+#   cores: 4           # CPU cores
+#   sockets: 1         # CPU sockets
+#   memory: 8192       # Memory in MB
+#   disk_size: 128     # Disk size in GB
+#
+# -- Controller node VM defaults (optimized for etcd and control plane)
+#    Controllers run etcd, API server, scheduler, and controller-manager
+#    When allowSchedulingOnControlPlanes: false (default), no workloads run here
+#    Fallback chain: per-node -> controller-defaults -> global-defaults
+# proxmox_vm_controller_defaults:
+#   cores: 4           # CPU cores (etcd is single-threaded, 4 is plenty)
+#   sockets: 1         # CPU sockets
+#   memory: 8192       # Memory in MB (8GB sufficient for control plane)
+#   disk_size: 64      # Disk size in GB (etcd only, no workloads)
+#
+# -- Worker node VM defaults (optimized for running workloads)
+#    Workers run application pods, require more resources
+#    Fallback chain: per-node -> worker-defaults -> global-defaults
+# proxmox_vm_worker_defaults:
+#   cores: 8           # CPU cores (more for workload scheduling)
+#   sockets: 1         # CPU sockets
+#   memory: 16384      # Memory in MB (16GB for application pods)
+#   disk_size: 256     # Disk size in GB (container images + workloads)
+#
+# -- Advanced VM settings (Talos-optimized defaults)
+# proxmox_vm_advanced:
+#   bios: "ovmf"              # UEFI boot (required for Talos)
+#   machine: "q35"            # Modern chipset
+#   cpu_type: "host"          # CPU type (host = passthrough)
+#   scsi_hw: "virtio-scsi-pci"# SCSI controller
+#   balloon: 0                # Memory ballooning disabled (K8s)
+#   numa: true                # NUMA enabled
+#   qemu_agent: true          # QEMU guest agent
+#   net_queues: 4             # Multi-queue networking
+#   disk_discard: true        # Enable TRIM/discard
+#   disk_ssd: true            # SSD emulation
+#   tags: ["kubernetes", "linux", "talos"]  # VM tags
+#   # Network configuration
+#   network_bridge: "vmbr0"   # Proxmox bridge interface for VM networking
+#   # Guest OS configuration
+#   ostype: "l26"             # Linux 2.6/3.x/4.x/5.x/6.x kernel
+#   # Storage flags (Talos-optimized: immutable OS, K8s handles HA)
+#   disk_backup: false        # Exclude from Proxmox backup jobs
+#   disk_replicate: false     # Disable Proxmox replication

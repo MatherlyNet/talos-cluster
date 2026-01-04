@@ -46,10 +46,13 @@ output "worker_nodes" {
 # -----------------------------------------------------------------------------
 
 output "talos_iso_files" {
-  description = "Map of schematic ID prefix to ISO file path on Proxmox"
+  description = "Map of schematic-secureboot key to ISO file path on Proxmox"
   value = {
-    for schematic, file in proxmox_virtual_environment_download_file.talos_iso :
-    substr(schematic, 0, 12) => file.id
+    for key, file in proxmox_virtual_environment_download_file.talos_iso :
+    key => {
+      id        = file.id
+      file_name = file.file_name
+    }
   }
 }
 

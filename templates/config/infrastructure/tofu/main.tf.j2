@@ -10,9 +10,21 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  # Extract unique schematic IDs for ISO downloads
-  # This ensures we only download each unique ISO once
-  unique_schematics = distinct([for node in var.nodes : node.schematic_id])
+  # Extract unique schematic+secureboot combinations for ISO downloads
+  # SecureBoot nodes require a different ISO (nocloud-amd64-secureboot.iso)
+  # This ensures we download each unique combination once
+  schematic_secureboot_list = distinct([
+    for node in var.nodes : {
+      schematic_id = node.schematic_id
+      secureboot   = node.secureboot
+    }
+  ])
+
+  # Create a map keyed by "schematic_id-secureboot" for for_each
+  schematic_secureboot_map = {
+    for combo in local.schematic_secureboot_list :
+    "${combo.schematic_id}-${combo.secureboot}" => combo
+  }
 
   # Create node map for for_each
   nodes_map = { for node in var.nodes : node.name => node }
@@ -25,23 +37,33 @@ locals {
 # Talos ISO Download from Image Factory
 # -----------------------------------------------------------------------------
 # Downloads Talos ISOs from Image Factory using schematic IDs.
-# Each unique schematic_id results in one ISO download.
-# Multiple nodes with the same schematic share the same ISO.
+# Each unique (schematic_id, secureboot) combination results in one ISO download.
+# SecureBoot nodes use nocloud-amd64-secureboot.iso, others use nocloud-amd64.iso.
+# REF: https://www.talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot/
 
 resource "proxmox_virtual_environment_download_file" "talos_iso" {
-  for_each = toset(local.unique_schematics)
+  for_each = local.schematic_secureboot_map
 
   content_type = "iso"
   datastore_id = var.proxmox_iso_storage
   node_name    = var.proxmox_node
 
   # Talos Image Factory URL format:
-  # https://factory.talos.dev/image/{schematic_id}/v{version}/nocloud-amd64.iso
-  # Using nocloud for Proxmox/QEMU compatibility
-  url = "${local.talos_factory_url}/${each.key}/v${var.talos_version}/nocloud-amd64.iso"
+  # Standard:   https://factory.talos.dev/image/{schematic_id}/v{version}/nocloud-amd64.iso
+  # SecureBoot: https://factory.talos.dev/image/{schematic_id}/v{version}/nocloud-amd64-secureboot.iso
+  url = each.value.secureboot ? (
+    "${local.talos_factory_url}/${each.value.schematic_id}/v${var.talos_version}/nocloud-amd64-secureboot.iso"
+  ) : (
+    "${local.talos_factory_url}/${each.value.schematic_id}/v${var.talos_version}/nocloud-amd64.iso"
+  )
 
   # Use schematic ID prefix for filename (first 12 chars for readability)
-  file_name = "talos-v${var.talos_version}-${substr(each.key, 0, 12)}.iso"
+  # Append -secureboot suffix for SecureBoot ISOs
+  file_name = each.value.secureboot ? (
+    "talos-v${var.talos_version}-${substr(each.value.schematic_id, 0, 12)}-secureboot.iso"
+  ) : (
+    "talos-v${var.talos_version}-${substr(each.value.schematic_id, 0, 12)}.iso"
+  )
 
   # Overwrite if ISO already exists with different content
   overwrite = true
@@ -109,16 +131,18 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   }
 
   # EFI Disk (required for OVMF BIOS)
+  # NOTE: pre_enrolled_keys must be false for Talos SecureBoot
+  # Talos uses its own signing keys, not Microsoft's pre-enrolled keys
   efi_disk {
     datastore_id      = var.proxmox_disk_storage
     type              = "4m"
-    pre_enrolled_keys = each.value.secureboot
+    pre_enrolled_keys = false
   }
 
-  # Boot ISO (Talos nocloud image)
+  # Boot ISO (Talos nocloud image - standard or secureboot variant)
   cdrom {
     enabled   = true
-    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.schematic_id].id
+    file_id   = proxmox_virtual_environment_download_file.talos_iso["${each.value.schematic_id}-${each.value.secureboot}"].id
     interface = "ide2"
   }
 
@@ -145,6 +169,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     model       = "virtio"
     queues      = var.vm_advanced.net_queues
     vlan_id     = var.node_vlan_tag
+    mtu         = each.value.mtu
   }
 
   # Serial device (required for console access)

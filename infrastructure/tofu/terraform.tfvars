@@ -68,7 +68,7 @@ vm_advanced = {
 
 node_cidr            = "192.168.20.0/22"
 node_default_gateway = "192.168.23.254"
-node_vlan_tag        = null
+node_vlan_tag        = "7"
 
 # =============================================================================
 # Node Definitions
@@ -92,7 +92,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
   {
@@ -112,7 +112,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
   {
@@ -132,7 +132,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
   {
@@ -152,7 +152,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
   {
@@ -172,7 +172,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
   {
@@ -192,7 +192,7 @@ nodes = [
     vm_startup_delay  = 15
     vm_shutdown_delay = 60
     # Optional node settings
-    mtu              = null
+    mtu              = 1500
     secureboot       = true
   },
 ]
