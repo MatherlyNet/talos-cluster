@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' and monitoring_alerts_enabled | default(true) %#
+#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' and monitoring_alerts_enabled | default(true) %#
 ---
 # Infrastructure Alerts - Critical monitoring rules for cluster health
 # These alerts are designed for homelab infrastructure and Talos Linux clusters.

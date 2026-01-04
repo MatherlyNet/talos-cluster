@@ -2,10 +2,27 @@ import base64
 import ipaddress
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import makejinja
+
+
+# Cached file readers for 20-30% render improvement
+# See: docs/REVIEW-FOLLOWUP-JAN-2026.md item #10
+@lru_cache(maxsize=8)
+def _read_file_cached(file_path: str) -> str:
+    """Read and cache file contents. Cached for performance during template rendering."""
+    with open(file_path, "r") as file:
+        return file.read().strip()
+
+
+@lru_cache(maxsize=4)
+def _read_json_cached(file_path: str) -> str:
+    """Read and cache JSON file contents as string. Parsed by caller."""
+    with open(file_path, "r") as file:
+        return file.read()
 
 
 # Return the filename of a path without the j2 extension
@@ -27,8 +44,7 @@ def nthhost(value: str, query: int) -> str:
 # Return the age public or private key from age.key
 def age_key(key_type: str, file_path: str = "age.key") -> str:
     try:
-        with open(file_path, "r") as file:
-            file_content = file.read().strip()
+        file_content = _read_file_cached(file_path)
         if key_type == "public":
             key_match = re.search(r"# public key: (age1[\w]+)", file_content)
             if not key_match:
@@ -50,8 +66,7 @@ def age_key(key_type: str, file_path: str = "age.key") -> str:
 # Return cloudflare tunnel fields from cloudflare-tunnel.json
 def cloudflare_tunnel_id(file_path: str = "cloudflare-tunnel.json") -> str:
     try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
+        data = json.loads(_read_json_cached(file_path))
         tunnel_id = data.get("TunnelID")
         if tunnel_id is None:
             raise KeyError(f"Missing 'TunnelID' key in {file_path}")
@@ -70,8 +85,7 @@ def cloudflare_tunnel_id(file_path: str = "cloudflare-tunnel.json") -> str:
 # Return cloudflare tunnel fields from cloudflare-tunnel.json in TUNNEL_TOKEN format
 def cloudflare_tunnel_secret(file_path: str = "cloudflare-tunnel.json") -> str:
     try:
-        with open(file_path, "r") as file:
-            data = json.load(file)
+        data = json.loads(_read_json_cached(file_path))
         transformed_data = {
             "a": data["AccountTag"],
             "t": data["TunnelID"],
@@ -93,8 +107,7 @@ def cloudflare_tunnel_secret(file_path: str = "cloudflare-tunnel.json") -> str:
 # Return the GitHub deploy key from github-deploy.key
 def github_deploy_key(file_path: str = "github-deploy.key") -> str:
     try:
-        with open(file_path, "r") as file:
-            return file.read().strip()
+        return _read_file_cached(file_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"File not found: {file_path}")
     except Exception as e:
@@ -104,8 +117,7 @@ def github_deploy_key(file_path: str = "github-deploy.key") -> str:
 # Return the Flux / GitHub push token from github-push-token.txt
 def github_push_token(file_path: str = "github-push-token.txt") -> str:
     try:
-        with open(file_path, "r") as file:
-            return file.read().strip()
+        return _read_file_cached(file_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"File not found: {file_path}")
     except Exception as e:

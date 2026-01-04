@@ -8,6 +8,6 @@ components:
 
 resources:
   - ./namespace.yaml
-  #% if proxmox_csi_enabled is defined and proxmox_csi_enabled %#
+  #% if proxmox_csi_enabled | default(false) %#
   - ./proxmox-csi/ks.yaml
   #% endif %#

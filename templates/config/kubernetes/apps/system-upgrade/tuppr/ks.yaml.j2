@@ -5,6 +5,7 @@ metadata:
   name: tuppr
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/system-upgrade/tuppr/app
   postBuild:
     substituteFrom:

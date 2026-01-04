@@ -6,6 +6,33 @@ source "$(dirname "${0}")/lib/common.sh"
 export LOG_LEVEL="debug"
 export ROOT_DIR="$(git rev-parse --show-toplevel)"
 
+# Maximum parallel jobs for background operations
+MAX_PARALLEL_JOBS="${MAX_PARALLEL_JOBS:-4}"
+
+# Track background job PIDs for parallel execution
+declare -a BACKGROUND_PIDS=()
+
+# Run a command in background and track its PID
+function run_parallel() {
+    local name="$1"
+    shift
+    log debug "Starting parallel task" "task=${name}"
+    "$@" &
+    BACKGROUND_PIDS+=($!)
+}
+
+# Wait for all background jobs to complete
+function wait_parallel() {
+    local failed=0
+    for pid in "${BACKGROUND_PIDS[@]}"; do
+        if ! wait "$pid"; then
+            ((failed++))
+        fi
+    done
+    BACKGROUND_PIDS=()
+    return $failed
+}
+
 # Talos requires the nodes to be 'Ready=False' before applying resources
 function wait_for_nodes() {
     log debug "Waiting for nodes to be available"
@@ -131,14 +158,34 @@ function main() {
     check_env KUBECONFIG TALOSCONFIG
     check_cli helmfile kubectl kustomize sops talhelper yq
 
-    # Apply resources and Helm releases
+    local start_time
+    start_time=$(date +%s)
+
+    # Phase 1: Wait for nodes (required before anything else)
     wait_for_nodes
-    apply_namespaces
-    apply_sops_secrets
+
+    # Phase 2: Apply namespaces and secrets in parallel (independent operations)
+    log info "Phase 2: Applying namespaces and secrets in parallel"
+    run_parallel "namespaces" apply_namespaces
+    run_parallel "secrets" apply_sops_secrets
+    if ! wait_parallel; then
+        log error "Phase 2 failed: namespaces or secrets application failed"
+    fi
+    log info "Phase 2 complete: namespaces and secrets applied"
+
+    # Phase 3: Apply CRDs (depends on namespaces)
+    log info "Phase 3: Applying CRDs"
     apply_crds
+
+    # Phase 4: Sync Helm releases (depends on CRDs)
+    log info "Phase 4: Syncing Helm releases"
     sync_helm_releases
 
-    log info "Congrats! The cluster is bootstrapped and Flux is syncing the Git repository"
+    local end_time duration
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+
+    log info "Congrats! The cluster is bootstrapped and Flux is syncing the Git repository" "duration=${duration}s"
 }
 
 main "$@"

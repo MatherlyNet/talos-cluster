@@ -81,6 +81,62 @@ task talos:reset
 | `task template:tidy` | Archive template files | Post-setup cleanup |
 | `task template:reset` | Remove all generated files | Start fresh |
 
+### Infrastructure Tasks (OpenTofu)
+
+| Command | Description | Parameters |
+| ------- | ----------- | ---------- |
+| `task infra:init` | Initialize OpenTofu with R2 backend | None |
+| `task infra:plan` | Create execution plan (outputs tfplan) | None |
+| `task infra:apply` | Apply saved plan (requires tfplan) | None |
+| `task infra:apply-auto` | Apply with auto-approve (interactive) | None |
+| `task infra:destroy` | Destroy managed resources (interactive) | None |
+| `task infra:output` | Show OpenTofu outputs | None |
+| `task infra:state-list` | List resources in state | None |
+| `task infra:force-unlock` | Force unlock state lock | `LOCK_ID=<id>` |
+| `task infra:validate` | Validate configuration | None |
+| `task infra:fmt` | Format configuration files | None |
+| `task infra:fmt-check` | Check formatting (CI) | None |
+| `task infra:secrets-edit` | Edit encrypted secrets | None |
+
+**Usage Examples:**
+
+```bash
+# Initialize OpenTofu (first time or after backend changes)
+task infra:init
+
+# Plan and review changes
+task infra:plan
+
+# Apply the saved plan
+task infra:apply
+
+# Quick apply without plan file (prompts for confirmation)
+task infra:apply-auto
+
+# View current outputs
+task infra:output
+
+# List managed resources
+task infra:state-list
+
+# Force unlock a stuck state
+task infra:force-unlock LOCK_ID=abc123
+
+# Edit encrypted secrets (Proxmox API credentials, R2 tokens)
+task infra:secrets-edit
+
+# Validate configuration syntax
+task infra:validate
+
+# Format configuration files
+task infra:fmt
+```
+
+**Prerequisites:**
+- `infrastructure/secrets.sops.yaml` must exist (created by `task configure`)
+- `age.key` must be present for SOPS decryption
+- Required tools: `tofu`, `sops`, `yq`
+
 ---
 
 ## talosctl Reference

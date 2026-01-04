@@ -120,7 +120,9 @@ templates/config/kubernetes/apps/<namespace>/<app>/
 **Template Delimiters (makejinja):**
 - Block: `#% ... %#` (e.g., `#% if condition %#`)
 - Variable: `#{ ... }#` (e.g., `#{ cluster_api_addr }#`)
-- Comment: `#| ... #|`
+- Comment: `#| ... #|` ⚠️ **SYMMETRICAL** - both ends use `#|`, NOT `|#`
+
+> **CRITICAL**: Comments use the SAME delimiter on both ends (`#|`). Do NOT extrapolate from the block/variable mirror pattern. The correct comment is `#| comment here #|`, **never** `#| comment here |#`.
 
 **SOPS Encryption:** All `*.sops.yaml` files encrypted with Age.
 

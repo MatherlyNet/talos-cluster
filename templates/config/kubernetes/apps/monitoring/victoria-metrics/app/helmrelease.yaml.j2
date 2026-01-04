@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -26,6 +26,20 @@ spec:
             memory: 256Mi
           limits:
             memory: 1Gi
+        # Health probes for reliability
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8429
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8429
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
 
     # VMAgent for scraping
     vmagent:
@@ -37,6 +51,19 @@ spec:
             memory: 128Mi
           limits:
             memory: 256Mi
+        # Health probes for reliability
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8429
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8429
+          initialDelaySeconds: 30
+          periodSeconds: 30
 
     # Grafana
     grafana:
@@ -61,6 +88,20 @@ spec:
           memory: 128Mi
         limits:
           memory: 512Mi
+      # Health probes for reliability
+      readinessProbe:
+        httpGet:
+          path: /api/health
+          port: 3000
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /api/health
+          port: 3000
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        timeoutSeconds: 5
       # Dashboard provisioning
       dashboardProviders:
         dashboardproviders.yaml:
@@ -197,6 +238,19 @@ spec:
             memory: 64Mi
           limits:
             memory: 128Mi
+        # Health probes for reliability
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9093
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9093
+          initialDelaySeconds: 10
+          periodSeconds: 30
       config:
         global:
           resolve_timeout: 5m

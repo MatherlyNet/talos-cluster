@@ -1,4 +1,4 @@
-#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+#% if proxmox_ccm_enabled | default(false) %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -6,6 +6,7 @@ metadata:
   name: proxmox-ccm
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/kube-system/proxmox-ccm/app
   postBuild:
     substituteFrom:

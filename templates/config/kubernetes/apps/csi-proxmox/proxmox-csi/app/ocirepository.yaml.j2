@@ -1,11 +1,11 @@
-#% if proxmox_csi_enabled is defined and proxmox_csi_enabled %#
+#% if proxmox_csi_enabled | default(false) %#
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: proxmox-csi
 spec:
-  interval: 15m
+  interval: 30m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy

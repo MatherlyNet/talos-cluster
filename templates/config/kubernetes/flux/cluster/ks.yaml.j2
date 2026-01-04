@@ -9,6 +9,7 @@ spec:
     provider: sops
   deletionPolicy: WaitForTermination
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps
   prune: true
   sourceRef:

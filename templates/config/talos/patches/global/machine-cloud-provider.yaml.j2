@@ -1,4 +1,4 @@
-#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+#% if proxmox_ccm_enabled | default(false) %#
 # Enable external cloud provider mode for Proxmox CCM integration.
 # This tells kubelet to wait for CCM to initialize node labels before scheduling workloads.
 cluster:

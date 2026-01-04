@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
 ---
 # Note: Alloy's Helm chart does not support OCI registry (GitHub Issue #3068).
 # Using HelmRepository instead.

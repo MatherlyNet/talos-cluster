@@ -3,16 +3,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./cert-manager
-  #% if proxmox_csi_enabled is defined and proxmox_csi_enabled %#
+  #% if proxmox_csi_enabled | default(false) %#
   - ./csi-proxmox
   #% endif %#
   - ./default
-  #% if external_secrets_enabled is defined and external_secrets_enabled %#
+  #% if external_secrets_enabled | default(false) %#
   - ./external-secrets
   #% endif %#
   - ./flux-system
   - ./kube-system
-  #% if monitoring_enabled is defined and monitoring_enabled %#
+  #% if monitoring_enabled | default(false) %#
   - ./monitoring
   #% endif %#
   - ./network

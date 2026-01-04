@@ -88,11 +88,17 @@ bgpControlPlane:
 
 ### Comments
 
+**IMPORTANT: Comment delimiters are SYMMETRICAL** - both start AND end use `#|`
+
+Unlike blocks (`#%`/`%#`) and variables (`#{`/`}#`) which mirror, comments use the SAME delimiter on both ends:
+
 ```yaml
-#| This is a template comment - not rendered |#
+#| This is a template comment - not rendered #|
 #| Multi-line comments work too
-   Just keep using the same delimiters |#
+   Just keep using the same delimiters #|
 ```
+
+⚠️ **Common Mistake**: Do NOT use `|#` for comment end - that's incorrect extrapolation from the block/variable pattern.
 
 ## Data Sources
 
@@ -352,7 +358,7 @@ task configure
 ### Debugging Variables
 
 ```yaml
-#| Debug: #{ variable | default('UNDEFINED') }# |#
+#| Debug: #{ variable | default('UNDEFINED') }# #|
 ```
 
 ### Template Not Rendering

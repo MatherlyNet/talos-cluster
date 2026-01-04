@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack == 'prometheus' %#
+#% if monitoring_enabled | default(false) and monitoring_stack == 'prometheus' %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -11,6 +11,7 @@ spec:
       name: kube-prometheus-stack
       namespace: monitoring
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/monitoring/kube-prometheus-stack/app
   postBuild:
     substituteFrom:

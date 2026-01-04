@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -13,6 +13,7 @@ spec:
       name: alloy
       namespace: monitoring
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/monitoring/alloy/app
   postBuild:
     substituteFrom:

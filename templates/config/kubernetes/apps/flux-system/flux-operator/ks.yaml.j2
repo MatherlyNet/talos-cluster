@@ -5,6 +5,7 @@ metadata:
   name: flux-operator
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/flux-system/flux-operator/app
   postBuild:
     substituteFrom:

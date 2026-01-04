@@ -20,31 +20,32 @@ kubeconform_args=(
     "-verbose"
 )
 
+# Use process substitution to avoid subshell exit code masking
 echo "=== Validating standalone manifests in ${KUBERNETES_DIR}/flux ==="
-find "${KUBERNETES_DIR}/flux" -maxdepth 1 -type f -name '*.yaml' -print0 | while IFS= read -r -d $'\0' file;
-do
-    kubeconform "${kubeconform_args[@]}" "${file}"
-    if [[ ${PIPESTATUS[0]} != 0 ]]; then
-        exit 1
-    fi
+flux_files=()
+while IFS= read -r -d $'\0' file; do
+    flux_files+=("$file")
+done < <(find "${KUBERNETES_DIR}/flux" -maxdepth 1 -type f -name '*.yaml' -print0)
+for file in "${flux_files[@]}"; do
+    kubeconform "${kubeconform_args[@]}" "${file}" || exit 1
 done
 
 echo "=== Validating kustomizations in ${KUBERNETES_DIR}/flux ==="
-find "${KUBERNETES_DIR}/flux" -type f -name $kustomize_config -print0 | while IFS= read -r -d $'\0' file;
-do
+flux_kustomizations=()
+while IFS= read -r -d $'\0' file; do
+    flux_kustomizations+=("$file")
+done < <(find "${KUBERNETES_DIR}/flux" -type f -name "$kustomize_config" -print0)
+for file in "${flux_kustomizations[@]}"; do
     echo "=== Validating kustomizations in ${file/%$kustomize_config} ==="
-    kustomize build "${file/%$kustomize_config}" "${kustomize_args[@]}" | kubeconform "${kubeconform_args[@]}"
-    if [[ ${PIPESTATUS[0]} != 0 ]]; then
-        exit 1
-    fi
+    kustomize build "${file/%$kustomize_config}" "${kustomize_args[@]}" | kubeconform "${kubeconform_args[@]}" || exit 1
 done
 
 echo "=== Validating kustomizations in ${KUBERNETES_DIR}/apps ==="
-find "${KUBERNETES_DIR}/apps" -type f -name $kustomize_config -print0 | while IFS= read -r -d $'\0' file;
-do
+app_kustomizations=()
+while IFS= read -r -d $'\0' file; do
+    app_kustomizations+=("$file")
+done < <(find "${KUBERNETES_DIR}/apps" -type f -name "$kustomize_config" -print0)
+for file in "${app_kustomizations[@]}"; do
     echo "=== Validating kustomizations in ${file/%$kustomize_config} ==="
-    kustomize build "${file/%$kustomize_config}" "${kustomize_args[@]}" | kubeconform "${kubeconform_args[@]}"
-    if [[ ${PIPESTATUS[0]} != 0 ]]; then
-        exit 1
-    fi
+    kustomize build "${file/%$kustomize_config}" "${kustomize_args[@]}" | kubeconform "${kubeconform_args[@]}" || exit 1
 done

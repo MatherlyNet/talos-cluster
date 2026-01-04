@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
 ---
 # CRITICAL COHESION: Grafana is disabled here - it's deployed by VictoriaMetrics stack only.
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -42,6 +42,21 @@ spec:
       persistence:
         enabled: true
         size: "#{ logs_storage_size | default('50Gi') }#"
+      # Health probes for reliability
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 3100
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 1
+      livenessProbe:
+        httpGet:
+          path: /ready
+          port: 3100
+        initialDelaySeconds: 45
+        periodSeconds: 30
+        timeoutSeconds: 5
     gateway:
       enabled: false
     # COHESION: Disable components deployed by victoria-metrics-k8s-stack

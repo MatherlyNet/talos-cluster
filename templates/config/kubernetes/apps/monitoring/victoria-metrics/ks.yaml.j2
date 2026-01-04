@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -11,6 +11,7 @@ spec:
       name: victoria-metrics-k8s-stack
       namespace: monitoring
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/monitoring/victoria-metrics/app
   postBuild:
     substituteFrom:

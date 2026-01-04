@@ -1,4 +1,4 @@
-#% if proxmox_ccm_enabled is defined and proxmox_ccm_enabled %#
+#% if proxmox_ccm_enabled | default(false) %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

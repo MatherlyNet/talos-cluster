@@ -57,7 +57,7 @@ spec:
             - type: File
               file:
                 path: /dev/stdout
-    #% if tracing_enabled is defined and tracing_enabled %#
+    #% if tracing_enabled | default(false) %#
     tracing:
       samplingRate: #{ tracing_sample_rate | default(10) }#
       provider:

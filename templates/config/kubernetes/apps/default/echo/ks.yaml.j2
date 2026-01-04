@@ -5,6 +5,7 @@ metadata:
   name: echo
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/default/echo/app
   postBuild:
     substituteFrom:

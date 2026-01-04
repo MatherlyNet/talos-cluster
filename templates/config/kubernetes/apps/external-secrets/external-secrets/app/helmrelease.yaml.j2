@@ -1,4 +1,4 @@
-#% if external_secrets_enabled is defined and external_secrets_enabled %#
+#% if external_secrets_enabled | default(false) %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

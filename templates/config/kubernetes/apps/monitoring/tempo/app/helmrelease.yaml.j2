@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and tracing_enabled | default(false) %#
+#% if monitoring_enabled | default(false) and tracing_enabled | default(false) %#
 ---
 # Note: Tempo's Helm chart does not support OCI registry (GitHub Issue #3068).
 # Using HelmRepository (grafana) from Alloy deployment.
@@ -85,6 +85,21 @@ spec:
         memory: 256Mi
       limits:
         memory: 1Gi
+
+    # Health probes for reliability
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 3200
+      initialDelaySeconds: 15
+      periodSeconds: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: 3200
+      initialDelaySeconds: 45
+      periodSeconds: 30
+      timeoutSeconds: 5
 
     # ServiceMonitor for VictoriaMetrics to scrape Tempo metrics
     serviceMonitor:

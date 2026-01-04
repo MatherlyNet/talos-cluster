@@ -1,11 +1,11 @@
-#% if external_secrets_enabled is defined and external_secrets_enabled %#
+#% if external_secrets_enabled | default(false) %#
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: external-secrets
 spec:
-  interval: 15m
+  interval: 30m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy

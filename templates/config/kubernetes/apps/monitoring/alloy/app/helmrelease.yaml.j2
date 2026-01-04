@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and loki_enabled | default(false) %#
+#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
 ---
 # Alloy is Grafana's distribution of the OpenTelemetry Collector.
 # It replaces Promtail (EOL March 2026) and Grafana Agent (EOL November 2025).
@@ -80,6 +80,20 @@ spec:
           memory: 64Mi
         limits:
           memory: 128Mi
+      # Health probes for reliability
+      readinessProbe:
+        httpGet:
+          path: /-/ready
+          port: 12345
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /-/healthy
+          port: 12345
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        timeoutSeconds: 5
 #% if tracing_enabled | default(false) %#
     # Service for receiving OTLP traces
     service:

@@ -1,11 +1,11 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack == 'prometheus' %#
+#% if monitoring_enabled | default(false) and monitoring_stack == 'prometheus' %#
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kube-prometheus-stack
 spec:
-  interval: 15m
+  interval: 30m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy

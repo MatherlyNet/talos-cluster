@@ -5,6 +5,7 @@ metadata:
   name: cloudflare-dns
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/network/cloudflare-dns/app
   postBuild:
     substituteFrom:

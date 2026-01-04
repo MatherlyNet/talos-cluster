@@ -1,4 +1,4 @@
-#% if monitoring_enabled is defined and monitoring_enabled and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

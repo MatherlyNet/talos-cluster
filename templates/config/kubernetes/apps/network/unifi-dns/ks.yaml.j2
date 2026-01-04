@@ -5,6 +5,7 @@ metadata:
   name: unifi-dns
 spec:
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/network/unifi-dns/app
   postBuild:
     substituteFrom:

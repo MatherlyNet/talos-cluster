@@ -39,6 +39,62 @@ jobs:
         with:
           args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes/flux/cluster -v
 
+  security-scan:
+    name: Security Scan
+    needs: pre-job
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: 'kubernetes/'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Run Trivy vulnerability scanner (config)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.29.0
+        with:
+          scan-type: 'config'
+          scan-ref: 'kubernetes/'
+          format: 'sarif'
+          output: 'trivy-config-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-filesystem'
+
+      - name: Upload Trivy config scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-config-results.sarif'
+          category: 'trivy-config'
+
+      - name: Trivy scan summary
+        run: |
+          echo "### Security Scan Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Trivy scanned the kubernetes/ directory for:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Filesystem vulnerabilities**: Container images referenced in manifests" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Configuration issues**: Kubernetes misconfigurations and security best practices" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Results are available in the Security tab." >> "$GITHUB_STEP_SUMMARY"
+
   diff:
     name: Flux Local Diff
     needs: pre-job
@@ -108,7 +164,7 @@ jobs:
 
   flux-local-status:
     name: Flux Local Success
-    needs: ["test", "diff"]
+    needs: ["test", "security-scan", "diff"]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:

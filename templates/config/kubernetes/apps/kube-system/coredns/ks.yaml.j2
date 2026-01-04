@@ -4,7 +4,10 @@ kind: Kustomization
 metadata:
   name: coredns
 spec:
+  dependsOn:
+    - name: cilium
   interval: 1h
+  retryInterval: 30s
   path: ./kubernetes/apps/kube-system/coredns/app
   postBuild:
     substituteFrom:
