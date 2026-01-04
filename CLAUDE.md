@@ -55,6 +55,7 @@ task infra:apply             # Apply saved plan
 task infra:apply-auto        # Apply with auto-approve
 task infra:destroy           # Destroy managed resources
 task infra:secrets-edit      # Edit secrets (rotation only)
+task infra:verify-nodes      # Verify nodes accessible (pre-bootstrap)
 task infra:validate          # Validate configuration
 task infra:fmt               # Format configuration
 ```

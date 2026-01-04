@@ -98,6 +98,7 @@ task talos:reset
 | `task infra:fmt` | Format configuration files | None |
 | `task infra:fmt-check` | Check formatting (CI) | None |
 | `task infra:secrets-edit` | Edit encrypted secrets (for rotation) | None |
+| `task infra:verify-nodes` | Verify nodes accessible in maintenance mode | None |
 
 **Usage Examples:**
 
@@ -133,6 +134,10 @@ task infra:validate
 
 # Format configuration files
 task infra:fmt
+
+# Verify all nodes are accessible after VM provisioning
+# Run before task bootstrap:talos
+task infra:verify-nodes
 ```
 
 **Prerequisites:**

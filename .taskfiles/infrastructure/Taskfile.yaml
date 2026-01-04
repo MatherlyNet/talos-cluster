@@ -159,3 +159,37 @@ tasks:
         sh: test -f {{.SECRETS_FILE}}
       - test -f {{.SOPS_AGE_KEY_FILE}}
       - which sops
+
+  verify-nodes:
+    desc: Verify all nodes are accessible in Talos maintenance mode
+    vars:
+      NODES_FILE: "{{.ROOT_DIR}}/nodes.yaml"
+    cmds:
+      - |
+        echo "Verifying node accessibility (maintenance mode port 50000)..."
+        failed=0
+        for ip in $(yq -r '.nodes[].address' {{.NODES_FILE}}); do
+          name=$(yq -r ".nodes[] | select(.address == \"$ip\") | .name" {{.NODES_FILE}})
+          if talosctl -n "$ip" disks --insecure >/dev/null 2>&1; then
+            echo "✓ $name ($ip) - ready"
+          else
+            echo "✗ $name ($ip) - not accessible"
+            failed=$((failed + 1))
+          fi
+        done
+        if [ $failed -gt 0 ]; then
+          echo ""
+          echo "ERROR: $failed node(s) not accessible. Check:"
+          echo "  - VMs are powered on in Proxmox"
+          echo "  - Network connectivity to node VLAN"
+          echo "  - Firewall allows port 50000"
+          exit 1
+        fi
+        echo ""
+        echo "All nodes ready for bootstrap!"
+    preconditions:
+      - msg: "nodes.yaml not found. Run 'task init' first."
+        sh: test -f {{.NODES_FILE}}
+      - msg: "No nodes defined in nodes.yaml"
+        sh: "[ $(yq '.nodes | length' {{.NODES_FILE}}) -gt 0 ]"
+      - which talosctl yq

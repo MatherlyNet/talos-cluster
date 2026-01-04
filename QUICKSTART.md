@@ -59,10 +59,8 @@ task infra:plan
 task infra:apply
 
 # VMs are now in Talos maintenance mode (port 50000)
-# Verify ALL nodes are accessible before proceeding to Bootstrap:
-for ip in 192.168.x.x 192.168.x.y 192.168.x.z; do
-  talosctl -n $ip disks --insecure && echo "✓ $ip ready"
-done
+# Verify ALL nodes are accessible before proceeding to Bootstrap
+task infra:verify-nodes
 ```
 
 **First-time setup (new state backend):**
@@ -187,6 +185,7 @@ task infra:apply
 | Infra auth (401) | Check credentials in `cluster.yaml`, re-run `task configure` |
 | Backend URL changed | `task infra:init -- -reconfigure` |
 | VM not booting | Check Proxmox console, verify schematic_id in nodes.yaml |
+| Nodes not accessible | `task infra:verify-nodes`, check VM power state, network/firewall |
 | BGP not established | Check `cilium bgp peers`, verify ASNs match, ensure UniFi config uploaded |
 
 ## Key Files
