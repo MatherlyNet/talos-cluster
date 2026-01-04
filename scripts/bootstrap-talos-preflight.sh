@@ -36,7 +36,7 @@ function check_node_reachable() {
         fi
     done
 
-    log error "Node unreachable after ${max_retries} attempts" "ip=${node_ip}"
+    log warn "Node unreachable after ${max_retries} attempts (may be rebooting)" "ip=${node_ip}"
     return 1
 }
 
