@@ -107,7 +107,8 @@ task configure
 
 **3. Upload UniFi BGP configuration:**
 ```bash
-# Generated file: unifi/bgp.conf
+# Generated file: unifi/bgp.conf (gitignored - contains password)
+# Sample structure: unifi/bgp.conf.sample
 # Upload via: Settings → Routing → BGP → Add Configuration
 ```
 
