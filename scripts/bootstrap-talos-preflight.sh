@@ -94,7 +94,7 @@ function extract_disk_selector() {
     # Extract installDisk or installDiskSelector for this node
     # This is a simplified version - real implementation would parse YAML properly
     local install_disk
-    install_disk=$(yq -r ".nodes[] | select(.ipAddress == \"${node_ip}\") | .installDisk // .installDiskSelector.serial // empty" "${talconfig}")
+    install_disk=$(yq -r ".nodes[] | select(.ipAddress == \"${node_ip}\") | .installDisk // .installDiskSelector.serial // \"\"" "${talconfig}" 2>/dev/null) || true
 
     echo "${install_disk}"
 }
