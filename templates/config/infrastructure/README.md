@@ -166,6 +166,40 @@ nodes:
     vm_startup_delay: 30 # Seconds to wait before next VM
 ```
 
+### Proxmox API Token Permissions (CRITICAL)
+
+The bpg/proxmox provider requires specific privileges. The `download_file` resource (for ISO downloads) requires `Sys.Audit` and `Sys.Modify` on the root path (`/`).
+
+**Create a dedicated role on Proxmox:**
+```bash
+# SSH to Proxmox server
+pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.PowerMgmt"
+```
+
+**Option A: Use existing root token with role assignment**
+```bash
+# Assign role to root token on root path
+pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
+```
+
+**Option B: Create dedicated user and token**
+```bash
+pveum user add terraform@pve
+pveum aclmod / -user terraform@pve -role TerraformProv
+pveum user token add terraform@pve terraform-token --privsep=0
+# Use terraform@pve!terraform-token as proxmox_api_token_id
+```
+
+**Critical privileges for ISO downloads:**
+
+| Privilege | Purpose |
+| ----------- | --------- |
+| `Datastore.AllocateTemplate` | Upload ISOs to storage |
+| `Sys.Audit` | Query system metadata |
+| `Sys.Modify` | Required by query-url-metadata API |
+
+> **Reference:** [bpg/proxmox download_file docs](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file)
+
 ## Secrets Management
 
 Infrastructure secrets are **auto-generated** from `cluster.yaml` during `task configure`, following the same pattern as other Kubernetes secrets.
@@ -221,6 +255,16 @@ task infra:init -- -reconfigure
 # or for state migration:
 task infra:init -- -migrate-state
 ```
+
+### "403 Permission check failed" on ISO download
+The bpg/proxmox provider's `download_file` resource requires `Sys.Audit` and `Sys.Modify` privileges on the root path (`/`):
+```bash
+# On Proxmox server - add privileges to your token
+pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
+# Or use PVEDatastoreAdmin role if TerraformProv doesn't exist:
+pveum aclmod / -token 'root@pam!k8s-gitops' -role PVEDatastoreAdmin
+```
+See [Proxmox API Token Permissions](#proxmox-api-token-permissions-critical) for creating the role.
 
 ## Next Steps
 

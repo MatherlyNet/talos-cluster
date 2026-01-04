@@ -45,6 +45,15 @@ task configure
 
 If you configured Proxmox credentials in cluster.yaml, `task configure` already initialized OpenTofu.
 
+**Prerequisites - Proxmox API Permissions:**
+```bash
+# On Proxmox server - create role with required privileges
+pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.PowerMgmt"
+
+# Assign role to your API token on root path (CRITICAL for ISO downloads)
+pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
+```
+
 This automatically:
 - Downloads Talos ISO from Image Factory using your schematic IDs
 - Uploads ISO to Proxmox storage
@@ -186,6 +195,7 @@ task infra:apply
 | Backend URL changed | `task infra:init -- -reconfigure` |
 | VM not booting | Check Proxmox console, verify schematic_id in nodes.yaml |
 | Nodes not accessible | `task infra:verify-nodes`, check VM power state, network/firewall |
+| ISO download 403 | Add Proxmox API permissions: see Infrastructure section above |
 | BGP not established | Check `cilium bgp peers`, verify ASNs match, ensure UniFi config uploaded |
 
 ## Key Files

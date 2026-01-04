@@ -458,10 +458,25 @@ The infrastructure layer:
 | Error | Cause | Solution |
 | ----- | ----- | -------- |
 | `401 Unauthorized` | Bad credentials | Check cluster.yaml, run `task configure` |
+| `403 Permission check failed` | Missing Proxmox privileges | Add `Sys.Audit`, `Sys.Modify` to token (see below) |
 | `Error acquiring lock` | Stale lock | `task infra:force-unlock LOCK_ID=xxx` |
 | `Checksum mismatch` | R2 API quirk | Env vars set by Taskfile |
 | `Backend config changed` | Modified backend.tf | `task infra:init -- -reconfigure` |
 | `Missing provider` | Not initialized | `task infra:init` |
+
+### Proxmox API Token Permissions
+
+The bpg/proxmox provider requires specific privileges. The `download_file` resource (for ISO downloads) requires `Sys.Audit` and `Sys.Modify` on root path (`/`):
+
+```bash
+# Create role with all required privileges
+pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.Monitor,VM.PowerMgmt"
+
+# Assign role to token on root path
+pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
+```
+
+Reference: [bpg/proxmox download_file docs](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file)
 
 ### Debug Commands
 
