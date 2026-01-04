@@ -32,6 +32,7 @@ nodes:
   #
   # Fallback chain: per-node value -> role defaults -> global defaults
   #
+  #   vm_id: 200           # (VM/OPTIONAL) Proxmox VM ID (auto-assigned if not set)
   #   vm_cores: 4          # (VM/OPTIONAL) CPU cores
   #   vm_sockets: 1        # (VM/OPTIONAL) CPU sockets
   #   vm_memory: 8192      # (VM/OPTIONAL) Memory in MB
@@ -50,6 +51,7 @@ nodes:
   # Uses proxmox_vm_controller_defaults: 4 cores, 8GB RAM, 64GB disk
   #
   # - name: "k8s-cp-1"
+  #   vm_id: 101
   #   address: "192.168.1.10"
   #   controller: true
   #   disk: "/dev/sda"
@@ -58,6 +60,7 @@ nodes:
   #   vm_startup_order: 1          # Controllers boot first
   #
   # - name: "k8s-cp-2"
+  #   vm_id: 102
   #   address: "192.168.1.11"
   #   controller: true
   #   disk: "S4EVNF0M123456"        # Can use disk serial instead of path
@@ -66,6 +69,7 @@ nodes:
   #   vm_startup_order: 2
   #
   # - name: "k8s-cp-3"
+  #   vm_id: 103
   #   address: "192.168.1.12"
   #   controller: true
   #   disk: "/dev/sda"
@@ -79,6 +83,7 @@ nodes:
   # Uses proxmox_vm_worker_defaults: 8 cores, 16GB RAM, 256GB disk
   #
   # - name: "k8s-wrkr-1"
+  #   vm_id: 111
   #   address: "192.168.1.20"
   #   controller: false             # false = worker node
   #   disk: "/dev/sda"
@@ -87,6 +92,7 @@ nodes:
   #   vm_startup_order: 10          # Workers boot after controllers
   #
   # - name: "k8s-wrkr-2"
+  #   vm_id: 112
   #   address: "192.168.1.21"
   #   controller: false
   #   disk: "/dev/sda"
@@ -103,6 +109,7 @@ nodes:
   #   vm_startup_order: 11
   #
   # - name: "k8s-wrkr-3"
+  #   vm_id: 113
   #   address: "192.168.1.22"
   #   controller: false
   #   disk: "/dev/sda"

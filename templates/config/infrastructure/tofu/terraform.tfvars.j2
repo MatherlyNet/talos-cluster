@@ -115,6 +115,12 @@ nodes = [
 #% else %#
     secureboot       = false
 #% endif %#
+    # VM ID (null = auto-assign by Proxmox)
+#% if node.vm_id is defined %#
+    vm_id            = #{ node.vm_id }#
+#% else %#
+    vm_id            = null
+#% endif %#
   },
 #% endfor %#
 ]

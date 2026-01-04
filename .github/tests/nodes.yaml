@@ -14,6 +14,7 @@ nodes:
     mtu: 1500
     secureboot: true
     encrypt_disk: true
+    vm_id: 200
     kernel_modules:
       - nvidia
       - nvidia_uvm

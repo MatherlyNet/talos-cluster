@@ -94,6 +94,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7001
   },
   {
     name             = "matherlynet-cp-2"
@@ -114,6 +116,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7002
   },
   {
     name             = "matherlynet-cp-3"
@@ -134,6 +138,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7003
   },
   {
     name             = "matherlynet-wrkr-1"
@@ -154,6 +160,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7011
   },
   {
     name             = "matherlynet-wrkr-2"
@@ -174,6 +182,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7012
   },
   {
     name             = "matherlynet-wrkr-3"
@@ -194,6 +204,8 @@ nodes = [
     # Optional node settings
     mtu              = 1500
     secureboot       = true
+    # VM ID (null = auto-assign by Proxmox)
+    vm_id            = 7013
   },
 ]
 

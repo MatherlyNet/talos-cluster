@@ -78,6 +78,8 @@ resource "proxmox_virtual_environment_download_file" "talos_iso" {
 resource "proxmox_virtual_environment_vm" "talos_node" {
   for_each = local.nodes_map
 
+  # VM ID: use specified value or let Proxmox auto-assign
+  vm_id       = each.value.vm_id
   name        = each.value.name
   node_name   = var.proxmox_node
   description = "Talos Linux ${each.value.controller ? "control plane" : "worker"} node"
@@ -153,7 +155,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     discard      = var.vm_advanced.disk_discard ? "on" : "ignore"
     backup       = var.vm_advanced.disk_backup
     replicate    = var.vm_advanced.disk_replicate
-    iothread     = true
+    iothread     = false
   }
 
   # SCSI Controller
@@ -172,9 +174,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # Serial device (required for console access)
   serial_device {}
 
-  # VGA (minimal for Talos - use serial console)
+  # VGA (std for Proxmox console access, serial0 available via serial_device)
   vga {
-    type = "serial0"
+    type = "std"
   }
 
   # Lifecycle: Ignore changes to started state after creation

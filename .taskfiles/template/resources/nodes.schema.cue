@@ -27,6 +27,7 @@ import (
 	kernel_modules?: [...string]
 
 	// VM-specific settings (only used when provisioning via OpenTofu)
+	vm_id?:             int & >=100 & <=999999999  // Proxmox VM ID (auto-assigned if not set)
 	vm_cores?:          int & >=1 & <=64
 	vm_sockets?:        int & >=1 & <=4
 	vm_memory?:         int & >=1024 & <=262144

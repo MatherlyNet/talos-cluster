@@ -416,6 +416,7 @@ Per-node overrides for VM provisioning. Fallback chain: per-node → role-defaul
 
 | Field | Type | Default | Description |
 | ------- | ------ | --------- | ------------- |
+| `vm_id` | int | auto-assigned | Proxmox VM ID (100-999999999, auto-assigned if not set) |
 | `vm_cores` | int | role-based | CPU cores (controller: 4, worker: 8) |
 | `vm_sockets` | int | `1` | CPU sockets |
 | `vm_memory` | int | role-based | Memory in MB (controller: 8192, worker: 16384) |

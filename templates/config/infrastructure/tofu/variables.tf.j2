@@ -169,6 +169,7 @@ variable "nodes" {
     vm_shutdown_delay = number
     mtu               = optional(number)
     secureboot        = bool
+    vm_id             = optional(number)
   }))
   description = "List of Talos nodes to provision"
 }

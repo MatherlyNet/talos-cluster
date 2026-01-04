@@ -53,11 +53,16 @@
               "type": "string"
             }
           },
+          "vm_id": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 999999999,
+            "description": "VM-specific settings (only used when provisioning via OpenTofu)"
+          },
           "vm_cores": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 64,
-            "description": "VM-specific settings (only used when provisioning via OpenTofu)"
+            "maximum": 64
           },
           "vm_sockets": {
             "type": "integer",
