@@ -53,6 +53,7 @@ Configuration validated by CUE schema at `.taskfiles/template/resources/cluster.
 | `node_ntp_servers` | IPv4[] | `["162.159.200.1", "162.159.200.123"]` | NTP servers |
 | `node_default_gateway` | IPv4 | First IP in `node_cidr` | Default gateway |
 | `node_vlan_tag` | string | - | VLAN ID for tagged ports |
+| `proxmox_vlan_mode` | bool | `false` | When `true`, Proxmox handles VLAN tagging (access port mode). When `false`, Talos creates VLAN sub-interfaces (trunk port / bare-metal mode). Set to `true` when using Proxmox VM provisioning with `node_vlan_tag`. |
 | `cluster_pod_cidr` | CIDR | `10.42.0.0/16` | Pod network CIDR |
 | `cluster_svc_cidr` | CIDR | `10.43.0.0/16` | Service network CIDR |
 | `cluster_api_tls_sans` | FQDN[] | - | Additional API server SANs |

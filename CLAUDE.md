@@ -201,6 +201,7 @@ Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 
 Optional Proxmox Infrastructure (VM provisioning via OpenTofu):
 - `proxmox_api_url`, `proxmox_node` (both required to enable)
+- `proxmox_vlan_mode` - When `true`, Proxmox handles VLAN tagging (access port mode); when `false` (default), Talos creates VLAN sub-interfaces (trunk port / bare-metal mode). Set to `true` when using Proxmox with `node_vlan_tag`.
 - When configured, `infrastructure_enabled=true` and OpenTofu configs are generated
 - Role-based VM defaults with 3-tier fallback chain:
   - `proxmox_vm_controller_defaults` - Controller nodes (4 cores, 8GB, 64GB disk)
