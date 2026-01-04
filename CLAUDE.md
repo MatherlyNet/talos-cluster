@@ -54,7 +54,7 @@ task infra:plan              # Create execution plan
 task infra:apply             # Apply saved plan
 task infra:apply-auto        # Apply with auto-approve
 task infra:destroy           # Destroy managed resources
-task infra:secrets-edit      # Edit encrypted secrets
+task infra:secrets-edit      # Edit secrets (rotation only)
 task infra:validate          # Validate configuration
 task infra:fmt               # Format configuration
 ```
@@ -130,7 +130,8 @@ templates/config/kubernetes/apps/<namespace>/<app>/
 - Node Network: `node_cidr` (e.g., 192.168.1.0/24)
 - Pods: `cluster_pod_cidr` (default: 10.42.0.0/16)
 - Services: `cluster_svc_cidr` (default: 10.43.0.0/16)
-- LoadBalancers: `cluster_gateway_addr`, `cloudflare_gateway_addr`, `cluster_dns_gateway_addr`
+- LoadBalancers: `cluster_gateway_addr`, `cloudflare_gateway_addr`
+- Internal DNS: `cluster_dns_gateway_addr` (only when NOT using UniFi DNS)
 
 ## Key Files
 
@@ -165,9 +166,10 @@ Required variables in `cluster.yaml`:
 - `cloudflare_domain`, `cloudflare_token`, `cloudflare_gateway_addr`
 - `repository_name`
 
-Optional UniFi DNS (replaces k8s_gateway):
+Optional UniFi DNS (replaces k8s_gateway - makes `cluster_dns_gateway_addr` unnecessary):
 - `unifi_host`, `unifi_api_key` (requires UniFi Network v9.0.0+)
-- See `docs/research/external-dns-unifi-integration.md` for setup guide
+- When configured, `k8s_gateway_enabled=false` and `unifi_dns_enabled=true` (derived in plugin.py)
+- See `docs/research/archive/implemented/external-dns-unifi-integration.md` for setup guide
 
 Optional Cilium BGP Control Plane v2 (for multi-VLAN routing):
 - `cilium_bgp_router_addr`, `cilium_bgp_router_asn`, `cilium_bgp_node_asn` (all three required)
@@ -185,6 +187,38 @@ Optional CiliumNetworkPolicies (zero-trust networking):
 - `network_policies_enabled` - Enable namespace-scoped network policies
 - `network_policies_mode` - "audit" (observe via Hubble) or "enforce" (active blocking)
 - See `docs/research/cilium-network-policies-jan-2026.md` for policy designs
+
+Optional Talos Backup (etcd snapshots to S3):
+- `backup_s3_endpoint`, `backup_s3_bucket` (both required to enable)
+- When configured, `talos_backup_enabled=true` (derived in plugin.py)
+- See `docs/CONFIGURATION.md` for all backup settings
+
+Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
+- `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
+- When configured, `oidc_enabled=true` (derived in plugin.py)
+- Creates SecurityPolicy targeting HTTPRoutes with label `security: jwt-protected`
+
+Optional Proxmox Infrastructure (VM provisioning via OpenTofu):
+- `proxmox_api_url`, `proxmox_node` (both required to enable)
+- When configured, `infrastructure_enabled=true` and OpenTofu configs are generated
+- Role-based VM defaults with 3-tier fallback chain:
+  - `proxmox_vm_controller_defaults` - Controller nodes (4 cores, 8GB, 64GB disk)
+  - `proxmox_vm_worker_defaults` - Worker nodes (8 cores, 16GB, 256GB disk)
+  - `proxmox_vm_defaults` - Global fallback
+- Per-node overrides via `vm_cores`, `vm_memory`, `vm_disk_size` in nodes.yaml
+- Fallback chain: per-node → role-defaults → global-defaults
+- See `docs/CONFIGURATION.md` for complete Proxmox settings
+
+Derived Variables (computed in `templates/scripts/plugin.py`):
+- `cilium_bgp_enabled` - true when all 3 BGP keys set
+- `unifi_dns_enabled` - true when unifi_host + unifi_api_key set
+- `k8s_gateway_enabled` - true when unifi_dns_enabled is false (mutually exclusive)
+- `talos_backup_enabled` - true when backup_s3_endpoint + backup_s3_bucket set
+- `oidc_enabled` - true when oidc_issuer_url + oidc_jwks_uri set
+- `spegel_enabled` - true when >1 node (can be overridden by user)
+- `infrastructure_enabled` - true when proxmox_api_url + proxmox_node set
+- `proxmox_vm_controller_defaults` - Merged controller VM settings
+- `proxmox_vm_worker_defaults` - Merged worker VM settings
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -231,7 +265,7 @@ Deep context in `docs/ai-context/`:
 | BGP issues | `cilium bgp peers`, `kubectl get ciliumbgpclusterconfig -A` |
 | Certificate issues | `kubectl get certificates -A` |
 | OpenTofu state lock | `task infra:force-unlock LOCK_ID=xxx` |
-| OpenTofu auth issues | `task infra:secrets-edit` (check credentials) |
+| OpenTofu auth issues | Check credentials in `cluster.yaml`, run `task configure` |
 | Monitoring not working | `flux get hr -n monitoring`, `kubectl -n monitoring get pods` |
 | Hubble not visible | `hubble status`, `kubectl -n kube-system port-forward svc/hubble-relay 4245:80` |
 | Network policy blocking | `hubble observe --verdict DROPPED`, `kubectl get cnp -A` |

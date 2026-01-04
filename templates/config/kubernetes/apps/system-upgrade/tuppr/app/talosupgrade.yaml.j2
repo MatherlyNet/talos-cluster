@@ -5,7 +5,7 @@ metadata:
   name: talos
 spec:
   talos:
-    version: "#{ talos_version }#"
+    version: "v#{ talos_version[1:] if talos_version.startswith('v') else talos_version }#"
   policy:
     rebootMode: default
   healthChecks:

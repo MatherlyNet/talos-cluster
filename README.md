@@ -254,26 +254,27 @@ Complete these in Cloudflare before proceeding:
    - `cluster.yaml` - Add `proxmox_api_url` and `proxmox_node` to enable infrastructure
    - `nodes.yaml` - Add VM specs per node (`vm_cores`, `vm_memory`, etc.)
 
-3. **Render Templates** (generates infrastructure configs):
+3. **Add Credentials** to `cluster.yaml`:
+   ```yaml
+   # R2 state backend credentials (must match tfstate-worker secrets)
+   tfstate_username: "terraform"
+   tfstate_password: "your-strong-password"
+
+   # Proxmox API token (for VM provisioning)
+   proxmox_api_token_id: "root@pam!terraform"
+   proxmox_api_token_secret: "your-api-token"
+   ```
+
+4. **Render Templates** (generates configs and auto-initializes backend):
    ```sh
    task configure
    ```
 
-4. **Configure Credentials**:
+5. **Verify Connection** (use `-lock=false` for initial setup when no state exists):
    ```sh
-   task infra:secrets-edit
+   task infra:plan -- -lock=false
    ```
-   Update `tfstate_username` and `tfstate_password` to match your worker secrets.
-
-5. **Initialize Backend**:
-   ```sh
-   task infra:init
-   ```
-
-6. **Verify Connection**:
-   ```sh
-   task infra:plan
-   ```
+   > **Note:** The `-lock=false` flag is only needed for the first plan/apply when no state file exists yet. After the initial apply creates state, locking works normally.
 
 ### Backend Configuration
 
@@ -282,10 +283,10 @@ The HTTP backend is configured via template and generated to `infrastructure/tof
 ```hcl
 terraform {
   backend "http" {
-    address        = "https://tfstate.matherlynet.io/tfstate/states/proxmox"
-    lock_address   = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    address        = "https://tfstate.matherly.net/tfstate/states/proxmox"
+    lock_address   = "https://tfstate.matherly.net/tfstate/states/proxmox/lock"
     lock_method    = "LOCK"
-    unlock_address = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    unlock_address = "https://tfstate.matherly.net/tfstate/states/proxmox/lock"
     unlock_method  = "UNLOCK"
     # Credentials via TF_HTTP_USERNAME / TF_HTTP_PASSWORD env vars
   }
@@ -304,7 +305,7 @@ terraform {
 | `task infra:apply-auto` | Apply with auto-approve |
 | `task infra:destroy` | Destroy all resources |
 | `task infra:state-list` | List managed resources |
-| `task infra:secrets-edit` | Edit encrypted secrets |
+| `task infra:secrets-edit` | Edit encrypted secrets (rotation) |
 
 > **See also:** [templates/config/infrastructure/README.md](./templates/config/infrastructure/README.md) for detailed documentation.
 
@@ -506,7 +507,8 @@ task talos:reset
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Certificate issues | `kubectl get certificates -A` |
 | Infrastructure state lock | `task infra:force-unlock LOCK_ID=<id>` |
-| Infrastructure auth | `task infra:secrets-edit` |
+| Infrastructure 404 on lock | Use `-- -lock=false` for initial plan/apply (new state) |
+| Infrastructure auth | Check credentials in `cluster.yaml`, re-run `task configure` |
 
 See [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) for comprehensive diagnostic flowcharts.
 

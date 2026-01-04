@@ -14,14 +14,17 @@ import (
 	cluster_svc_cidr: *"10.43.0.0/16" | net.IPCIDR & !=node_cidr & !=cluster_pod_cidr
 	cluster_api_addr: net.IPv4
 	cluster_api_tls_sans?: [...net.FQDN]
-	cluster_gateway_addr: net.IPv4 & !=cluster_api_addr & !=cluster_dns_gateway_addr & !=cloudflare_gateway_addr
-	cluster_dns_gateway_addr: net.IPv4 & !=cluster_api_addr & !=cluster_gateway_addr & !=cloudflare_gateway_addr
+	cluster_gateway_addr: net.IPv4 & !=cluster_api_addr & !=cloudflare_gateway_addr
+	// cluster_dns_gateway_addr is only required when NOT using UniFi DNS integration
+	// When unifi_host and unifi_api_key are set, k8s-gateway is replaced by external-dns-unifi
+	cluster_dns_gateway_addr?: net.IPv4 & !=cluster_api_addr & !=cluster_gateway_addr & !=cloudflare_gateway_addr
 	repository_name: string
 	repository_branch?: string & !=""
 	repository_visibility?: *"public" | "private"
 	cloudflare_domain: net.FQDN
 	cloudflare_token: string
-	cloudflare_gateway_addr: net.IPv4 & !=cluster_api_addr & !=cluster_gateway_addr & !=cluster_dns_gateway_addr
+	// NOTE: Cannot constrain against optional cluster_dns_gateway_addr - that constraint is on line 20 instead
+	cloudflare_gateway_addr: net.IPv4 & !=cluster_api_addr & !=cluster_gateway_addr
 	// Cilium LoadBalancer configuration
 	cilium_loadbalancer_mode?: *"dsr" | "snat"
 
@@ -83,6 +86,22 @@ import (
 		memory?:    *8192 | int & >=1024 & <=262144
 		disk_size?: *128 | int & >=32 & <=4096
 	}
+	// Controller node VM defaults (optimized for etcd and control plane)
+	// Fallback chain: per-node -> controller-defaults -> global-defaults
+	proxmox_vm_controller_defaults?: {
+		cores?:     *4 | int & >=1 & <=64
+		sockets?:   *1 | int & >=1 & <=4
+		memory?:    *8192 | int & >=1024 & <=262144
+		disk_size?: *64 | int & >=32 & <=4096
+	}
+	// Worker node VM defaults (optimized for running workloads)
+	// Fallback chain: per-node -> worker-defaults -> global-defaults
+	proxmox_vm_worker_defaults?: {
+		cores?:     *8 | int & >=1 & <=64
+		sockets?:   *1 | int & >=1 & <=4
+		memory?:    *16384 | int & >=1024 & <=262144
+		disk_size?: *256 | int & >=32 & <=4096
+	}
 	proxmox_vm_advanced?: {
 		bios?:         *"ovmf" | "seabios"
 		machine?:      *"q35" | "i440fx"
@@ -95,7 +114,27 @@ import (
 		disk_discard?: *true | bool
 		disk_ssd?:     *true | bool
 		tags?: [...string]
+		// Network configuration
+		network_bridge?: *"vmbr0" | string & !=""
+		// Guest OS configuration
+		ostype?: *"l26" | "l24" | "win10" | "win11" | string & !=""
+		// Storage flags (Talos-optimized defaults)
+		disk_backup?:    *false | bool
+		disk_replicate?: *false | bool
 	}
+	// Infrastructure API Token - for OpenTofu VM provisioning
+	// NOTE: Separate from proxmox_csi_token and proxmox_ccm_token for least-privilege
+	proxmox_api_token_id?:     string & =~"^.+@.+!.+$"  // format: user@realm!token-name
+	proxmox_api_token_secret?: string & !=""
+
+	// Cloudflare Account (for R2 state backend)
+	// Dashboard → Overview → Account ID (right sidebar)
+	cf_account_id?: string & !=""
+
+	// OpenTofu R2 State Backend Credentials
+	// Must match secrets configured in your tfstate-worker deployment
+	tfstate_username?: *"terraform" | string & !=""
+	tfstate_password?: string & !=""
 
 	// Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
 	// Full-stack observability with metrics, logs, and distributed tracing

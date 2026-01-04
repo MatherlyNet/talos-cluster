@@ -139,11 +139,30 @@ def infrastructure_enabled(data: dict[str, Any]) -> bool:
 
 
 # Default VM settings for Proxmox (Talos-optimized)
+# These are global defaults; role-based defaults below take precedence
 PROXMOX_VM_DEFAULTS = {
     "cores": 4,
     "sockets": 1,
     "memory": 8192,
     "disk_size": 128,
+}
+
+# Controller node VM defaults (optimized for etcd and control plane)
+# Controllers typically need fewer resources but fast disk for etcd
+PROXMOX_VM_CONTROLLER_DEFAULTS = {
+    "cores": 4,
+    "sockets": 1,
+    "memory": 8192,
+    "disk_size": 64,  # Smaller disk - etcd only, no workloads
+}
+
+# Worker node VM defaults (optimized for running workloads)
+# Workers typically need more resources for application pods
+PROXMOX_VM_WORKER_DEFAULTS = {
+    "cores": 8,
+    "sockets": 1,
+    "memory": 16384,
+    "disk_size": 256,  # Larger disk for container images and workloads
 }
 
 # Advanced VM settings for Proxmox (Talos-optimized)
@@ -159,6 +178,13 @@ PROXMOX_VM_ADVANCED = {
     "disk_discard": True,
     "disk_ssd": True,
     "tags": ["kubernetes", "linux", "talos"],
+    # Network configuration
+    "network_bridge": "vmbr0",  # Proxmox bridge interface for VM networking
+    # Guest OS configuration
+    "ostype": "l26",  # Linux 2.6/3.x/4.x/5.x/6.x kernel
+    # Storage flags (Talos is immutable, skip backups/replication)
+    "disk_backup": False,  # Exclude from Proxmox backup jobs
+    "disk_replicate": False,  # Disable Proxmox replication (K8s handles HA)
 }
 
 
@@ -188,9 +214,31 @@ class Plugin(makejinja.plugin.Plugin):
         bgp_enabled = all(data.get(key) for key in bgp_keys)
         data.setdefault("cilium_bgp_enabled", bgp_enabled)
 
-        # If there is more than one node, enable spegel
-        spegel_enabled = len(data.get("nodes")) > 1
-        data.setdefault("spegel_enabled", spegel_enabled)
+        # UniFi DNS integration - when enabled, replaces k8s-gateway
+        # Both unifi_host and unifi_api_key must be set to enable
+        unifi_dns_enabled = bool(data.get("unifi_host") and data.get("unifi_api_key"))
+        data["unifi_dns_enabled"] = unifi_dns_enabled
+
+        # k8s-gateway is only enabled when UniFi DNS is NOT configured
+        # This is mutually exclusive with unifi_dns_enabled
+        k8s_gateway_enabled = not unifi_dns_enabled
+        data["k8s_gateway_enabled"] = k8s_gateway_enabled
+
+        # Talos Backup - enabled when S3 endpoint and bucket are configured
+        # Both backup_s3_endpoint and backup_s3_bucket must be set to enable
+        talos_backup_enabled = bool(
+            data.get("backup_s3_endpoint") and data.get("backup_s3_bucket")
+        )
+        data["talos_backup_enabled"] = talos_backup_enabled
+
+        # OIDC/JWT authentication - enabled when issuer URL and JWKS URI are configured
+        # Both oidc_issuer_url and oidc_jwks_uri must be set to enable
+        oidc_enabled = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))
+        data["oidc_enabled"] = oidc_enabled
+
+        # If there is more than one node, enable spegel (can be overridden by user)
+        if "spegel_enabled" not in data:
+            data["spegel_enabled"] = len(data.get("nodes", [])) > 1
 
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
@@ -201,10 +249,30 @@ class Plugin(makejinja.plugin.Plugin):
             data.setdefault("proxmox_iso_storage", "local")
             data.setdefault("proxmox_disk_storage", "local-lvm")
 
-            # Merge user-provided vm_defaults with our defaults
+            # Merge user-provided vm_defaults with our defaults (global fallback)
             user_vm_defaults = data.get("proxmox_vm_defaults", {})
             merged_vm_defaults = {**PROXMOX_VM_DEFAULTS, **user_vm_defaults}
             data["proxmox_vm_defaults"] = merged_vm_defaults
+
+            # Merge user-provided controller VM defaults with our defaults
+            # Fallback chain: user controller -> built-in controller -> global defaults
+            user_vm_controller = data.get("proxmox_vm_controller_defaults", {})
+            merged_vm_controller = {
+                **merged_vm_defaults,  # Start with global defaults
+                **PROXMOX_VM_CONTROLLER_DEFAULTS,  # Apply built-in controller defaults
+                **user_vm_controller,  # Apply user overrides
+            }
+            data["proxmox_vm_controller_defaults"] = merged_vm_controller
+
+            # Merge user-provided worker VM defaults with our defaults
+            # Fallback chain: user worker -> built-in worker -> global defaults
+            user_vm_worker = data.get("proxmox_vm_worker_defaults", {})
+            merged_vm_worker = {
+                **merged_vm_defaults,  # Start with global defaults
+                **PROXMOX_VM_WORKER_DEFAULTS,  # Apply built-in worker defaults
+                **user_vm_worker,  # Apply user overrides
+            }
+            data["proxmox_vm_worker_defaults"] = merged_vm_worker
 
             # Merge user-provided vm_advanced with our defaults
             user_vm_advanced = data.get("proxmox_vm_advanced", {})

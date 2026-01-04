@@ -73,8 +73,9 @@ spec:
   #% endif %#
   #| BGP Timers - defaults tuned for faster failure detection (~9s vs ~90s) #|
   #| Minimum: holdTimeSeconds=3, keepAliveTimeSeconds=1 #|
-  holdTimeSeconds: #{ cilium_bgp_hold_time | default(30) }#
-  keepAliveTimeSeconds: #{ cilium_bgp_keepalive_time | default(10) }#
+  timers:
+    holdTimeSeconds: #{ cilium_bgp_hold_time | default(30) }#
+    keepAliveTimeSeconds: #{ cilium_bgp_keepalive_time | default(10) }#
   #% if cilium_bgp_graceful_restart | default(false) %#
   #| Graceful Restart - smoother failover during Cilium restarts #|
   gracefulRestart:

@@ -1,0 +1,10 @@
+---
+# Note: Alloy's Helm chart does not support OCI registry (GitHub Issue #3068).
+# Using HelmRepository instead.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana
+spec:
+  interval: 1h
+  url: https://grafana.github.io/helm-charts

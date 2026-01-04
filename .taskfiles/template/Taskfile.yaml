@@ -53,10 +53,12 @@ tasks:
     prompt: Any conflicting files in the kubernetes directory will be overwritten... continue?
     cmds:
       - task: validate-schemas
+      - task: schema
       - task: render-configs
       - task: encrypt-secrets
       - task: validate-kubernetes-config
       - task: validate-talos-config
+      - task: maybe-init-infra
     preconditions:
       - msg: An existing Age key interferes with the age key in this repository, rename or delete ~/.config/sops/age/keys.txt
         sh: "! test -f ~/.config/sops/age/keys.txt"
@@ -76,6 +78,23 @@ tasks:
       - test -f {{.TEMPLATE_RESOURCES_DIR}}/cluster.schema.cue
       - test -f {{.TEMPLATE_RESOURCES_DIR}}/nodes.schema.cue
       - which cue
+
+  schema:
+    desc: Generate JSON Schema from CUE for IDE validation
+    cmds:
+      - python {{.TEMPLATE_RESOURCES_DIR}}/generate_jsonschema.py
+    sources:
+      - "{{.TEMPLATE_RESOURCES_DIR}}/cluster.schema.cue"
+      - "{{.TEMPLATE_RESOURCES_DIR}}/nodes.schema.cue"
+      - "{{.TEMPLATE_RESOURCES_DIR}}/generate_jsonschema.py"
+    generates:
+      - "{{.TEMPLATE_RESOURCES_DIR}}/cluster.schema.json"
+      - "{{.TEMPLATE_RESOURCES_DIR}}/nodes.schema.json"
+    preconditions:
+      - test -f {{.TEMPLATE_RESOURCES_DIR}}/cluster.schema.cue
+      - test -f {{.TEMPLATE_RESOURCES_DIR}}/nodes.schema.cue
+      - test -f {{.TEMPLATE_RESOURCES_DIR}}/generate_jsonschema.py
+      - which python
 
   render-configs:
     internal: true
@@ -117,6 +136,33 @@ tasks:
     preconditions:
       - test -f {{.TALOS_DIR}}/talconfig.yaml
       - which talhelper
+
+  maybe-init-infra:
+    internal: true
+    desc: Conditionally initialize OpenTofu if credentials are configured
+    cmds:
+      - |
+        if [ -f "{{.INFRASTRUCTURE_DIR}}/tofu/backend.tf" ]; then
+          # Check if tfstate_password is configured (not empty)
+          PASS=$(sops -d "{{.INFRASTRUCTURE_DIR}}/secrets.sops.yaml" 2>/dev/null | yq -r '.tfstate_password // ""')
+          if [ -n "$PASS" ] && [ "$PASS" != "" ]; then
+            echo "Infrastructure credentials configured, initializing OpenTofu..."
+            cd "{{.INFRASTRUCTURE_DIR}}/tofu"
+            export TF_HTTP_USERNAME=$(sops -d "{{.INFRASTRUCTURE_DIR}}/secrets.sops.yaml" | yq -r '.tfstate_username')
+            export TF_HTTP_PASSWORD="$PASS"
+            # Suppress AWS checksum warnings for R2
+            export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
+            export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
+            tofu init -input=false -no-color 2>&1 || echo "Note: OpenTofu init failed. Ensure tfstate-worker is deployed, then run 'task infra:init' manually."
+          else
+            echo "Infrastructure credentials not configured, skipping infra:init"
+            echo "To enable: add tfstate_password to cluster.yaml"
+          fi
+        fi
+    status:
+      - test ! -f "{{.INFRASTRUCTURE_DIR}}/tofu/backend.tf"
+    preconditions:
+      - which sops yq tofu
 
   debug:
     desc: Gather common resources in your cluster

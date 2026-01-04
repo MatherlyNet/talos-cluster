@@ -1,0 +1,43 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: talos-backup
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: talos-backup
+  interval: 12h
+  values:
+    priorityClassName: system-cluster-critical
+    schedule: "0 */6 * * *"
+    env:
+      - name: CLUSTER_NAME
+        value: "matherlynet"
+      - name: S3_ENDPOINT
+        value: ""
+      - name: S3_BUCKET
+        value: ""
+      - name: S3_PREFIX
+        value: "matherlynet/etcd-backups"
+      - name: AGE_X25519_PUBLIC_KEY
+        valueFrom:
+          secretKeyRef:
+            name: talos-backup-secrets
+            key: age-public-key
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: talos-backup-secrets
+            key: aws-access-key-id
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: talos-backup-secrets
+            key: aws-secret-access-key
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""

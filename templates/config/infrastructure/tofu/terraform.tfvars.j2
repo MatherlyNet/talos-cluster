@@ -19,7 +19,7 @@ proxmox_disk_storage = "#{ proxmox_disk_storage }#"
 # =============================================================================
 # VM Default Settings
 # =============================================================================
-
+# Global defaults (fallback for all nodes)
 vm_defaults = {
   cores     = #{ proxmox_vm_defaults.cores }#
   sockets   = #{ proxmox_vm_defaults.sockets }#
@@ -27,22 +27,45 @@ vm_defaults = {
   disk_size = #{ proxmox_vm_defaults.disk_size }#
 }
 
+# Controller node defaults (optimized for etcd and control plane)
+vm_controller_defaults = {
+  cores     = #{ proxmox_vm_controller_defaults.cores }#
+  sockets   = #{ proxmox_vm_controller_defaults.sockets }#
+  memory    = #{ proxmox_vm_controller_defaults.memory }#
+  disk_size = #{ proxmox_vm_controller_defaults.disk_size }#
+}
+
+# Worker node defaults (optimized for running workloads)
+vm_worker_defaults = {
+  cores     = #{ proxmox_vm_worker_defaults.cores }#
+  sockets   = #{ proxmox_vm_worker_defaults.sockets }#
+  memory    = #{ proxmox_vm_worker_defaults.memory }#
+  disk_size = #{ proxmox_vm_worker_defaults.disk_size }#
+}
+
 # =============================================================================
 # VM Advanced Settings (Talos-optimized)
 # =============================================================================
 
 vm_advanced = {
-  bios         = "#{ proxmox_vm_advanced.bios }#"
-  machine      = "#{ proxmox_vm_advanced.machine }#"
-  cpu_type     = "#{ proxmox_vm_advanced.cpu_type }#"
-  scsi_hw      = "#{ proxmox_vm_advanced.scsi_hw }#"
-  balloon      = #{ proxmox_vm_advanced.balloon }#
-  numa         = #{ proxmox_vm_advanced.numa | lower }#
-  qemu_agent   = #{ proxmox_vm_advanced.qemu_agent | lower }#
-  net_queues   = #{ proxmox_vm_advanced.net_queues }#
-  disk_discard = #{ proxmox_vm_advanced.disk_discard | lower }#
-  disk_ssd     = #{ proxmox_vm_advanced.disk_ssd | lower }#
-  tags         = [#% for tag in proxmox_vm_advanced.tags %#"#{ tag }#"#% if not loop.last %#, #% endif %##% endfor %#]
+  bios           = "#{ proxmox_vm_advanced.bios }#"
+  machine        = "#{ proxmox_vm_advanced.machine }#"
+  cpu_type       = "#{ proxmox_vm_advanced.cpu_type }#"
+  scsi_hw        = "#{ proxmox_vm_advanced.scsi_hw }#"
+  balloon        = #{ proxmox_vm_advanced.balloon }#
+  numa           = #{ proxmox_vm_advanced.numa | lower }#
+  qemu_agent     = #{ proxmox_vm_advanced.qemu_agent | lower }#
+  net_queues     = #{ proxmox_vm_advanced.net_queues }#
+  disk_discard   = #{ proxmox_vm_advanced.disk_discard | lower }#
+  disk_ssd       = #{ proxmox_vm_advanced.disk_ssd | lower }#
+  tags           = [#% for tag in proxmox_vm_advanced.tags %#"#{ tag }#"#% if not loop.last %#, #% endif %##% endfor %#]
+  # Network configuration
+  network_bridge = "#{ proxmox_vm_advanced.network_bridge }#"
+  # Guest OS configuration
+  ostype         = "#{ proxmox_vm_advanced.ostype }#"
+  # Storage flags
+  disk_backup    = #{ proxmox_vm_advanced.disk_backup | lower }#
+  disk_replicate = #{ proxmox_vm_advanced.disk_replicate | lower }#
 }
 
 # =============================================================================
@@ -63,6 +86,8 @@ node_vlan_tag        = null
 
 nodes = [
 #% for node in nodes %#
+#| Role-based defaults: controller uses proxmox_vm_controller_defaults, worker uses proxmox_vm_worker_defaults #|
+#% set role_defaults = proxmox_vm_controller_defaults if node.controller else proxmox_vm_worker_defaults %#
   {
     name             = "#{ node.name }#"
     address          = "#{ node.address }#"
@@ -70,14 +95,15 @@ nodes = [
     mac_addr         = "#{ node.mac_addr }#"
     schematic_id     = "#{ node.schematic_id }#"
     disk             = "#{ node.disk }#"
-    # VM resource overrides (fallback to vm_defaults if not specified)
-    vm_cores         = #{ node.vm_cores | default(proxmox_vm_defaults.cores) }#
-    vm_sockets       = #{ node.vm_sockets | default(proxmox_vm_defaults.sockets) }#
-    vm_memory        = #{ node.vm_memory | default(proxmox_vm_defaults.memory) }#
-    vm_disk_size     = #{ node.vm_disk_size | default(proxmox_vm_defaults.disk_size) }#
-    # Startup configuration
-    vm_startup_order = #{ node.vm_startup_order | default(loop.index + 3) }#
-    vm_startup_delay = #{ node.vm_startup_delay | default(15) }#
+    # VM resource overrides (fallback chain: per-node -> role-defaults -> global-defaults)
+    vm_cores         = #{ node.vm_cores | default(role_defaults.cores) }#
+    vm_sockets       = #{ node.vm_sockets | default(role_defaults.sockets) }#
+    vm_memory        = #{ node.vm_memory | default(role_defaults.memory) }#
+    vm_disk_size     = #{ node.vm_disk_size | default(role_defaults.disk_size) }#
+    # Startup/shutdown configuration
+    vm_startup_order  = #{ node.vm_startup_order | default(loop.index + 3) }#
+    vm_startup_delay  = #{ node.vm_startup_delay | default(15) }#
+    vm_shutdown_delay = #{ node.vm_shutdown_delay | default(60) }#
     # Optional node settings
 #% if node.mtu is defined %#
     mtu              = #{ node.mtu }#

@@ -94,7 +94,7 @@
     "infra:init": "Initialize OpenTofu with R2 backend",
     "infra:plan": "Create OpenTofu execution plan",
     "infra:apply": "Apply OpenTofu changes",
-    "infra:secrets-edit": "Edit infrastructure secrets"
+    "infra:secrets-edit": "Edit encrypted secrets (rotation)"
   },
   "configuration": {
     "cluster_config": {

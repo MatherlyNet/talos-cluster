@@ -1,0 +1,17 @@
+# OpenTofu and Provider Version Constraints
+#
+# This file defines the required OpenTofu version and provider versions.
+# The bpg/proxmox provider is pre-configured for future VM management.
+
+terraform {
+  required_version = ">= 1.11.0"
+
+  required_providers {
+    # Proxmox provider for VM management
+    # https://registry.terraform.io/providers/bpg/proxmox/latest
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = ">= 0.78.0"
+    }
+  }
+}

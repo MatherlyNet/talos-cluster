@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MatherlyNet/talos-cluster/nodes.schema.json",
+  "title": "Nodes Configuration",
+  "description": "Node definitions for matherlynet-talos-cluster",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "description": "List of cluster nodes",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9\\-]{0,61}[a-z0-9]$|^[a-z0-9]$"
+          },
+          "address": {
+            "type": "string",
+            "format": "ipv4",
+            "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+          },
+          "controller": {
+            "type": "boolean"
+          },
+          "disk": {
+            "type": "string"
+          },
+          "mac_addr": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{2}[:]){5}([0-9a-f]{2})$"
+          },
+          "schematic_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]{64}$"
+          },
+          "mtu": {
+            "type": "integer",
+            "minimum": 1450,
+            "maximum": 9000
+          },
+          "secureboot": {
+            "type": "boolean"
+          },
+          "encrypt_disk": {
+            "type": "boolean"
+          },
+          "kernel_modules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vm_cores": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64,
+            "description": "VM-specific settings (only used when provisioning via OpenTofu)"
+          },
+          "vm_sockets": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "vm_memory": {
+            "type": "integer",
+            "minimum": 1024,
+            "maximum": 262144
+          },
+          "vm_disk_size": {
+            "type": "integer",
+            "minimum": 32,
+            "maximum": 4096
+          },
+          "vm_startup_order": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "vm_startup_delay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "vm_shutdown_delay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "controller",
+          "disk",
+          "mac_addr",
+          "schematic_id"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "nodes"
+  ]
+}

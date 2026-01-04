@@ -27,12 +27,13 @@ import (
 	kernel_modules?: [...string]
 
 	// VM-specific settings (only used when provisioning via OpenTofu)
-	vm_cores?:         int & >=1 & <=64
-	vm_sockets?:       int & >=1 & <=4
-	vm_memory?:        int & >=1024 & <=262144
-	vm_disk_size?:     int & >=32 & <=4096
-	vm_startup_order?: int & >=1 & <=100
-	vm_startup_delay?: int & >=0 & <=300
+	vm_cores?:          int & >=1 & <=64
+	vm_sockets?:        int & >=1 & <=4
+	vm_memory?:         int & >=1024 & <=262144
+	vm_disk_size?:      int & >=32 & <=4096
+	vm_startup_order?:  int & >=1 & <=100
+	vm_startup_delay?:  int & >=0 & <=300
+	vm_shutdown_delay?: int & >=0 & <=600  // Graceful shutdown timeout
 }
 
 #Config

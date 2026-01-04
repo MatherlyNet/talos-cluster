@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./.taskfiles/template/resources/cluster.schema.json
 ---
 # -- The network CIDR for the nodes.
 # (REQUIRED) / (e.g. 192.168.1.0/24)
@@ -35,9 +36,12 @@ cluster_api_addr: ""
 #    (OPTIONAL) / (DEFAULT: "10.43.0.0/16")
 # cluster_svc_cidr: ""
 
-# -- The Load balancer IP for k8s_gateway, this provides DNS to all your gateways when split DNS is configured on your internal DNS server (Dnsmasq, Pi-hole, etc)
-#    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
-cluster_dns_gateway_addr: ""
+# -- The Load balancer IP for k8s_gateway (split DNS for internal resolution)
+#    (CONDITIONAL) / Required ONLY when NOT using UniFi DNS integration
+#    When unifi_host and unifi_api_key are set, k8s-gateway is replaced by
+#    external-dns-unifi and this setting is ignored.
+#    (NOTE: Choose an unused IP in node_cidr if using k8s_gateway)
+# cluster_dns_gateway_addr: ""
 
 # -- The Load balancer IP for the internal gateway
 #    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
@@ -269,12 +273,33 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "local-lvm")
 # proxmox_disk_storage: ""
 
-# -- Default VM resources (can be overridden per-node in nodes.yaml)
+# -- Global VM resource defaults (fallback for all nodes)
+#    Can be overridden by role-specific defaults or per-node in nodes.yaml
+#    Fallback chain: per-node -> role-defaults -> global-defaults
 # proxmox_vm_defaults:
 #   cores: 4           # CPU cores
 #   sockets: 1         # CPU sockets
 #   memory: 8192       # Memory in MB
 #   disk_size: 128     # Disk size in GB
+#
+# -- Controller node VM defaults (optimized for etcd and control plane)
+#    Controllers run etcd, API server, scheduler, and controller-manager
+#    When allowSchedulingOnControlPlanes: false (default), no workloads run here
+#    Fallback chain: per-node -> controller-defaults -> global-defaults
+# proxmox_vm_controller_defaults:
+#   cores: 4           # CPU cores (etcd is single-threaded, 4 is plenty)
+#   sockets: 1         # CPU sockets
+#   memory: 8192       # Memory in MB (8GB sufficient for control plane)
+#   disk_size: 64      # Disk size in GB (etcd only, no workloads)
+#
+# -- Worker node VM defaults (optimized for running workloads)
+#    Workers run application pods, require more resources
+#    Fallback chain: per-node -> worker-defaults -> global-defaults
+# proxmox_vm_worker_defaults:
+#   cores: 8           # CPU cores (more for workload scheduling)
+#   sockets: 1         # CPU sockets
+#   memory: 16384      # Memory in MB (16GB for application pods)
+#   disk_size: 256     # Disk size in GB (container images + workloads)
 #
 # -- Advanced VM settings (Talos-optimized defaults)
 # proxmox_vm_advanced:
@@ -289,6 +314,38 @@ cloudflare_gateway_addr: ""
 #   disk_discard: true        # Enable TRIM/discard
 #   disk_ssd: true            # SSD emulation
 #   tags: ["kubernetes", "linux", "talos"]  # VM tags
+#   # Network configuration
+#   network_bridge: "vmbr0"   # Proxmox bridge interface for VM networking
+#   # Guest OS configuration
+#   ostype: "l26"             # Linux 2.6/3.x/4.x/5.x/6.x kernel
+#   # Storage flags (Talos-optimized: immutable OS, K8s handles HA)
+#   disk_backup: false        # Exclude from Proxmox backup jobs
+#   disk_replicate: false     # Disable Proxmox replication
+
+# -- Proxmox API token for OpenTofu VM provisioning
+#    Create at: Datacenter → Permissions → API Tokens → Add
+#    Format: user@realm!token-name (e.g., root@pam!terraform)
+#    NOTE: Separate from CSI/CCM tokens for least-privilege
+#    (OPTIONAL) / Required when infrastructure_enabled
+# proxmox_api_token_id: ""
+# proxmox_api_token_secret: ""
+
+# =============================================================================
+# INFRASTRUCTURE CREDENTIALS (OpenTofu R2 State Backend)
+# =============================================================================
+# Credentials for the tfstate-worker HTTP backend on Cloudflare R2.
+# These are used by `task infra:*` commands for state management.
+
+# -- Cloudflare Account ID
+#    Dashboard → Overview → Account ID (right sidebar)
+#    (OPTIONAL) / Required for R2 state backend
+# cf_account_id: ""
+
+# -- tfstate-worker Basic Auth credentials
+#    Must match secrets configured in your tfstate-worker deployment
+#    (OPTIONAL) / (DEFAULT: "terraform")
+# tfstate_username: "terraform"
+# tfstate_password: ""
 
 # =============================================================================
 # OBSERVABILITY - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)

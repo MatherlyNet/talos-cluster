@@ -77,6 +77,7 @@ task talos:reset
 
 | Command | Description | When to Use |
 | ------- | ----------- | ----------- |
+| `task template:schema` | Generate JSON Schema from CUE | IDE validation updates |
 | `task template:debug` | Dump cluster resource states | Debugging |
 | `task template:tidy` | Archive template files | Post-setup cleanup |
 | `task template:reset` | Remove all generated files | Start fresh |
@@ -96,12 +97,13 @@ task talos:reset
 | `task infra:validate` | Validate configuration | None |
 | `task infra:fmt` | Format configuration files | None |
 | `task infra:fmt-check` | Check formatting (CI) | None |
-| `task infra:secrets-edit` | Edit encrypted secrets | None |
+| `task infra:secrets-edit` | Edit encrypted secrets (for rotation) | None |
 
 **Usage Examples:**
 
 ```bash
 # Initialize OpenTofu (first time or after backend changes)
+# NOTE: task configure auto-runs init when credentials are configured
 task infra:init
 
 # Plan and review changes
@@ -122,7 +124,8 @@ task infra:state-list
 # Force unlock a stuck state
 task infra:force-unlock LOCK_ID=abc123
 
-# Edit encrypted secrets (Proxmox API credentials, R2 tokens)
+# Edit encrypted secrets (for credential rotation only)
+# NOTE: Initial credentials come from cluster.yaml via task configure
 task infra:secrets-edit
 
 # Validate configuration syntax
@@ -133,8 +136,9 @@ task infra:fmt
 ```
 
 **Prerequisites:**
-- `infrastructure/secrets.sops.yaml` must exist (created by `task configure`)
-- `age.key` must be present for SOPS decryption
+- Configure credentials in `cluster.yaml`: `tfstate_username`, `tfstate_password`, `proxmox_api_token_id`, `proxmox_api_token_secret`
+- Run `task configure` to generate and encrypt `infrastructure/secrets.sops.yaml`
+- `age.key` must be present for SOPS encryption
 - Required tools: `tofu`, `sops`, `yq`
 
 ---

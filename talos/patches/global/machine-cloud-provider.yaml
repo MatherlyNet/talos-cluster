@@ -1,0 +1,5 @@
+# Enable external cloud provider mode for Proxmox CCM integration.
+# This tells kubelet to wait for CCM to initialize node labels before scheduling workloads.
+cluster:
+  externalCloudProvider:
+    enabled: true

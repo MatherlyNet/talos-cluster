@@ -1,22 +1,135 @@
+# yaml-language-server: $schema=./.taskfiles/template/resources/nodes.schema.json
 ---
 nodes:
   []
-  # - name: ""            # (REQUIRED) Name of the node (must match [a-z0-9-\]+)
-  #   address: ""         # (REQUIRED) IP address of the node (must be in the node_cidr)
-  #   controller: true    # (REQUIRED) Set to true if this is a controller node
-  #   disk: ""            # (REQUIRED) Device path or serial number of the disk for this node (talosctl get disks -n <ip> --insecure)
-  #   mac_addr: ""        # (REQUIRED) MAC address of the NIC for this node (talosctl get links -n <ip> --insecure)
-  #   schematic_id: ""    # (REQUIRED) Schematic ID from https://factory.talos.dev/
-  #   mtu: 1500           # (ADVANCED/OPTIONAL) MTU for the NIC. DEFAULT: 1500
-  #   secureboot: false   # (ADVANCED/OPTIONAL) SecureBoot mode on UEFI platforms. Ref: https://www.talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot
-  #   encrypt_disk: false # (ADVANCED/OPTIONAL) TPM-based disk encryption. Ref: https://www.talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot
-  #   kernel_modules: []  # (ADVANCED/OPTIONAL) Only applicable if the `schematic_id` you've provided contains system extensions that require kernel modules to correctly load - Example: ["nvidia", "nvidia_uvm", "nvidia_drm", "nvidia_modeset", "zfs"]
+  # =============================================================================
+  # NODE CONFIGURATION
+  # =============================================================================
+  # Each node requires the following fields. Use talosctl commands to gather info:
+  #   talosctl get disks -n <ip> --insecure    # Get disk info
+  #   talosctl get links -n <ip> --insecure    # Get MAC addresses
   #
-  # VM-specific settings (only used when provisioning via OpenTofu)
-  #   vm_cores: 4         # (VM/OPTIONAL) CPU cores. Overrides proxmox_vm_defaults.cores
-  #   vm_sockets: 1       # (VM/OPTIONAL) CPU sockets. Overrides proxmox_vm_defaults.sockets
-  #   vm_memory: 8192     # (VM/OPTIONAL) Memory in MB. Overrides proxmox_vm_defaults.memory
-  #   vm_disk_size: 128   # (VM/OPTIONAL) Disk size in GB. Overrides proxmox_vm_defaults.disk_size
-  #   vm_startup_order: 4 # (VM/OPTIONAL) Boot order (lower = earlier)
+  # Required Fields:
+  #   name: ""            # (REQUIRED) Hostname (must match [a-z0-9-]+)
+  #   address: ""         # (REQUIRED) IP address (must be in node_cidr)
+  #   controller: true    # (REQUIRED) true = control plane, false = worker
+  #   disk: ""            # (REQUIRED) Device path (/dev/sda) or serial number
+  #   mac_addr: ""        # (REQUIRED) NIC MAC address (lowercase, colon-separated)
+  #   schematic_id: ""    # (REQUIRED) 64-char hex from https://factory.talos.dev/
+  #
+  # Advanced/Optional Fields:
+  #   mtu: 1500           # (OPTIONAL) NIC MTU. DEFAULT: 1500
+  #   secureboot: false   # (OPTIONAL) UEFI SecureBoot. REF: talos.dev/latest/talos-guides/install/bare-metal-platforms/secureboot
+  #   encrypt_disk: false # (OPTIONAL) TPM-based disk encryption
+  #   kernel_modules: []  # (OPTIONAL) Extra kernel modules. Example: ["nvidia", "zfs"]
+  #
+  # =============================================================================
+  # VM-SPECIFIC SETTINGS (OpenTofu/Proxmox provisioning only)
+  # =============================================================================
+  # Per-node overrides for VM resources. If not specified, uses role-based defaults:
+  #   - Controller nodes: proxmox_vm_controller_defaults (4 cores, 8GB, 64GB disk)
+  #   - Worker nodes: proxmox_vm_worker_defaults (8 cores, 16GB, 256GB disk)
+  #
+  # Fallback chain: per-node value -> role defaults -> global defaults
+  #
+  #   vm_cores: 4          # (VM/OPTIONAL) CPU cores
+  #   vm_sockets: 1        # (VM/OPTIONAL) CPU sockets
+  #   vm_memory: 8192      # (VM/OPTIONAL) Memory in MB
+  #   vm_disk_size: 128    # (VM/OPTIONAL) Disk size in GB
+  #   vm_startup_order: 4  # (VM/OPTIONAL) Boot order (lower = earlier)
   #   vm_startup_delay: 15 # (VM/OPTIONAL) Seconds to wait before starting next VM
-  # ...
+  #   vm_shutdown_delay: 60 # (VM/OPTIONAL) Graceful shutdown timeout in seconds
+  #
+  # =============================================================================
+  # EXAMPLE: 3 Controller + 3 Worker Cluster
+  # =============================================================================
+  # Recommended for production: 3 controllers for HA, dedicated workers for workloads.
+  # Controllers run etcd + control plane; workers run application pods.
+  #
+  # --- CONTROLLER NODES (control plane only, no workloads) ---
+  # Uses proxmox_vm_controller_defaults: 4 cores, 8GB RAM, 64GB disk
+  #
+  # - name: "k8s-cp-1"
+  #   address: "192.168.1.10"
+  #   controller: true
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:01"
+  #   schematic_id: "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+  #   vm_startup_order: 1          # Controllers boot first
+  #
+  # - name: "k8s-cp-2"
+  #   address: "192.168.1.11"
+  #   controller: true
+  #   disk: "S4EVNF0M123456"        # Can use disk serial instead of path
+  #   mac_addr: "aa:bb:cc:dd:ee:02"
+  #   schematic_id: "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+  #   vm_startup_order: 2
+  #
+  # - name: "k8s-cp-3"
+  #   address: "192.168.1.12"
+  #   controller: true
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:03"
+  #   schematic_id: "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+  #   secureboot: true              # Optional: enable SecureBoot
+  #   encrypt_disk: true            # Optional: TPM disk encryption
+  #   vm_startup_order: 3
+  #
+  # --- WORKER NODES (run application workloads) ---
+  # Uses proxmox_vm_worker_defaults: 8 cores, 16GB RAM, 256GB disk
+  #
+  # - name: "k8s-wrkr-1"
+  #   address: "192.168.1.20"
+  #   controller: false             # false = worker node
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:10"
+  #   schematic_id: "f1e2d3c4b5a6789012345678901234567890123456789012345678901234wxyz"
+  #   vm_startup_order: 10          # Workers boot after controllers
+  #
+  # - name: "k8s-wrkr-2"
+  #   address: "192.168.1.21"
+  #   controller: false
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:11"
+  #   schematic_id: "f1e2d3c4b5a6789012345678901234567890123456789012345678901234wxyz"
+  #   vm_cores: 16                  # Override: GPU workloads need more cores
+  #   vm_memory: 32768              # Override: 32GB for ML workloads
+  #   vm_disk_size: 512             # Override: 512GB for large models
+  #   kernel_modules:               # GPU drivers
+  #     - nvidia
+  #     - nvidia_uvm
+  #     - nvidia_drm
+  #     - nvidia_modeset
+  #   vm_startup_order: 11
+  #
+  # - name: "k8s-wrkr-3"
+  #   address: "192.168.1.22"
+  #   controller: false
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:12"
+  #   schematic_id: "f1e2d3c4b5a6789012345678901234567890123456789012345678901234wxyz"
+  #   vm_cores: 16                  # Override: GPU workloads need more cores
+  #   vm_memory: 32768              # Override: 32GB for ML workloads
+  #   vm_disk_size: 512             # Override: 512GB for large models
+  #   kernel_modules:               # GPU drivers
+  #     - nvidia
+  #     - nvidia_uvm
+  #     - nvidia_drm
+  #     - nvidia_modeset
+  #   vm_startup_order: 12
+  #
+  # =============================================================================
+  # EXAMPLE: Single Node Cluster (Development/Testing)
+  # =============================================================================
+  # For dev/test: single node with allowSchedulingOnControlPlanes: true
+  # Edit templates/config/talos/patches/controller/cluster.yaml.j2 to enable.
+  #
+  # - name: "k8s-dev"
+  #   address: "192.168.1.10"
+  #   controller: true
+  #   disk: "/dev/sda"
+  #   mac_addr: "aa:bb:cc:dd:ee:01"
+  #   schematic_id: "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+  #   vm_cores: 8                   # More cores for single node
+  #   vm_memory: 16384              # More memory for workloads
+  #   vm_disk_size: 256             # Larger disk for everything

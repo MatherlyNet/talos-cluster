@@ -1,0 +1,22 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmox-csi-plugin
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: proxmox-csi
+  interval: 1h
+  values:
+    replicaCount: 1
+    metrics:
+      enabled: true
+    storageClass:
+      - name: proxmox-zfs
+        storage: "local-zfs"
+        reclaimPolicy: Delete
+        fstype: ext4
+        ssd: true
+    existingConfigSecret: proxmox-csi-config
+    existingConfigSecretKey: config.yaml

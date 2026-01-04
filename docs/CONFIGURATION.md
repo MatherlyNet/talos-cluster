@@ -2,6 +2,25 @@
 
 > Complete configuration reference for cluster.yaml and nodes.yaml
 
+## IDE Schema Validation
+
+Both `cluster.yaml` and `nodes.yaml` support IDE schema validation for autocomplete and error checking.
+
+**Modeline Support:** Add this comment at the top of your YAML file for inline schema validation:
+```yaml
+# yaml-language-server: $schema=./.taskfiles/template/resources/cluster.schema.json
+---
+```
+
+**VS Code Integration:** The `.vscode/settings.json` already configures schema associations for:
+- `cluster.yaml`, `cluster.sample.yaml` → `cluster.schema.json`
+- `nodes.yaml`, `nodes.sample.yaml` → `nodes.schema.json`
+
+**Schema Regeneration:** Schemas are auto-generated from CUE during `task configure`, or manually via:
+```bash
+task template:schema
+```
+
 ## cluster.yaml Schema
 
 Configuration validated by CUE schema at `.taskfiles/template/resources/cluster.schema.cue`.
@@ -13,11 +32,18 @@ Configuration validated by CUE schema at `.taskfiles/template/resources/cluster.
 | `node_cidr` | CIDR | `192.168.1.0/24` | Network CIDR where nodes reside |
 | `cluster_api_addr` | IPv4 | `192.168.1.100` | Virtual IP for Kubernetes API |
 | `cluster_gateway_addr` | IPv4 | `192.168.1.101` | LoadBalancer IP for internal gateway |
-| `cluster_dns_gateway_addr` | IPv4 | `192.168.1.102` | LoadBalancer IP for k8s-gateway (split DNS) |
 | `repository_name` | string | `user/repo` | GitHub repository (owner/name format) |
 | `cloudflare_domain` | FQDN | `example.com` | Cloudflare-managed domain |
 | `cloudflare_token` | string | `abc123...` | Cloudflare API token |
 | `cloudflare_gateway_addr` | IPv4 | `192.168.1.103` | LoadBalancer IP for external gateway |
+
+### Conditional Fields
+
+| Field | Type | Example | Required When | Description |
+| ------- | ------ | --------- | --------------- | ------------- |
+| `cluster_dns_gateway_addr` | IPv4 | `192.168.1.102` | NOT using UniFi DNS | LoadBalancer IP for k8s-gateway (split DNS) |
+
+**Note:** When `unifi_host` and `unifi_api_key` are both set, k8s-gateway is replaced by external-dns-unifi and `cluster_dns_gateway_addr` is ignored.
 
 ### Optional Fields
 
@@ -206,6 +232,95 @@ Sync secrets from external secret management providers.
 
 **Note:** See `docs/guides/k8s-at-home-remaining-implementation.md` for implementation details.
 
+### Proxmox Infrastructure (Optional)
+
+VM provisioning via OpenTofu for Proxmox VE environments.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `proxmox_api_url` | string | - | Proxmox API URL (e.g., `https://pve.example.com:8006/api2/json`) |
+| `proxmox_node` | string | - | Proxmox node name for VM creation |
+| `proxmox_iso_storage` | string | `local` | Storage for ISO images |
+| `proxmox_disk_storage` | string | `local-lvm` | Storage for VM disks |
+
+When `proxmox_api_url` and `proxmox_node` are both set, `infrastructure_enabled` becomes `true` and OpenTofu configuration is generated.
+
+#### Infrastructure Credentials
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `cf_account_id` | string | - | Cloudflare account ID (Dashboard → Overview → right sidebar) |
+| `tfstate_username` | string | `terraform` | HTTP backend auth username (must match tfstate-worker) |
+| `tfstate_password` | string | - | HTTP backend auth password (must match tfstate-worker) |
+| `proxmox_api_token_id` | string | - | Proxmox API token ID (format: `user@realm!token-name`) |
+| `proxmox_api_token_secret` | string | - | Proxmox API token secret |
+
+**Note:** These credentials are stored in `cluster.yaml` (gitignored) and flow to `infrastructure/secrets.sops.yaml` during `task configure`. When `tfstate_password` is set, `task configure` automatically runs `tofu init`.
+
+#### VM Defaults (Global Fallback)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `proxmox_vm_defaults.cores` | int | `4` | CPU cores |
+| `proxmox_vm_defaults.sockets` | int | `1` | CPU sockets |
+| `proxmox_vm_defaults.memory` | int | `8192` | Memory in MB |
+| `proxmox_vm_defaults.disk_size` | int | `128` | Disk size in GB |
+
+#### Controller Node VM Defaults (Etcd/Control Plane Optimized)
+
+Used for nodes with `controller: true`. Smaller disk since controllers don't run workloads.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `proxmox_vm_controller_defaults.cores` | int | `4` | CPU cores (etcd is single-threaded) |
+| `proxmox_vm_controller_defaults.sockets` | int | `1` | CPU sockets |
+| `proxmox_vm_controller_defaults.memory` | int | `8192` | Memory in MB (8GB sufficient) |
+| `proxmox_vm_controller_defaults.disk_size` | int | `64` | Disk size in GB (etcd only) |
+
+#### Worker Node VM Defaults (Workload Optimized)
+
+Used for nodes with `controller: false`. Larger resources for application pods.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `proxmox_vm_worker_defaults.cores` | int | `8` | CPU cores (workload scheduling) |
+| `proxmox_vm_worker_defaults.sockets` | int | `1` | CPU sockets |
+| `proxmox_vm_worker_defaults.memory` | int | `16384` | Memory in MB (16GB for pods) |
+| `proxmox_vm_worker_defaults.disk_size` | int | `256` | Disk size in GB (images + workloads) |
+
+**Fallback Chain:** per-node value → role-defaults → global-defaults
+
+```yaml
+# Example: Custom worker defaults for GPU cluster
+proxmox_vm_worker_defaults:
+  cores: 16
+  memory: 32768
+  disk_size: 512
+```
+
+#### VM Advanced Settings (Talos-Optimized)
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `proxmox_vm_advanced.bios` | enum | `ovmf` | BIOS type (`ovmf`, `seabios`) |
+| `proxmox_vm_advanced.machine` | enum | `q35` | Machine type (`q35`, `i440fx`) |
+| `proxmox_vm_advanced.cpu_type` | string | `host` | CPU type |
+| `proxmox_vm_advanced.scsi_hw` | enum | `virtio-scsi-pci` | SCSI controller |
+| `proxmox_vm_advanced.balloon` | int | `0` | Balloon memory (0 = disabled) |
+| `proxmox_vm_advanced.numa` | bool | `true` | NUMA optimization |
+| `proxmox_vm_advanced.qemu_agent` | bool | `true` | QEMU guest agent |
+| `proxmox_vm_advanced.net_queues` | int | `4` | Network queues |
+| `proxmox_vm_advanced.disk_discard` | bool | `true` | SSD TRIM support |
+| `proxmox_vm_advanced.disk_ssd` | bool | `true` | SSD emulation |
+| `proxmox_vm_advanced.tags` | string[] | `["kubernetes", "linux", "talos"]` | VM tags |
+| `proxmox_vm_advanced.network_bridge` | string | `vmbr0` | Proxmox bridge interface |
+| `proxmox_vm_advanced.ostype` | string | `l26` | Guest OS type (Linux 2.6+) |
+| `proxmox_vm_advanced.disk_backup` | bool | `false` | Include in Proxmox backups |
+| `proxmox_vm_advanced.disk_replicate` | bool | `false` | Enable Proxmox replication |
+
+**Note:** See `templates/config/infrastructure/tofu/` for OpenTofu configuration.
+**REF:** `docs/research/proxmox-vm-configuration-gap-analysis-jan-2026.md` for detailed analysis.
+
 ### IP Address Constraints
 
 All LoadBalancer IPs must be:
@@ -294,6 +409,22 @@ Configuration validated by CUE schema at `.taskfiles/template/resources/nodes.sc
 | `secureboot` | bool | No | Enable UEFI Secure Boot |
 | `encrypt_disk` | bool | No | Enable TPM-based disk encryption |
 | `kernel_modules` | string[] | No | Additional kernel modules to load |
+
+### VM-Specific Fields (OpenTofu/Proxmox)
+
+Per-node overrides for VM provisioning. Fallback chain: per-node → role-defaults → global-defaults.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `vm_cores` | int | role-based | CPU cores (controller: 4, worker: 8) |
+| `vm_sockets` | int | `1` | CPU sockets |
+| `vm_memory` | int | role-based | Memory in MB (controller: 8192, worker: 16384) |
+| `vm_disk_size` | int | role-based | Disk size in GB (controller: 64, worker: 256) |
+| `vm_startup_order` | int | node index + 3 | Boot order (lower = earlier) |
+| `vm_startup_delay` | int | `15` | Seconds before starting next VM |
+| `vm_shutdown_delay` | int | `60` | Graceful shutdown timeout in seconds |
+
+**Note:** When `controller: true`, uses `proxmox_vm_controller_defaults`. When `controller: false`, uses `proxmox_vm_worker_defaults`.
 
 ### Name Constraints
 
@@ -418,8 +549,22 @@ Set automatically by the plugin:
 | `repository_branch` | `main` | Default branch |
 | `repository_visibility` | `public` | Public repo |
 | `cilium_loadbalancer_mode` | `dsr` | Direct Server Return |
-| `cilium_bgp_enabled` | `true/false` | All BGP keys set |
-| `spegel_enabled` | `true/false` | More than 1 node |
+
+### Derived Variables
+
+Computed from configuration and used in templates:
+
+| Variable | Value | Condition |
+| ---------- | ------- | ----------- |
+| `cilium_bgp_enabled` | `true` | All 3 BGP keys set (`cilium_bgp_router_addr`, `cilium_bgp_router_asn`, `cilium_bgp_node_asn`) |
+| `unifi_dns_enabled` | `true` | Both `unifi_host` and `unifi_api_key` set |
+| `k8s_gateway_enabled` | `true` | `unifi_dns_enabled` is `false` (mutually exclusive) |
+| `talos_backup_enabled` | `true` | Both `backup_s3_endpoint` and `backup_s3_bucket` set |
+| `oidc_enabled` | `true` | Both `oidc_issuer_url` and `oidc_jwks_uri` set |
+| `spegel_enabled` | `true` | More than 1 node (can be overridden by user) |
+| `infrastructure_enabled` | `true` | Both `proxmox_api_url` and `proxmox_node` set |
+
+**Note:** Derived variables simplify template conditionals and ensure consistent behavior. For example, templates use `#% if oidc_enabled %#` instead of `#% if oidc_issuer_url is defined and oidc_jwks_uri is defined %#`.
 
 ---
 

@@ -1,0 +1,653 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MatherlyNet/talos-cluster/cluster.schema.json",
+  "title": "Cluster Configuration",
+  "description": "Configuration schema for matherlynet-talos-cluster GitOps template",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "node_cidr": {
+      "type": "string",
+      "format": "ipv4-cidr",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+    },
+    "node_dns_servers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "ipv4"
+      }
+    },
+    "node_ntp_servers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "ipv4"
+      }
+    },
+    "node_default_gateway": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+    },
+    "node_vlan_tag": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cluster_pod_cidr": {
+      "default": "10.42.0.0/16",
+      "type": "string",
+      "format": "ipv4-cidr",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+    },
+    "cluster_svc_cidr": {
+      "default": "10.43.0.0/16",
+      "type": "string",
+      "format": "ipv4-cidr",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+    },
+    "cluster_api_addr": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+    },
+    "cluster_api_tls_sans": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "hostname"
+      }
+    },
+    "cluster_gateway_addr": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+    },
+    "cluster_dns_gateway_addr": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$",
+      "description": "cluster_dns_gateway_addr is only required when NOT using UniFi DNS integration When unifi_host and unifi_api_key are set, k8s-gateway is replaced by external-dns-unifi"
+    },
+    "repository_name": {
+      "type": "string"
+    },
+    "repository_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository_visibility": {
+      "default": "public",
+      "type": "string"
+    },
+    "cloudflare_domain": {
+      "type": "string",
+      "format": "hostname"
+    },
+    "cloudflare_token": {
+      "type": "string"
+    },
+    "cloudflare_gateway_addr": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$",
+      "description": "NOTE: Cannot constrain against optional cluster_dns_gateway_addr - that constraint is on line 20 instead"
+    },
+    "cilium_loadbalancer_mode": {
+      "default": "dsr",
+      "type": "string",
+      "description": "Cilium LoadBalancer configuration"
+    },
+    "cilium_bgp_router_addr": {
+      "type": "string",
+      "format": "ipv4",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$",
+      "description": "Cilium BGP Configuration - Optional for multi-VLAN environments REF: https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-v2/"
+    },
+    "cilium_bgp_router_asn": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "cilium_bgp_node_asn": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "cilium_lb_pool_cidr": {
+      "type": "string",
+      "format": "ipv4-cidr",
+      "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"
+    },
+    "cilium_bgp_hold_time": {
+      "default": 30,
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 300
+    },
+    "cilium_bgp_keepalive_time": {
+      "default": 10,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "cilium_bgp_graceful_restart": {
+      "default": false,
+      "type": "boolean"
+    },
+    "cilium_bgp_graceful_restart_time": {
+      "default": 120,
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 600
+    },
+    "cilium_bgp_ecmp_max_paths": {
+      "default": 3,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "cilium_bgp_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unifi_host": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "UniFi DNS Integration - Optional for internal DNS via external-dns webhook Requires UniFi Network v9.0.0+ for API key authentication (current stable: 9.5.21)"
+    },
+    "unifi_api_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unifi_site": {
+      "default": "default",
+      "type": "string",
+      "minLength": 1
+    },
+    "unifi_external_controller": {
+      "default": false,
+      "type": "boolean"
+    },
+    "talos_version": {
+      "default": "1.12.0",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Talos Upgrade Controller (tuppr) - Automated OS/K8s upgrades"
+    },
+    "kubernetes_version": {
+      "default": "1.35.0",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "backup_s3_endpoint": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Talos Backup - Automated etcd snapshots with S3 storage"
+    },
+    "backup_s3_bucket": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backup_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backup_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backup_age_public_key": {
+      "type": "string",
+      "pattern": "^age1"
+    },
+    "proxmox_csi_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Proxmox CSI Configuration - Optional for persistent storage Requires Proxmox API token with storage permissions"
+    },
+    "proxmox_endpoint": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "proxmox_csi_token_id": {
+      "type": "string",
+      "pattern": "^.+@.+!.+$"
+    },
+    "proxmox_csi_token_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_csi_storage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_region": {
+      "default": "pve",
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_ccm_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Proxmox CCM Configuration - Optional for node labeling/lifecycle Use Proxmox CCM instead of Talos CCM when running on Proxmox infrastructure NOTE: Talos CCM and Proxmox CCM are mutually exclusive"
+    },
+    "proxmox_ccm_token_id": {
+      "type": "string",
+      "pattern": "^.+@.+!.+$"
+    },
+    "proxmox_ccm_token_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_api_url": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Infrastructure (OpenTofu/Proxmox) - Optional for VM deployments"
+    },
+    "proxmox_node": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_iso_storage": {
+      "default": "local",
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_disk_storage": {
+      "default": "local-lvm",
+      "type": "string",
+      "minLength": 1
+    },
+    "proxmox_vm_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cores": {
+          "default": 4,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "sockets": {
+          "default": 1,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "memory": {
+          "default": 8192,
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 262144
+        },
+        "disk_size": {
+          "default": 128,
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 4096
+        }
+      }
+    },
+    "proxmox_vm_controller_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cores": {
+          "default": 4,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "sockets": {
+          "default": 1,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "memory": {
+          "default": 8192,
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 262144
+        },
+        "disk_size": {
+          "default": 64,
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 4096
+        }
+      },
+      "description": "Controller node VM defaults (optimized for etcd and control plane) Fallback chain: per-node -> controller-defaults -> global-defaults"
+    },
+    "proxmox_vm_worker_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cores": {
+          "default": 8,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "sockets": {
+          "default": 1,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "memory": {
+          "default": 16384,
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 262144
+        },
+        "disk_size": {
+          "default": 256,
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 4096
+        }
+      },
+      "description": "Worker node VM defaults (optimized for running workloads) Fallback chain: per-node -> worker-defaults -> global-defaults"
+    },
+    "proxmox_vm_advanced": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bios": {
+          "default": "ovmf",
+          "type": "string"
+        },
+        "machine": {
+          "default": "q35",
+          "type": "string"
+        },
+        "cpu_type": {
+          "default": "host",
+          "type": "string",
+          "minLength": 1
+        },
+        "scsi_hw": {
+          "default": "virtio-scsi-pci",
+          "type": "string"
+        },
+        "balloon": {
+          "default": 0,
+          "type": "integer",
+          "minimum": 0
+        },
+        "numa": {
+          "default": true,
+          "type": "boolean"
+        },
+        "qemu_agent": {
+          "default": true,
+          "type": "boolean"
+        },
+        "net_queues": {
+          "default": 4,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "disk_discard": {
+          "default": true,
+          "type": "boolean"
+        },
+        "disk_ssd": {
+          "default": true,
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_bridge": {
+          "default": "vmbr0",
+          "type": "string",
+          "minLength": 1,
+          "description": "Network configuration"
+        },
+        "ostype": {
+          "default": "l26",
+          "type": "string",
+          "minLength": 1,
+          "description": "Guest OS configuration"
+        },
+        "disk_backup": {
+          "default": false,
+          "type": "boolean",
+          "description": "Storage flags (Talos-optimized defaults)"
+        },
+        "disk_replicate": {
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "proxmox_api_token_id": {
+      "type": "string",
+      "pattern": "^.+@.+!.+$",
+      "description": "Infrastructure API Token - for OpenTofu VM provisioning NOTE: Separate from proxmox_csi_token and proxmox_ccm_token for least-privilege"
+    },
+    "proxmox_api_token_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cf_account_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Cloudflare Account (for R2 state backend) Dashboard \u2192 Overview \u2192 Account ID (right sidebar)"
+    },
+    "tfstate_username": {
+      "default": "terraform",
+      "type": "string",
+      "minLength": 1,
+      "description": "OpenTofu R2 State Backend Credentials Must match secrets configured in your tfstate-worker deployment"
+    },
+    "tfstate_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager) Full-stack observability with metrics, logs, and distributed tracing"
+    },
+    "monitoring_stack": {
+      "default": "victoriametrics",
+      "type": "string"
+    },
+    "hubble_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "hubble_ui_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "grafana_subdomain": {
+      "default": "grafana",
+      "type": "string",
+      "minLength": 1
+    },
+    "metrics_retention": {
+      "default": "7d",
+      "type": "string",
+      "pattern": "^[0-9]+[dhw]$"
+    },
+    "metrics_storage_size": {
+      "default": "50Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "storage_class": {
+      "default": "local-path",
+      "type": "string",
+      "minLength": 1
+    },
+    "monitoring_alerts_enabled": {
+      "default": true,
+      "type": "boolean",
+      "description": "Observability - Infrastructure Alerts (PrometheusRule)"
+    },
+    "node_memory_threshold": {
+      "default": 90,
+      "type": "integer",
+      "minimum": 50,
+      "maximum": 99
+    },
+    "node_cpu_threshold": {
+      "default": 90,
+      "type": "integer",
+      "minimum": 50,
+      "maximum": 99
+    },
+    "loki_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Observability - Log Aggregation (Loki + Alloy)"
+    },
+    "logs_retention": {
+      "default": "7d",
+      "type": "string",
+      "pattern": "^[0-9]+[dhw]$"
+    },
+    "logs_storage_size": {
+      "default": "50Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "tracing_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Observability - Distributed Tracing (Tempo)"
+    },
+    "tracing_sample_rate": {
+      "default": 10,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "trace_retention": {
+      "default": "72h",
+      "type": "string",
+      "pattern": "^[0-9]+[hd]$"
+    },
+    "trace_storage_size": {
+      "default": "10Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "cluster_name": {
+      "default": "matherlynet",
+      "type": "string",
+      "minLength": 1
+    },
+    "observability_namespace": {
+      "default": "monitoring",
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "default": "production",
+      "type": "string"
+    },
+    "oidc_provider_name": {
+      "default": "keycloak",
+      "type": "string",
+      "minLength": 1,
+      "description": "OIDC/JWT Configuration - Optional for API authentication via SecurityPolicy REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/"
+    },
+    "oidc_issuer_url": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "oidc_jwks_uri": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "oidc_additional_claims": {
+      "type": "string",
+      "pattern": "^X-"
+    },
+    "volsync_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "VolSync - PVC Backup with restic to S3-compatible storage REF: https://volsync.readthedocs.io/en/stable/"
+    },
+    "volsync_s3_endpoint": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "volsync_s3_bucket": {
+      "type": "string",
+      "minLength": 1
+    },
+    "volsync_restic_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "volsync_schedule": {
+      "default": "0 */6 * * *",
+      "type": "string",
+      "pattern": "^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+    },
+    "volsync_copy_method": {
+      "default": "Clone",
+      "type": "string"
+    },
+    "volsync_retain_daily": {
+      "default": 7,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365
+    },
+    "volsync_retain_weekly": {
+      "default": 4,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 52
+    },
+    "volsync_retain_monthly": {
+      "default": 3,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 24
+    },
+    "external_secrets_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "External Secrets Operator - Sync secrets from external providers REF: https://external-secrets.io/"
+    },
+    "external_secrets_provider": {
+      "default": "1password",
+      "type": "string"
+    },
+    "onepassword_connect_host": {
+      "type": "string",
+      "pattern": "^https?://"
+    },
+    "network_policies_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "CiliumNetworkPolicies - Zero-Trust Network Security REF: https://docs.cilium.io/en/stable/security/policy/ REF: docs/research/cilium-network-policies-jan-2026.md"
+    },
+    "network_policies_mode": {
+      "default": "audit",
+      "type": "string"
+    }
+  },
+  "required": [
+    "node_cidr",
+    "cluster_pod_cidr",
+    "cluster_svc_cidr",
+    "cluster_api_addr",
+    "cluster_gateway_addr",
+    "repository_name",
+    "cloudflare_domain",
+    "cloudflare_token",
+    "cloudflare_gateway_addr"
+  ]
+}

@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: network-namespace-policies
+spec:
+  dependsOn:
+    - name: cluster-network-policies
+    - name: envoy-gateway
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/network/network-policies/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: network
+  timeout: 5m
+  wait: true

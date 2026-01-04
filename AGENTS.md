@@ -76,7 +76,7 @@ task infra:plan                # Create execution plan
 task infra:apply               # Apply saved plan
 task infra:apply-auto          # Apply with auto-approve
 task infra:destroy             # Destroy managed resources
-task infra:secrets-edit        # Edit encrypted secrets
+task infra:secrets-edit        # Edit encrypted secrets (for rotation)
 task infra:validate            # Validate configuration
 task infra:fmt                 # Format configuration
 ```

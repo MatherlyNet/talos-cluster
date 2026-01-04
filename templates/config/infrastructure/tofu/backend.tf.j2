@@ -5,9 +5,8 @@
 #
 # Prerequisites:
 # 1. Deploy tfstate-worker: https://github.com/MatherlyNet/matherlynet-tfstate
-# 2. Run: task configure (generates secrets)
-# 3. Edit credentials: task infra:secrets-edit
-# 4. Initialize: task infra:init
+# 2. Configure credentials in cluster.yaml (tfstate_username, tfstate_password)
+# 3. Run: task configure (generates secrets and auto-runs init if configured)
 #
 # Authentication is handled via environment variables:
 # - TF_HTTP_USERNAME: Set from secrets.sops.yaml by task
@@ -16,12 +15,12 @@
 terraform {
   backend "http" {
     # State endpoint - change 'proxmox' to your project name for multiple states
-    address = "https://tfstate.matherlynet.io/tfstate/states/proxmox"
+    address = "https://tfstate.#{ cloudflare_domain }#/tfstate/states/proxmox"
 
     # Lock endpoints for concurrent access protection
-    lock_address   = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    lock_address   = "https://tfstate.#{ cloudflare_domain }#/tfstate/states/proxmox/lock"
     lock_method    = "LOCK"
-    unlock_address = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    unlock_address = "https://tfstate.#{ cloudflare_domain }#/tfstate/states/proxmox/lock"
     unlock_method  = "UNLOCK"
 
     # Credentials set via environment variables:

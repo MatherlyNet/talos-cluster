@@ -46,52 +46,51 @@ This guide implements a **free, production-ready** OpenTofu state backend using:
 
 ## Project Secrets Architecture
 
-This project uses a **two-tier secrets architecture**:
+This project uses a **unified secrets architecture** where all credentials are configured in `cluster.yaml` (gitignored) and flow through the template system:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    TEMPLATE-TIME SECRETS                                │
-│                    (Used during `task configure`)                       │
+│                    UNIFIED SECRETS FLOW                                 │
+│                    (All from cluster.yaml via `task configure`)         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│   cluster.yaml ─────┐                                                   │
-│   nodes.yaml ───────┤                                                   │
-│                     ├───► makejinja ───► kubernetes/*.sops.yaml         │
-│   External Files:   │        │           bootstrap/*.sops.yaml          │
-│   • age.key ────────┤        │                                          │
-│   • cloudflare-     │        │                                          │
-│     tunnel.json ────┘        │                                          │
-│                              ▼                                          │
-│                         plugin.py                                       │
-│                    (age_key, cloudflare_tunnel_*)                       │
+│   cluster.yaml (gitignored) ─────────────────────────────────────────┐  │
+│   ├── cloudflare_token ──────────────► kubernetes/*.sops.yaml        │  │
+│   ├── tfstate_username ──────────────► infrastructure/secrets.sops   │  │
+│   ├── tfstate_password ──────────────► infrastructure/secrets.sops   │  │
+│   ├── proxmox_api_token_id ──────────► infrastructure/secrets.sops   │  │
+│   └── proxmox_api_token_secret ──────► infrastructure/secrets.sops   │  │
+│                                                                         │
+│   External Files:                                                       │
+│   • age.key ─────────────────────────► SOPS encryption                  │
+│   • cloudflare-tunnel.json ──────────► kubernetes/*.sops.yaml          │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    RUNTIME SECRETS                                      │
-│                    (Used during `task infra:*` commands)                │
+│                    RUNTIME USAGE                                        │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│   infrastructure/secrets.sops.yaml                                      │
+│   infrastructure/secrets.sops.yaml (generated, encrypted)               │
 │            │                                                            │
 │            ├───► task infra:init ───► TF_HTTP_USERNAME/PASSWORD         │
 │            ├───► task infra:plan                                        │
 │            └───► task infra:apply                                       │
 │                                                                         │
-│   NOTE: These secrets are NOT part of the template workflow.            │
-│         They're used by task commands at runtime.                       │
+│   NOTE: `task configure` auto-runs `tofu init` if credentials present  │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Why are infrastructure secrets separate from cluster.yaml?**
+**All secrets flow through cluster.yaml:**
 
-| Aspect | cluster.yaml | infrastructure/secrets.sops.yaml |
-| -------- | ------------ | -------------------------------- |
-| **Used By** | makejinja templates | Task runner (tofu commands) |
-| **When** | Template generation | Runtime execution |
-| **Purpose** | K8s manifest generation | External tool auth |
-| **Examples** | `cloudflare_token` → K8s Secret | `tfstate_password` → CLI env var |
+| Secret | In cluster.yaml | Generated To |
+| ------ | --------------- | ------------ |
+| `cloudflare_token` | ✅ | kubernetes/*.sops.yaml |
+| `tfstate_username` | ✅ | infrastructure/secrets.sops.yaml |
+| `tfstate_password` | ✅ | infrastructure/secrets.sops.yaml |
+| `proxmox_api_token_id` | ✅ | infrastructure/secrets.sops.yaml |
+| `proxmox_api_token_secret` | ✅ | infrastructure/secrets.sops.yaml |
 
 ---
 
@@ -169,57 +168,49 @@ Created bucket 'matherlynet-tfstate'.
 
 > **Warning:** The Secret Access Key is shown only once. Store it immediately.
 
-### Step 1.3: Store Credentials in SOPS
+### Step 1.3: Configure Credentials in cluster.yaml
 
-> **Architecture Note:** Infrastructure secrets are stored separately from `cluster.yaml` because:
-> - They're **runtime secrets** used by task commands, not template-time secrets
-> - They're not needed in Kubernetes manifests (unlike `cloudflare_token`)
-> - This follows the project's two-tier secrets pattern:
->   - `cluster.yaml` → K8s secrets via templating → SOPS-encrypted manifests
->   - `infrastructure/secrets.sops.yaml` → Task commands at runtime
-
-The infrastructure secrets file is **auto-generated** from a template during `task configure`, following the same pattern as other project secrets.
-
-**Template:** `templates/config/infrastructure/secrets.sops.yaml.j2`
-**Generated:** `infrastructure/secrets.sops.yaml`
+> **Architecture Note:** All infrastructure secrets are now configured in `cluster.yaml` (gitignored), following the same pattern as other secrets in this project. The `task configure` command generates the encrypted `infrastructure/secrets.sops.yaml` automatically.
 
 **Prerequisites:**
 1. Ensure `age.key` exists (created by `task init`)
-2. Ensure you have run `task configure` (generates and encrypts secrets)
 
 ```bash
 # Initialize config files if not done (creates age.key, cluster.yaml, nodes.yaml)
 task init
-
-# Generate config files including infrastructure secrets
-task configure
-
-# Edit to add your actual credentials
-task infra:secrets-edit
 ```
 
-Update the following values (SOPS encrypts on save):
+Add the following to your `cluster.yaml`:
 
 ```yaml
-# infrastructure/secrets.sops.yaml
+# =============================================================================
+# INFRASTRUCTURE CREDENTIALS (OpenTofu R2 State Backend)
+# =============================================================================
+
+# -- Cloudflare Account ID
+#    Dashboard → Overview → Account ID (right sidebar)
 cf_account_id: "your-cloudflare-account-id"
 
-# R2 API Token (optional - only needed for direct S3 API access)
-# r2_access_key_id: "your-r2-access-key-id"
-# r2_secret_access_key: "your-r2-secret-access-key"
-
-# tfstate-worker authentication (REQUIRED)
-tfstate_username: "terraform"
+# -- tfstate-worker Basic Auth credentials
+#    Must match secrets configured in your tfstate-worker deployment
+tfstate_username: "terraform"  # Default
 tfstate_password: "your-strong-random-password"  # Generate with: openssl rand -base64 32
 
-# Proxmox credentials (if infrastructure_enabled in cluster.yaml)
+# -- Proxmox API token (required when infrastructure_enabled)
 proxmox_api_token_id: "root@pam!terraform"
 proxmox_api_token_secret: "your-api-token-secret"
 ```
 
+Then run `task configure` to generate encrypted secrets and auto-initialize the backend:
+
+```bash
+# Generates infrastructure/secrets.sops.yaml and runs tofu init
+task configure
+```
+
 > **Tip:** Generate a secure password: `openssl rand -base64 32`
 >
-> **Note:** Proxmox credentials are conditionally included in the template based on `infrastructure_enabled` (when `proxmox_api_url` and `proxmox_node` are set in `cluster.yaml`).
+> **Note:** Proxmox API token credentials are only required when `infrastructure_enabled` (when `proxmox_api_url` and `proxmox_node` are set in `cluster.yaml`).
 
 ---
 

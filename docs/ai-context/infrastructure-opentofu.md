@@ -209,27 +209,24 @@ variable "proxmox_api_token_secret" {
 
 ## Secrets Management
 
-### Two-Tier Architecture
+### Unified Secrets Architecture
 
-This project separates secrets by lifecycle:
+All infrastructure secrets are configured in `cluster.yaml` (gitignored) and flow through the template system:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Secrets Architecture                          │
+│                    Unified Secrets Flow                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐  │
-│  │   Template-Time Secrets  │  │    Runtime Secrets          │  │
-│  ├─────────────────────────┤  ├─────────────────────────────┤  │
-│  │ Source: cluster.yaml     │  │ Source: secrets.sops.yaml   │  │
-│  │ User: makejinja          │  │ User: task commands         │  │
-│  │ When: task configure     │  │ When: task infra:*          │  │
-│  ├─────────────────────────┤  ├─────────────────────────────┤  │
-│  │ Examples:                │  │ Examples:                   │  │
-│  │ - cloudflare_token       │  │ - tfstate_username          │  │
-│  │ - proxmox_api_url        │  │ - tfstate_password          │  │
-│  │ - proxmox_vm_defaults    │  │ - proxmox_api_token_*       │  │
-│  └─────────────────────────┘  └─────────────────────────────┘  │
+│  cluster.yaml (gitignored) ─────────────────────────────────────│
+│  ├── cloudflare_token ──────────► kubernetes/*.sops.yaml        │
+│  ├── tfstate_username ──────────► infrastructure/secrets.sops   │
+│  ├── tfstate_password ──────────► infrastructure/secrets.sops   │
+│  ├── proxmox_api_token_id ──────► infrastructure/secrets.sops   │
+│  └── proxmox_api_token_secret ──► infrastructure/secrets.sops   │
+│                                                                  │
+│  NOTE: `task configure` auto-runs `tofu init` if credentials    │
+│        are present in cluster.yaml                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -240,15 +237,16 @@ Infrastructure follows the same templating pattern as kubernetes/talos:
 
 | Source | Purpose | Contents |
 | ------ | ------- | -------- |
-| `cluster.yaml` | Non-sensitive config | `proxmox_api_url`, `proxmox_node`, `proxmox_vm_defaults` |
+| `cluster.yaml` | Config + credentials | `proxmox_api_url`, `proxmox_node`, `proxmox_vm_defaults`, `tfstate_*`, `proxmox_api_token_*` |
 | `nodes.yaml` | Per-node VM specs | `vm_cores`, `vm_memory`, `vm_disk_size` |
 
 ### Secrets Template
 
-The infrastructure secrets file is **auto-generated** from a template:
+The infrastructure secrets file is **auto-generated** from `cluster.yaml`:
 
+**Source:** `cluster.yaml` (gitignored)
 **Template:** `templates/config/infrastructure/secrets.sops.yaml.j2`
-**Generated:** `infrastructure/secrets.sops.yaml`
+**Generated:** `infrastructure/secrets.sops.yaml` (encrypted)
 
 The template conditionally includes Proxmox credentials based on `infrastructure_enabled`.
 
@@ -297,7 +295,7 @@ Handled by `.sops.yaml` rule:
 | `task infra:validate` | Validate configuration |
 | `task infra:fmt` | Format HCL files |
 | `task infra:fmt-check` | Check formatting |
-| `task infra:secrets-edit` | Edit encrypted secrets |
+| `task infra:secrets-edit` | Edit encrypted secrets (rotation) |
 
 ### How Tasks Handle Secrets
 
@@ -399,7 +397,7 @@ The infrastructure layer:
 
 | Error | Cause | Solution |
 | ----- | ----- | -------- |
-| `401 Unauthorized` | Bad credentials | `task infra:secrets-edit` |
+| `401 Unauthorized` | Bad credentials | Check cluster.yaml, run `task configure` |
 | `Error acquiring lock` | Stale lock | `task infra:force-unlock LOCK_ID=xxx` |
 | `Checksum mismatch` | R2 API quirk | Env vars set by Taskfile |
 | `Backend config changed` | Modified backend.tf | `task infra:init -- -reconfigure` |

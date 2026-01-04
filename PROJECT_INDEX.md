@@ -89,7 +89,7 @@ matherlynet-talos-cluster/
 | `task infra:init` | Initialize OpenTofu with R2 backend |
 | `task infra:plan` | Create OpenTofu execution plan |
 | `task infra:apply` | Apply OpenTofu changes |
-| `task infra:secrets-edit` | Edit infrastructure secrets |
+| `task infra:secrets-edit` | Edit infrastructure secrets (for rotation) |
 
 ## Configuration Files
 
