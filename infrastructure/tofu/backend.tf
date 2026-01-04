@@ -13,12 +13,12 @@
 terraform {
   backend "http" {
     # State endpoint - change 'proxmox' to your project name for multiple states
-    address = "https://tfstate.matherly.net/tfstate/states/proxmox"
+    address = "https://tfstate.matherly.net/states/proxmox"
 
     # Lock endpoints for concurrent access protection
-    lock_address   = "https://tfstate.matherly.net/tfstate/states/proxmox/lock"
+    lock_address   = "https://tfstate.matherly.net/states/proxmox/lock"
     lock_method    = "LOCK"
-    unlock_address = "https://tfstate.matherly.net/tfstate/states/proxmox/lock"
+    unlock_address = "https://tfstate.matherly.net/states/proxmox/lock"
     unlock_method  = "UNLOCK"
 
     # Credentials set via environment variables:
