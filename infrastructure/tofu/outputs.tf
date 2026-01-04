@@ -1,0 +1,94 @@
+# Outputs
+#
+# Exposes provisioned resource information for external use.
+
+# -----------------------------------------------------------------------------
+# Node Information
+# -----------------------------------------------------------------------------
+
+output "node_vm_ids" {
+  description = "Map of node name to Proxmox VM ID"
+  value = {
+    for name, vm in proxmox_virtual_environment_vm.talos_node :
+    name => vm.vm_id
+  }
+}
+
+output "node_addresses" {
+  description = "Map of node name to IP address"
+  value = {
+    for node in var.nodes :
+    node.name => node.address
+  }
+}
+
+output "controller_nodes" {
+  description = "List of controller node names"
+  value = [
+    for node in var.nodes :
+    node.name if node.controller
+  ]
+}
+
+output "worker_nodes" {
+  description = "List of worker node names"
+  value = [
+    for node in var.nodes :
+    node.name if !node.controller
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# ISO Information
+# -----------------------------------------------------------------------------
+
+output "talos_iso_files" {
+  description = "Map of schematic ID prefix to ISO file path on Proxmox"
+  value = {
+    for schematic, file in proxmox_virtual_environment_download_file.talos_iso :
+    substr(schematic, 0, 12) => file.id
+  }
+}
+
+output "talos_version" {
+  description = "Talos Linux version deployed"
+  value       = var.talos_version
+}
+
+# -----------------------------------------------------------------------------
+# Cluster Summary
+# -----------------------------------------------------------------------------
+
+output "cluster_summary" {
+  description = "Human-readable cluster summary"
+  value = <<-EOT
+    Talos Cluster on Proxmox
+    ========================
+    Talos Version: v${var.talos_version}
+    Proxmox Node:  ${var.proxmox_node}
+
+    Controllers:   ${length([for n in var.nodes : n if n.controller])}
+    Workers:       ${length([for n in var.nodes : n if !n.controller])}
+    Total Nodes:   ${length(var.nodes)}
+
+    API Endpoint:  ${var.cluster_api_addr}
+    Pod CIDR:      ${var.cluster_pod_cidr}
+    Service CIDR:  ${var.cluster_svc_cidr}
+  EOT
+}
+
+# -----------------------------------------------------------------------------
+# Next Steps
+# -----------------------------------------------------------------------------
+
+output "next_steps" {
+  description = "Commands to continue cluster setup"
+  value = <<-EOT
+    VMs are booted into Talos maintenance mode.
+
+    Next steps:
+    1. Wait for nodes to be accessible on port 50000
+    2. Run: task bootstrap:talos
+    3. Run: task bootstrap:apps
+  EOT
+}

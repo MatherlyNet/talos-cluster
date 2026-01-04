@@ -141,6 +141,26 @@ cloudflare_gateway_addr: ""
 # cilium_bgp_password: ""
 
 # =============================================================================
+# CILIUM NETWORK POLICIES - Zero-Trust Network Security
+# =============================================================================
+# CiliumNetworkPolicies enforce zero-trust networking with L3-L7 controls.
+# Policies are applied per-namespace with explicit ingress/egress allowlists.
+# REF: https://docs.cilium.io/en/stable/security/policy/
+# REF: docs/research/cilium-network-policies-jan-2026.md
+
+# -- Enable CiliumNetworkPolicies for zero-trust networking
+#    Creates namespace-scoped policies with default-deny and explicit allowlists
+#    (OPTIONAL) / (DEFAULT: false)
+# network_policies_enabled: false
+
+# -- Network policy enforcement mode: "audit" or "enforce"
+#    audit: Policies created with enableDefaultDeny: false (observe only via Hubble)
+#    enforce: Policies created with enableDefaultDeny: true (active blocking)
+#    Start with audit mode to observe traffic patterns before enforcing
+#    (OPTIONAL) / (DEFAULT: "audit")
+# network_policies_mode: "audit"
+
+# =============================================================================
 # UNIFI DNS INTEGRATION - Optional for internal DNS via external-dns webhook
 # =============================================================================
 # When configured, replaces k8s_gateway with native UniFi DNS record management.
@@ -175,32 +195,6 @@ cloudflare_gateway_addr: ""
 # -- Kubernetes version for automated upgrades
 #    (OPTIONAL) / (DEFAULT: "1.35.0")
 # kubernetes_version: "1.35.0"
-
-# =============================================================================
-# TALOS BACKUP - Automated etcd snapshots with S3 storage
-# =============================================================================
-# Talos Backup creates periodic etcd snapshots and uploads them to S3-compatible
-# storage with Age encryption. Required for disaster recovery.
-
-# -- S3-compatible endpoint for backups (Cloudflare R2 recommended)
-#    (OPTIONAL) / (e.g. "https://<account-id>.r2.cloudflarestorage.com")
-# backup_s3_endpoint: ""
-
-# -- S3 bucket name for backups
-#    (OPTIONAL) / (e.g. "cluster-backups")
-# backup_s3_bucket: ""
-
-# -- S3 access key ID
-#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
-# backup_s3_access_key: ""
-
-# -- S3 secret access key
-#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
-# backup_s3_secret_key: ""
-
-# -- Age public key for backup encryption (use same as cluster Age key)
-#    (OPTIONAL) / (e.g. "age1...")
-# backup_age_public_key: ""
 
 # =============================================================================
 # PROXMOX CSI CONFIGURATION - Optional for persistent storage
@@ -449,6 +443,26 @@ cloudflare_gateway_addr: ""
 # environment: "production"
 
 # =============================================================================
+# EXTERNAL SECRETS OPERATOR - Sync secrets from external providers
+# =============================================================================
+# External Secrets Operator syncs secrets from external secret stores.
+# Supported providers: 1Password, Bitwarden, HashiCorp Vault
+# REF: https://external-secrets.io/
+# REF: docs/guides/k8s-at-home-remaining-implementation.md
+
+# -- Enable External Secrets Operator
+#    (OPTIONAL) / (DEFAULT: false)
+# external_secrets_enabled: false
+
+# -- External secrets provider: "1password", "bitwarden", or "vault"
+#    (OPTIONAL) / (DEFAULT: "1password")
+# external_secrets_provider: "1password"
+
+# -- 1Password Connect host URL (required when provider is "1password")
+#    (OPTIONAL) / (e.g. "http://onepassword-connect:8080")
+# onepassword_connect_host: ""
+
+# =============================================================================
 # OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
 # =============================================================================
 # JWT-based authentication for API endpoints, validating tokens against JWKS.
@@ -478,6 +492,32 @@ cloudflare_gateway_addr: ""
 #      - name: "realm_access.roles"
 #        header: "X-User-Roles"
 # oidc_additional_claims: []
+
+# =============================================================================
+# TALOS BACKUP - Automated etcd snapshots with S3 storage
+# =============================================================================
+# Talos Backup creates periodic etcd snapshots and uploads them to S3-compatible
+# storage with Age encryption. Required for disaster recovery.
+
+# -- S3-compatible endpoint for backups (Cloudflare R2 recommended)
+#    (OPTIONAL) / (e.g. "https://<account-id>.r2.cloudflarestorage.com")
+# backup_s3_endpoint: ""
+
+# -- S3 bucket name for backups
+#    (OPTIONAL) / (e.g. "cluster-backups")
+# backup_s3_bucket: ""
+
+# -- S3 access key ID
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# backup_s3_access_key: ""
+
+# -- S3 secret access key
+#    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
+# backup_s3_secret_key: ""
+
+# -- Age public key for backup encryption (use same as cluster Age key)
+#    (OPTIONAL) / (e.g. "age1...")
+# backup_age_public_key: ""
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3
@@ -524,43 +564,3 @@ cloudflare_gateway_addr: ""
 # -- Monthly backup retention count
 #    (OPTIONAL) / (DEFAULT: 3)
 # volsync_retain_monthly: 3
-
-# =============================================================================
-# EXTERNAL SECRETS OPERATOR - Sync secrets from external providers
-# =============================================================================
-# External Secrets Operator syncs secrets from external secret stores.
-# Supported providers: 1Password, Bitwarden, HashiCorp Vault
-# REF: https://external-secrets.io/
-# REF: docs/guides/k8s-at-home-remaining-implementation.md
-
-# -- Enable External Secrets Operator
-#    (OPTIONAL) / (DEFAULT: false)
-# external_secrets_enabled: false
-
-# -- External secrets provider: "1password", "bitwarden", or "vault"
-#    (OPTIONAL) / (DEFAULT: "1password")
-# external_secrets_provider: "1password"
-
-# -- 1Password Connect host URL (required when provider is "1password")
-#    (OPTIONAL) / (e.g. "http://onepassword-connect:8080")
-# onepassword_connect_host: ""
-
-# =============================================================================
-# CILIUM NETWORK POLICIES - Zero-Trust Network Security
-# =============================================================================
-# CiliumNetworkPolicies enforce zero-trust networking with L3-L7 controls.
-# Policies are applied per-namespace with explicit ingress/egress allowlists.
-# REF: https://docs.cilium.io/en/stable/security/policy/
-# REF: docs/research/cilium-network-policies-jan-2026.md
-
-# -- Enable CiliumNetworkPolicies for zero-trust networking
-#    Creates namespace-scoped policies with default-deny and explicit allowlists
-#    (OPTIONAL) / (DEFAULT: false)
-# network_policies_enabled: false
-
-# -- Network policy enforcement mode: "audit" or "enforce"
-#    audit: Policies created with enableDefaultDeny: false (observe only via Hubble)
-#    enforce: Policies created with enableDefaultDeny: true (active blocking)
-#    Start with audit mode to observe traffic patterns before enforcing
-#    (OPTIONAL) / (DEFAULT: "audit")
-# network_policies_mode: "audit"

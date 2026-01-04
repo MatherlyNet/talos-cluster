@@ -4,7 +4,7 @@
 # Non-sensitive defaults can be overridden via terraform.tfvars or CLI.
 
 # -----------------------------------------------------------------------------
-# Proxmox Provider Variables (for future VM management)
+# Proxmox Provider Variables
 # -----------------------------------------------------------------------------
 
 variable "proxmox_api_url" {
@@ -42,4 +42,151 @@ variable "state_encryption_passphrase" {
   description = "Passphrase for client-side state encryption (optional)"
   default     = ""
   sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Proxmox Infrastructure Variables
+# -----------------------------------------------------------------------------
+
+variable "proxmox_node" {
+  type        = string
+  description = "Proxmox node name to create VMs on"
+}
+
+variable "proxmox_iso_storage" {
+  type        = string
+  description = "Proxmox storage for ISO images"
+  default     = "local"
+}
+
+variable "proxmox_disk_storage" {
+  type        = string
+  description = "Proxmox storage for VM disks"
+  default     = "local-lvm"
+}
+
+variable "talos_version" {
+  type        = string
+  description = "Talos Linux version for Image Factory ISO download"
+}
+
+# -----------------------------------------------------------------------------
+# VM Default Settings
+# -----------------------------------------------------------------------------
+
+variable "vm_defaults" {
+  type = object({
+    cores     = number
+    sockets   = number
+    memory    = number
+    disk_size = number
+  })
+  description = "Global VM defaults (fallback for all nodes)"
+}
+
+variable "vm_controller_defaults" {
+  type = object({
+    cores     = number
+    sockets   = number
+    memory    = number
+    disk_size = number
+  })
+  description = "Controller node VM defaults"
+}
+
+variable "vm_worker_defaults" {
+  type = object({
+    cores     = number
+    sockets   = number
+    memory    = number
+    disk_size = number
+  })
+  description = "Worker node VM defaults"
+}
+
+variable "vm_advanced" {
+  type = object({
+    bios           = string
+    machine        = string
+    cpu_type       = string
+    scsi_hw        = string
+    balloon        = number
+    numa           = bool
+    qemu_agent     = bool
+    net_queues     = number
+    disk_discard   = bool
+    disk_ssd       = bool
+    tags           = list(string)
+    network_bridge = string
+    ostype         = string
+    disk_backup    = bool
+    disk_replicate = bool
+  })
+  description = "Advanced VM settings (Talos-optimized)"
+}
+
+# -----------------------------------------------------------------------------
+# Network Configuration
+# -----------------------------------------------------------------------------
+
+variable "node_cidr" {
+  type        = string
+  description = "Network CIDR for nodes"
+}
+
+variable "node_default_gateway" {
+  type        = string
+  description = "Default gateway for nodes"
+}
+
+variable "node_vlan_tag" {
+  type        = number
+  description = "VLAN tag for node network (null if no VLAN)"
+  default     = null
+}
+
+# -----------------------------------------------------------------------------
+# Node Definitions
+# -----------------------------------------------------------------------------
+
+variable "nodes" {
+  type = list(object({
+    name              = string
+    address           = string
+    controller        = bool
+    mac_addr          = string
+    schematic_id      = string
+    disk              = string
+    vm_cores          = number
+    vm_sockets        = number
+    vm_memory         = number
+    vm_disk_size      = number
+    vm_startup_order  = number
+    vm_startup_delay  = number
+    vm_shutdown_delay = number
+    mtu               = optional(number)
+    secureboot        = bool
+  }))
+  description = "List of Talos nodes to provision"
+}
+
+# -----------------------------------------------------------------------------
+# Cluster Configuration (for reference)
+# -----------------------------------------------------------------------------
+
+variable "cluster_api_addr" {
+  type        = string
+  description = "Kubernetes API server address"
+}
+
+variable "cluster_pod_cidr" {
+  type        = string
+  description = "Pod network CIDR"
+  default     = "10.42.0.0/16"
+}
+
+variable "cluster_svc_cidr" {
+  type        = string
+  description = "Service network CIDR"
+  default     = "10.43.0.0/16"
 }

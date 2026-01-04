@@ -5,8 +5,9 @@ Step-by-step commands for deploying the cluster. See [README.md](./README.md) fo
 ## Prerequisites
 
 - Cloudflare account with domain
-- Nodes booted into Talos maintenance mode (port 50000 accessible)
 - [mise](https://mise.jdx.dev/) installed
+- **Option A (Manual):** Nodes booted into Talos maintenance mode (port 50000 accessible)
+- **Option B (Automated):** Proxmox VE with API access for VM provisioning
 
 ## Setup
 
@@ -24,7 +25,9 @@ cloudflared tunnel create --credentials-file cloudflare-tunnel.json kubernetes
 task init
 
 # 4. Edit configuration files
-# - cluster.yaml: network settings, cloudflare, credentials (including tfstate_* for infra)
+# - cluster.yaml: network settings, cloudflare, credentials
+#   For VM provisioning: proxmox_api_url, proxmox_node, proxmox_api_token_id, proxmox_api_token_secret
+#   For state backend: tfstate_username, tfstate_password
 # - nodes.yaml: node names, IPs, disks, MACs, schematic IDs
 
 # 5. Render templates, validate, and auto-init infrastructure
@@ -32,32 +35,48 @@ task configure
 # Note: Automatically runs 'tofu init' if tfstate_password is configured
 ```
 
-## Infrastructure (Optional - for OpenTofu/Proxmox)
+## Infrastructure (Proxmox VM Provisioning)
 
-If you configured infrastructure credentials in cluster.yaml, `task configure` already initialized OpenTofu. Continue with:
+If you configured Proxmox credentials in cluster.yaml, `task configure` already initialized OpenTofu.
+
+This automatically:
+- Downloads Talos ISO from Image Factory using your schematic IDs
+- Uploads ISO to Proxmox storage
+- Creates VMs with configured resources (cores, memory, disk)
+- Boots VMs into Talos maintenance mode
 
 ```bash
-# First plan (use -lock=false for new state backend)
-task infra:plan -- -lock=false
-
-# Apply infrastructure (provision VMs)
-task infra:apply -- -lock=false
-
-# Subsequent operations (locking works after state exists)
+# Review execution plan (shows ISO downloads + VM creations)
 task infra:plan
+
+# Provision VMs (downloads ISO, creates VMs, boots them)
 task infra:apply
+
+# VMs are now in Talos maintenance mode (port 50000)
+# Verify nodes are accessible before proceeding to Bootstrap
+```
+
+**First-time setup (new state backend):**
+```bash
+# Use -lock=false for initial plan/apply when no state exists
+task infra:plan -- -lock=false
+task infra:apply -- -lock=false
+# Locking works normally after first apply
 ```
 
 **Troubleshooting:**
 ```bash
 # If backend URL changed after initial setup
 task infra:init -- -reconfigure
+
+# View provisioned resources
+task infra:output
 ```
 
 ## Bootstrap
 
 ```bash
-# 1. Install Talos on nodes
+# 1. Install Talos on nodes (applies machine configs)
 task bootstrap:talos
 
 # 2. Commit generated secrets
@@ -105,6 +124,10 @@ task talos:upgrade-k8s
 
 # Re-render after config changes
 task configure
+
+# Modify infrastructure
+task infra:plan
+task infra:apply
 ```
 
 ## Troubleshooting
@@ -119,6 +142,7 @@ task configure
 | Infra state lock stuck | `task infra:force-unlock LOCK_ID=<id>` |
 | Infra auth (401) | Check credentials in `cluster.yaml`, re-run `task configure` |
 | Backend URL changed | `task infra:init -- -reconfigure` |
+| VM not booting | Check Proxmox console, verify schematic_id in nodes.yaml |
 
 ## Key Files
 
@@ -128,9 +152,14 @@ task configure
 | `nodes.yaml` | Node definitions (gitignored) |
 | `age.key` | Encryption key (gitignored, never commit) |
 | `cloudflare-tunnel.json` | Tunnel credentials (gitignored) |
+| `infrastructure/tofu/` | Generated OpenTofu configs |
 
 ## Reset
 
 ```bash
+# Reset Talos cluster (wipes nodes)
 task talos:reset
+
+# Destroy infrastructure (removes VMs)
+task infra:destroy
 ```
