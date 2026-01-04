@@ -58,13 +58,14 @@ spec:
           - tcp
           - flow
           - icmp
+#% if tracing_enabled | default(false) %#
+          #| L7 HTTP metrics with exemplars for Tempo trace linking (replaces 'http' when tracing enabled) #|
+          - httpV2:exemplars=true;labelsContext=source_namespace,source_workload,destination_namespace,destination_workload
+#% else %#
           - http
+#% endif %#
           - port-distribution
           - policy:sourceContext=workload-name|reserved-identity;destinationContext=workload-name|reserved-identity
-#% if tracing_enabled | default(false) %#
-          #| L7 HTTP metrics with exemplars for Tempo trace linking #|
-          - httpV2:exemplars=true;labelsContext=source_namespace,source_workload,destination_namespace,destination_workload
-#% endif %#
         enableOpenMetrics: true
         serviceMonitor:
           enabled: true
