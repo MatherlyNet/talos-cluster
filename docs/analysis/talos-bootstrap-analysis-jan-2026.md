@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Analysis of Talos cluster bootstrap issues with VMs in MAINTENANCE stage. Five new/modified Talos patch templates were reviewed and one critical issue was identified and **FIXED**.
+Analysis of Talos cluster bootstrap issues with VMs in MAINTENANCE stage. Five new/modified Talos patch templates were reviewed and two critical issues were identified and **FIXED**.
 
 ## Template Changes Reviewed
 
@@ -46,15 +46,12 @@ machine:
 - Matches apiServer feature gate in `controller/cluster.yaml.j2`
 
 ### 3. `machine-logging.yaml.j2` (NEW)
-**Purpose:** Forward Talos kernel/service logs to Vector via UDP
+**Purpose:** Forward Talos service logs to Vector via UDP
 
-**Configuration:** (Conditional on `talos_system_logs_enabled`)
+**Configuration:** (Conditional on `loki_enabled`)
 ```yaml
-#% if talos_system_logs_enabled %#
+#% if loki_enabled | default(false) %#
 machine:
-  install:
-    extraKernelArgs:
-      - talos.logging.kernel=udp://127.0.0.1:6050
   logging:
     destinations:
       - endpoint: "udp://127.0.0.1:6051"
@@ -62,7 +59,7 @@ machine:
 #% endif %#
 ```
 
-**Assessment:** ✅ **FIXED** - Changed conditional from `talos_system_logs_enabled` to `loki_enabled`
+**Assessment:** ✅ **FIXED** (see Issues #1 and #2 below)
 
 ### 4. `machine-network.yaml.j2` (MODIFIED)
 **Change:** Added loopback address for Cilium eBPF host routing workaround
@@ -137,6 +134,69 @@ Changed the conditional from `talos_system_logs_enabled` to `loki_enabled`:
 
 ---
 
+### ISSUE #2: SecureBoot/UKI Conflict with extraKernelArgs ✅ FIXED
+
+**Symptom:** Bootstrap failed with error:
+```
+install.extraKernelArgs and install.grubUseUKICmdline can't be used together
+```
+
+**Root Cause:**
+1. Talos v1.12.0 defaults to `grubUseUKICmdline: true` for SecureBoot images
+2. With UKI (Unified Kernel Image) mode, kernel command line arguments are embedded at build time
+3. Runtime `machine.install.extraKernelArgs` in config conflicts with this mode
+4. The original template had:
+   ```yaml
+   machine:
+     install:
+       extraKernelArgs:
+         - talos.logging.kernel=udp://127.0.0.1:6050
+   ```
+
+**Fix Applied:**
+1. Created new Image Factory schematic with kernel logging embedded:
+   ```yaml
+   customization:
+     extraKernelArgs:
+       - talos.logging.kernel=udp://127.0.0.1:6050
+     systemExtensions:
+       officialExtensions:
+         - siderolabs/qemu-guest-agent
+   ```
+
+2. New schematic ID: `a7f294c4436e874167652f711750f9bc607c89f12f7c27f183584a25763a2bca`
+   - Previous: `ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515`
+
+3. Updated `nodes.yaml` with new schematic ID for all 6 nodes
+
+4. Removed `machine.install.extraKernelArgs` from template:
+   ```yaml
+   # Before (conflicting)
+   machine:
+     install:
+       extraKernelArgs:
+         - talos.logging.kernel=udp://127.0.0.1:6050
+     logging:
+       destinations:
+         - endpoint: "udp://127.0.0.1:6051"
+           format: json_lines
+
+   # After (fixed)
+   machine:
+     logging:
+       destinations:
+         - endpoint: "udp://127.0.0.1:6051"
+           format: json_lines
+   ```
+
+**Technical Details:**
+- With SecureBoot/UKI mode, kernel args must be baked into the schematic via Image Factory
+- The schematic is retrieved at boot time and contains the embedded kernel command line
+- Runtime config can only modify `machine.logging` section, not `machine.install.extraKernelArgs`
+- REF: https://docs.siderolabs.com/talos/v1.12/configure-your-talos-cluster/logging-and-telemetry/logging
+
+---
+
 ## Network Configuration Validation
 
 | Setting | Value | Status |
@@ -159,6 +219,20 @@ Changed the conditional from `talos_system_logs_enabled` to `loki_enabled`:
 | matherlynet-wrkr-1 | 192.168.22.111/22 | ✅ |
 | matherlynet-wrkr-2 | 192.168.22.112/22 | ✅ |
 | matherlynet-wrkr-3 | 192.168.22.113/22 | ✅ |
+
+---
+
+## Proxmox Configuration Validation
+
+Per Talos documentation for Proxmox integration:
+
+| Requirement | Status |
+| ----------- | ------ |
+| QEMU Guest Agent extension | ✅ Included in schematic |
+| VirtIO SCSI controller | ✅ Configured in OpenTofu |
+| q35 machine type | ✅ Configured in OpenTofu |
+| UEFI/OVMF BIOS | ✅ Required for SecureBoot |
+| Memory ballooning disabled | ✅ Configured in OpenTofu |
 
 ---
 
@@ -186,7 +260,11 @@ Based on research, common causes of RPC errors during Talos bootstrap:
 
 ## Recommended Actions
 
-1. **Re-run `task configure`** to regenerate all templates with the fix applied
+1. **Destroy and recreate VMs** to pick up the new schematic with embedded kernel args:
+   ```bash
+   task infra:destroy
+   task infra:apply
+   ```
 
 2. **Verify node connectivity** before bootstrap:
    ```bash
@@ -223,7 +301,12 @@ Based on research, common causes of RPC errors during Talos bootstrap:
 
 ## Template Documentation Updates
 
-The Talos system logging is now automatically enabled when `loki_enabled: true` is set in `cluster.yaml`. No additional documentation updates are required as the configuration follows the existing observability stack pattern.
+The Talos system logging is now automatically enabled when `loki_enabled: true` is set in `cluster.yaml`.
+
+Key changes:
+- Kernel logging (`talos.logging.kernel`) is embedded in the Image Factory schematic
+- Service logging (`machine.logging`) is configured via the template when `loki_enabled: true`
+- Both send to Vector DaemonSet on localhost (ports 6050 and 6051 respectively)
 
 ---
 
@@ -232,5 +315,7 @@ The Talos system logging is now automatically enabled when `loki_enabled: true` 
 - [Talos Host DNS Documentation](https://docs.siderolabs.com/talos/v1.11/networking/host-dns)
 - [Cilium eBPF Host Routing Issue](https://github.com/cilium/cilium/issues/36761)
 - [Talos forwardKubeDNSToHost PR](https://github.com/siderolabs/talos/pull/9200)
-- [Talos Logging Documentation](https://docs.siderolabs.com/talos/v1.11/configure-your-talos-cluster/logging-and-telemetry/logging)
+- [Talos Logging Documentation](https://docs.siderolabs.com/talos/v1.12/configure-your-talos-cluster/logging-and-telemetry/logging)
+- [Talos Image Factory](https://factory.talos.dev/)
+- [Talos Proxmox Installation Guide](https://docs.siderolabs.com/talos/v1.12/platform-specific-installations/virtualized-platforms/proxmox)
 - [Kubernetes ImageVolume Feature Gate](https://kubernetes.io/docs/concepts/storage/volumes/#image)
