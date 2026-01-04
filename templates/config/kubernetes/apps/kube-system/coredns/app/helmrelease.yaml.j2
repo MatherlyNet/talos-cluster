@@ -65,3 +65,8 @@ spec:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
         effect: NoSchedule
+      #| Allow scheduling before CCM initializes nodes (breaks bootstrap chicken-egg) #|
+      #| Ref: https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/ #|
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
+        effect: NoSchedule
