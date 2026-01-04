@@ -139,8 +139,8 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   }
 
   # Boot ISO (Talos nocloud image - standard or secureboot variant)
+  # Note: 'enabled' attribute is deprecated in bpg/proxmox provider - set file_id to "none" to leave empty
   cdrom {
-    enabled   = true
     file_id   = proxmox_virtual_environment_download_file.talos_iso["${each.value.schematic_id}-${each.value.secureboot}"].id
     interface = "ide2"
   }

@@ -173,7 +173,7 @@ The bpg/proxmox provider requires specific privileges. The `download_file` resou
 **Create a dedicated role on Proxmox:**
 ```bash
 # SSH to Proxmox server
-pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.PowerMgmt"
+pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.GuestAgent.Audit,VM.Migrate,VM.PowerMgmt"
 ```
 
 **Option A: Use existing root token with role assignment**
@@ -199,6 +199,14 @@ pveum user token add terraform@pve terraform-token --privsep=0
 | `Sys.Modify` | Required by query-url-metadata API |
 
 > **Reference:** [bpg/proxmox download_file docs](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file)
+
+**Proxmox VE 9+ QEMU Guest Agent privileges:**
+
+| Privilege | Purpose |
+| ----------- | --------- |
+| `VM.GuestAgent.Audit` | Query VM network interfaces via guest agent (new in PVE 9) |
+
+> **Note:** If your Talos schematic includes `siderolabs/qemu-guest-agent`, this privilege is required for the bpg/proxmox provider to query network interfaces. Without it, you'll see "Permission check failed" warnings during `tofu plan/apply`.
 
 ## Secrets Management
 
