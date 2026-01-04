@@ -44,7 +44,7 @@ tasks:
       - |
         export TF_HTTP_USERNAME=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_username')
         export TF_HTTP_PASSWORD=$(sops -d {{.SECRETS_FILE}} | yq -r '.tfstate_password')
-        tofu apply tfplan
+        tofu apply {{.CLI_ARGS}} tfplan
     preconditions:
       - test -f {{.TOFU_DIR}}/tfplan
       - test -f {{.SECRETS_FILE}}
