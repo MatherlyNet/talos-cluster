@@ -89,6 +89,37 @@ task bootstrap:apps
 kubectl get pods -A --watch
 ```
 
+## BGP Configuration (Optional)
+
+Enable BGP peering between Cilium and your UniFi gateway for multi-VLAN routing:
+
+**1. Add to `cluster.yaml`:**
+```yaml
+cilium_bgp_router_addr: "192.168.23.254"  # Gateway IP (VLAN gateway, NOT UDM management IP)
+cilium_bgp_router_asn: "64513"            # Gateway ASN (private: 64512-65534)
+cilium_bgp_node_asn: "64514"              # Kubernetes ASN (must differ from gateway)
+```
+
+**2. Regenerate templates:**
+```bash
+task configure
+```
+
+**3. Upload UniFi BGP configuration:**
+```bash
+# Generated file: unifi/bgp.conf
+# Upload via: Settings → Routing → BGP → Add Configuration
+```
+
+**4. Deploy and verify:**
+```bash
+git add -A && git commit -m "feat: enable BGP peering" && git push
+task reconcile
+cilium bgp peers  # Should show "established" for all nodes
+```
+
+> **Full guide:** See [docs/guides/bgp-unifi-cilium-implementation.md](docs/guides/bgp-unifi-cilium-implementation.md) for advanced options (authentication, ECMP, graceful restart, timers).
+
 ## Verification
 
 ```bash
@@ -105,6 +136,9 @@ flux get hr -A
 
 # Check certificates
 kubectl get certificates -A
+
+# Check BGP (if enabled)
+cilium bgp peers
 ```
 
 ## Day-2 Operations
@@ -143,6 +177,7 @@ task infra:apply
 | Infra auth (401) | Check credentials in `cluster.yaml`, re-run `task configure` |
 | Backend URL changed | `task infra:init -- -reconfigure` |
 | VM not booting | Check Proxmox console, verify schematic_id in nodes.yaml |
+| BGP not established | Check `cilium bgp peers`, verify ASNs match, ensure UniFi config uploaded |
 
 ## Key Files
 
@@ -153,6 +188,7 @@ task infra:apply
 | `age.key` | Encryption key (gitignored, never commit) |
 | `cloudflare-tunnel.json` | Tunnel credentials (gitignored) |
 | `infrastructure/tofu/` | Generated OpenTofu configs |
+| `unifi/bgp.conf` | Generated UniFi BGP config (upload to gateway) |
 
 ## Reset
 

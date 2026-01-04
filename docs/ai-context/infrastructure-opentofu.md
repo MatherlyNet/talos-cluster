@@ -339,39 +339,98 @@ OpenTofu 1.11+ is required for:
 OpenTofu automates the complete VM lifecycle for Proxmox-based deployments:
 
 1. **Talos ISO Management**: Downloads Talos ISO from Image Factory using schematic ID
-2. **ISO Upload**: Uploads ISO to Proxmox storage
-3. **VM Creation**: Creates VMs with specified resources (cores, memory, disk)
-4. **Boot Configuration**: Attaches ISO and configures boot order
-5. **Node Provisioning**: Boots VMs into Talos maintenance mode
+2. **SecureBoot Support**: Automatically downloads correct ISO variant (standard or secureboot)
+3. **ISO Upload**: Uploads ISO to Proxmox storage
+4. **VM Creation**: Creates VMs with specified resources (cores, memory, disk)
+5. **Boot Configuration**: Attaches ISO with UEFI/OVMF settings
+6. **Node Provisioning**: Boots VMs into Talos maintenance mode
 
-### Resources
+### ISO Download (SecureBoot-Aware)
 
 ```hcl
-# VM for Talos node
-resource "proxmox_virtual_environment_vm" "talos_node" {
-  name      = "talos-${var.node_name}"
-  node_name = var.proxmox_node
+locals {
+  # Extract unique schematic+secureboot combinations
+  # SecureBoot nodes require different ISO (nocloud-amd64-secureboot.iso)
+  schematic_secureboot_map = {
+    for combo in distinct([
+      for node in var.nodes : {
+        schematic_id = node.schematic_id
+        secureboot   = node.secureboot
+      }
+    ]) :
+    "${combo.schematic_id}-${combo.secureboot}" => combo
+  }
+}
 
-  clone {
-    vm_id = var.talos_template_id
+resource "proxmox_virtual_environment_download_file" "talos_iso" {
+  for_each = local.schematic_secureboot_map
+
+  content_type = "iso"
+  datastore_id = var.proxmox_iso_storage
+  node_name    = var.proxmox_node
+
+  # Talos Image Factory URL format:
+  # Standard:   .../nocloud-amd64.iso
+  # SecureBoot: .../nocloud-amd64-secureboot.iso
+  url = each.value.secureboot ? (
+    "https://factory.talos.dev/image/${each.value.schematic_id}/v${var.talos_version}/nocloud-amd64-secureboot.iso"
+  ) : (
+    "https://factory.talos.dev/image/${each.value.schematic_id}/v${var.talos_version}/nocloud-amd64.iso"
+  )
+}
+```
+
+### VM Resources
+
+```hcl
+resource "proxmox_virtual_environment_vm" "talos_node" {
+  for_each = local.nodes_map
+
+  name        = each.value.name
+  node_name   = var.proxmox_node
+  bios        = "ovmf"        # UEFI required for Talos
+  machine     = "q35"
+
+  # EFI Disk - pre_enrolled_keys must be false for Talos SecureBoot
+  # Talos uses its own signing keys, not Microsoft's
+  efi_disk {
+    datastore_id      = var.proxmox_disk_storage
+    type              = "4m"
+    pre_enrolled_keys = false
+  }
+
+  # Boot ISO (standard or secureboot variant)
+  cdrom {
+    file_id = proxmox_virtual_environment_download_file.talos_iso[
+      "${each.value.schematic_id}-${each.value.secureboot}"
+    ].id
   }
 
   cpu {
-    cores = var.cpu_cores
+    cores = each.value.vm_cores
     type  = "host"
+    numa  = true
   }
 
   memory {
-    dedicated = var.memory_mb
+    dedicated = each.value.vm_memory
+    floating  = 0  # No ballooning for Kubernetes
   }
 
   disk {
-    datastore_id = var.datastore
-    size         = var.disk_gb
+    datastore_id = var.proxmox_disk_storage
+    size         = each.value.vm_disk_size
+    ssd          = true
+    discard      = "on"
+    iothread     = true
   }
 
   network_device {
-    bridge = "vmbr0"
+    bridge  = var.vm_advanced.network_bridge
+    model   = "virtio"
+    queues  = var.vm_advanced.net_queues
+    vlan_id = var.node_vlan_tag  # Optional VLAN tagging
+    mtu     = each.value.mtu     # Optional per-node MTU
   }
 }
 ```
@@ -379,10 +438,11 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 ### Integration with Talos
 
 The infrastructure layer:
-1. Creates VMs from Talos ISO (downloaded from Image Factory)
-2. Configures networking (MAC addresses for static IP assignment)
-3. Boots nodes into Talos maintenance mode
-4. Ready for `task bootstrap:talos` to complete installation
+1. Downloads correct ISO from Image Factory (standard or secureboot variant)
+2. Creates VMs with UEFI/OVMF and proper SecureBoot settings
+3. Configures networking (MAC addresses, VLAN, MTU)
+4. Boots nodes into Talos maintenance mode
+5. Ready for `task bootstrap:talos` to complete installation
 
 ### Deployment Paths
 
