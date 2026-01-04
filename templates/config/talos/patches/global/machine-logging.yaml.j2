@@ -1,4 +1,4 @@
-#% if talos_system_logs_enabled %#
+#% if loki_enabled | default(false) %#
 #| Talos Logging - forward kernel and service logs to Vector via UDP #|
 #| Vector receives kernel logs on port 6050 and service logs on port 6051 #|
 #| NOTE: Uses localhost because Talos can't resolve K8s DNS (cluster.local) #|
