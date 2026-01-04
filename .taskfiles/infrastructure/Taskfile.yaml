@@ -170,7 +170,7 @@ tasks:
         failed=0
         for ip in $(yq -r '.nodes[].address' {{.NODES_FILE}}); do
           name=$(yq -r ".nodes[] | select(.address == \"$ip\") | .name" {{.NODES_FILE}})
-          if talosctl -n "$ip" disks --insecure >/dev/null 2>&1; then
+          if talosctl get disks -n "$ip" --insecure >/dev/null 2>&1; then
             echo "✓ $name ($ip) - ready"
           else
             echo "✗ $name ($ip) - not accessible"
