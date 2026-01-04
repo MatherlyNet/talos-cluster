@@ -43,9 +43,17 @@ function check_node_reachable() {
 function check_node_stage() {
     local node_ip="$1"
     local stage
+    local json_output
 
-    stage=$(talosctl get machineconfig -n "${node_ip}" --insecure -o json 2>/dev/null | \
-        yq -r '.phase // "MAINTENANCE"' || echo "MAINTENANCE")
+    # Get machineconfig - returns empty/error when in MAINTENANCE mode
+    json_output=$(talosctl get machineconfig -n "${node_ip}" --insecure -o json 2>/dev/null) || true
+
+    if [[ -z "$json_output" ]]; then
+        # No machineconfig means node is in MAINTENANCE
+        stage="MAINTENANCE"
+    else
+        stage=$(echo "$json_output" | yq -r '.phase // "MAINTENANCE"')
+    fi
 
     if [[ "$stage" != "MAINTENANCE" ]]; then
         log warn "Node not in expected MAINTENANCE stage" "ip=${node_ip}" "stage=${stage}"
