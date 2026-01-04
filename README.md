@@ -143,7 +143,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    nmap -Pn -n -p 50000 192.168.1.0/24 -vv | grep 'Discovered'
    ```
 
-> **Note:** Continue to [Stage 5](#stage-5-infrastructure-optional) for R2 backend setup (one-time), then [Stage 6](#stage-6-cluster-configuration) for cluster configuration.
+> **Note:** For OpenTofu VM provisioning, continue to [Stage 5](#stage-5-infrastructure-optional) for R2 backend setup, then [Stage 6](#stage-6-cluster-configuration). For manually provisioned VMs or bare metal, skip directly to [Stage 6](#stage-6-cluster-configuration).
 
 ---
 

@@ -1,7 +1,7 @@
 # Observability Stack Implementation Guide
 
 > **Created:** 2026-01-03
-> **Updated:** 2026-01-03 - Added PrometheusRule infrastructure alerts with conditional templating
+> **Updated:** 2026-01-04 - Added httpV2:exemplars conditional for Tempo trace linking
 > **Status:** Fully Implemented
 > **Target:** Infrastructure Foundation Monitoring
 > **Stack:** VictoriaMetrics + Loki + Grafana (Unified Platform)
@@ -168,10 +168,14 @@ This guide provides comprehensive implementation instructions for deploying a **
 
 | Dashboard ID | Name | Purpose | Source |
 | ------------ | ---- | ------- | ------ |
-| **16612** | [Cilium v1.12 Agent](https://grafana.com/grafana/dashboards/16612-cilium-agent/) | Cilium agent metrics | Isovalent |
+| **16611** | [Cilium v1.12 Agent](https://grafana.com/grafana/dashboards/16611-cilium-metrics/) | Cilium agent metrics (BPF, API, forwarding) | Isovalent |
+| **16612** | [Cilium v1.12 Operator](https://grafana.com/grafana/dashboards/16612-cilium-operator/) | Cilium operator metrics (IPAM, nodes) | Isovalent |
 | **16613** | [Cilium v1.12 Hubble](https://grafana.com/grafana/dashboards/16613-hubble/) | Hubble network flows | Isovalent |
+| **18015** | [Cilium Policy Verdicts](https://grafana.com/grafana/dashboards/18015-cilium-policy-verdicts/) | Network policy enforcement tracking | Isovalent |
+| **24056** | [Cilium Network Monitoring](https://grafana.com/grafana/dashboards/24056-cilium-network-monitoring/) | Endpoints, BPF maps, connectivity | Community |
 | **23862** | [Cilium Flows - Hubble Observer](https://grafana.com/grafana/dashboards/23862-cilium-flows-hubble-observer/) | Flow visualization | ONZACK |
-| **18015** | [Cilium Policy Verdicts](https://grafana.com/grafana/dashboards/18015-cilium-policy-verdicts/) | Network policy metrics | Isovalent |
+
+> **Note:** Dashboards 16611/16612/16613 are also auto-deployed by Cilium when `dashboards.enabled: true` via ConfigMaps. Grafana sidecar auto-discovers these for version-matched dashboards.
 
 #### DNS (Priority: P0)
 
@@ -423,13 +427,29 @@ spec:
             revision: 1
             datasource: VictoriaMetrics
         network:
-          # Cilium
+          # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
+            gnetId: 16611
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Operator (IPAM, node management)
+          cilium-operator:
             gnetId: 16612
             revision: 1
             datasource: VictoriaMetrics
+          # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Network Policy Verdicts (policy enforcement tracking)
+          cilium-policy-verdicts:
+            gnetId: 18015
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
+          cilium-network-monitoring:
+            gnetId: 24056
             revision: 1
             datasource: VictoriaMetrics
           # Envoy Gateway
@@ -619,6 +639,12 @@ Add or update the Hubble section:
           - flow
           - icmp
           - http
+          - port-distribution
+          - policy:sourceContext=workload-name|reserved-identity;destinationContext=workload-name|reserved-identity
+#% if tracing_enabled | default(false) %#
+          #| L7 HTTP metrics with exemplars for Tempo trace linking |#
+          - httpV2:exemplars=true;labelsContext=source_namespace,source_workload,destination_namespace,destination_workload
+#% endif %#
         enableOpenMetrics: true
         serviceMonitor:
           enabled: #{ hubble_enabled | default(false) | lower }#
@@ -626,6 +652,8 @@ Add or update the Hubble section:
           enabled: #{ hubble_enabled | default(false) | lower }#
           namespace: monitoring
 ```
+
+> **Note:** The `httpV2:exemplars=true` metric is conditionally enabled when `tracing_enabled: true` to support trace linking from Hubble HTTP metrics to Tempo distributed traces.
 
 ### Phase 3: Log Aggregation with Loki
 
@@ -1528,6 +1556,13 @@ curl http://localhost:8429/targets | grep -c "node-exporter"
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-04 | **ADDED**: Conditional `httpV2:exemplars=true` Hubble metric for Tempo trace linking (enabled when `tracing_enabled: true`) |
+| 2026-01-03 | **BUGFIX**: Fixed cilium-agent dashboard ID from 16612 (Operator) to 16611 (Agent) |
+| 2026-01-03 | **ADDED**: Cilium Operator dashboard (16612) - properly labeled |
+| 2026-01-03 | **ADDED**: Cilium Policy Verdicts dashboard (18015) for network policy monitoring |
+| 2026-01-03 | **ADDED**: Cilium Network Monitoring dashboard (24056) for endpoints/BPF visibility |
+| 2026-01-03 | **ADDED**: Grafana sidecar for auto-discovery of Cilium ConfigMap dashboards |
+| 2026-01-03 | **ADDED**: Hubble `port-distribution` and `policy` metrics for enhanced visibility |
 | 2026-01-03 | **IMPLEMENTED**: Added PrometheusRule infrastructure alerts with 30+ alerting rules across 10 categories |
 | 2026-01-03 | **IMPLEMENTED**: Added conditional templating for alerts via `monitoring_alerts_enabled` variable |
 | 2026-01-03 | **IMPLEMENTED**: Added customizable thresholds (`node_memory_threshold`, `node_cpu_threshold`) |

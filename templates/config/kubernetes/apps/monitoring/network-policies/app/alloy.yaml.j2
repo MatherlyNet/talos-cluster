@@ -1,0 +1,76 @@
+#% if network_policies_enabled | default(false) and monitoring_enabled | default(false) and tracing_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| Alloy network policy: Unified telemetry collector #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: alloy
+  namespace: monitoring
+spec:
+  description: "Alloy: Collect logs/traces from apps, forward to Loki/Tempo"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| Receive OTLP traces/logs from applications (gRPC) #|
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    #| Receive OTLP traces/logs from applications (HTTP) #|
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "4318"
+              protocol: TCP
+    #| Metrics scraping from vmagent #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "12345"
+              protocol: TCP
+  egress:
+#% if loki_enabled | default(false) %#
+    #| Push logs to Loki #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: loki
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+#% endif %#
+    #| Push traces to Tempo (OTLP gRPC) #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: tempo
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    #| Access kube-apiserver for pod discovery #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+#% endif %#

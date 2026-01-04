@@ -149,6 +149,29 @@ When `oidc_issuer_url` and `oidc_jwks_uri` are both set, a SecurityPolicy is cre
 
 **Note:** See `docs/guides/envoy-gateway-observability-security.md` for implementation details.
 
+### CiliumNetworkPolicies (Optional)
+
+Zero-trust network segmentation with L3-L7 policy enforcement.
+
+| Field | Type | Default | Description |
+| ------- | ------ | --------- | ------------- |
+| `network_policies_enabled` | bool | `false` | Enable CiliumNetworkPolicies |
+| `network_policies_mode` | enum | `audit` | `audit` (observe only) or `enforce` (block traffic) |
+
+**Modes:**
+- `audit`: Policies deployed with `enableDefaultDeny: false` - traffic is observed via Hubble but not blocked
+- `enforce`: Policies deployed with `enableDefaultDeny: true` - non-matching traffic is actively blocked
+
+**Covered Namespaces:** cluster-policies, kube-system, monitoring, flux-system, cert-manager, network
+
+**Recommended Workflow:**
+1. Deploy with `network_policies_mode: "audit"`
+2. Monitor for 24-48 hours via `hubble observe --verdict AUDIT`
+3. Review traffic patterns and adjust policies as needed
+4. Switch to `network_policies_mode: "enforce"` after validation
+
+**Note:** See `docs/research/cilium-network-policies-jan-2026.md` for policy designs and implementation details.
+
 ### VolSync PVC Backup (Optional)
 
 Automated PVC backups with restic to S3-compatible storage.

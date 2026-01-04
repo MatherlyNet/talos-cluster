@@ -1,0 +1,64 @@
+#% if network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| cert-manager Controller network policy: Certificate lifecycle management #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-controller
+  namespace: cert-manager
+spec:
+  description: "cert-manager Controller: Issue certificates via ACME/DNS01"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: cert-manager
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+#% if monitoring_enabled | default(false) %#
+    #| Metrics scraping from vmagent #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "9402"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| Access kube-apiserver for certificate resources #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Access ACME providers (Let's Encrypt) #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    #| DNS for DNS01 challenges (Cloudflare, etc.) #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Internal DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+#% endif %#

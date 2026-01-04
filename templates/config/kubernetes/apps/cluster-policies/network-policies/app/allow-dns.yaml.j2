@@ -1,0 +1,32 @@
+#% if network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| Cluster-wide policy: Allow all pods to query CoreDNS #|
+#| This policy is deployed first to ensure DNS works before enabling default-deny #|
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-dns-all
+spec:
+  description: "Allow all pods to query CoreDNS for DNS resolution"
+  endpointSelector:
+    matchExpressions:
+      #| Exclude kube-system pods as they have their own policies #|
+      - key: io.kubernetes.pod.namespace
+        operator: NotIn
+        values: ["kube-system"]
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: false
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+#% endif %#

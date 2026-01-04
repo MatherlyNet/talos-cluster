@@ -8,10 +8,11 @@
 
 ## Executive Summary
 
-This document tracks remaining action items from the January 2026 comprehensive review. **Twelve high-priority items have been remediated; eight items remain pending for future implementation.**
+This document tracks remaining action items from the January 2026 comprehensive review. **Thirteen high-priority items have been remediated; seven items remain pending for future implementation.**
 
 **Completed Today (January 3, 2026):**
 - Health probes for critical monitoring apps (#9)
+- CiliumNetworkPolicies implementation - 33 policy templates across 6 namespaces (#11)
 - PodDisruptionBudgets for CoreDNS, cert-manager, Envoy Gateway (#13)
 - Parallelized bootstrap operations (#14)
 - SBOM generation for releases (#15)
@@ -87,16 +88,47 @@ def _read_json_cached(file_path: str) -> str:
 
 | # | Action | Effort | Impact | Status |
 | --- | -------- | -------- | -------- | ------- |
-| 11 | Add CiliumNetworkPolicies | 4h | MEDIUM | Pending |
+| 11 | Add CiliumNetworkPolicies | 4h | MEDIUM | ✅ **IMPLEMENTED** |
 | 12 | Create disaster recovery runbook | 4h | MEDIUM | Pending |
 | 13 | Add PodDisruptionBudgets | 3h | MEDIUM | ✅ **IMPLEMENTED** |
 | 14 | Parallelize bootstrap operations | 4h | MEDIUM | ✅ **IMPLEMENTED** |
 | 15 | Add SBOM generation to releases | 2h | MEDIUM | ✅ **IMPLEMENTED** |
 
-**NetworkPolicy Priority:**
-1. monitoring namespace (isolate observability stack)
-2. flux-system namespace (protect GitOps controllers)
-3. cert-manager namespace (protect PKI)
+**Implementation Details for #11 (Implemented January 3, 2026):**
+
+Full implementation completed based on research document `docs/research/cilium-network-policies-jan-2026.md`:
+
+**Templates Created (33 files):**
+- `templates/config/kubernetes/apps/cluster-policies/network-policies/` - Cluster-wide DNS and API server policies
+- `templates/config/kubernetes/apps/kube-system/network-policies/` - CoreDNS, metrics-server, Spegel, Reloader
+- `templates/config/kubernetes/apps/monitoring/network-policies/` - VictoriaMetrics, Grafana, Loki, Tempo, Alloy
+- `templates/config/kubernetes/apps/flux-system/network-policies/` - Flux controllers
+- `templates/config/kubernetes/apps/cert-manager/network-policies/` - Controller, webhook, cainjector
+- `templates/config/kubernetes/apps/network/network-policies/` - Envoy Gateway, Cloudflare Tunnel, external-dns, k8s-gateway
+
+**Key Implementation Features:**
+- **Audit Mode by Default**: All policies use `enableDefaultDeny: false` when `network_policies_mode: "audit"`
+- **Conditional Rendering**: Policies only deploy when `network_policies_enabled: true`
+- **Dependency Chain**: Flux Kustomizations ensure cluster-wide policies deploy first
+- **Metrics Integration**: vmagent scraping allowed when `monitoring_enabled: true`
+- **Optional Components**: UniFi DNS, Loki, Tempo, Alloy policies conditional on feature flags
+
+**Configuration (cluster.yaml):**
+```yaml
+network_policies_enabled: true
+network_policies_mode: "audit"  # Start with audit, switch to "enforce" after validation
+```
+
+**Validation Commands:**
+```bash
+# Monitor policy verdicts
+hubble observe --verdict DROPPED
+hubble observe --verdict AUDIT
+
+# List deployed policies
+kubectl get cnp -A
+kubectl get ccnp -A
+```
 
 **Implementation Details for #13 (Completed January 3, 2026):**
 
@@ -156,7 +188,7 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 - [ ] Create disaster recovery runbook (#12)
 
 ### Month 2
-- [ ] Add CiliumNetworkPolicies (#11)
+- [x] Add CiliumNetworkPolicies (#11) - ✅ Implemented January 3, 2026
 
 ### Month 3+
 - [ ] Sigstore image signing (#16)
@@ -200,6 +232,48 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 | 2026-01-03 | Added PodDisruptionBudgets (#13) | Complete |
 | 2026-01-03 | Parallelized bootstrap operations (#14) | Complete |
 | 2026-01-03 | Added SBOM generation to releases (#15) | Complete |
+| 2026-01-03 | CiliumNetworkPolicies research completed (#11) | Research Complete |
+| 2026-01-03 | CiliumNetworkPolicies fully implemented (#11) | Complete |
+| 2026-01-03 | Cilium observability dashboards corrected and expanded | Complete |
+
+---
+
+## Additional Improvements (January 3, 2026)
+
+### Cilium Observability Stack Enhancement
+
+**Research Document:** `docs/research/cilium-observability-addon-research-jan-2026.md`
+
+**Critical Bug Fixed:**
+- Dashboard ID mismatch: `cilium-agent` was incorrectly using gnetId 16612 (Operator dashboard)
+- Corrected to gnetId 16611 (actual Cilium Agent dashboard)
+- Properly labeled `cilium-operator` entry added with gnetId 16612
+
+**Dashboards Added:**
+
+| Dashboard | gnetId | Purpose |
+| --------- | ------ | ------- |
+| `cilium-agent` | 16611 | BPF operations, API latency, forwarding stats |
+| `cilium-operator` | 16612 | IPAM, node management, EC2 API (if AWS) |
+| `cilium-hubble` | 16613 | Network flows, drops, DNS, HTTP, TCP |
+| `cilium-policy-verdicts` | 18015 | Network policy enforcement tracking |
+| `cilium-network-monitoring` | 24056 | Endpoints, BPF maps, connectivity |
+
+**Hubble Metrics Enhanced:**
+- Added `port-distribution` for port usage visibility
+- Added `policy` metric with `sourceContext` and `destinationContext` for policy verdicts dashboard
+- Enabled `enableOpenMetrics: true` for exemplar support
+
+**Grafana Sidecar Enabled:**
+- Auto-discovery of Cilium-generated ConfigMap dashboards
+- Label: `grafana_dashboard: "1"`
+- Search across all namespaces
+
+**Files Modified:**
+- `templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2`
+- `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/app/helmrelease.yaml.j2`
+- `templates/config/kubernetes/apps/kube-system/cilium/app/helmrelease.yaml.j2`
+- `docs/guides/observability-stack-implementation.md`
 
 ---
 
@@ -209,6 +283,7 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 - `docs/BEST_PRACTICES_AUDIT_2026.md` - Detailed best practices analysis
 - `docs/CLI_REFERENCE.md` - Updated with infrastructure tasks
 - `docs/TROUBLESHOOTING.md` - Diagnostic procedures
+- `docs/research/cilium-network-policies-jan-2026.md` - CiliumNetworkPolicy research and designs
 
 ---
 

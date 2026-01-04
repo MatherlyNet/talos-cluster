@@ -1,0 +1,53 @@
+#% if network_policies_enabled | default(false) and monitoring_enabled | default(false) and tracing_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| Tempo network policy: Distributed tracing backend #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tempo
+  namespace: monitoring
+spec:
+  description: "Tempo: Receive traces from Alloy, serve queries to Grafana"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: tempo
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| Receive traces from Alloy (OTLP gRPC) #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: alloy
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    #| Queries from Grafana (HTTP API) #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: grafana
+      toPorts:
+        - ports:
+            - port: "3200"
+              protocol: TCP
+    #| Metrics scraping from vmagent #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "3200"
+              protocol: TCP
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+#% endif %#

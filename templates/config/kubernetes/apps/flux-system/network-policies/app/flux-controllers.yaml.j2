@@ -1,0 +1,68 @@
+#% if network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| Flux Controllers network policy: GitOps automation #|
+#| Applies to: source-controller, kustomize-controller, helm-controller, notification-controller #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: flux-controllers
+  namespace: flux-system
+spec:
+  description: "Flux Controllers: Sync from Git/OCI, manage K8s resources"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: flux
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+#% if monitoring_enabled | default(false) %#
+    #| Metrics scraping from vmagent #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+#% endif %#
+    #| Webhook notifications (optional) #|
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "9292"
+              protocol: TCP
+  egress:
+    #| Access kube-apiserver to manage resources #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Fetch from GitHub/GitLab (HTTPS and SSH) #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            #| HTTPS for Git repos and OCI registries #|
+            - port: "443"
+              protocol: TCP
+            #| SSH for Git repos #|
+            - port: "22"
+              protocol: TCP
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+#% endif %#

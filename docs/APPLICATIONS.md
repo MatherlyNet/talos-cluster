@@ -46,6 +46,7 @@
 - L2 load balancer announcements (MetalLB replacement)
 - kube-proxy replacement
 - Optional BGP peering
+- Optional CiliumNetworkPolicies (zero-trust networking)
 
 **Configuration Variables:**
 
@@ -54,6 +55,8 @@
 | `cluster_pod_cidr` | ipv4NativeRoutingCIDR |
 | `cilium_loadbalancer_mode` | DSR or SNAT mode |
 | `cilium_bgp_enabled` | Enable BGP control plane |
+| `network_policies_enabled` | Enable CiliumNetworkPolicies |
+| `network_policies_mode` | `audit` (observe) or `enforce` (block) |
 
 **Helm Values Highlights:**
 ```yaml
@@ -71,6 +74,12 @@ routingMode: native
 cilium status
 cilium connectivity test
 kubectl -n kube-system exec -it ds/cilium -- cilium bpf lb list
+
+# Network policies (when enabled)
+kubectl get cnp -A                    # List namespace policies
+kubectl get ccnp -A                   # List cluster-wide policies
+hubble observe --verdict DROPPED      # View blocked traffic
+hubble observe --verdict AUDIT        # View audit events
 ```
 
 ---
@@ -798,7 +807,7 @@ spec:
             key: token
 ```
 
-2. Then create ExternalSecrets that sync from your provider:
+1. Then create ExternalSecrets that sync from your provider:
 ```yaml
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret

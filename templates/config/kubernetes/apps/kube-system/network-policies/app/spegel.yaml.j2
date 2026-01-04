@@ -1,0 +1,77 @@
+#% if network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| Spegel network policy: P2P container image registry #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: spegel
+  namespace: kube-system
+spec:
+  description: "Spegel: Peer-to-peer container image distribution"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: spegel
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| Accept image pull requests from containerd on all nodes #|
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "5000"
+              protocol: TCP
+    #| P2P registry traffic from other Spegel instances #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: spegel
+      toPorts:
+        - ports:
+            - port: "5000"
+              protocol: TCP
+#% if monitoring_enabled | default(false) %#
+    #| Metrics scraping #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| Connect to other Spegel instances for P2P #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: spegel
+      toPorts:
+        - ports:
+            - port: "5000"
+              protocol: TCP
+    #| Pull images from external registries when not cached #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    #| Access kube-apiserver for node/image discovery #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+#% endif %#

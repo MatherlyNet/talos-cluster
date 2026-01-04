@@ -154,6 +154,12 @@ import (
 	external_secrets_enabled?:  *false | bool
 	external_secrets_provider?: *"1password" | "bitwarden" | "vault"
 	onepassword_connect_host?:  string & =~"^https?://"
+
+	// CiliumNetworkPolicies - Zero-Trust Network Security
+	// REF: https://docs.cilium.io/en/stable/security/policy/
+	// REF: docs/research/cilium-network-policies-jan-2026.md
+	network_policies_enabled?: *false | bool
+	network_policies_mode?:    *"audit" | "enforce"
 }
 
 #Config

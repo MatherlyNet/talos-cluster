@@ -1,0 +1,9 @@
+#% if network_policies_enabled | default(false) %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./controller.yaml
+  - ./webhook.yaml
+  - ./cainjector.yaml
+#% endif %#

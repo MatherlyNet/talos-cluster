@@ -1,0 +1,94 @@
+#% if network_policies_enabled | default(false) and monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| VMAgent network policy: Metrics scraper and forwarder #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vmagent
+  namespace: monitoring
+spec:
+  description: "VMAgent: Scrape metrics from all targets, push to vmsingle"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: vmagent
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress: []
+  egress:
+    #| Push metrics to vmsingle #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: vmsingle
+      toPorts:
+        - ports:
+            - port: "8429"
+              protocol: TCP
+    #| Access kube-apiserver for service discovery #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Scrape metrics from all pods in the cluster #|
+    #| Common metrics ports across applications #|
+    - toEntities:
+        - cluster
+      toPorts:
+        - ports:
+            #| Prometheus standard metrics port #|
+            - port: "9090"
+              protocol: TCP
+            #| Node exporter #|
+            - port: "9100"
+              protocol: TCP
+            #| CoreDNS metrics #|
+            - port: "9153"
+              protocol: TCP
+            #| kube-state-metrics #|
+            - port: "8080"
+              protocol: TCP
+            #| VictoriaMetrics metrics #|
+            - port: "8429"
+              protocol: TCP
+            #| cert-manager metrics #|
+            - port: "9402"
+              protocol: TCP
+            #| Flux controllers #|
+            - port: "8080"
+              protocol: TCP
+            #| Envoy Gateway admin #|
+            - port: "19001"
+              protocol: TCP
+            #| Grafana metrics #|
+            - port: "3000"
+              protocol: TCP
+            #| Loki metrics #|
+            - port: "3100"
+              protocol: TCP
+            #| Tempo metrics #|
+            - port: "3200"
+              protocol: TCP
+            #| external-dns metrics #|
+            - port: "7979"
+              protocol: TCP
+    #| Scrape kubelet metrics on nodes #|
+    - toEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "10250"
+              protocol: TCP
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+#% endif %#

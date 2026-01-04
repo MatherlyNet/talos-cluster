@@ -102,6 +102,16 @@ spec:
         initialDelaySeconds: 30
         periodSeconds: 30
         timeoutSeconds: 5
+      # Sidecar for auto-discovery of Cilium-generated dashboard ConfigMaps
+      sidecar:
+        dashboards:
+          enabled: true
+          label: grafana_dashboard
+          labelValue: "1"
+          searchNamespace: ALL
+          folderAnnotation: grafana_folder
+          provider:
+            foldersFromFilesStructure: true
       # Dashboard provisioning
       dashboardProviders:
         dashboardproviders.yaml:
@@ -164,13 +174,29 @@ spec:
             revision: 1
             datasource: VictoriaMetrics
         network:
-          # Cilium
+          # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
+            gnetId: 16611
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Operator (IPAM, node management)
+          cilium-operator:
             gnetId: 16612
             revision: 1
             datasource: VictoriaMetrics
+          # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Network Policy Verdicts (policy enforcement tracking)
+          cilium-policy-verdicts:
+            gnetId: 18015
+            revision: 1
+            datasource: VictoriaMetrics
+          # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
+          cilium-network-monitoring:
+            gnetId: 24056
             revision: 1
             datasource: VictoriaMetrics
           # Envoy Gateway

@@ -181,6 +181,11 @@ Optional Observability Stack (metrics, logs, traces):
 - `tracing_enabled` - Enable distributed tracing with Tempo
 - See `docs/guides/observability-stack-implementation.md` for setup guide
 
+Optional CiliumNetworkPolicies (zero-trust networking):
+- `network_policies_enabled` - Enable namespace-scoped network policies
+- `network_policies_mode` - "audit" (observe via Hubble) or "enforce" (active blocking)
+- See `docs/research/cilium-network-policies-jan-2026.md` for policy designs
+
 See `docs/CONFIGURATION.md` for complete schema reference.
 
 ## AI Assistants
@@ -229,6 +234,7 @@ Deep context in `docs/ai-context/`:
 | OpenTofu auth issues | `task infra:secrets-edit` (check credentials) |
 | Monitoring not working | `flux get hr -n monitoring`, `kubectl -n monitoring get pods` |
 | Hubble not visible | `hubble status`, `kubectl -n kube-system port-forward svc/hubble-relay 4245:80` |
+| Network policy blocking | `hubble observe --verdict DROPPED`, `kubectl get cnp -A` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

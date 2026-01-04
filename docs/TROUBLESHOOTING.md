@@ -193,6 +193,79 @@ kubectl get ciliumloadbalancerippool -o yaml
 arping -I <interface> <loadbalancer-ip>
 ```
 
+### Symptom: Traffic Blocked by Network Policies
+
+> **Note:** CiliumNetworkPolicies are optional. Skip this section if `network_policies_enabled: false`.
+
+**Quick Check:**
+```bash
+hubble observe --verdict DROPPED
+hubble observe --verdict AUDIT
+kubectl get cnp -A
+kubectl get ccnp -A
+```
+
+**Decision Tree:**
+
+```
+Traffic Blocked
+     │
+     ├── Hubble shows DROPPED verdict
+     │   ├── Check policy name in verdict → Review policy rules
+     │   ├── Missing egress rule → Add DNS/API server access
+     │   └── Missing ingress rule → Allow source namespace
+     │
+     ├── Hubble shows AUDIT verdict (audit mode)
+     │   └── Traffic allowed but logged → Review before switching to enforce
+     │
+     └── No verdict shown
+         ├── Hubble not enabled → Enable hubble_enabled: true
+         └── Policy not matching → Check endpointSelector labels
+```
+
+**Debugging Network Policies:**
+
+```bash
+# Monitor policy verdicts via Hubble
+hubble observe --verdict DROPPED
+hubble observe --verdict AUDIT
+hubble observe --namespace <ns> --verdict DROPPED
+
+# List deployed policies
+kubectl get cnp -A       # Namespace-scoped
+kubectl get ccnp -A      # Cluster-wide
+
+# Inspect policy details
+kubectl describe cnp -n <ns> <name>
+kubectl get cnp -n <ns> <name> -o yaml
+
+# Debug specific pod connectivity
+hubble observe --from-pod <ns>/<pod> --verdict DROPPED
+hubble observe --to-pod <ns>/<pod> --verdict DROPPED
+
+# Check Cilium endpoint policy status
+kubectl -n kube-system exec -it ds/cilium -- cilium endpoint list
+kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
+```
+
+**Common Network Policy Issues:**
+
+| Issue | Cause | Solution |
+| ------- | ------- | ---------- |
+| Pod can't resolve DNS | Missing DNS egress rule | Add egress to `kube-system/kube-dns` port 53 |
+| Pod can't reach API server | Missing API egress rule | Add egress to `kube-apiserver` entity |
+| Metrics not scraped | Missing vmagent ingress | Allow ingress from `monitoring/vmagent` |
+| External access blocked | Missing world egress | Add egress to `world` entity with port |
+| Cross-namespace blocked | Missing namespace selector | Use `io.kubernetes.pod.namespace` label |
+
+**Switching from Audit to Enforce:**
+
+1. Monitor for 24-48 hours with `network_policies_mode: "audit"`
+2. Review AUDIT verdicts for legitimate traffic
+3. Adjust policies as needed
+4. Change to `network_policies_mode: "enforce"` in `cluster.yaml`
+5. Run `task configure` and commit changes
+
 ### Symptom: BGP Peering Not Established
 
 > **Note:** BGP is optional. Skip this section if you're using L2 announcements (default).
@@ -534,6 +607,8 @@ talosctl logs kubelet -n <ip>
 | `unable to recognize "..."` | CRD not installed | Check CRD installation order |
 | `context deadline exceeded` | Timeout on operation | Check network, increase timeout |
 | `etcd cluster is unavailable` | etcd quorum lost | Check control plane health |
+| `policy verdict: DROPPED` | Network policy blocking | Check CNP rules, add required access |
+| `policy verdict: AUDIT` | Policy audit mode | Traffic allowed but logged for review |
 
 ---
 

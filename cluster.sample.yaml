@@ -487,3 +487,23 @@ cloudflare_gateway_addr: ""
 # -- 1Password Connect host URL (required when provider is "1password")
 #    (OPTIONAL) / (e.g. "http://onepassword-connect:8080")
 # onepassword_connect_host: ""
+
+# =============================================================================
+# CILIUM NETWORK POLICIES - Zero-Trust Network Security
+# =============================================================================
+# CiliumNetworkPolicies enforce zero-trust networking with L3-L7 controls.
+# Policies are applied per-namespace with explicit ingress/egress allowlists.
+# REF: https://docs.cilium.io/en/stable/security/policy/
+# REF: docs/research/cilium-network-policies-jan-2026.md
+
+# -- Enable CiliumNetworkPolicies for zero-trust networking
+#    Creates namespace-scoped policies with default-deny and explicit allowlists
+#    (OPTIONAL) / (DEFAULT: false)
+# network_policies_enabled: false
+
+# -- Network policy enforcement mode: "audit" or "enforce"
+#    audit: Policies created with enableDefaultDeny: false (observe only via Hubble)
+#    enforce: Policies created with enableDefaultDeny: true (active blocking)
+#    Start with audit mode to observe traffic patterns before enforcing
+#    (OPTIONAL) / (DEFAULT: "audit")
+# network_policies_mode: "audit"

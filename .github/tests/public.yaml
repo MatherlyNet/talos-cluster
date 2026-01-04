@@ -105,3 +105,8 @@ kubernetes_version: "1.35.0"
 # external_secrets_enabled: true
 # external_secrets_provider: "1password"
 # onepassword_connect_host: "http://onepassword-connect:8080"
+
+# CiliumNetworkPolicies (optional - uncomment to test)
+# REF: docs/research/cilium-network-policies-jan-2026.md
+# network_policies_enabled: true
+# network_policies_mode: "audit"  # or "enforce"

@@ -1,0 +1,22 @@
+#% if network_policies_enabled | default(false) %#
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-network-policies
+spec:
+  dependsOn:
+    - name: cluster-network-policies
+    - name: cert-manager
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/cert-manager/network-policies/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: cert-manager
+  timeout: 5m
+  wait: true
+#% endif %#

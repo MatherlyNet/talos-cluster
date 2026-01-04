@@ -20,6 +20,7 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 
 **Optional Features (Jan 2026):**
 - Cilium BGP Control Plane v2 for multi-VLAN routing
+- CiliumNetworkPolicies for zero-trust network segmentation (audit/enforce modes)
 - UniFi DNS Integration via external-dns webhook
 - tuppr (Talos Upgrade Controller) for automated OS/K8s upgrades
 - Talos Backup for automated etcd snapshots to S3
@@ -266,7 +267,7 @@ The `docs/ai-context/` directory provides domain-specific deep-dive documentatio
 | -------- | ------ | -------- |
 | `flux-gitops.md` | Flux CD | Adding apps, troubleshooting sync issues, understanding GitOps flow |
 | `talos-operations.md` | Talos Linux | Node operations, upgrades, configuration changes |
-| `cilium-networking.md` | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
+| `cilium-networking.md` | Cilium CNI | Network debugging, LoadBalancer issues, BGP config, NetworkPolicies |
 | `template-system.md` | makejinja | Template syntax, adding variables, creating new templates |
 | `infrastructure-opentofu.md` | OpenTofu | IaC operations, R2 backend, Proxmox automation |
 

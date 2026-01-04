@@ -1,0 +1,59 @@
+#% if network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| CoreDNS network policy: Central DNS server for the cluster #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  description: "CoreDNS: Accept DNS queries from cluster, forward to upstream"
+  endpointSelector:
+    matchLabels:
+      k8s-app: kube-dns
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| Accept DNS queries from all pods in the cluster #|
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Metrics scraping from monitoring #|
+#% if monitoring_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "9153"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| Forward DNS queries to upstream DNS servers (Cloudflare, etc.) #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+            #| DNS-over-HTTPS to Cloudflare #|
+            - port: "443"
+              protocol: TCP
+    #| Access kube-apiserver for service discovery #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+#% endif %#

@@ -481,6 +481,127 @@ When `monitoring_enabled: true` and `hubble_enabled: true`:
 - Grafana dashboards are automatically provisioned
 - Metrics include: dns queries, drops, tcp flows, http requests
 
+## CiliumNetworkPolicies (Zero-Trust Networking)
+
+Optional network segmentation layer providing L3-L7 policy enforcement. Policies define explicit ingress/egress rules per workload.
+
+### Configuration
+
+Enable via `cluster.yaml`:
+```yaml
+network_policies_enabled: true   # Enable network policies
+network_policies_mode: "audit"   # "audit" (observe) or "enforce" (block)
+```
+
+### Modes
+
+| Mode | `enableDefaultDeny` | Behavior |
+| ---- | ------------------- | -------- |
+| `audit` | `false` | Policies observe but don't block; use Hubble to monitor |
+| `enforce` | `true` | Non-matching traffic actively blocked |
+
+**Recommended workflow:** Start in `audit` mode → monitor with Hubble → switch to `enforce` after validation.
+
+### Policy Types
+
+| CRD | Scope | Use Case |
+| --- | ----- | -------- |
+| `CiliumNetworkPolicy` (CNP) | Namespace | App-specific rules |
+| `CiliumClusterwideNetworkPolicy` (CCNP) | Cluster | Cross-namespace/global rules |
+
+### Covered Namespaces
+
+When `network_policies_enabled: true`:
+
+- **cluster-policies**: Cluster-wide DNS and API server access
+- **kube-system**: CoreDNS, metrics-server, Spegel, Reloader
+- **monitoring**: VictoriaMetrics, Grafana, Loki, Tempo, Alloy
+- **flux-system**: Flux controllers
+- **cert-manager**: Controller, webhook, cainjector
+- **network**: Envoy Gateway, Cloudflare Tunnel, external-dns, k8s-gateway
+
+### Policy Structure
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: app-policy
+  namespace: myapp
+spec:
+  description: "Policy description"
+  endpointSelector:
+    matchLabels:
+      app: myapp
+  enableDefaultDeny:
+    egress: false  # audit mode
+    ingress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: vmagent
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+```
+
+### Cilium Entities
+
+Special selectors for common destinations:
+
+| Entity | Matches |
+| ------ | ------- |
+| `kube-apiserver` | Kubernetes API server |
+| `host` | Node host networking |
+| `world` | All external traffic (0.0.0.0/0) |
+| `cluster` | All in-cluster endpoints |
+| `remote-node` | Other Kubernetes nodes |
+
+### Debugging
+
+```bash
+# Monitor policy verdicts via Hubble
+hubble observe --verdict DROPPED
+hubble observe --verdict AUDIT
+hubble observe --namespace <ns> --verdict DROPPED
+
+# List deployed policies
+kubectl get cnp -A       # Namespace-scoped
+kubectl get ccnp -A      # Cluster-wide
+
+# Inspect policy details
+kubectl describe cnp -n <ns> <name>
+kubectl get cnp -n <ns> <name> -o yaml
+
+# Debug pod connectivity
+hubble observe --from-pod <ns>/<pod> --verdict DROPPED
+hubble observe --to-pod <ns>/<pod> --verdict DROPPED
+
+# Check Cilium endpoint policy status
+kubectl -n kube-system exec -it ds/cilium -- cilium endpoint list
+kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
+```
+
+### Transition: Audit → Enforce
+
+1. Deploy with `network_policies_mode: "audit"`
+2. Monitor for 24-48 hours via Hubble
+3. Review `AUDIT` verdicts for legitimate traffic
+4. Adjust policies as needed
+5. Change to `network_policies_mode: "enforce"` in `cluster.yaml`
+6. Run `task configure` and commit changes
+
 ## CLI Reference
 
 | Command | Description |
@@ -491,3 +612,6 @@ When `monitoring_enabled: true` and `hubble_enabled: true`:
 | `cilium endpoint list` | List all endpoints |
 | `cilium service list` | List all services |
 | `cilium monitor` | Real-time packet monitoring |
+| `hubble observe --verdict DROPPED` | Policy-blocked traffic |
+| `kubectl get cnp -A` | List CiliumNetworkPolicies |
+| `kubectl get ccnp -A` | List CiliumClusterwideNetworkPolicies |
