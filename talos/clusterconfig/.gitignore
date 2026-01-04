@@ -1,7 +1,6 @@
-kubernetes-matherlynet-cp-1.yaml
-kubernetes-matherlynet-cp-2.yaml
-kubernetes-matherlynet-cp-3.yaml
-kubernetes-matherlynet-wrkr-1.yaml
-kubernetes-matherlynet-wrkr-2.yaml
-kubernetes-matherlynet-wrkr-3.yaml
+# Generated node configuration files (talhelper output)
+# Using wildcard to match any cluster/node name combination
+kubernetes-*.yaml
+
+# Talos client configuration (contains cluster secrets)
 talosconfig
