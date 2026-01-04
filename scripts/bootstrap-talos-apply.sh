@@ -28,7 +28,7 @@ function exponential_backoff_retry() {
             return 0
         fi
 
-        ((retry++))
+        : $((retry++))
 
         if [[ $retry -lt $max_retries ]]; then
             log debug "Command failed, retrying" \
@@ -123,7 +123,7 @@ function apply_all_nodes_sequential() {
         if [[ $line =~ --nodes=([0-9.]+) ]]; then
             node_ip="${BASH_REMATCH[1]}"
         else
-            log error "Could not extract node IP from command: $line"
+            log warn "Could not extract node IP from command, skipping" "line=${line}"
             continue
         fi
 
@@ -131,7 +131,7 @@ function apply_all_nodes_sequential() {
         if [[ $line =~ --file=([^ ]+) ]]; then
             config_file="${BASH_REMATCH[1]}"
         else
-            log error "Could not extract config file from command: $line"
+            log warn "Could not extract config file from command, skipping" "node=${node_ip}"
             continue
         fi
 
@@ -139,7 +139,7 @@ function apply_all_nodes_sequential() {
 
         # Apply config to this node
         if ! apply_node_config "${node_ip}" "${config_file}"; then
-            log error "Failed to apply config to node ${node_ip} (continuing with next node)"
+            log warn "Failed to apply config to node, continuing with next" "node=${node_ip}"
         fi
 
     done <<< "$apply_cmds"
@@ -182,7 +182,7 @@ function apply_all_nodes_parallel() {
             continue
         fi
 
-        ((total_jobs++))
+        : $((total_jobs++))
 
         # Wait if we've reached max parallel jobs
         while [[ $active_jobs -ge $max_parallel ]]; do
@@ -194,14 +194,14 @@ function apply_all_nodes_parallel() {
                     if wait "$pid" 2>/dev/null; then
                         log debug "Parallel job completed successfully" "pid=${pid}" "node=${node_ips[$i]}"
                     else
-                        log error "Parallel job failed" "pid=${pid}" "node=${node_ips[$i]}"
+                        log warn "Parallel job failed" "pid=${pid}" "node=${node_ips[$i]}"
                     fi
                     # Remove from arrays
                     unset 'pids[$i]'
                     unset 'node_ips[$i]'
-                    ((active_jobs--))
+                    : $((active_jobs--))
                 fi
-                ((i++))
+                : $((i++))
             done
 
             if [[ $active_jobs -ge $max_parallel ]]; then
@@ -215,7 +215,7 @@ function apply_all_nodes_parallel() {
         local job_pid=$!
         pids+=("$job_pid")
         node_ips+=("$node_ip")
-        ((active_jobs++))
+        : $((active_jobs++))
 
     done <<< "$apply_cmds"
 
@@ -231,8 +231,8 @@ function apply_all_nodes_parallel() {
             if wait "$pid" 2>/dev/null; then
                 log debug "Parallel job completed" "pid=${pid}" "node=${node_ip}"
             else
-                log error "Parallel job failed" "pid=${pid}" "node=${node_ip}"
-                ((failed_parallel++))
+                log warn "Parallel job failed" "pid=${pid}" "node=${node_ip}"
+                : $((failed_parallel++))
             fi
         fi
     done
