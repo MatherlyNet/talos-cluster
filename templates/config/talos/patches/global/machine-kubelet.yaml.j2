@@ -1,5 +1,8 @@
 machine:
   kubelet:
+    extraArgs:
+      # Enable ImageVolume feature gate for CNPG managed extensions
+      feature-gates: ImageVolume=true
     extraConfig:
       serializeImagePulls: false
     nodeIP:

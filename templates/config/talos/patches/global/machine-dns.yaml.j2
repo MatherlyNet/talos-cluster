@@ -1,0 +1,13 @@
+#| Host DNS configuration for caching and cluster member name resolution #|
+#| REF: https://docs.siderolabs.com/talos/v1.11/networking/host-dns #|
+#| NOTE: No reboot required - config apply is sufficient #|
+machine:
+  features:
+    hostDNS:
+      #| Enable local DNS caching resolver at 127.0.0.53 #|
+      enabled: true
+      #| Forward CoreDNS queries through host DNS (default in Talos 1.8+) #|
+      forwardKubeDNSToHost: true
+      #| Enable cluster member hostname resolution (e.g., talos-cp-001 → 192.168.22.101) #|
+      #| Allows using hostnames instead of IPs in talosctl commands and scripts #|
+      resolveMemberNames: true

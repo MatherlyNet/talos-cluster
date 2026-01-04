@@ -1,3 +1,8 @@
+# Workaround for Cilium eBPF host routing with Talos forwardKubeDNSToHost
+# This adds the Talos host DNS IP to loopback, enabling eBPF host routing
+# while maintaining DNS forwarding functionality.
+# REF: https://github.com/cilium/cilium/issues/36761#issuecomment-3493689525
+# REF: https://github.com/siderolabs/talos/pull/9200#issuecomment-2805269653
 machine:
   network:
     disableSearchDomain: true
@@ -5,3 +10,7 @@ machine:
       #% for item in node_dns_servers %#
       - #{ item }#
       #% endfor %#
+    interfaces:
+      - interface: lo
+        addresses:
+          - 169.254.116.108/32
