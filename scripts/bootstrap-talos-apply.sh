@@ -135,7 +135,7 @@ function apply_all_nodes_sequential() {
             continue
         fi
 
-        ((processed_cmds++))
+        : $((processed_cmds++))
 
         # Apply config to this node
         if ! apply_node_config "${node_ip}" "${config_file}"; then
