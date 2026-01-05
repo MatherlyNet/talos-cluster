@@ -68,16 +68,7 @@ spec:
     grafana:
       enabled: true
       ingress:
-        enabled: true
-        ingressClassName: ""
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "192.168.22.80"
-        hosts:
-          - "grafana.${SECRET_DOMAIN}"
-        tls:
-          - secretName: ${SECRET_DOMAIN/./-}-production-tls
-            hosts:
-              - "grafana.${SECRET_DOMAIN}"
+        enabled: false
       persistence:
         enabled: true
         storageClassName: "proxmox-zfs"

@@ -68,17 +68,10 @@ spec:
     # Grafana
     grafana:
       enabled: true
+      #| Ingress disabled - using Gateway API HTTPRoute for envoy-internal instead #|
+      #| See httproute.yaml for the HTTPRoute that exposes Grafana internally #|
       ingress:
-        enabled: true
-        ingressClassName: ""
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "#{ cluster_gateway_addr }#"
-        hosts:
-          - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
-        tls:
-          - secretName: ${SECRET_DOMAIN/./-}-production-tls
-            hosts:
-              - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+        enabled: false
       persistence:
         enabled: true
         storageClassName: "#{ storage_class | default('local-path') }#"

@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
+  - ./httproute.yaml
 #% if monitoring_alerts_enabled | default(true) %#
   - ./prometheusrule.yaml
 #% endif %#
