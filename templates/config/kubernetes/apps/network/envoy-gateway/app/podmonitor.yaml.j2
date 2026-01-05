@@ -1,3 +1,4 @@
+#| Envoy Proxy metrics - data plane (envoy-external, envoy-internal pods) #|
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
@@ -16,3 +17,21 @@ spec:
     matchLabels:
       app.kubernetes.io/component: proxy
       app.kubernetes.io/name: envoy
+#| Envoy Gateway metrics - control plane (envoy-gateway pod) #|
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-gateway
+spec:
+  jobLabel: envoy-gateway
+  namespaceSelector:
+    matchNames:
+      - network
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      honorLabels: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envoy-gateway

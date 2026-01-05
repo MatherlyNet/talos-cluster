@@ -210,6 +210,12 @@ spec:
             datasource: VictoriaMetrics
       # Additional datasources for unified observability
       additionalDataSources:
+        #| Prometheus alias for dashboard compatibility (many dashboards use ${DS_PROMETHEUS}) #|
+        - name: Prometheus
+          type: prometheus
+          url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8429
+          access: proxy
+          isDefault: false
 #% if loki_enabled | default(false) %#
         - name: Loki
           type: loki
@@ -325,19 +331,54 @@ spec:
             source_labels: ["__name__"]
             regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
 
-    # etcd monitoring (Talos requires explicit endpoints)
+    # etcd monitoring - Talos exposes metrics on HTTP port 2381
+    # Ref: https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/etcd-metrics
     kubeEtcd:
       enabled: true
+      endpoints:
+#% for node in nodes %#
+#% if node.controller %#
+        - #{ node.address }#
+#% endif %#
+#% endfor %#
+      service:
+        enabled: true
+        port: 2381
+        targetPort: 2381
+      spec:
+        endpoints:
+          - port: http-metrics
+            scheme: http
 
     # API Server
     kubeApiServer:
       enabled: true
 
-    # Controller Manager
+    # Controller Manager - Talos Linux binds to 0.0.0.0 but certs only valid for localhost
+    # Ref: https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476
     kubeControllerManager:
       enabled: true
+      spec:
+        endpoints:
+          - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+            port: http-metrics
+            scheme: https
+            tlsConfig:
+              caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              serverName: localhost
+              insecureSkipVerify: true
 
-    # Scheduler
+    # Scheduler - Talos Linux binds to 0.0.0.0 but certs only valid for 127.0.0.1
+    # Ref: https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476
     kubeScheduler:
       enabled: true
+      spec:
+        endpoints:
+          - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+            port: http-metrics
+            scheme: https
+            tlsConfig:
+              caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              serverName: "127.0.0.1"
+              insecureSkipVerify: true
 #% endif %#

@@ -17,3 +17,8 @@ spec:
         effect: NoSchedule
     serviceMonitor:
       create: true
+    webui:
+      #| Disable built-in NetworkPolicy - it only allows port 9080, blocks metrics on 8080 #|
+      #| We manage network policies at the CiliumNetworkPolicy level when network_policies_enabled #|
+      networkPolicy:
+        create: false

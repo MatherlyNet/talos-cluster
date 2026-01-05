@@ -16,3 +16,20 @@ spec:
     matchLabels:
       app.kubernetes.io/component: proxy
       app.kubernetes.io/name: envoy
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-gateway
+spec:
+  jobLabel: envoy-gateway
+  namespaceSelector:
+    matchNames:
+      - network
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      honorLabels: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envoy-gateway
