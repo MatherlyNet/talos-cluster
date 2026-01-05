@@ -6,3 +6,4 @@ resources:
   - ./ocirepository.yaml
   - ./networks.yaml
   - ./secret.sops.yaml
+  - ./httproute.yaml

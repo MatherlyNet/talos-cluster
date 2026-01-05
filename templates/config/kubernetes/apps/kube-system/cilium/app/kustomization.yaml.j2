@@ -8,3 +8,6 @@ resources:
 #% if cilium_bgp_password is defined %#
   - ./secret.sops.yaml
 #% endif %#
+#% if hubble_enabled | default(false) %#
+  - ./httproute.yaml
+#% endif %#
