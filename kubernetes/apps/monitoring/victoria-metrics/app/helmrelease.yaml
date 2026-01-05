@@ -67,6 +67,25 @@ spec:
     # Grafana
     grafana:
       enabled: true
+      plugins:
+        - victoriametrics-metrics-datasource
+      grafana.ini:
+        feature_toggles:
+          enable: exploreMetrics,exploreLogs,traceToLogs,correlations,nestedFolders
+        unified_alerting:
+          enabled: true
+        alerting:
+          enabled: false
+        users:
+          viewers_can_edit: false
+        auth.anonymous:
+          enabled: false
+        analytics:
+          reporting_enabled: false
+          check_for_updates: false
+        log:
+          mode: console
+          level: warn
       admin:
         existingSecret: grafana-admin-secret
         userKey: admin-user

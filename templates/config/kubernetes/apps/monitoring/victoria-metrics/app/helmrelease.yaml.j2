@@ -68,6 +68,35 @@ spec:
     # Grafana
     grafana:
       enabled: true
+      #| Plugins for enhanced observability #|
+      #| Ref: https://grafana.com/grafana/plugins/victoriametrics-metrics-datasource/ #|
+      plugins:
+        - victoriametrics-metrics-datasource
+      #| Grafana.ini configuration for Grafana 12+ features #|
+      #| Ref: https://grafana.com/blog/2025/05/07/grafana-12-release-all-the-new-features/ #|
+      grafana.ini:
+        feature_toggles:
+          #| Enable Grafana 12 Drilldown apps (formerly Explore Metrics/Logs/Traces) #|
+          enable: exploreMetrics,exploreLogs,traceToLogs,correlations,nestedFolders
+        unified_alerting:
+          #| Grafana-managed alerting (replaces legacy alerting removed in Grafana 11) #|
+          enabled: true
+        alerting:
+          #| Disable legacy alerting (deprecated) #|
+          enabled: false
+        users:
+          #| Allow viewing dashboards without login (read-only) #|
+          viewers_can_edit: false
+        auth.anonymous:
+          #| Anonymous access disabled by default - enable if you want public dashboards #|
+          enabled: false
+        analytics:
+          #| Disable analytics reporting #|
+          reporting_enabled: false
+          check_for_updates: false
+        log:
+          mode: console
+          level: warn
       #| Admin credentials from SOPS-encrypted secret #|
       #| Configure grafana_admin_user and grafana_admin_password in cluster.yaml #|
       admin:
