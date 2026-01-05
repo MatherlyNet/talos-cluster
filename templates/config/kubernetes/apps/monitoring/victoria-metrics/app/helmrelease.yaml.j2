@@ -26,17 +26,17 @@ spec:
             memory: 256Mi
           limits:
             memory: 1Gi
-        # Health probes for reliability
+        #| Health probes - vmsingle listens on port 8428, NOT 8429 #|
         readinessProbe:
           httpGet:
             path: /health
-            port: 8429
+            port: 8428
           initialDelaySeconds: 5
           periodSeconds: 15
         livenessProbe:
           httpGet:
             path: /health
-            port: 8429
+            port: 8428
           initialDelaySeconds: 30
           periodSeconds: 30
           timeoutSeconds: 5
