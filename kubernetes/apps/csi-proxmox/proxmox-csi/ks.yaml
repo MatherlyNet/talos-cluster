@@ -4,6 +4,9 @@ kind: Kustomization
 metadata:
   name: proxmox-csi
 spec:
+  dependsOn:
+    - name: proxmox-ccm
+    - name: coredns
   interval: 1h
   retryInterval: 30s
   path: ./kubernetes/apps/csi-proxmox/proxmox-csi/app

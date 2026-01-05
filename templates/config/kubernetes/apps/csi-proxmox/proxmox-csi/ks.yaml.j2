@@ -5,6 +5,11 @@ kind: Kustomization
 metadata:
   name: proxmox-csi
 spec:
+  dependsOn:
+    #% if proxmox_ccm_enabled | default(false) %#
+    - name: proxmox-ccm
+    #% endif %#
+    - name: coredns
   interval: 1h
   retryInterval: 30s
   path: ./kubernetes/apps/csi-proxmox/proxmox-csi/app
