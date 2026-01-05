@@ -80,7 +80,7 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | unifi-dns | [APPLICATIONS.md](./APPLICATIONS.md#unifi-dns) | network (optional) |
 | k8s-gateway | [APPLICATIONS.md](./APPLICATIONS.md#k8s-gateway) | network |
 | Cloudflare Tunnel | [APPLICATIONS.md](./APPLICATIONS.md#cloudflare-tunnel) | network |
-| VictoriaMetrics | [APPLICATIONS.md](./APPLICATIONS.md#victoriametrics) | monitoring (optional) |
+| kube-prometheus-stack | [APPLICATIONS.md](./APPLICATIONS.md#kube-prometheus-stack) | monitoring (optional) |
 | Loki | [APPLICATIONS.md](./APPLICATIONS.md#loki) | monitoring (optional) |
 | Alloy | [APPLICATIONS.md](./APPLICATIONS.md#alloy) | monitoring (optional) |
 | Tempo | [APPLICATIONS.md](./APPLICATIONS.md#tempo) | monitoring (optional) |
@@ -170,8 +170,8 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 
 | Variable | Used In | Docs |
 | ---------- | --------- | ------ |
-| `monitoring_enabled` | VictoriaMetrics stack | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
-| `monitoring_stack` | VictoriaMetrics/Prometheus choice | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
+| `monitoring_enabled` | kube-prometheus-stack | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
+| `monitoring_stack` | Monitoring backend (prometheus) | [CONFIGURATION.md](./CONFIGURATION.md#observability-monitoring-stack) |
 | `monitoring_alerts_enabled` | PrometheusRule alerts | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
 | `node_memory_threshold` | Alert thresholds | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
 | `node_cpu_threshold` | Alert thresholds | [CONFIGURATION.md](./CONFIGURATION.md#infrastructure-alerts-prometheusrule) |
@@ -244,7 +244,7 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
 | [BGP UniFi Cilium Implementation](./guides/bgp-unifi-cilium-implementation.md) | BGP peering between UniFi gateway and Cilium | Enabling BGP routing |
 | [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI/CCM | Adding cloud-native components |
-| [Observability Stack Implementation](./guides/observability-stack-implementation.md) | VictoriaMetrics, Loki, Tempo, PrometheusRule alerts | Enabling monitoring/alerting |
+| [Observability Stack Implementation](./guides/observability-stack-implementation.md) | kube-prometheus-stack, Loki, Tempo, PrometheusRule alerts | Enabling monitoring/alerting |
 | [Envoy Gateway Observability & Security](./guides/envoy-gateway-observability-security.md) | Tracing, metrics, JWT authentication | Gateway observability/security |
 | [k8s-at-home Patterns Implementation](./guides/k8s-at-home-patterns-implementation.md) | Community patterns (Phase 1 + 3A) | Adopting k8s-at-home patterns |
 | [k8s-at-home Remaining Implementation](./guides/k8s-at-home-remaining-implementation.md) | VolSync, External Secrets, Descheduler | Future enhancements |

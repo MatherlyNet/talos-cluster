@@ -178,7 +178,7 @@ Optional Cilium BGP Control Plane v2 (for multi-VLAN routing):
 - See `docs/guides/bgp-unifi-cilium-implementation.md` for setup guide
 
 Optional Observability Stack (metrics, logs, traces):
-- `monitoring_enabled` - Enable VictoriaMetrics + Grafana + AlertManager
+- `monitoring_enabled` - Enable kube-prometheus-stack (Prometheus + Grafana + AlertManager)
 - `hubble_enabled` - Enable Cilium Hubble network observability
 - `loki_enabled` - Enable log aggregation with Loki + Alloy
 - `tracing_enabled` - Enable distributed tracing with Tempo

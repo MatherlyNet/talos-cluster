@@ -22,11 +22,10 @@
 | `network` | [unifi-dns](#unifi-dns) | Internal DNS (UniFi) | Flux (optional) |
 | `network` | [k8s-gateway](#k8s-gateway) | Split DNS Fallback | Flux (if no UniFi) |
 | `network` | [Cloudflare Tunnel](#cloudflare-tunnel) | External Access | Flux |
-| `monitoring` | [VictoriaMetrics](#victoriametrics) | Metrics + Grafana + AlertManager | Flux (optional) |
-| `monitoring` | [kube-prometheus-stack](#kube-prometheus-stack) | Prometheus-based Metrics (alt) | Flux (optional) |
-| `monitoring` | [Loki](#loki) | Log Aggregation | VictoriaMetrics (optional) |
+| `monitoring` | [kube-prometheus-stack](#kube-prometheus-stack) | Prometheus + Grafana + AlertManager | Flux (optional) |
+| `monitoring` | [Loki](#loki) | Log Aggregation | kube-prometheus-stack (optional) |
 | `monitoring` | [Alloy](#alloy) | Unified Telemetry Collector | Loki (optional) |
-| `monitoring` | [Tempo](#tempo) | Distributed Tracing | VictoriaMetrics (optional) |
+| `monitoring` | [Tempo](#tempo) | Distributed Tracing | kube-prometheus-stack (optional) |
 | `kube-system` | [Hubble](#hubble) | Network Observability (Cilium) | Cilium (optional) |
 | `external-secrets` | [External Secrets](#external-secrets) | Secret sync from external providers | Flux (optional) |
 | `default` | [Echo](#echo) | Test Application | Envoy Gateway |
@@ -401,7 +400,7 @@ spec:
 **Observability Features:**
 - **JSON Access Logging**: Always enabled, logs to stdout for Alloy/Loki collection
 - **Distributed Tracing**: Conditional on `tracing_enabled`, sends Zipkin spans to Tempo (port 9411)
-- **Prometheus Metrics**: PodMonitor scrapes Envoy metrics for VictoriaMetrics
+- **Prometheus Metrics**: PodMonitor scrapes Envoy metrics for Prometheus
 
 **Security Features (Optional):**
 - **JWT SecurityPolicy**: Enabled when `oidc_issuer_url` and `oidc_jwks_uri` are set
@@ -520,74 +519,17 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 
 ## monitoring Namespace
 
-### VictoriaMetrics
+### kube-prometheus-stack
 
-**Purpose:** Full-stack metrics with Grafana, AlertManager, and infrastructure alerting (VictoriaMetrics is 10x more memory-efficient than Prometheus).
+**Purpose:** Full-stack Prometheus monitoring with Grafana, AlertManager, and infrastructure alerting.
 
-**Template:** `templates/config/kubernetes/apps/monitoring/victoria-metrics/`
+**Template:** `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/`
 
 **Condition:** Only enabled when `monitoring_enabled: true` in `cluster.yaml`
 
 **Components:**
-- VictoriaMetrics Single (metrics storage)
-- Grafana (visualization with pre-configured dashboards)
-- AlertManager (alerting)
-- VMAgent (metric collection)
-- PrometheusRule (infrastructure alerts - auto-converted to VMRule)
-
-**Configuration Variables:**
-
-| Variable | Usage | Default |
-| ---------- | ------- | ------- |
-| `monitoring_enabled` | Enable monitoring stack | `false` |
-| `monitoring_stack` | Backend choice (`victoriametrics` or `prometheus`) | `victoriametrics` |
-| `grafana_subdomain` | Grafana subdomain | `grafana` |
-| `metrics_retention` | Retention period | `7d` |
-| `metrics_storage_size` | PV size | `50Gi` |
-| `storage_class` | Storage class | `local-path` |
-| `monitoring_alerts_enabled` | Enable infrastructure alerts | `true` |
-| `node_memory_threshold` | Memory % threshold for alerts | `90` |
-| `node_cpu_threshold` | CPU % threshold for alerts | `90` |
-
-**Infrastructure Alerts:**
-
-When `monitoring_alerts_enabled: true` (default), a PrometheusRule with 30+ alerts is created covering:
-- Node health (memory, CPU, disk, filesystem, network)
-- Control Plane (API server, scheduler, controller-manager)
-- etcd (membership, health, latency)
-- Cilium (agent health, endpoint issues, policy errors)
-- CoreDNS (health, query latency)
-- Envoy Gateway (connection issues, config errors)
-- Certificates (expiration warnings)
-- Flux GitOps (reconciliation failures)
-- Workloads (pod crashes, deployment issues)
-- Storage (PV usage)
-
-**Note:** VictoriaMetrics Operator auto-converts PrometheusRule to VMRule - no special labels required.
-
-**Troubleshooting:**
-```bash
-flux get hr -n monitoring victoria-metrics-k8s-stack
-kubectl -n monitoring get pods
-kubectl -n monitoring port-forward svc/vmsingle-victoria-metrics-k8s-stack 8429:8429
-# Visit http://localhost:8429 for VictoriaMetrics UI
-kubectl -n monitoring port-forward svc/victoria-metrics-k8s-stack-grafana 3000:80
-# Visit http://localhost:3000 for Grafana (admin/admin)
-```
-
----
-
-### kube-prometheus-stack
-
-**Purpose:** Full-stack Prometheus monitoring with Grafana and AlertManager (alternative to VictoriaMetrics).
-
-**Template:** `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/`
-
-**Condition:** Only enabled when `monitoring_enabled: true` AND `monitoring_stack: "prometheus"` in `cluster.yaml`
-
-**Components:**
 - Prometheus Operator
-- Prometheus Server (metrics storage)
+- Prometheus Server (metrics storage with remote write receiver for Tempo)
 - Grafana (visualization with pre-configured dashboards)
 - AlertManager (alerting)
 - Node Exporter (node metrics)
@@ -599,11 +541,29 @@ kubectl -n monitoring port-forward svc/victoria-metrics-k8s-stack-grafana 3000:8
 | Variable | Usage | Default |
 | ---------- | ------- | ------- |
 | `monitoring_enabled` | Enable monitoring stack | `false` |
-| `monitoring_stack` | Set to `prometheus` | `victoriametrics` |
+| `monitoring_stack` | Monitoring backend | `prometheus` |
 | `grafana_subdomain` | Grafana subdomain | `grafana` |
+| `grafana_admin_password` | Grafana admin password | (SOPS encrypted) |
 | `metrics_retention` | Retention period | `7d` |
 | `metrics_storage_size` | PV size | `50Gi` |
 | `storage_class` | Storage class | `local-path` |
+| `monitoring_alerts_enabled` | Enable infrastructure alerts | `true` |
+| `node_memory_threshold` | Memory % threshold for alerts | `90` |
+| `node_cpu_threshold` | CPU % threshold for alerts | `90` |
+
+**Infrastructure Alerts:**
+
+When `monitoring_alerts_enabled: true` (default), PrometheusRules with 30+ alerts cover:
+- Node health (memory, CPU, disk, filesystem, network)
+- Control Plane (API server, scheduler, controller-manager)
+- etcd (membership, health, latency)
+- Cilium (agent health, endpoint issues, policy errors)
+- CoreDNS (health, query latency)
+- Envoy Gateway (connection issues, config errors)
+- Certificates (expiration warnings)
+- Flux GitOps (reconciliation failures)
+- Workloads (pod crashes, deployment issues)
+- Storage (PV usage)
 
 **Pre-configured Grafana Dashboards:**
 - **Infrastructure:** Kubernetes Global, Nodes, Pods, etcd, CoreDNS, Node Exporter, cert-manager
@@ -613,7 +573,13 @@ kubectl -n monitoring port-forward svc/victoria-metrics-k8s-stack-grafana 3000:8
 **Integration with Loki/Tempo:**
 When `loki_enabled` or `tracing_enabled` are set, Grafana automatically includes datasources for:
 - Loki (log aggregation)
-- Tempo (distributed tracing with traces-to-logs correlation)
+- Tempo (distributed tracing with traces-to-logs/metrics correlation)
+
+**Talos Linux Specific Configuration:**
+- etcd scraping via explicit controller node endpoints (port 2381)
+- kubeControllerManager/kubeScheduler with `insecureSkipVerify: true`
+- kube-proxy disabled (Cilium replaces kube-proxy)
+- High-cardinality metric dropping for kubelet
 
 **Troubleshooting:**
 ```bash
@@ -622,7 +588,8 @@ kubectl -n monitoring get pods
 kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
 # Visit http://localhost:9090 for Prometheus UI
 kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
-# Visit http://localhost:3000 for Grafana (admin/prom-operator)
+# Visit http://localhost:3000 for Grafana
+kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana -- grafana-cli admin reset-admin-password <new-password>
 ```
 
 ---
@@ -728,7 +695,7 @@ kubectl -n monitoring port-forward svc/tempo 3200:3200
 **Components:**
 - Hubble Relay (aggregates flows from all nodes)
 - Hubble UI (optional, enabled with `hubble_ui_enabled: true`)
-- Hubble metrics (exported to VictoriaMetrics when monitoring enabled)
+- Hubble metrics (exported to Prometheus when monitoring enabled)
 
 **Configuration Variables:**
 

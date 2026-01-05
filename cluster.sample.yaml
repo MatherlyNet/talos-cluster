@@ -299,19 +299,19 @@ cloudflare_gateway_addr: ""
 # tfstate_password: ""
 
 # =============================================================================
-# OBSERVABILITY - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
+# OBSERVABILITY - Monitoring Stack (kube-prometheus-stack)
 # =============================================================================
 # Full-stack observability with metrics, logs, and distributed tracing.
-# VictoriaMetrics is recommended for homelab (10x less memory than Prometheus).
+# Uses kube-prometheus-stack: Prometheus + Grafana + AlertManager + node-exporter
 
-# -- Enable monitoring stack (VictoriaMetrics/Prometheus + Grafana + AlertManager)
+# -- Enable monitoring stack (Prometheus + Grafana + AlertManager)
 #    (OPTIONAL) / (DEFAULT: false)
 # monitoring_enabled: false
 
-# -- Monitoring stack choice: "victoriametrics" or "prometheus"
-#    VictoriaMetrics uses ~10x less memory, recommended for homelabs
-#    (OPTIONAL) / (DEFAULT: "victoriametrics")
-# monitoring_stack: "victoriametrics"
+# -- Monitoring stack choice
+#    Currently only "prometheus" (kube-prometheus-stack) is supported
+#    (OPTIONAL) / (DEFAULT: "prometheus")
+# monitoring_stack: "prometheus"
 
 # -- Enable Hubble network observability (requires monitoring_enabled)
 #    Provides network flow visibility via Cilium
@@ -332,7 +332,7 @@ cloudflare_gateway_addr: ""
 
 # -- Grafana admin password (SOPS-encrypted)
 #    (OPTIONAL) / Set BEFORE initial deployment - password changes after first
-#    login require CLI reset: kubectl -n monitoring exec deploy/victoria-metrics-k8s-stack-grafana
+#    login require CLI reset: kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana
 #    -- grafana-cli admin reset-admin-password <new-password>
 # grafana_admin_password: ""
 

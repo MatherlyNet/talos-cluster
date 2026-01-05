@@ -458,11 +458,12 @@
     "monitoring_enabled": {
       "default": false,
       "type": "boolean",
-      "description": "Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager) Full-stack observability with metrics, logs, and distributed tracing"
+      "description": "Observability - Monitoring Stack (kube-prometheus-stack: Prometheus + Grafana + AlertManager) Full-stack observability with metrics, logs, and distributed tracing"
     },
     "monitoring_stack": {
-      "default": "victoriametrics",
-      "type": "string"
+      "default": "prometheus",
+      "type": "string",
+      "pattern": "^prometheus$"
     },
     "hubble_enabled": {
       "default": false,

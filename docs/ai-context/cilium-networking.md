@@ -447,7 +447,7 @@ hubble_ui_enabled: true     # Enable Hubble UI (optional)
 
 - **Hubble Relay**: Aggregates flows from all nodes
 - **Hubble UI**: Web interface for flow visualization
-- **Metrics Export**: Prometheus/VictoriaMetrics integration via ServiceMonitor
+- **Metrics Export**: Prometheus integration via ServiceMonitor
 - **Flow Types**: DNS, TCP, HTTP, ICMP, drop events
 
 ### Commands
@@ -477,7 +477,7 @@ kubectl -n kube-system exec -it ds/cilium -- hubble observe
 ### Integration with Observability Stack
 
 When `monitoring_enabled: true` and `hubble_enabled: true`:
-- Hubble metrics are scraped by VictoriaMetrics
+- Hubble metrics are scraped by Prometheus
 - Grafana dashboards are automatically provisioned
 - Metrics include: dns queries, drops, tcp flows, http requests
 
@@ -515,7 +515,7 @@ When `network_policies_enabled: true`:
 
 - **cluster-policies**: Cluster-wide DNS and API server access
 - **kube-system**: CoreDNS, metrics-server, Spegel, Reloader
-- **monitoring**: VictoriaMetrics, Grafana, Loki, Tempo, Alloy
+- **monitoring**: Prometheus, Grafana, AlertManager, Loki, Tempo, Alloy
 - **flux-system**: Flux controllers
 - **cert-manager**: Controller, webhook, cainjector
 - **network**: Envoy Gateway, Cloudflare Tunnel, external-dns, k8s-gateway
@@ -540,7 +540,7 @@ spec:
     - fromEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: monitoring
-            app.kubernetes.io/name: vmagent
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
             - port: "8080"

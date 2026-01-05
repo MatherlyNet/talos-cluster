@@ -214,15 +214,9 @@
     },
     {
       "namespace": "monitoring",
-      "name": "victoria-metrics",
-      "purpose": "Metrics + Grafana + AlertManager + PrometheusRule alerts",
-      "conditional": "monitoring_enabled && monitoring_stack == 'victoriametrics'"
-    },
-    {
-      "namespace": "monitoring",
       "name": "kube-prometheus-stack",
-      "purpose": "Prometheus-based metrics (alternative to VictoriaMetrics)",
-      "conditional": "monitoring_enabled && monitoring_stack == 'prometheus'"
+      "purpose": "Prometheus + Grafana + AlertManager + PrometheusRule alerts",
+      "conditional": "monitoring_enabled"
     },
     {
       "namespace": "monitoring",

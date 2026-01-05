@@ -139,10 +139,10 @@ import (
 	tfstate_username?: *"terraform" | string & !=""
 	tfstate_password?: string & !=""
 
-	// Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
+	// Observability - Monitoring Stack (kube-prometheus-stack: Prometheus + Grafana + AlertManager)
 	// Full-stack observability with metrics, logs, and distributed tracing
 	monitoring_enabled?:      *false | bool
-	monitoring_stack?:        *"victoriametrics" | "prometheus"
+	monitoring_stack?:        *"prometheus" | string & =~"^prometheus$"
 	hubble_enabled?:          *false | bool
 	hubble_ui_enabled?:       *false | bool
 	grafana_subdomain?:       *"grafana" | string & !=""

@@ -124,8 +124,8 @@ Full-stack observability with metrics, logs, and distributed tracing.
 
 | Field | Type | Default | Description |
 | ------- | ------ | --------- | ------------- |
-| `monitoring_enabled` | bool | `false` | Enable monitoring stack (VictoriaMetrics + Grafana + AlertManager) |
-| `monitoring_stack` | enum | `victoriametrics` | `victoriametrics` or `prometheus` |
+| `monitoring_enabled` | bool | `false` | Enable monitoring stack (Prometheus + Grafana + AlertManager) |
+| `monitoring_stack` | enum | `prometheus` | `prometheus` (kube-prometheus-stack) |
 | `hubble_enabled` | bool | `false` | Enable Cilium Hubble network observability |
 | `hubble_ui_enabled` | bool | `false` | Enable Hubble UI web interface |
 | `grafana_subdomain` | string | `grafana` | Subdomain for Grafana (creates `grafana.<cloudflare_domain>`) |
