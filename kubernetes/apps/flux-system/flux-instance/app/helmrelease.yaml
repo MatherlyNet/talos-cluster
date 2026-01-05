@@ -30,6 +30,18 @@ spec:
           app.kubernetes.io/name: flux
       kustomize:
         patches:
+          - # Allow scheduling before CCM initializes nodes (breaks bootstrap chicken-egg)
+            # Ref: https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/
+            patch: |
+              - op: add
+                path: /spec/template/spec/tolerations/-
+                value:
+                  key: node.cloudprovider.kubernetes.io/uninitialized
+                  operator: Exists
+                  effect: NoSchedule
+            target:
+              kind: Deployment
+              name: (source-controller|kustomize-controller|helm-controller|notification-controller)
           - # Increase the number of workers
             patch: |
               - op: add

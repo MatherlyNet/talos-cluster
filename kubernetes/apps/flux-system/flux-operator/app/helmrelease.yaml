@@ -9,5 +9,9 @@ spec:
     name: flux-operator
   interval: 1h
   values:
+    tolerations:
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
+        effect: NoSchedule
     serviceMonitor:
       create: true
