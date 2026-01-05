@@ -1,8 +1,23 @@
 # RustFS Shared Object Storage & Loki SimpleScalable Implementation
 
 **Date:** January 2026
-**Status:** Implementation Ready
+**Status:** Implementation Ready (with caveats)
 **Purpose:** Deploy RustFS as shared S3-compatible storage for cluster services (Loki, Tempo, backups, future apps)
+
+---
+
+> ⚠️ **IMPORTANT: Alpha Software Notice**
+>
+> As of January 2026, RustFS is in **alpha stage** (version 1.0.0-alpha.76, Helm chart 0.0.78).
+> The project is in rapid development—do not assume full S3 coverage.
+>
+> **Recommendations:**
+> - Deploy in test environment first before production migration
+> - Run exhaustive S3 compatibility tests with Loki workloads
+> - Have rollback plan ready (SingleBinary mode without RustFS)
+> - Monitor stability during initial deployment period
+>
+> See [RustFS GitHub](https://github.com/rustfs/rustfs) for current release status.
 
 ---
 
@@ -22,7 +37,7 @@ This document provides a comprehensive implementation plan for deploying **RustF
 | **Kubernetes Support** | Helm chart + StatefulSet | Operator CRD | Basic |
 | **Enterprise Features** | KMS, mTLS, encryption | Full suite | Limited |
 | **Telemetry** | None (privacy-focused) | Enabled by default | None |
-| **Maturity** | Production-ready v1.0+ | Very mature | Early production |
+| **Maturity** | Alpha (v1.0.0-alpha.76) | Very mature | Early production |
 
 ### Key Decisions
 
@@ -1334,7 +1349,7 @@ kubectl get endpoints -n monitoring loki
 | **Kubernetes Integration** | ⭐⭐⭐⭐ Helm + StatefulSet | ⭐⭐⭐⭐⭐ Operator | ⭐⭐⭐ Basic |
 | **Enterprise Features** | ⭐⭐⭐⭐ KMS, mTLS | ⭐⭐⭐⭐⭐ Full suite | ⭐⭐⭐ Limited |
 | **Privacy/Compliance** | ⭐⭐⭐⭐⭐ No telemetry | ⭐⭐⭐ Telemetry enabled | ⭐⭐⭐⭐⭐ No telemetry |
-| **Maturity** | ⭐⭐⭐⭐ Production v1.0+ | ⭐⭐⭐⭐⭐ Very mature | ⭐⭐⭐ Early production |
+| **Maturity** | ⭐⭐⭐ Alpha (v1.0.0-alpha) | ⭐⭐⭐⭐⭐ Very mature | ⭐⭐⭐ Early production |
 | **Memory Safety** | ⭐⭐⭐⭐⭐ Rust | ⭐⭐⭐ Go (GC) | ⭐⭐⭐⭐⭐ Rust |
 
 **Recommendation:** RustFS provides the best balance of performance, licensing freedom, and modern memory-safe architecture for this homelab/small production cluster.
