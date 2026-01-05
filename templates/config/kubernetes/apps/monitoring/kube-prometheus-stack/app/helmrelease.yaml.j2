@@ -81,14 +81,20 @@ spec:
           memory: 128Mi
         limits:
           memory: 512Mi
-      # Sidecar for auto-discovery of dashboard ConfigMaps
+      #| Sidecar for auto-discovery of dashboard ConfigMaps #|
       sidecar:
         dashboards:
           enabled: true
           label: grafana_dashboard
           labelValue: "1"
           searchNamespace: ALL
+          #| Enable folder organization via grafana_folder annotation #|
           folderAnnotation: grafana_folder
+          #| Add grafana_folder annotation to ALL built-in dashboard ConfigMaps #|
+          #| This organizes AlertManager, CoreDNS, etcd, k8s resources, kubelet, #|
+          #| node exporter, Prometheus, scheduler, etc. into a single folder #|
+          annotations:
+            grafana_folder: Monitoring
           provider:
             foldersFromFilesStructure: true
       #| Dashboard provisioning - custom dashboards not included in kube-prometheus-stack #|

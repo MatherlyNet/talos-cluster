@@ -71,7 +71,6 @@ spec:
           memory: 128Mi
         limits:
           memory: 512Mi
-      # Sidecar for auto-discovery of dashboard ConfigMaps
       sidecar:
         dashboards:
           enabled: true
@@ -79,6 +78,8 @@ spec:
           labelValue: "1"
           searchNamespace: ALL
           folderAnnotation: grafana_folder
+          annotations:
+            grafana_folder: Monitoring
           provider:
             foldersFromFilesStructure: true
       dashboardProviders:
