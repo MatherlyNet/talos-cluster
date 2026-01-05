@@ -475,6 +475,90 @@ grafana:
 
 See [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/helm/victoria-metrics-k8s-stack/) for more details.
 
+### Issue 10: PodSecurity Blocking Monitoring DaemonSets
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Monitoring namespace had `baseline` PodSecurity which blocks node-exporter
+
+**Error:**
+```
+pods "victoria-metrics-k8s-stack-prometheus-node-exporter-xxx" is forbidden: violates PodSecurity "baseline:latest": host namespaces (hostNetwork=true, hostPID=true), hostPath volumes (volumes "proc", "sys", "root"), hostPort (container "node-exporter" uses hostPort 9100)
+```
+
+**Analysis:** Node-exporter legitimately requires:
+- `hostNetwork=true` - access to host network metrics
+- `hostPID=true` - access to host process metrics
+- `hostPath` volumes - access to `/proc`, `/sys`, `/` for system metrics
+- `hostPort` - expose metrics on node port 9100
+
+**Solution:** Set monitoring namespace to `privileged` PodSecurity level:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/namespace.yaml.j2
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    #| Privileged required for node-exporter (hostNetwork, hostPID, hostPath, hostPort) #|
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+```
+
+**Note:** This is standard practice for monitoring namespaces. The `privileged` level allows workloads that genuinely need host access (node-exporter, kube-state-metrics scraping, etc.).
+
+### Issue 11: Loki 6.x SingleBinary Deployment Mode Validation
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Loki chart 6.x requires explicit disabling of non-active deployment modes
+
+**Error:**
+```
+execution error at (loki/templates/validate.yaml:31:4): You have more than zero replicas configured for both the single binary and simple scalable targets. If this was intentional change the deploymentMode to the transitional 'SingleBinary<->SimpleScalable' mode
+```
+
+**Analysis:** Loki 6.x chart validates that only ONE deployment mode is active. The chart has non-zero default replicas for `read`, `write`, `backend`, and other distributed components that conflict with `SingleBinary` mode.
+
+**Solution:** Explicitly set all other deployment mode components to `replicas: 0`:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/loki/app/helmrelease.yaml.j2
+values:
+  deploymentMode: SingleBinary
+  #| Zero out replica counts of other deployment modes for SingleBinary #|
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  ingester:
+    replicas: 0
+  querier:
+    replicas: 0
+  queryFrontend:
+    replicas: 0
+  queryScheduler:
+    replicas: 0
+  distributor:
+    replicas: 0
+  compactor:
+    replicas: 0
+  indexGateway:
+    replicas: 0
+  bloomCompactor:
+    replicas: 0
+  bloomGateway:
+    replicas: 0
+  loki:
+    # ... rest of config
+```
+
+**Reference:** [Loki Helm Chart - Install Monolithic](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/)
+
 ## Lessons Learned
 
 1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
@@ -482,6 +566,8 @@ See [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/h
 3. **Dry-Run Validation**: Flux validates ALL resources before applying ANY - CRDs must exist before CRs can be validated
 4. **healthChecks**: Use `healthChecks` with `wait: true` when subsequent Kustomizations depend on resources being fully deployed
 5. **StorageClass Specification**: Always explicitly set `storageClassName` on persistence configurations - don't rely on default StorageClass
+6. **PodSecurity for Monitoring**: Monitoring namespaces typically require `privileged` PodSecurity level for node-exporter and similar host-access workloads
+7. **Loki Deployment Modes**: When using SingleBinary mode, explicitly disable all other deployment mode components by setting `replicas: 0`
 
 ## References
 
