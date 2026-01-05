@@ -208,8 +208,13 @@ spec:
             gnetId: 16714
             revision: 1
             datasource: VictoriaMetrics
-      # Additional datasources for unified observability
-      additionalDataSources:
+    #| Moved to defaultDatasources.extra per chart changelog (see below) #|
+
+    #| Additional datasources for unified observability #|
+    #| Note: grafana.additionalDataSources was renamed to defaultDatasources.extra #|
+    #| Ref: https://docs.victoriametrics.com/helm/victoriametrics-k8s-stack/changelog/ #|
+    defaultDatasources:
+      extra:
         #| Prometheus alias for dashboard compatibility (many dashboards use ${DS_PROMETHEUS}) #|
         - name: Prometheus
           type: prometheus

@@ -203,8 +203,9 @@ spec:
             gnetId: 16714
             revision: 1
             datasource: VictoriaMetrics
-      # Additional datasources for unified observability
-      additionalDataSources:
+
+    defaultDatasources:
+      extra:
         - name: Prometheus
           type: prometheus
           url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8429
