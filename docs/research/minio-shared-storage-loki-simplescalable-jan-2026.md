@@ -202,7 +202,7 @@ metadata:
   name: minio
   namespace: storage
 spec:
-  image: minio/minio:RELEASE.2025-01-01T00-00-00Z  #| Pin version #|
+  image: quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z  #| Latest stable release #|
   pools:
     - servers: #{ minio_replicas | default(2) }#
       name: pool-0
@@ -816,14 +816,15 @@ kubectl exec -n monitoring deploy/loki-read -- cat /etc/loki/config/config.yaml 
 
 ## Sources
 
-- [MinIO Operator Documentation](https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-operator-helm.html)
+- [MinIO Operator Documentation](https://docs.min.io/community/minio-object-store/reference/operator-chart-values.html)
 - [MinIO Tenant Deployment](https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant-helm.html)
 - [Loki SimpleScalable Installation](https://grafana.com/docs/loki/latest/setup/install/helm/install-scalable/)
 - [Loki Storage Configuration](https://grafana.com/docs/loki/latest/setup/install/helm/configure-storage/)
 - [MinIO Multi-Tenant Architecture](https://blog.min.io/single-vs-multi-tenant/)
 - [GitHub Issue #11390 - Loki Dashboard Job Labels](https://github.com/grafana/loki/issues/11390)
 - [GitHub Issue #9183 - SingleBinary Dashboard ConfigMaps](https://github.com/grafana/loki/issues/9183)
-- [Grafana Loki 3.4 Release Notes](https://grafana.com/blog/2025/02/13/grafana-loki-3.4-standardized-storage-config-sizing-guidance-and-promtail-merging-into-alloy/)
+- [Grafana Loki 3.6 Release Notes](https://grafana.com/docs/loki/latest/release-notes/v3-6/)
+- [MinIO GitHub Releases](https://github.com/minio/minio/releases)
 
 ---
 
