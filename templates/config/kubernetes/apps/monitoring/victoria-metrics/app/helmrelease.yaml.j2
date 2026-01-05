@@ -68,10 +68,6 @@ spec:
     # Grafana
     grafana:
       enabled: true
-      #| Plugins for enhanced observability #|
-      #| Ref: https://grafana.com/grafana/plugins/victoriametrics-metrics-datasource/ #|
-      plugins:
-        - victoriametrics-metrics-datasource
       #| Grafana.ini configuration for Grafana 12+ features #|
       #| Ref: https://grafana.com/blog/2025/05/07/grafana-12-release-all-the-new-features/ #|
       grafana.ini:
@@ -286,6 +282,15 @@ spec:
     #| Note: grafana.additionalDataSources was renamed to defaultDatasources.extra #|
     #| Ref: https://docs.victoriametrics.com/helm/victoriametrics-k8s-stack/changelog/ #|
     defaultDatasources:
+      #| Override default datasources to remove VictoriaMetrics (DS) which uses the plugin #|
+      #| The victoriametrics-metrics-datasource plugin has issues with Grafana 12+ #|
+      #| GF_INSTALL_PLUGINS is deprecated; use only prometheus-compatible datasource #|
+      victoriametrics:
+        datasources:
+          - name: VictoriaMetrics
+            type: prometheus
+            access: proxy
+            isDefault: true
       extra:
         #| Prometheus alias for dashboard compatibility (many dashboards use ${DS_PROMETHEUS}) #|
         #| The uid: prometheus is CRITICAL - it allows Grafana to resolve ${DS_PROMETHEUS} variable #|
