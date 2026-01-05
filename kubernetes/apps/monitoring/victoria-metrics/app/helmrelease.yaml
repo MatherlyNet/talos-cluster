@@ -101,16 +101,11 @@ spec:
         initialDelaySeconds: 30
         periodSeconds: 30
         timeoutSeconds: 5
-      # Sidecar for auto-discovery of Cilium-generated dashboard ConfigMaps
+      # Sidecar disabled - using grafana.dashboards for provisioning instead
+      # The victoria-metrics chart doesn't allow both sidecar and dashboards simultaneously
       sidecar:
         dashboards:
-          enabled: true
-          label: grafana_dashboard
-          labelValue: "1"
-          searchNamespace: ALL
-          folderAnnotation: grafana_folder
-          provider:
-            foldersFromFilesStructure: true
+          enabled: false
       # Dashboard provisioning
       dashboardProviders:
         dashboardproviders.yaml:

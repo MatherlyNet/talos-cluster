@@ -346,9 +346,117 @@ grep -r "dependsOn:" templates/config/kubernetes/apps/**/ks.yaml.j2 -A 3
 grep -r "dependsOn:" kubernetes/apps/**/ks.yaml -A 3
 ```
 
+## Additional Issues Found During Bootstrap (January 4, 2026)
+
+### Issue 6: Cross-Namespace dependsOn Requires Explicit Namespace
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Kustomizations are deployed to their `targetNamespace`, NOT `flux-system`
+
+When a Kustomization uses `dependsOn` to reference a Kustomization in a different namespace, the `namespace` field **must** be explicitly specified:
+
+```yaml
+# WRONG - looks for coredns in same namespace as this Kustomization
+dependsOn:
+  - name: coredns
+
+# CORRECT - explicitly specifies the namespace
+dependsOn:
+  - name: coredns
+    namespace: kube-system
+```
+
+**Affected Kustomizations Fixed:**
+
+| Kustomization | Target NS | Dependency | Dependency NS | Fix Applied |
+| ------------- | --------- | ---------- | ------------- | ----------- |
+| cert-manager | cert-manager | coredns | kube-system | Added `namespace: kube-system` |
+| proxmox-csi | csi-proxmox | coredns | kube-system | Added `namespace: kube-system` |
+| proxmox-csi | csi-proxmox | proxmox-ccm | kube-system | Added `namespace: kube-system` |
+| victoria-metrics | monitoring | coredns | kube-system | Added `namespace: kube-system` |
+| envoy-gateway | network | cert-manager | cert-manager | Changed from `flux-system` to `cert-manager` |
+
+### Issue 7: tuppr CRD Race Condition
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Flux server-side dry-run validates TalosUpgrade/KubernetesUpgrade CRs before HelmRelease installs CRDs
+
+**Error:**
+```
+TalosUpgrade/system-upgrade/talos dry-run failed: no matches for kind "TalosUpgrade" in version "tuppr.home-operations.com/v1alpha1"
+```
+
+**Solution:** Split tuppr into two Kustomizations:
+
+1. **tuppr** - HelmRelease only (installs operator + CRDs)
+   - Uses `healthChecks` to wait for HelmRelease
+   - Uses `wait: true` with 5m timeout
+
+2. **tuppr-upgrades** - TalosUpgrade/KubernetesUpgrade CRs
+   - Uses `dependsOn: [tuppr]` to ensure CRDs exist
+   - Deployed after tuppr is Ready
+
+**Directory Structure:**
+```
+tuppr/
+├── ks.yaml.j2              # Contains BOTH Kustomizations
+├── app/
+│   ├── kustomization.yaml.j2  # HelmRelease + OCIRepository only
+│   ├── helmrelease.yaml.j2
+│   └── ocirepository.yaml.j2
+└── upgrades/
+    ├── kustomization.yaml.j2  # Upgrade CRs only
+    ├── talosupgrade.yaml.j2
+    └── kubernetesupgrade.yaml.j2
+```
+
+This pattern follows [Helm CRD best practices](https://helm.sh/docs/v3/chart_best_practices/custom_resource_definitions/) for ensuring CRDs exist before CRs are applied.
+
+### Issue 8: victoria-metrics Grafana Dashboard Conflict
+
+**Severity:** Medium
+**Discovery:** During actual cluster bootstrap
+**Problem:** Chart disallows both `sidecar.dashboards.enabled: true` AND `grafana.dashboards` configuration
+
+**Error:**
+```
+execution error at (victoria-metrics-k8s-stack/templates/grafana/dashboard.yaml:38:3):
+It is not possible to use both "grafana.sidecar.dashboards.enabled: true" and "grafana.dashboards" at the same time.
+```
+
+**Solution:** Disabled sidecar and use explicit grafana.com dashboard IDs:
+
+```yaml
+grafana:
+  sidecar:
+    dashboards:
+      enabled: false  # Disabled - using dashboards: instead
+  dashboards:
+    infrastructure:
+      kubernetes-global:
+        gnetId: 15757
+        # ...
+```
+
+**Trade-off:** This approach uses explicit dashboard IDs from grafana.com rather than auto-discovering dashboards from ConfigMaps (sidecar approach). For future Cilium Hubble integration that creates its own dashboard ConfigMaps, the sidecar approach may need to be reconsidered.
+
+See [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/helm/victoria-metrics-k8s-stack/) for more details.
+
+## Lessons Learned
+
+1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
+2. **CRD Installation Order**: When deploying CRDs via HelmRelease and CRs in the same Kustomization, split them and use `dependsOn`
+3. **Dry-Run Validation**: Flux validates ALL resources before applying ANY - CRDs must exist before CRs can be validated
+4. **healthChecks**: Use `healthChecks` with `wait: true` when subsequent Kustomizations depend on resources being fully deployed
+
 ## References
 
 - [Flux Kustomization API](https://fluxcd.io/flux/components/kustomize/kustomizations/)
 - [Flux Health Checks](https://fluxcd.io/flux/components/kustomize/kustomizations/#health-checks)
 - [Kubernetes CCM Chicken-Egg Problem](https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/)
+- [Helm CRD Best Practices](https://helm.sh/docs/v3/chart_best_practices/custom_resource_definitions/)
+- [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/helm/victoria-metrics-k8s-stack/)
+- [tuppr GitHub Repository](https://github.com/home-operations/tuppr)
 - Project Research: `docs/research/talos-kubernetes-interoperability-jan-2026.md`
