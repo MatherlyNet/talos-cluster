@@ -6,6 +6,7 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./httproute.yaml
+  - ./secret.sops.yaml
 #% if monitoring_alerts_enabled | default(true) %#
   - ./prometheusrule.yaml
 #% endif %#

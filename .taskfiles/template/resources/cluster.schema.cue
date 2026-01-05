@@ -141,14 +141,16 @@ import (
 
 	// Observability - Monitoring Stack (VictoriaMetrics + Grafana + AlertManager)
 	// Full-stack observability with metrics, logs, and distributed tracing
-	monitoring_enabled?:    *false | bool
-	monitoring_stack?:      *"victoriametrics" | "prometheus"
-	hubble_enabled?:        *false | bool
-	hubble_ui_enabled?:     *false | bool
-	grafana_subdomain?:     *"grafana" | string & !=""
-	metrics_retention?:     *"7d" | string & =~"^[0-9]+[dhw]$"
-	metrics_storage_size?:  *"50Gi" | string & =~"^[0-9]+[KMGT]i$"
-	storage_class?:         *"local-path" | string & !=""
+	monitoring_enabled?:      *false | bool
+	monitoring_stack?:        *"victoriametrics" | "prometheus"
+	hubble_enabled?:          *false | bool
+	hubble_ui_enabled?:       *false | bool
+	grafana_subdomain?:       *"grafana" | string & !=""
+	grafana_admin_user?:      *"admin" | string & !=""
+	grafana_admin_password?:  string & =~".{8,}"  // Minimum 8 characters
+	metrics_retention?:       *"7d" | string & =~"^[0-9]+[dhw]$"
+	metrics_storage_size?:    *"50Gi" | string & =~"^[0-9]+[KMGT]i$"
+	storage_class?:           *"local-path" | string & !=""
 
 	// Observability - Infrastructure Alerts (PrometheusRule)
 	monitoring_alerts_enabled?: *true | bool

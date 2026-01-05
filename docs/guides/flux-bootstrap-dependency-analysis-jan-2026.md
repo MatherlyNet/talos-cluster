@@ -625,6 +625,139 @@ schemaConfig:
 
 **Lesson:** Always quote date values in Loki schemaConfig to prevent YAML type coercion issues.
 
+### Issue 14: UniFi DNS API Permission Error
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** UniFi external-dns webhook returns 403 "No permission" when accessing static-dns API
+
+**Error:**
+```
+API error during GET to https://192.168.23.254/proxy/network/v2/api/site/Matherly-UDM/static-dns/ (status 403): No permission
+```
+
+**Analysis:** The UniFi API key may not have the correct permissions or the site name may be incorrect.
+
+**Diagnostic Commands:**
+```bash
+# Test 1: Basic connectivity with default site
+curl -k -X GET \
+  "https://192.168.23.254/proxy/network/v2/api/site/default/static-dns/" \
+  -H "X-API-KEY: <your-api-key>"
+
+# Test 2: List sites to find correct site name
+curl -k -X GET \
+  "https://192.168.23.254/proxy/network/api/s/default/self" \
+  -H "X-API-KEY: <your-api-key>"
+```
+
+**Possible Causes:**
+1. API key lacks DNS management permissions
+2. Site name mismatch (configured `Matherly-UDM` vs actual site ID)
+3. UniFi Network version < v9.0.0 (API key auth requires v9.0.0+)
+
+**Solution:** Verify API key permissions and site name in UniFi Console:
+- Admin → Control Plane → API Keys → Create with "Full Management Access"
+- Check actual site ID in Settings → System → Network Application
+
+### Issue 15: Grafana Uses Legacy Ingress Instead of Gateway API
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Grafana inaccessible via `envoy-internal` because VictoriaMetrics Helm chart creates legacy Ingress, not HTTPRoute
+
+**Error:** Cloudflare Error 1033 when accessing `grafana.matherly.net`
+
+**Analysis:** The architecture uses two Envoy Gateways:
+- `envoy-external` (192.168.22.90): Public access via Cloudflare Tunnel
+- `envoy-internal` (192.168.22.80): Local network access via UniFi DNS + BGP
+
+The VictoriaMetrics Helm chart creates a legacy `Ingress` resource for Grafana. However:
+1. There's no Ingress controller (Envoy Gateway uses Gateway API)
+2. UniFi external-dns watches `gateway-httproute`, not `ingress`
+3. Result: No DNS record created, no routing available
+
+**Solution:** Disable Helm chart Ingress and create explicit HTTPRoute:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+grafana:
+  enabled: true
+  ingress:
+    enabled: false  # Disable legacy Ingress
+```
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/httproute.yaml.j2
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+spec:
+  hostnames:
+    - "grafana.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: victoria-metrics-k8s-stack-grafana
+          port: 80
+```
+
+**Lesson:** When using Gateway API, always prefer explicit HTTPRoute resources over Helm chart Ingress configurations.
+
+### Issue 16: Grafana Admin Credentials Configuration
+
+**Severity:** Medium
+**Discovery:** During actual cluster bootstrap
+**Problem:** Grafana uses auto-generated admin password stored in a Kubernetes secret, requiring manual retrieval
+
+**Context:** The default VictoriaMetrics Helm chart generates a random admin password stored in a secret. While secure, this creates friction for GitOps workflows where credentials should be managed declaratively.
+
+**Solution:** Create SOPS-encrypted secret and reference via `admin.existingSecret`:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/secret.sops.yaml.j2
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-admin-secret
+stringData:
+  admin-user: "#{ grafana_admin_user | default('admin') }#"
+  admin-password: "#{ grafana_admin_password | default('admin') }#"
+```
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+grafana:
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: admin-user
+    passwordKey: admin-password
+```
+
+**Configuration (cluster.yaml):**
+```yaml
+# Grafana admin credentials
+grafana_admin_user: "admin"           # (OPTIONAL) / (DEFAULT: "admin")
+grafana_admin_password: "securepass"  # (OPTIONAL) / Set for GitOps-managed credentials
+```
+
+**Important Caveat:** Grafana stores the admin password in its internal database after first login. Changing `grafana_admin_password` in cluster.yaml will NOT update an existing Grafana installation. To change the password after initial deployment:
+
+```bash
+# Option 1: Reset via Grafana CLI inside pod
+kubectl -n monitoring exec -it deploy/victoria-metrics-k8s-stack-grafana -- grafana-cli admin reset-admin-password <new-password>
+
+# Option 2: Delete the Grafana PVC and redeploy (loses dashboard customizations)
+kubectl -n monitoring delete pvc victoria-metrics-k8s-stack-grafana
+flux reconcile hr victoria-metrics-k8s-stack -n monitoring
+```
+
+**Lesson:** For Grafana admin credentials, set the password in cluster.yaml BEFORE initial deployment. Post-deployment password changes require CLI reset or data wipe.
+
 ## Lessons Learned
 
 1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
@@ -636,6 +769,9 @@ schemaConfig:
 7. **Loki Deployment Modes**: When using SingleBinary mode, explicitly disable all other deployment mode components by setting `replicas: 0`
 8. **Chart Parameter Names**: Don't assume consistency - Loki uses `storageClass`, most charts use `storageClassName`
 9. **YAML Date Quoting**: Always quote date values in configuration to prevent YAML type coercion issues
+10. **UniFi API Authentication**: API keys require UniFi Network v9.0.0+ and correct site ID configuration
+11. **Gateway API over Ingress**: When using Envoy Gateway with external-dns, use HTTPRoute resources instead of Helm chart Ingress configurations
+12. **Grafana Credentials Timing**: Set `grafana_admin_password` in cluster.yaml BEFORE initial deployment - post-deployment changes require CLI reset
 
 ## References
 

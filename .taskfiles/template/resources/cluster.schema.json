@@ -477,6 +477,15 @@
       "type": "string",
       "minLength": 1
     },
+    "grafana_admin_user": {
+      "default": "admin",
+      "type": "string",
+      "minLength": 1
+    },
+    "grafana_admin_password": {
+      "type": "string",
+      "pattern": ".{8,}"
+    },
     "metrics_retention": {
       "default": "7d",
       "type": "string",

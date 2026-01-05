@@ -66,6 +66,8 @@ kubernetes_version: "1.35.0"
 # hubble_enabled: true
 # hubble_ui_enabled: true
 # grafana_subdomain: "grafana"
+# grafana_admin_user: "admin"
+# grafana_admin_password: "test-password-min8"
 # metrics_retention: "7d"
 # metrics_storage_size: "50Gi"
 # storage_class: "local-path"

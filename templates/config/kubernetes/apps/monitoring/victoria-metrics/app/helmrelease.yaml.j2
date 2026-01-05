@@ -68,6 +68,12 @@ spec:
     # Grafana
     grafana:
       enabled: true
+      #| Admin credentials from SOPS-encrypted secret #|
+      #| Configure grafana_admin_user and grafana_admin_password in cluster.yaml #|
+      admin:
+        existingSecret: grafana-admin-secret
+        userKey: admin-user
+        passwordKey: admin-password
       #| Ingress disabled - using Gateway API HTTPRoute for envoy-internal instead #|
       #| See httproute.yaml for the HTTPRoute that exposes Grafana internally #|
       ingress:

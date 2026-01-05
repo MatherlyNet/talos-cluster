@@ -67,6 +67,10 @@ spec:
     # Grafana
     grafana:
       enabled: true
+      admin:
+        existingSecret: grafana-admin-secret
+        userKey: admin-user
+        passwordKey: admin-password
       ingress:
         enabled: false
       persistence:

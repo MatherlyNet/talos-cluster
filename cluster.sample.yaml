@@ -326,6 +326,16 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "grafana")
 # grafana_subdomain: "grafana"
 
+# -- Grafana admin username
+#    (OPTIONAL) / (DEFAULT: "admin")
+# grafana_admin_user: "admin"
+
+# -- Grafana admin password (SOPS-encrypted)
+#    (OPTIONAL) / Set BEFORE initial deployment - password changes after first
+#    login require CLI reset: kubectl -n monitoring exec deploy/victoria-metrics-k8s-stack-grafana
+#    -- grafana-cli admin reset-admin-password <new-password>
+# grafana_admin_password: ""
+
 # -- Metrics retention period
 #    (OPTIONAL) / (DEFAULT: "7d")
 # metrics_retention: "7d"
