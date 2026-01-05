@@ -247,6 +247,12 @@
       "name": "external-secrets",
       "purpose": "External secret management (1Password/Bitwarden/Vault)",
       "conditional": "external_secrets_enabled"
+    },
+    {
+      "namespace": "storage",
+      "name": "rustfs",
+      "purpose": "S3-compatible object storage for Loki/Tempo (alpha)",
+      "conditional": "rustfs_enabled"
     }
   ],
   "tools": {

@@ -1,0 +1,19 @@
+#% if rustfs_enabled | default(false) %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./helmrepository.yaml
+  - ./helmrelease.yaml
+  - ./secret.sops.yaml
+#% if loki_enabled | default(false) %#
+  - ./secret-loki.sops.yaml
+#% endif %#
+#% if tracing_enabled | default(false) %#
+  - ./secret-tempo.sops.yaml
+#% endif %#
+  - ./job-setup.yaml
+#% if monitoring_enabled | default(false) %#
+  - ./servicemonitor.yaml
+#% endif %#
+#% endif %#

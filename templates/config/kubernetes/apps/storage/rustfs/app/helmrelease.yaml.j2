@@ -1,0 +1,119 @@
+#% if rustfs_enabled | default(false) %#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rustfs
+spec:
+  chart:
+    spec:
+      chart: rustfs
+      version: "1.0.x"
+      sourceRef:
+        kind: HelmRepository
+        name: rustfs
+        namespace: storage
+  interval: 1h
+  values:
+    #| MNMD: Multi-Node Multi-Drive distributed mode #|
+    mode:
+      standalone:
+        enabled: false
+      distributed:
+        enabled: true
+
+    #| Number of RustFS nodes #|
+    replicaCount: #{ rustfs_replicas | default(3) }#
+
+    #| Volumes per node (4 enables erasure coding) #|
+    volumesPerServer: #{ rustfs_volumes_per_node | default(4) }#
+
+    #| Container image #|
+    image:
+      repository: rustfs/rustfs
+      tag: "latest"
+      pullPolicy: IfNotPresent
+
+    #| Resource limits #|
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+    #| Environment variables #|
+    environment:
+      RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
+      RUSTFS_ENABLE_SCANNER: "true"
+      RUSTFS_ENABLE_HEAL: "true"
+      #| Console UI disabled in production by default - use mc CLI #|
+      RUSTFS_CONSOLE_ENABLE: "#{ rustfs_console_enabled | default(false) | string | lower }#"
+
+    #| Use existing secret for credentials #|
+    existingSecret: rustfs-credentials
+
+    #| Persistence configuration #|
+    persistence:
+      enabled: true
+      storageClass: "#{ rustfs_storage_class | default(storage_class) | default('local-path') }#"
+      size: "#{ rustfs_volume_size | default('20Gi') }#"
+      accessMode: ReadWriteOnce
+
+    #| Service configuration #|
+    service:
+      type: ClusterIP
+      port: 9000
+      consolePort: 9001
+
+    #| Ingress disabled - internal service only #|
+    ingress:
+      enabled: false
+
+    #| Pod security context - restricted PSS #|
+    securityContext:
+      runAsUser: 10001
+      runAsGroup: 10001
+      fsGroup: 10001
+      runAsNonRoot: true
+
+    #| Container security context #|
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+      seccompProfile:
+        type: RuntimeDefault
+
+    #| Pod anti-affinity for HA #|
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - rustfs
+              topologyKey: kubernetes.io/hostname
+
+    #| Liveness and readiness probes #|
+    livenessProbe:
+      httpGet:
+        path: /minio/health/live
+        port: 9000
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /minio/health/ready
+        port: 9000
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+#% endif %#

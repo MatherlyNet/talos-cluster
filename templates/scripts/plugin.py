@@ -236,6 +236,22 @@ class Plugin(makejinja.plugin.Plugin):
         oidc_enabled = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))
         data["oidc_enabled"] = oidc_enabled
 
+        # RustFS shared storage - enabled when rustfs_enabled is true
+        # When RustFS is enabled, Loki uses S3 backend for SimpleScalable mode
+        rustfs_enabled = data.get("rustfs_enabled", False)
+        data["rustfs_enabled"] = rustfs_enabled
+        if rustfs_enabled:
+            # Set default storage class for RustFS if not specified
+            data.setdefault("rustfs_storage_class", data.get("storage_class", "local-path"))
+
+        # Loki deployment mode is determined by RustFS availability
+        # SimpleScalable mode when RustFS is available, SingleBinary otherwise
+        if data.get("loki_enabled"):
+            if rustfs_enabled:
+                data["loki_deployment_mode"] = "SimpleScalable"
+            else:
+                data["loki_deployment_mode"] = "SingleBinary"
+
         # If there is more than one node, enable spegel (can be overridden by user)
         if "spegel_enabled" not in data:
             data["spegel_enabled"] = len(data.get("nodes", [])) > 1

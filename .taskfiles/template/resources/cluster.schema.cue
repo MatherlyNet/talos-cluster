@@ -204,6 +204,28 @@ import (
 	// REF: docs/research/cilium-network-policies-jan-2026.md
 	network_policies_enabled?: *false | bool
 	network_policies_mode?:    *"audit" | "enforce"
+
+	// RustFS Shared Object Storage - S3-compatible storage for cluster services
+	// REF: https://rustfs.com/
+	// REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
+	// WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production
+	rustfs_enabled?:          *false | bool
+	rustfs_replicas?:         *3 | int & >=1 & <=16
+	rustfs_volumes_per_node?: *4 | int & >=1 & <=16
+	rustfs_volume_size?:      *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+	rustfs_storage_class?:    string & !=""
+	rustfs_access_key?:       *"rustfsadmin" | string & !=""
+	rustfs_secret_key?:       string & !=""
+	rustfs_buffer_profile?:   *"DataAnalytics" | "General" | "Streaming" | "Archival"
+	rustfs_console_enabled?:  *false | bool
+
+	// RustFS Service Account Credentials for Loki (when rustfs_enabled && loki_enabled)
+	loki_s3_access_key?: *"loki" | string & !=""
+	loki_s3_secret_key?: string & !=""
+
+	// RustFS Service Account Credentials for Tempo (when rustfs_enabled && tracing_enabled)
+	tempo_s3_access_key?: *"tempo" | string & !=""
+	tempo_s3_secret_key?: string & !=""
 }
 
 #Config

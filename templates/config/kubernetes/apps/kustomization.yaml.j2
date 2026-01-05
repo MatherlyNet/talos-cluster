@@ -16,4 +16,7 @@ resources:
   - ./monitoring
   #% endif %#
   - ./network
+  #% if rustfs_enabled | default(false) %#
+  - ./storage
+  #% endif %#
   - ./system-upgrade

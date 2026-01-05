@@ -184,6 +184,13 @@ Optional Observability Stack (metrics, logs, traces):
 - `tracing_enabled` - Enable distributed tracing with Tempo
 - See `docs/guides/observability-stack-implementation.md` for setup guide
 
+Optional RustFS Shared Object Storage (S3-compatible):
+- `rustfs_enabled` - Enable RustFS for shared S3 storage
+- When enabled, Loki automatically switches to SimpleScalable mode with S3 backend
+- `rustfs_secret_key`, `loki_s3_secret_key`, `tempo_s3_secret_key` - SOPS-encrypted credentials
+- ⚠️ RustFS is currently alpha software (v1.0.0-alpha.78) - test before production
+- See `docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md` for implementation
+
 Optional CiliumNetworkPolicies (zero-trust networking):
 - `network_policies_enabled` - Enable namespace-scoped network policies
 - `network_policies_mode` - "audit" (observe via Hubble) or "enforce" (active blocking)
@@ -221,6 +228,8 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `infrastructure_enabled` - true when proxmox_api_url + proxmox_node set
 - `proxmox_vm_controller_defaults` - Merged controller VM settings
 - `proxmox_vm_worker_defaults` - Merged worker VM settings
+- `rustfs_enabled` - true when rustfs_enabled is explicitly set to true
+- `loki_deployment_mode` - "SimpleScalable" when rustfs_enabled, "SingleBinary" otherwise
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -271,6 +280,8 @@ Deep context in `docs/ai-context/`:
 | Monitoring not working | `flux get hr -n monitoring`, `kubectl -n monitoring get pods` |
 | Hubble not visible | `hubble status`, `kubectl -n kube-system port-forward svc/hubble-relay 4245:80` |
 | Network policy blocking | `hubble observe --verdict DROPPED`, `kubectl get cnp -A` |
+| RustFS not ready | `kubectl get pods -n storage`, `kubectl logs -n storage -l app.kubernetes.io/name=rustfs` |
+| Loki S3 errors | `kubectl logs -n monitoring -l app.kubernetes.io/component=write` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

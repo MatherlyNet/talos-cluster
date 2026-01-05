@@ -1,5 +1,8 @@
 # yaml-language-server: $schema=./.taskfiles/template/resources/cluster.schema.json
 ---
+# =============================================================================
+# TALOS CLUSTER - Required
+# =============================================================================
 # -- The network CIDR for the nodes.
 # (REQUIRED) / (e.g. 192.168.1.0/24)
 node_cidr: ""
@@ -35,12 +38,12 @@ cluster_api_addr: ""
 # cluster_api_tls_sans: []
 
 # -- The pod CIDR for the cluster, this must NOT overlap with any existing networks and should be a /16 (64K IPs).
-#    (OPTIONAL) / (DEFAULT: "10.42.0.0/16")
-# cluster_pod_cidr: ""
+#    (REQUIRED) / (DEFAULT: "10.42.0.0/16")
+cluster_pod_cidr: ""
 
 # -- The service CIDR for the cluster, this must NOT overlap with any existing networks and should be a /16 (64K IPs).
-#    (OPTIONAL) / (DEFAULT: "10.43.0.0/16")
-# cluster_svc_cidr: ""
+#    (REQUIRED) / (DEFAULT: "10.43.0.0/16")
+cluster_svc_cidr: ""
 
 # -- The Load balancer IP for k8s_gateway (split DNS for internal resolution)
 #    (CONDITIONAL) / Required ONLY when NOT using UniFi DNS integration
@@ -76,10 +79,6 @@ cloudflare_token: ""
 # -- The Load balancer IP for the external gateway
 #    (REQUIRED) / (NOTE: Choose an unused IP in node_cidr)
 cloudflare_gateway_addr: ""
-# -- The load balancer mode for cilium.
-#    (OPTIONAL) / (DEFAULT: "dsr") / (NOTE: accepted values are 'dsr' or 'snat') / (REF: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
-# cilium_loadbalancer_mode: ""
-
 # =============================================================================
 # CILIUM BGP CONFIGURATION - Optional for multi-VLAN environments
 # =============================================================================
@@ -115,6 +114,10 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (e.g. "172.20.10.0/24")
 #    NOTE: If set, update UniFi prefix-list to match this CIDR
 # cilium_lb_pool_cidr: ""
+
+# -- The load balancer mode for cilium.
+#    (OPTIONAL) / (DEFAULT: "dsr") / (NOTE: accepted values are 'dsr' or 'snat') / (REF: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
+# cilium_loadbalancer_mode: ""
 
 # -- BGP Hold Time in seconds (failure detection = 3x keepalive or hold timeout)
 #    (OPTIONAL) / (DEFAULT: 30) / (Minimum: 3)
@@ -410,6 +413,68 @@ cloudflare_gateway_addr: ""
 # environment: "production"
 
 # =============================================================================
+# RUSTFS SHARED OBJECT STORAGE - S3-compatible storage for cluster services
+# =============================================================================
+# RustFS is a high-performance, Rust-based S3-compatible object storage system.
+# When enabled, Loki automatically switches to SimpleScalable mode with S3.
+# Performance: 2.3x faster than MinIO for small objects, Apache 2.0 license.
+# REF: https://github.com/rustfs/rustfs
+
+# -- Enable RustFS shared storage
+#    When enabled, Loki uses SimpleScalable mode with S3 backend
+#    (OPTIONAL) / (DEFAULT: false)
+# rustfs_enabled: false
+
+# -- Number of RustFS nodes (3 or 4 recommended for distributed mode)
+#    (OPTIONAL) / (DEFAULT: 3)
+# rustfs_replicas: 3
+
+# -- Number of volumes per RustFS node (affects erasure coding)
+#    4 volumes per node enables 4+2 erasure coding for optimal redundancy
+#    (OPTIONAL) / (DEFAULT: 4)
+# rustfs_volumes_per_node: 4
+
+# -- Data storage size per volume
+#    (OPTIONAL) / (DEFAULT: "20Gi")
+# rustfs_volume_size: "20Gi"
+
+# -- RustFS root admin username
+#    (OPTIONAL) / (DEFAULT: "rustfsadmin")
+# rustfs_access_key: "rustfsadmin"
+
+# -- RustFS root admin password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 32
+#    (REQUIRED when rustfs_enabled)
+# rustfs_secret_key: ""
+
+# -- Workload optimization profile
+#    Options: GeneralPurpose, AiTraining, DataAnalytics, WebWorkload, IndustrialIoT, SecureStorage
+#    (OPTIONAL) / (DEFAULT: "DataAnalytics")
+# rustfs_buffer_profile: "DataAnalytics"
+
+# -- Enable RustFS console UI
+#    (OPTIONAL) / (DEFAULT: false)
+# rustfs_console_enabled: false
+
+# -- Loki S3 access key (created as RustFS access key)
+#    (OPTIONAL) / (DEFAULT: "loki")
+# loki_s3_access_key: "loki"
+
+# -- Loki S3 secret key (SOPS-encrypted)
+#    Generate with: openssl rand -base64 32
+#    (REQUIRED when rustfs_enabled and loki_enabled)
+# loki_s3_secret_key: ""
+
+# -- Tempo S3 access key (created as RustFS access key)
+#    (OPTIONAL) / (DEFAULT: "tempo")
+# tempo_s3_access_key: "tempo"
+
+# -- Tempo S3 secret key (SOPS-encrypted)
+#    Generate with: openssl rand -base64 32
+#    (REQUIRED when rustfs_enabled and tracing_enabled)
+# tempo_s3_secret_key: ""
+
+# =============================================================================
 # EXTERNAL SECRETS OPERATOR - Sync secrets from external providers
 # =============================================================================
 # External Secrets Operator syncs secrets from external secret stores.
@@ -535,10 +600,10 @@ cloudflare_gateway_addr: ""
 # =============================================================================
 # GLOBAL VM DEFAULTS (OpenTofu/Proxmox) - Optional for VM deployments
 # =============================================================================
-
 # -- Global VM resource defaults (fallback for all nodes)
 #    Can be overridden by role-specific defaults or per-node in nodes.yaml
 #    Fallback chain: per-node -> role-defaults -> global-defaults
+
 # proxmox_vm_defaults:
 #   cores: 4           # CPU cores
 #   sockets: 1         # CPU sockets

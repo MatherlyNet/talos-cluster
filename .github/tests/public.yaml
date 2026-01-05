@@ -115,3 +115,16 @@ kubernetes_version: "1.35.0"
 # REF: docs/research/cilium-network-policies-jan-2026.md
 # network_policies_enabled: true
 # network_policies_mode: "audit"  # or "enforce"
+
+# RustFS Shared Object Storage (optional - uncomment to test)
+# REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
+# rustfs_enabled: true
+# rustfs_replicas: 3
+# rustfs_volumes_per_node: 4
+# rustfs_volume_size: "20Gi"
+# rustfs_access_key: "rustfsadmin"
+# rustfs_secret_key: "test-secret-key"
+# loki_s3_access_key: "loki"
+# loki_s3_secret_key: "test-loki-secret"
+# tempo_s3_access_key: "tempo"
+# tempo_s3_secret_key: "test-tempo-secret"

@@ -1,24 +1,18 @@
-#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
+#% if rustfs_enabled | default(false) %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: loki
+  name: rustfs
 spec:
-  dependsOn:
-    - name: kube-prometheus-stack
-#% if rustfs_enabled | default(false) %#
-    - name: rustfs
-      namespace: storage
-#% endif %#
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: loki
-      namespace: monitoring
+      name: rustfs
+      namespace: storage
   interval: 1h
   retryInterval: 30s
-  path: ./kubernetes/apps/monitoring/loki/app
+  path: ./kubernetes/apps/storage/rustfs/app
   postBuild:
     substituteFrom:
       - name: cluster-secrets
@@ -28,7 +22,7 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: monitoring
-  timeout: 10m
+  targetNamespace: storage
+  timeout: 15m
   wait: true
 #% endif %#

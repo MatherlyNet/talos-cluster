@@ -5,4 +5,7 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
+#% if rustfs_enabled | default(false) %#
+  - ./secret-s3.sops.yaml
+#% endif %#
 #% endif %#
