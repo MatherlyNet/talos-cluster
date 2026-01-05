@@ -1,0 +1,102 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rustfs
+spec:
+  chart:
+    spec:
+      chart: rustfs
+      version: "1.0.x"
+      sourceRef:
+        kind: HelmRepository
+        name: rustfs
+        namespace: storage
+  interval: 1h
+  values:
+    mode:
+      standalone:
+        enabled: false
+      distributed:
+        enabled: true
+
+    replicaCount: 3
+
+    volumesPerServer: 4
+
+    image:
+      repository: rustfs/rustfs
+      tag: "latest"
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+    environment:
+      RUSTFS_BUFFER_PROFILE: "DataAnalytics"
+      RUSTFS_ENABLE_SCANNER: "true"
+      RUSTFS_ENABLE_HEAL: "true"
+      RUSTFS_CONSOLE_ENABLE: "true"
+
+    existingSecret: rustfs-credentials
+
+    persistence:
+      enabled: true
+      storageClass: "proxmox-zfs"
+      size: "20Gi"
+      accessMode: ReadWriteOnce
+
+    service:
+      type: ClusterIP
+      port: 9000
+      consolePort: 9001
+
+    ingress:
+      enabled: false
+
+    securityContext:
+      runAsUser: 10001
+      runAsGroup: 10001
+      fsGroup: 10001
+      runAsNonRoot: true
+
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+      seccompProfile:
+        type: RuntimeDefault
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - rustfs
+              topologyKey: kubernetes.io/hostname
+
+    livenessProbe:
+      httpGet:
+        path: /minio/health/live
+        port: 9000
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /minio/health/ready
+        port: 9000
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
