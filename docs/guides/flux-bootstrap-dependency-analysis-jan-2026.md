@@ -758,6 +758,211 @@ flux reconcile hr victoria-metrics-k8s-stack -n monitoring
 
 **Lesson:** For Grafana admin credentials, set the password in cluster.yaml BEFORE initial deployment. Post-deployment password changes require CLI reset or data wipe.
 
+### Issue 17: VictoriaMetrics Dashboard Datasource Compatibility
+
+**Severity:** Medium
+**Discovery:** During dashboard testing after deployment
+**Problem:** Many Grafana dashboards use `${DS_PROMETHEUS}` variable which doesn't match our "VictoriaMetrics" datasource name
+
+**Symptoms:**
+- Dashboard dropdown selectors showing "datasource ${DS_PROMETHEUS} was not found"
+- "No data" in panels expecting Prometheus datasource
+
+**Solution:** Add a Prometheus datasource alias pointing to VictoriaMetrics:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+grafana:
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8429
+      access: proxy
+      isDefault: false
+```
+
+**Lesson:** When using VictoriaMetrics with community Grafana dashboards, add a "Prometheus" datasource alias for dashboard compatibility.
+
+### Issue 18: Talos Control Plane Metrics TLS Configuration
+
+**Severity:** High
+**Discovery:** During VictoriaMetrics target analysis
+**Problem:** kube-controller-manager and kube-scheduler metrics scraping fails with TLS certificate errors
+
+**Error:**
+```
+tls: failed to verify certificate: x509: certificate is valid for localhost, localhost, not kubernetes
+tls: failed to verify certificate: x509: certificate is valid for 127.0.0.1, not 192.168.22.101
+```
+
+**Analysis:** Talos Linux already configures `bind-address: 0.0.0.0` for controller-manager and scheduler in the machineConfig (see `templates/config/talos/patches/controller/cluster.yaml.j2`), making them accessible on node IPs. However, the TLS certificates are only valid for `localhost`/`127.0.0.1`, not the node IP addresses.
+
+**Solution:** Configure VictoriaMetrics to skip TLS verification with correct serverName:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+kubeControllerManager:
+  enabled: true
+  spec:
+    endpoints:
+      - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        port: http-metrics
+        scheme: https
+        tlsConfig:
+          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          serverName: localhost
+          insecureSkipVerify: true
+
+kubeScheduler:
+  enabled: true
+  spec:
+    endpoints:
+      - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        port: http-metrics
+        scheme: https
+        tlsConfig:
+          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          serverName: "127.0.0.1"
+          insecureSkipVerify: true
+```
+
+**Reference:** [VictoriaMetrics GitHub Issue #6476](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476)
+
+**Lesson:** Talos control plane components use self-signed certificates valid only for localhost. Use `insecureSkipVerify: true` with appropriate `serverName` when scraping these endpoints.
+
+### Issue 19: Talos etcd Metrics HTTP Endpoint Configuration
+
+**Severity:** High
+**Discovery:** During VictoriaMetrics target analysis
+**Problem:** etcd metrics endpoint shows "No endpoint defined" in scrape targets
+
+**Analysis:** Talos already exposes etcd metrics on HTTP port 2381 via machineConfig (`listen-metrics-urls: http://0.0.0.0:2381`). The issue was VictoriaMetrics helm chart defaults expecting HTTPS on port 2379.
+
+**Solution:** Configure kubeEtcd with explicit controller node endpoints and HTTP scheme:
+
+```yaml
+# templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
+kubeEtcd:
+  enabled: true
+  endpoints:
+#% for node in nodes %#
+#% if node.controller %#
+    - #{ node.address }#
+#% endif %#
+#% endfor %#
+  service:
+    enabled: true
+    port: 2381
+    targetPort: 2381
+  spec:
+    endpoints:
+      - port: http-metrics
+        scheme: http
+```
+
+**Reference:** [Talos etcd Metrics Documentation](https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/etcd-metrics)
+
+**Lesson:** Talos etcd exposes metrics on HTTP:2381, not the default etcd client port 2379/HTTPS. Configure explicit endpoints and HTTP scheme.
+
+### Issue 20: flux-operator NetworkPolicy Blocks Metrics Port
+
+**Severity:** High
+**Discovery:** During VictoriaMetrics target analysis
+**Problem:** flux-operator metrics endpoint (port 8080) times out while the pod is healthy
+
+**Error:**
+```
+net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+```
+
+**Analysis:** The flux-operator helm chart creates a NetworkPolicy (`flux-operator-web`) that only allows ingress on port 9080 (web UI), blocking the metrics port 8080.
+
+**Solution:** Disable the built-in NetworkPolicy:
+
+```yaml
+# templates/config/kubernetes/apps/flux-system/flux-operator/app/helmrelease.yaml.j2
+values:
+  webui:
+    networkPolicy:
+      create: false
+```
+
+**Alternative:** If NetworkPolicies are managed at the CiliumNetworkPolicy level, disabling the chart's NetworkPolicy is appropriate. Otherwise, create a custom NetworkPolicy that allows both ports.
+
+**Lesson:** Always check if helm charts create NetworkPolicies that may block metrics ports. The chart's default NetworkPolicy configuration may not include all necessary ports.
+
+### Issue 21: Hubble L7 Metrics Require CiliumNetworkPolicies
+
+**Severity:** Low (Documentation)
+**Discovery:** During dashboard analysis
+**Problem:** Cilium Hubble HTTP and DNS metrics panels show "No data" despite metrics being scraped
+
+**Analysis:** Hubble L7 metrics (HTTP, DNS) require CiliumNetworkPolicies with L7 rules to enable visibility. Without L7 policies, Hubble only provides L3/L4 visibility.
+
+From [Cilium L7 Protocol Visibility Documentation](https://docs.cilium.io/en/stable/observability/visibility/):
+> L7 metrics such as HTTP are only emitted for pods that enable Layer 7 Protocol Visibility.
+
+**Metrics that work without L7 policies:**
+- `drop`, `tcp`, `flow`, `icmp`, `port-distribution`
+
+**Metrics that require L7 policies:**
+- `http`, `dns`
+
+**Example L7 Visibility Policy:**
+```yaml
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: l7-visibility
+spec:
+  endpointSelector: {}
+  egress:
+    - toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+```
+
+**Lesson:** Hubble L7 metrics require explicit L7 network policies. This is by design - L7 visibility implies L7 inspection which has performance implications. The `hubble.metrics.enabled` array only configures which metrics to export, not which traffic to inspect.
+
+### Issue 22: Envoy Gateway Control Plane Metrics Missing
+
+**Severity:** Medium
+**Discovery:** During dashboard analysis
+**Problem:** Envoy Gateway Overview dashboard shows "No data" for gateway controller metrics
+
+**Analysis:** The existing PodMonitor only targets envoy proxy pods (`app.kubernetes.io/component: proxy`), not the envoy-gateway controller pod (`app.kubernetes.io/name: envoy-gateway`).
+
+**Solution:** Add a second PodMonitor for the gateway controller:
+
+```yaml
+# templates/config/kubernetes/apps/network/envoy-gateway/app/podmonitor.yaml.j2
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-gateway
+spec:
+  jobLabel: envoy-gateway
+  namespaceSelector:
+    matchNames:
+      - network
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      honorLabels: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envoy-gateway
+```
+
+**Note:** The gateway controller exposes metrics at `/metrics`, while proxy pods expose at `/stats/prometheus`.
+
+**Lesson:** Envoy Gateway has two distinct metric sources - the control plane (envoy-gateway pod) and data plane (envoy-* proxy pods). Both need separate monitors.
+
 ## Lessons Learned
 
 1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
@@ -772,6 +977,12 @@ flux reconcile hr victoria-metrics-k8s-stack -n monitoring
 10. **UniFi API Authentication**: API keys require UniFi Network v9.0.0+ and correct site ID configuration
 11. **Gateway API over Ingress**: When using Envoy Gateway with external-dns, use HTTPRoute resources instead of Helm chart Ingress configurations
 12. **Grafana Credentials Timing**: Set `grafana_admin_password` in cluster.yaml BEFORE initial deployment - post-deployment changes require CLI reset
+13. **Datasource Aliases**: Add "Prometheus" datasource alias when using VictoriaMetrics for community dashboard compatibility
+14. **Talos TLS Certificates**: Control plane component certs are localhost-only - use `insecureSkipVerify: true` with serverName
+15. **etcd HTTP Metrics**: Talos etcd uses HTTP:2381 for metrics, not the default 2379/HTTPS - configure explicit endpoints
+16. **Chart NetworkPolicies**: Check if helm charts create NetworkPolicies that block metrics ports before deployment
+17. **Hubble L7 Visibility**: L7 metrics (HTTP/DNS) require CiliumNetworkPolicies with L7 rules - metrics config alone is insufficient
+18. **Envoy Gateway Metrics**: Control plane and data plane have separate metric endpoints requiring distinct PodMonitors
 
 ## References
 
