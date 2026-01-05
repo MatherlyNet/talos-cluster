@@ -4,7 +4,7 @@
 #| NOTE: Kernel logging (port 6050) is configured via Image Factory schematic extraKernelArgs #|
 #| NOTE: Uses localhost because Talos can't resolve K8s DNS (cluster.local) #|
 #| Vector runs as DaemonSet with hostNetwork, so each node has local Vector #|
-#| REF: https://docs.siderolabs.com/talos/v1.11/configure-your-talos-cluster/logging-and-telemetry/logging #|
+#| REF: https://docs.siderolabs.com/talos/v1.12/talos-guides/configuration/logging #|
 machine:
   logging:
     #| Service logs (machined, kubelet, etcd, etc.) via UDP JSON lines #|
