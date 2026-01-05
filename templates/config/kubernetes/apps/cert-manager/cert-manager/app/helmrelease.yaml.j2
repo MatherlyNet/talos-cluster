@@ -18,3 +18,24 @@ spec:
       enabled: true
       servicemonitor:
         enabled: true
+    #| Allow scheduling before CCM initializes nodes (breaks bootstrap chicken-egg) #|
+    #| Ref: https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/ #|
+    tolerations:
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        operator: Exists
+        effect: NoSchedule
+    webhook:
+      tolerations:
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          operator: Exists
+          effect: NoSchedule
+    cainjector:
+      tolerations:
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          operator: Exists
+          effect: NoSchedule
+    startupapicheck:
+      tolerations:
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          operator: Exists
+          effect: NoSchedule
