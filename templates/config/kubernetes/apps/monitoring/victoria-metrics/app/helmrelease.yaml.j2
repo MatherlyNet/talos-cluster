@@ -81,6 +81,7 @@ spec:
               - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
       persistence:
         enabled: true
+        storageClassName: "#{ storage_class | default('local-path') }#"
         size: 5Gi
       resources:
         requests:

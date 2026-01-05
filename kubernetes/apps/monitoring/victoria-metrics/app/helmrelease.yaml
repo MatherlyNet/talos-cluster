@@ -80,6 +80,7 @@ spec:
               - "grafana.${SECRET_DOMAIN}"
       persistence:
         enabled: true
+        storageClassName: "proxmox-zfs"
         size: 5Gi
       resources:
         requests:
