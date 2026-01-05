@@ -101,24 +101,6 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
-          cilium-agent:
-            gnetId: 16611
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          cilium-operator:
-            gnetId: 16612
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          cilium-hubble:
-            gnetId: 16613
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
           flux-cluster:
             gnetId: 16714
             revision: 1

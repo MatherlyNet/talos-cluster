@@ -104,6 +104,9 @@ spec:
       dashboards:
         enabled: true
         namespace: monitoring
+        #| Place Loki dashboards in Logging folder #|
+        annotations:
+          grafana_folder: Logging
       serviceMonitor:
         enabled: true
 #% endif %#

@@ -100,5 +100,7 @@ spec:
       dashboards:
         enabled: true
         namespace: monitoring
+        annotations:
+          grafana_folder: Logging
       serviceMonitor:
         enabled: true

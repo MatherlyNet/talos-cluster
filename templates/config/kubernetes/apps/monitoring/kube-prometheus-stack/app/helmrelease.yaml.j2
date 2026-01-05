@@ -110,34 +110,15 @@ spec:
               editable: true
               options:
                 path: /var/lib/grafana/dashboards/custom
-      #| Only provision dashboards NOT included in kube-prometheus-stack built-ins #|
+      #| Only provision dashboards NOT provided by other Helm charts #|
+      #| Cilium dashboards are now provided by Cilium HelmRelease with Network folder #|
+      #| Loki dashboards are now provided by Loki HelmRelease with Logging folder #|
       dashboards:
         custom:
           #| cert-manager - certificate monitoring (not included in kube-prometheus-stack) #|
           cert-manager:
             gnetId: 20842
             revision: 3
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          #| Cilium Agent - BPF operations, API latency, forwarding stats #|
-          cilium-agent:
-            gnetId: 16611
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          #| Cilium Operator - IPAM, node management #|
-          cilium-operator:
-            gnetId: 16612
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          #| Cilium Hubble - flows, drops, DNS, HTTP, TCP #|
-          cilium-hubble:
-            gnetId: 16613
-            revision: 1
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
