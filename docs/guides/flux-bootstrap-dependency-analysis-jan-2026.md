@@ -634,6 +634,8 @@ schemaConfig:
 5. **StorageClass Specification**: Always explicitly set `storageClassName` on persistence configurations - don't rely on default StorageClass
 6. **PodSecurity for Monitoring**: Monitoring namespaces typically require `privileged` PodSecurity level for node-exporter and similar host-access workloads
 7. **Loki Deployment Modes**: When using SingleBinary mode, explicitly disable all other deployment mode components by setting `replicas: 0`
+8. **Chart Parameter Names**: Don't assume consistency - Loki uses `storageClass`, most charts use `storageClassName`
+9. **YAML Date Quoting**: Always quote date values in configuration to prevent YAML type coercion issues
 
 ## References
 
