@@ -309,20 +309,11 @@ kind: Kustomization
 metadata:
   name: rustfs
 spec:
-  dependsOn:
-    - name: cert-manager
-      namespace: cert-manager
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: rustfs
       namespace: storage
-  healthCheckExprs:
-    - apiVersion: apps/v1
-      kind: StatefulSet
-      name: rustfs
-      namespace: storage
-      current: status.readyReplicas == status.replicas
   interval: 1h
   retryInterval: 30s
   path: ./kubernetes/apps/storage/rustfs/app
@@ -963,7 +954,25 @@ stringData:
 #% endif %#
 ```
 
-#### 3.3 Updated Loki Kustomization
+#### 3.3 Updated Loki App Kustomization
+
+**`monitoring/loki/app/kustomization.yaml.j2`:**
+
+```yaml
+#% if monitoring_enabled | default(false) and loki_enabled | default(false) %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+#% if rustfs_enabled | default(false) %#
+  - ./secret-s3.sops.yaml
+#% endif %#
+#% endif %#
+```
+
+#### 3.4 Updated Loki Flux Kustomization
 
 **`monitoring/loki/ks.yaml.j2`:**
 
