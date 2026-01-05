@@ -134,75 +134,105 @@ spec:
           kubernetes-global:
             gnetId: 15757
             revision: 43
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           kubernetes-nodes:
             gnetId: 15759
             revision: 32
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           kubernetes-pods:
             gnetId: 15760
             revision: 36
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Node metrics
           node-exporter-full:
             gnetId: 1860
             revision: 37
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Control plane
           kubernetes-etcd:
             gnetId: 20330
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # CoreDNS
           kubernetes-coredns:
             gnetId: 15762
             revision: 18
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # cert-manager
           cert-manager:
             gnetId: 11001
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
         network:
           # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
             gnetId: 16611
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Cilium Operator (IPAM, node management)
           cilium-operator:
             gnetId: 16612
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Cilium Network Policy Verdicts (policy enforcement tracking)
           cilium-policy-verdicts:
             gnetId: 18015
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
           cilium-network-monitoring:
             gnetId: 24056
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           # Envoy Gateway
           envoy-gateway:
             gnetId: 24460
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
           envoy-proxy:
             gnetId: 21329
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
         gitops:
           flux2:
             gnetId: 16714
             revision: 1
-            datasource: VictoriaMetrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: VictoriaMetrics
 
     defaultDatasources:
       extra:
