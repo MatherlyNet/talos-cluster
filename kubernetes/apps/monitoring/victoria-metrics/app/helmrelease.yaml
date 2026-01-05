@@ -170,12 +170,12 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: VictoriaMetrics
-          # cert-manager
+          # cert-manager (uses Datasource variable, not DS_PROMETHEUS)
           cert-manager:
             gnetId: 11001
             revision: 1
             datasource:
-              - name: DS_PROMETHEUS
+              - name: Datasource
                 value: VictoriaMetrics
         network:
           # Cilium Agent (BPF operations, API latency, forwarding stats)
@@ -220,11 +220,12 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: VictoriaMetrics
+          # Envoy Proxy (uses DS_PROMETHEUS-04 variable)
           envoy-proxy:
             gnetId: 21329
             revision: 1
             datasource:
-              - name: DS_PROMETHEUS
+              - name: DS_PROMETHEUS-04
                 value: VictoriaMetrics
         gitops:
           flux2:
