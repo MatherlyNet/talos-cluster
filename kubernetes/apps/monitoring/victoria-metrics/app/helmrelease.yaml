@@ -281,6 +281,7 @@ spec:
           jsonData:
             maxLines: 1000
         - name: Tempo
+          uid: tempo
           type: tempo
           url: http://tempo:3200
           access: proxy
@@ -294,13 +295,13 @@ spec:
               filterByTraceID: true
               filterBySpanID: true
             tracesToMetrics:
-              datasourceUid: VictoriaMetrics
+              datasourceUid: prometheus
               tags: [{ key: 'service.name', value: 'service' }]
               queries:
                 - name: 'Request Rate'
                   query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
             serviceMap:
-              datasourceUid: VictoriaMetrics
+              datasourceUid: prometheus
             nodeGraph:
               enabled: true
             search:

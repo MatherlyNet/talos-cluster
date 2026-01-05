@@ -307,6 +307,7 @@ spec:
 #% endif %#
 #% if tracing_enabled | default(false) %#
         - name: Tempo
+          uid: tempo
           type: tempo
           url: http://tempo:3200
           access: proxy
@@ -320,13 +321,14 @@ spec:
               filterByTraceID: true
               filterBySpanID: true
             tracesToMetrics:
-              datasourceUid: VictoriaMetrics
+              #| Use 'prometheus' UID - our Prometheus alias datasource that points to VictoriaMetrics #|
+              datasourceUid: prometheus
               tags: [{ key: 'service.name', value: 'service' }]
               queries:
                 - name: 'Request Rate'
                   query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
             serviceMap:
-              datasourceUid: VictoriaMetrics
+              datasourceUid: prometheus
             nodeGraph:
               enabled: true
             search:
