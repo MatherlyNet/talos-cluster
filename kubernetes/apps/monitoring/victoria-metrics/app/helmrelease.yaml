@@ -248,6 +248,7 @@ spec:
     defaultDatasources:
       extra:
         - name: Prometheus
+          uid: prometheus
           type: prometheus
           url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8429
           access: proxy

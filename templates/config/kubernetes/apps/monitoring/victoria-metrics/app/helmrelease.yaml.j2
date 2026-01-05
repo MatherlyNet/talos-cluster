@@ -259,7 +259,9 @@ spec:
     defaultDatasources:
       extra:
         #| Prometheus alias for dashboard compatibility (many dashboards use ${DS_PROMETHEUS}) #|
+        #| The uid: prometheus is CRITICAL - it allows Grafana to resolve ${DS_PROMETHEUS} variable #|
         - name: Prometheus
+          uid: prometheus
           type: prometheus
           url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8429
           access: proxy
