@@ -14,6 +14,8 @@ spec:
     prometheus:
       prometheusSpec:
         retention: "#{ metrics_retention | default('7d') }#"
+        # Enable remote write receiver for Tempo metrics generator
+        enableRemoteWriteReceiver: true
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -31,23 +33,44 @@ spec:
             memory: 1Gi
           limits:
             memory: 2Gi
-        # Talos Linux specific: kubelet metrics relabeling
+        # Talos Linux specific: drop high-cardinality kubelet metrics
         additionalScrapeConfigs: []
 
     # Grafana
     grafana:
       enabled: true
+      #| Grafana.ini configuration for Grafana 12+ features #|
+      grafana.ini:
+        feature_toggles:
+          #| Enable Grafana 12 Drilldown apps (formerly Explore Metrics/Logs/Traces) #|
+          enable: exploreMetrics,exploreLogs,traceToLogs,correlations,nestedFolders
+        unified_alerting:
+          #| Grafana-managed alerting (replaces legacy alerting removed in Grafana 11) #|
+          enabled: true
+        alerting:
+          #| Disable legacy alerting (deprecated) #|
+          enabled: false
+        users:
+          #| Allow viewing dashboards without login (read-only) #|
+          viewers_can_edit: false
+        auth.anonymous:
+          #| Anonymous access disabled by default - enable if you want public dashboards #|
+          enabled: false
+        analytics:
+          #| Disable analytics reporting #|
+          reporting_enabled: false
+          check_for_updates: false
+        log:
+          mode: console
+          level: warn
+      #| Admin credentials from SOPS-encrypted secret #|
+      admin:
+        existingSecret: grafana-admin-secret
+        userKey: admin-user
+        passwordKey: admin-password
+      #| Ingress disabled - using Gateway API HTTPRoute for envoy-internal instead #|
       ingress:
-        enabled: true
-        ingressClassName: ""
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "#{ cluster_gateway_addr }#"
-        hosts:
-          - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
-        tls:
-          - secretName: ${SECRET_DOMAIN/./-}-production-tls
-            hosts:
-              - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
+        enabled: false
       persistence:
         enabled: true
         storageClassName: "#{ storage_class | default('local-path') }#"
@@ -58,7 +81,7 @@ spec:
           memory: 128Mi
         limits:
           memory: 512Mi
-      # Sidecar for auto-discovery of Cilium-generated dashboard ConfigMaps
+      # Sidecar for auto-discovery of dashboard ConfigMaps
       sidecar:
         dashboards:
           enabled: true
@@ -94,85 +117,128 @@ spec:
               editable: true
               options:
                 path: /var/lib/grafana/dashboards/gitops
+      #| Dashboard datasource mapping uses array format for ${DS_PROMETHEUS} variable replacement #|
       dashboards:
         infrastructure:
-          # Kubernetes Core (dotdc collection)
+          # Kubernetes Core (dotdc collection - uses both DS_PROMETHEUS and datasource)
           kubernetes-global:
             gnetId: 15757
             revision: 43
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+              - name: datasource
+                value: Prometheus
           kubernetes-nodes:
             gnetId: 15759
             revision: 32
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+              - name: datasource
+                value: Prometheus
           kubernetes-pods:
             gnetId: 15760
             revision: 36
-            datasource: Prometheus
-          # Node metrics
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+              - name: datasource
+                value: Prometheus
+          # Node metrics (uses both DS_PROMETHEUS and datasource variables)
           node-exporter-full:
             gnetId: 1860
             revision: 37
-            datasource: Prometheus
-          # Control plane
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+              - name: datasource
+                value: Prometheus
+          # Control plane (uses datasource variable only)
           kubernetes-etcd:
             gnetId: 20330
             revision: 1
-            datasource: Prometheus
-          # CoreDNS
+            datasource:
+              - name: datasource
+                value: Prometheus
+          # CoreDNS (uses both DS_PROMETHEUS and datasource)
           kubernetes-coredns:
             gnetId: 15762
             revision: 18
-            datasource: Prometheus
-          # cert-manager
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+              - name: datasource
+                value: Prometheus
+          # cert-manager (uses Datasource variable, not DS_PROMETHEUS)
           cert-manager:
             gnetId: 11001
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: Datasource
+                value: Prometheus
         network:
           # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
             gnetId: 16611
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
           # Cilium Operator (IPAM, node management)
           cilium-operator:
             gnetId: 16612
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
           # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
           # Cilium Network Policy Verdicts (policy enforcement tracking)
           cilium-policy-verdicts:
             gnetId: 18015
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
           # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
           cilium-network-monitoring:
             gnetId: 24056
             revision: 1
-            datasource: Prometheus
-          # Envoy Gateway
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
+          # Envoy Gateway (uses datasource variable, not DS_PROMETHEUS)
           envoy-gateway:
             gnetId: 24460
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: datasource
+                value: Prometheus
+          # Envoy Proxy (uses DS_PROMETHEUS-04 variable)
           envoy-proxy:
             gnetId: 21329
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS-04
+                value: Prometheus
         gitops:
           flux2:
             gnetId: 16714
             revision: 1
-            datasource: Prometheus
+            datasource:
+              - name: DS_PROMETHEUS
+                value: Prometheus
       # Additional datasources for unified observability
       additionalDataSources:
 #% if loki_enabled | default(false) %#
         - name: Loki
+          uid: loki
           type: loki
           url: http://loki:3100
           access: proxy
@@ -182,6 +248,7 @@ spec:
 #% endif %#
 #% if tracing_enabled | default(false) %#
         - name: Tempo
+          uid: tempo
           type: tempo
           url: http://tempo:3200
           access: proxy
@@ -195,13 +262,13 @@ spec:
               filterByTraceID: true
               filterBySpanID: true
             tracesToMetrics:
-              datasourceUid: Prometheus
+              datasourceUid: prometheus
               tags: [{ key: 'service.name', value: 'service' }]
               queries:
                 - name: 'Request Rate'
-                  query: 'sum(rate(http_server_requests_seconds_count{$$__tags}[5m]))'
+                  query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
             serviceMap:
-              datasourceUid: Prometheus
+              datasourceUid: prometheus
             nodeGraph:
               enabled: true
             search:
@@ -227,8 +294,26 @@ spec:
             memory: 64Mi
           limits:
             memory: 128Mi
+      config:
+        global:
+          resolve_timeout: 5m
+        route:
+          group_by: ['alertname', 'namespace', 'severity']
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: 'null'
+          routes:
+            - match:
+                alertname: Watchdog
+              receiver: 'null'
+            - match:
+                severity: critical
+              receiver: 'null'
+        receivers:
+          - name: 'null'
 
-    # Default alerting rules - disabled, use custom PrometheusRule instead
+    # Default alerting rules - enabled with Talos-compatible settings
     defaultRules:
       create: true
       rules:
@@ -249,7 +334,7 @@ spec:
         kubeApiserverSlos: true
         kubeControllerManager: true
         kubelet: true
-        kubeProxy: true
+        kubeProxy: false  # Disabled - Cilium replaces kube-proxy
         kubePrometheusGeneral: true
         kubePrometheusNodeRecording: true
         kubernetesApps: true
@@ -290,22 +375,72 @@ spec:
     # kubelet scraping
     kubelet:
       enabled: true
+      serviceMonitor:
+        # For Talos Linux - drop high-cardinality metrics
+        metricRelabelings:
+          - action: labeldrop
+            regex: (uid)
+          - action: labeldrop
+            regex: (id|name)
+          - action: drop
+            sourceLabels: ["__name__"]
+            regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
 
-    # etcd monitoring (Talos Linux requires explicit endpoints)
+    # etcd monitoring - Talos exposes metrics on HTTP port 2381
     kubeEtcd:
       enabled: true
+      endpoints:
+#% for node in nodes %#
+#% if node.controller %#
+        - #{ node.address }#
+#% endif %#
+#% endfor %#
+      service:
+        enabled: true
+        port: 2381
+        targetPort: 2381
 
     # API Server
     kubeApiServer:
       enabled: true
 
-    # Controller Manager
+    # Controller Manager - Talos Linux binds to 0.0.0.0 but certs only valid for localhost
     kubeControllerManager:
       enabled: true
+      endpoints:
+#% for node in nodes %#
+#% if node.controller %#
+        - #{ node.address }#
+#% endif %#
+#% endfor %#
+      service:
+        enabled: true
+        port: 10257
+        targetPort: 10257
+      serviceMonitor:
+        https: true
+        insecureSkipVerify: true
 
-    # Scheduler
+    # Scheduler - Talos Linux binds to 0.0.0.0 but certs only valid for 127.0.0.1
     kubeScheduler:
       enabled: true
+      endpoints:
+#% for node in nodes %#
+#% if node.controller %#
+        - #{ node.address }#
+#% endif %#
+#% endfor %#
+      service:
+        enabled: true
+        port: 10259
+        targetPort: 10259
+      serviceMonitor:
+        https: true
+        insecureSkipVerify: true
+
+    # kube-proxy disabled - Cilium replaces kube-proxy
+    kubeProxy:
+      enabled: false
 
     # Prometheus Operator
     prometheusOperator:

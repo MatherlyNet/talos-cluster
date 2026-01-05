@@ -1,5 +1,5 @@
 ---
-# CRITICAL COHESION: Grafana is disabled here - it's deployed by VictoriaMetrics stack only.
+# CRITICAL COHESION: Grafana is disabled here - it's deployed by kube-prometheus-stack only.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -83,8 +83,8 @@ spec:
         timeoutSeconds: 5
     gateway:
       enabled: false
-    # COHESION: Disable components deployed by victoria-metrics-k8s-stack
-    # Grafana is deployed by VictoriaMetrics stack - DO NOT enable here
+    # COHESION: Disable components deployed by kube-prometheus-stack
+    # Grafana is deployed by kube-prometheus-stack - DO NOT enable here
     grafana:
       enabled: false
     # Promtail is deprecated - use Alloy instead
@@ -95,7 +95,7 @@ spec:
       enabled: false
     resultsCache:
       enabled: false
-    # Monitoring - ServiceMonitor for VictoriaMetrics to scrape
+    # Monitoring - ServiceMonitor for Prometheus to scrape
     monitoring:
       dashboards:
         enabled: true

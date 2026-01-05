@@ -9,9 +9,7 @@ components:
 
 resources:
   - ./namespace.yaml
-#% if monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
-  - ./victoria-metrics/ks.yaml
-#% elif monitoring_stack == 'prometheus' %#
+#% if monitoring_stack == 'prometheus' %#
   - ./kube-prometheus-stack/ks.yaml
 #% endif %#
 #% if loki_enabled | default(false) %#

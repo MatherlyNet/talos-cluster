@@ -8,7 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./victoria-metrics/ks.yaml
+  - ./kube-prometheus-stack/ks.yaml
   - ./loki/ks.yaml
   - ./alloy/ks.yaml
   - ./tempo/ks.yaml

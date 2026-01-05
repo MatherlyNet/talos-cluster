@@ -35,16 +35,14 @@ spec:
             - port: "3000"
               protocol: TCP
   egress:
-    #| Query VictoriaMetrics for metrics #|
-#% if monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+    #| Query Prometheus for metrics #|
     - toEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: vmsingle
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
-            - port: "8429"
+            - port: "9090"
               protocol: TCP
-#% endif %#
 #% if loki_enabled | default(false) %#
     #| Query Loki for logs #|
     - toEndpoints:

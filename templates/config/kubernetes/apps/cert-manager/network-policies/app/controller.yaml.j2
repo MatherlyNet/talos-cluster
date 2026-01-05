@@ -18,11 +18,11 @@ spec:
     ingress: #{ enforce | lower }#
   ingress:
 #% if monitoring_enabled | default(false) %#
-    #| Metrics scraping from vmagent #|
+    #| Metrics scraping from Prometheus #|
     - fromEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: monitoring
-            app.kubernetes.io/name: vmagent
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
             - port: "9402"

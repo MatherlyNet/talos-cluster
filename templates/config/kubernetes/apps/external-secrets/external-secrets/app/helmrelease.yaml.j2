@@ -13,7 +13,7 @@ spec:
     # Install CRDs with the helm chart
     installCRDs: true
 
-    # Enable ServiceMonitor for Prometheus/VictoriaMetrics
+    # Enable ServiceMonitor for Prometheus
     serviceMonitor:
       enabled: #{ monitoring_enabled | default(false) | lower }#
 

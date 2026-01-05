@@ -32,10 +32,10 @@ spec:
         - ports:
             - port: "3100"
               protocol: TCP
-    #| Metrics scraping from vmagent #|
+    #| Metrics scraping from Prometheus #|
     - fromEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: vmagent
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
             - port: "3100"

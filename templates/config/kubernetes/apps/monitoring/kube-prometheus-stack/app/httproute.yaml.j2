@@ -1,4 +1,4 @@
-#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
+#% if monitoring_enabled | default(false) and monitoring_stack == 'prometheus' %#
 ---
 #| HTTPRoute for Grafana via envoy-internal (local network access) #|
 #| This replaces the legacy Ingress and integrates with UniFi DNS via external-dns #|
@@ -15,7 +15,7 @@ spec:
       sectionName: https
   rules:
     - backendRefs:
-        - name: victoria-metrics-k8s-stack-grafana
+        - name: kube-prometheus-stack-grafana
           port: 80
       matches:
         - path:

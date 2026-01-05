@@ -27,7 +27,7 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: vmagent
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
             - port: "12345"

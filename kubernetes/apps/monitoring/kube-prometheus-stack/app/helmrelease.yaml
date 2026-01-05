@@ -1,111 +1,69 @@
-#% if monitoring_enabled | default(false) and monitoring_stack | default('victoriametrics') == 'victoriametrics' %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: victoria-metrics-k8s-stack
+  name: kube-prometheus-stack
 spec:
   chartRef:
     kind: OCIRepository
-    name: victoria-metrics-k8s-stack
+    name: kube-prometheus-stack
   interval: 1h
   values:
-    # VictoriaMetrics Single (lightweight, recommended for homelab)
-    vmsingle:
-      enabled: true
-      spec:
-        retentionPeriod: "#{ metrics_retention | default('7d') }#"
-        storage:
-          storageClassName: "#{ storage_class | default('local-path') }#"
-          resources:
-            requests:
-              storage: "#{ metrics_storage_size | default('50Gi') }#"
+    # Prometheus
+    prometheus:
+      prometheusSpec:
+        retention: "7d"
+        # Enable remote write receiver for Tempo metrics generator
+        enableRemoteWriteReceiver: true
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "proxmox-zfs"
+              resources:
+                requests:
+                  storage: "50Gi"
+        # Scrape all ServiceMonitors/PodMonitors regardless of labels
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
         resources:
           requests:
-            cpu: 100m
-            memory: 256Mi
-          limits:
+            cpu: 200m
             memory: 1Gi
-        #| Health probes - vmsingle listens on port 8428, NOT 8429 #|
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8428
-          initialDelaySeconds: 5
-          periodSeconds: 15
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8428
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          timeoutSeconds: 5
-
-    # VMAgent for scraping
-    vmagent:
-      enabled: true
-      spec:
-        resources:
-          requests:
-            cpu: 50m
-            memory: 128Mi
           limits:
-            memory: 256Mi
-        # Health probes for reliability
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8429
-          initialDelaySeconds: 5
-          periodSeconds: 15
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8429
-          initialDelaySeconds: 30
-          periodSeconds: 30
+            memory: 2Gi
+        # Talos Linux specific: drop high-cardinality kubelet metrics
+        additionalScrapeConfigs: []
 
     # Grafana
     grafana:
       enabled: true
-      #| Grafana.ini configuration for Grafana 12+ features #|
-      #| Ref: https://grafana.com/blog/2025/05/07/grafana-12-release-all-the-new-features/ #|
       grafana.ini:
         feature_toggles:
-          #| Enable Grafana 12 Drilldown apps (formerly Explore Metrics/Logs/Traces) #|
           enable: exploreMetrics,exploreLogs,traceToLogs,correlations,nestedFolders
         unified_alerting:
-          #| Grafana-managed alerting (replaces legacy alerting removed in Grafana 11) #|
           enabled: true
         alerting:
-          #| Disable legacy alerting (deprecated) #|
           enabled: false
         users:
-          #| Allow viewing dashboards without login (read-only) #|
           viewers_can_edit: false
         auth.anonymous:
-          #| Anonymous access disabled by default - enable if you want public dashboards #|
           enabled: false
         analytics:
-          #| Disable analytics reporting #|
           reporting_enabled: false
           check_for_updates: false
         log:
           mode: console
           level: warn
-      #| Admin credentials from SOPS-encrypted secret #|
-      #| Configure grafana_admin_user and grafana_admin_password in cluster.yaml #|
       admin:
         existingSecret: grafana-admin-secret
         userKey: admin-user
         passwordKey: admin-password
-      #| Ingress disabled - using Gateway API HTTPRoute for envoy-internal instead #|
-      #| See httproute.yaml for the HTTPRoute that exposes Grafana internally #|
       ingress:
         enabled: false
       persistence:
         enabled: true
-        storageClassName: "#{ storage_class | default('local-path') }#"
+        storageClassName: "proxmox-zfs"
         size: 5Gi
       resources:
         requests:
@@ -113,25 +71,16 @@ spec:
           memory: 128Mi
         limits:
           memory: 512Mi
-      # Health probes for reliability
-      readinessProbe:
-        httpGet:
-          path: /api/health
-          port: 3000
-        initialDelaySeconds: 10
-        periodSeconds: 10
-      livenessProbe:
-        httpGet:
-          path: /api/health
-          port: 3000
-        initialDelaySeconds: 30
-        periodSeconds: 30
-        timeoutSeconds: 5
-      # Sidecar disabled - using grafana.dashboards for provisioning instead
-      # The victoria-metrics chart doesn't allow both sidecar and dashboards simultaneously
+      # Sidecar for auto-discovery of dashboard ConfigMaps
       sidecar:
         dashboards:
-          enabled: false
+          enabled: true
+          label: grafana_dashboard
+          labelValue: "1"
+          searchNamespace: ALL
+          folderAnnotation: grafana_folder
+          provider:
+            foldersFromFilesStructure: true
       # Dashboard provisioning
       dashboardProviders:
         dashboardproviders.yaml:
@@ -158,8 +107,6 @@ spec:
               editable: true
               options:
                 path: /var/lib/grafana/dashboards/gitops
-      #| Dashboard datasource mapping uses array format for ${DS_PROMETHEUS} variable replacement #|
-      #| Ref: https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md #|
       dashboards:
         infrastructure:
           # Kubernetes Core (dotdc collection - uses both DS_PROMETHEUS and datasource)
@@ -168,57 +115,57 @@ spec:
             revision: 43
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           kubernetes-nodes:
             gnetId: 15759
             revision: 32
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           kubernetes-pods:
             gnetId: 15760
             revision: 36
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           # Node metrics (uses both DS_PROMETHEUS and datasource variables)
           node-exporter-full:
             gnetId: 1860
             revision: 37
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           # Control plane (uses datasource variable only)
           kubernetes-etcd:
             gnetId: 20330
             revision: 1
             datasource:
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           # CoreDNS (uses both DS_PROMETHEUS and datasource)
           kubernetes-coredns:
             gnetId: 15762
             revision: 18
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           # cert-manager (uses Datasource variable, not DS_PROMETHEUS)
           cert-manager:
             gnetId: 11001
             revision: 1
             datasource:
               - name: Datasource
-                value: VictoriaMetrics
+                value: Prometheus
         network:
           # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
@@ -226,81 +173,58 @@ spec:
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
           # Cilium Operator (IPAM, node management)
           cilium-operator:
             gnetId: 16612
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
           # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
           # Cilium Network Policy Verdicts (policy enforcement tracking)
           cilium-policy-verdicts:
             gnetId: 18015
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
           # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
           cilium-network-monitoring:
             gnetId: 24056
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
+                value: Prometheus
           # Envoy Gateway (uses datasource variable, not DS_PROMETHEUS)
           envoy-gateway:
             gnetId: 24460
             revision: 1
             datasource:
               - name: datasource
-                value: VictoriaMetrics
+                value: Prometheus
           # Envoy Proxy (uses DS_PROMETHEUS-04 variable)
           envoy-proxy:
             gnetId: 21329
             revision: 1
             datasource:
               - name: DS_PROMETHEUS-04
-                value: VictoriaMetrics
+                value: Prometheus
         gitops:
           flux2:
             gnetId: 16714
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
-                value: VictoriaMetrics
-    #| Moved to defaultDatasources.extra per chart changelog (see below) #|
-
-    #| Additional datasources for unified observability #|
-    #| Note: grafana.additionalDataSources was renamed to defaultDatasources.extra #|
-    #| Ref: https://docs.victoriametrics.com/helm/victoriametrics-k8s-stack/changelog/ #|
-    defaultDatasources:
-      #| Override default datasources to remove VictoriaMetrics (DS) which uses the plugin #|
-      #| The victoriametrics-metrics-datasource plugin has issues with Grafana 12+ #|
-      #| GF_INSTALL_PLUGINS is deprecated; use only prometheus-compatible datasource #|
-      victoriametrics:
-        datasources:
-          - name: VictoriaMetrics
-            type: prometheus
-            access: proxy
-            isDefault: true
-      extra:
-        #| Prometheus alias for dashboard compatibility (many dashboards use ${DS_PROMETHEUS}) #|
-        #| The uid: prometheus is CRITICAL - it allows Grafana to resolve ${DS_PROMETHEUS} variable #|
-        - name: Prometheus
-          uid: prometheus
-          type: prometheus
-          url: http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428
-          access: proxy
-          isDefault: false
-#% if loki_enabled | default(false) %#
+                value: Prometheus
+      # Additional datasources for unified observability
+      additionalDataSources:
         - name: Loki
           uid: loki
           type: loki
@@ -309,8 +233,6 @@ spec:
           isDefault: false
           jsonData:
             maxLines: 1000
-#% endif %#
-#% if tracing_enabled | default(false) %#
         - name: Tempo
           uid: tempo
           type: tempo
@@ -326,7 +248,6 @@ spec:
               filterByTraceID: true
               filterBySpanID: true
             tracesToMetrics:
-              #| Use 'prometheus' UID - our Prometheus alias datasource that points to VictoriaMetrics #|
               datasourceUid: prometheus
               tags: [{ key: 'service.name', value: 'service' }]
               queries:
@@ -340,31 +261,24 @@ spec:
               hide: false
             lokiSearch:
               datasourceUid: loki
-#% endif %#
 
     # AlertManager
     alertmanager:
       enabled: true
-      spec:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "proxmox-zfs"
+              resources:
+                requests:
+                  storage: 1Gi
         resources:
           requests:
             cpu: 50m
             memory: 64Mi
           limits:
             memory: 128Mi
-        # Health probes for reliability
-        readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: 9093
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /-/healthy
-            port: 9093
-          initialDelaySeconds: 10
-          periodSeconds: 30
       config:
         global:
           resolve_timeout: 5m
@@ -383,6 +297,45 @@ spec:
               receiver: 'null'
         receivers:
           - name: 'null'
+
+    # Default alerting rules - enabled with Talos-compatible settings
+    defaultRules:
+      create: true
+      rules:
+        alertmanager: true
+        etcd: true
+        configReloaders: true
+        general: true
+        k8sContainerCpuUsageSecondsTotal: true
+        k8sContainerMemoryCache: true
+        k8sContainerMemoryRss: true
+        k8sContainerMemorySwap: true
+        k8sContainerResource: true
+        k8sContainerMemoryWorkingSetBytes: true
+        k8sPodOwner: true
+        kubeApiserverAvailability: true
+        kubeApiserverBurnrate: true
+        kubeApiserverHistogram: true
+        kubeApiserverSlos: true
+        kubeControllerManager: true
+        kubelet: true
+        kubeProxy: false  # Disabled - Cilium replaces kube-proxy
+        kubePrometheusGeneral: true
+        kubePrometheusNodeRecording: true
+        kubernetesApps: true
+        kubernetesResources: true
+        kubernetesStorage: true
+        kubernetesSystem: true
+        kubeSchedulerAlerting: true
+        kubeSchedulerRecording: true
+        kubeStateMetrics: true
+        network: true
+        node: true
+        nodeExporterAlerting: true
+        nodeExporterRecording: true
+        prometheus: true
+        prometheusOperator: true
+        windows: false
 
     # Node Exporter
     prometheus-node-exporter:
@@ -407,68 +360,73 @@ spec:
     # kubelet scraping
     kubelet:
       enabled: true
-      spec:
-        # For Talos Linux
-        metricRelabelConfigs:
+      serviceMonitor:
+        # For Talos Linux - drop high-cardinality metrics
+        metricRelabelings:
           - action: labeldrop
             regex: (uid)
           - action: labeldrop
             regex: (id|name)
           - action: drop
-            source_labels: ["__name__"]
+            sourceLabels: ["__name__"]
             regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
 
     # etcd monitoring - Talos exposes metrics on HTTP port 2381
-    # Ref: https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/etcd-metrics
     kubeEtcd:
       enabled: true
       endpoints:
-#% for node in nodes %#
-#% if node.controller %#
-        - #{ node.address }#
-#% endif %#
-#% endfor %#
+        - 192.168.22.101
+        - 192.168.22.102
+        - 192.168.22.103
       service:
         enabled: true
         port: 2381
         targetPort: 2381
-      vmScrape:
-        spec:
-          endpoints:
-            - port: http-metrics
-              scheme: http
 
     # API Server
     kubeApiServer:
       enabled: true
 
     # Controller Manager - Talos Linux binds to 0.0.0.0 but certs only valid for localhost
-    # Ref: https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476
     kubeControllerManager:
       enabled: true
-      vmScrape:
-        spec:
-          endpoints:
-            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-              port: http-metrics
-              scheme: https
-              tlsConfig:
-                caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                serverName: localhost
-                insecureSkipVerify: true
+      endpoints:
+        - 192.168.22.101
+        - 192.168.22.102
+        - 192.168.22.103
+      service:
+        enabled: true
+        port: 10257
+        targetPort: 10257
+      serviceMonitor:
+        https: true
+        insecureSkipVerify: true
 
     # Scheduler - Talos Linux binds to 0.0.0.0 but certs only valid for 127.0.0.1
-    # Ref: https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476
     kubeScheduler:
       enabled: true
-      vmScrape:
-        spec:
-          endpoints:
-            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-              port: http-metrics
-              scheme: https
-              tlsConfig:
-                caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                serverName: "127.0.0.1"
-                insecureSkipVerify: true
-#% endif %#
+      endpoints:
+        - 192.168.22.101
+        - 192.168.22.102
+        - 192.168.22.103
+      service:
+        enabled: true
+        port: 10259
+        targetPort: 10259
+      serviceMonitor:
+        https: true
+        insecureSkipVerify: true
+
+    # kube-proxy disabled - Cilium replaces kube-proxy
+    kubeProxy:
+      enabled: false
+
+    # Prometheus Operator
+    prometheusOperator:
+      enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
