@@ -414,7 +414,38 @@ tuppr/
 
 This pattern follows [Helm CRD best practices](https://helm.sh/docs/v3/chart_best_practices/custom_resource_definitions/) for ensuring CRDs exist before CRs are applied.
 
-### Issue 8: victoria-metrics Grafana Dashboard Conflict
+### Issue 8: Missing storageClassName on Persistence Configurations
+
+**Severity:** Medium
+**Discovery:** During actual cluster bootstrap
+**Problem:** PVCs created without storageClassName cannot bind when no default StorageClass exists
+
+**Error:**
+```
+0/6 nodes are available: pod has unbound immediate PersistentVolumeClaims. not found
+no persistent volumes available for this claim and no storage class is set
+```
+
+**Affected Components:**
+- Grafana (victoria-metrics-k8s-stack)
+- Loki
+- Tempo
+
+**Solution:** Add `storageClassName` to all persistence configurations:
+
+```yaml
+persistence:
+  enabled: true
+  storageClassName: "#{ storage_class | default('local-path') }#"
+  size: 5Gi
+```
+
+**Files Fixed:**
+- `templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2` (Grafana)
+- `templates/config/kubernetes/apps/monitoring/loki/app/helmrelease.yaml.j2`
+- `templates/config/kubernetes/apps/monitoring/tempo/app/helmrelease.yaml.j2`
+
+### Issue 9: victoria-metrics Grafana Dashboard Conflict
 
 **Severity:** Medium
 **Discovery:** During actual cluster bootstrap
@@ -450,6 +481,7 @@ See [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/h
 2. **CRD Installation Order**: When deploying CRDs via HelmRelease and CRs in the same Kustomization, split them and use `dependsOn`
 3. **Dry-Run Validation**: Flux validates ALL resources before applying ANY - CRDs must exist before CRs can be validated
 4. **healthChecks**: Use `healthChecks` with `wait: true` when subsequent Kustomizations depend on resources being fully deployed
+5. **StorageClass Specification**: Always explicitly set `storageClassName` on persistence configurations - don't rely on default StorageClass
 
 ## References
 
