@@ -64,7 +64,7 @@ spec:
           memory: 512Mi
       persistence:
         enabled: true
-        storageClassName: "proxmox-zfs"
+        storageClass: "proxmox-zfs"
         size: "50Gi"
       # Health probes for reliability
       readinessProbe:

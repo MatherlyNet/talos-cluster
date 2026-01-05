@@ -559,6 +559,41 @@ values:
 
 **Reference:** [Loki Helm Chart - Install Monolithic](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/)
 
+### Issue 12: Loki Chart Uses Different StorageClass Parameter Name
+
+**Severity:** Medium
+**Discovery:** During actual cluster bootstrap
+**Problem:** Loki 6.x chart uses `storageClass` while most Helm charts use `storageClassName`
+
+**Error:**
+```
+0/6 nodes are available: pod has unbound immediate PersistentVolumeClaims. not found
+```
+
+**Analysis:** Even with persistence configuration set, the PVC was created without a storageClass because the parameter name was wrong:
+- **Most Helm charts:** `persistence.storageClassName`
+- **Loki 6.x chart:** `persistence.storageClass` (no "Name" suffix)
+- **Tempo chart:** `persistence.storageClassName` (standard)
+
+**Solution:** Use `storageClass` for Loki, `storageClassName` for other charts:
+
+```yaml
+# Loki (different parameter name)
+singleBinary:
+  persistence:
+    enabled: true
+    storageClass: "#{ storage_class | default('local-path') }#"  # Note: no "Name"
+    size: "50Gi"
+
+# Tempo and most other charts (standard parameter name)
+persistence:
+  enabled: true
+  storageClassName: "#{ storage_class | default('local-path') }#"
+  size: "10Gi"
+```
+
+**Lesson:** Always verify the exact parameter names in each chart's values.yaml - don't assume consistency across charts.
+
 ## Lessons Learned
 
 1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
