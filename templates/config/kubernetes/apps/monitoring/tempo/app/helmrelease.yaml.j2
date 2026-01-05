@@ -76,6 +76,7 @@ spec:
     # Persistence
     persistence:
       enabled: true
+      storageClassName: "#{ storage_class | default('local-path') }#"
       size: "#{ trace_storage_size | default('10Gi') }#"
 
     # Resources (homelab-appropriate)

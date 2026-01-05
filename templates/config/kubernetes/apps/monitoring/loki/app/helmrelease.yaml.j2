@@ -41,6 +41,7 @@ spec:
           memory: 512Mi
       persistence:
         enabled: true
+        storageClassName: "#{ storage_class | default('local-path') }#"
         size: "#{ logs_storage_size | default('50Gi') }#"
       # Health probes for reliability
       readinessProbe:

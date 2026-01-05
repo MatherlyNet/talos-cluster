@@ -75,6 +75,7 @@ spec:
     # Persistence
     persistence:
       enabled: true
+      storageClassName: "proxmox-zfs"
       size: "10Gi"
 
     # Resources (homelab-appropriate)
