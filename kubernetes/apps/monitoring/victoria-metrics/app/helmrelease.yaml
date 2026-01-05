@@ -149,12 +149,14 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: VictoriaMetrics
-          # Node metrics
+          # Node metrics (uses both DS_PROMETHEUS and datasource variables)
           node-exporter-full:
             gnetId: 1860
             revision: 37
             datasource:
               - name: DS_PROMETHEUS
+                value: VictoriaMetrics
+              - name: datasource
                 value: VictoriaMetrics
           # Control plane
           kubernetes-etcd:
@@ -213,12 +215,12 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: VictoriaMetrics
-          # Envoy Gateway
+          # Envoy Gateway (uses datasource variable, not DS_PROMETHEUS)
           envoy-gateway:
             gnetId: 24460
             revision: 1
             datasource:
-              - name: DS_PROMETHEUS
+              - name: datasource
                 value: VictoriaMetrics
           # Envoy Proxy (uses DS_PROMETHEUS-04 variable)
           envoy-proxy:
