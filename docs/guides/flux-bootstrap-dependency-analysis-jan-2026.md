@@ -803,27 +803,29 @@ tls: failed to verify certificate: x509: certificate is valid for 127.0.0.1, not
 # templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2
 kubeControllerManager:
   enabled: true
-  spec:
-    endpoints:
-      - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-        port: http-metrics
-        scheme: https
-        tlsConfig:
-          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          serverName: localhost
-          insecureSkipVerify: true
+  vmScrape:
+    spec:
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            serverName: localhost
+            insecureSkipVerify: true
 
 kubeScheduler:
   enabled: true
-  spec:
-    endpoints:
-      - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-        port: http-metrics
-        scheme: https
-        tlsConfig:
-          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          serverName: "127.0.0.1"
-          insecureSkipVerify: true
+  vmScrape:
+    spec:
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            serverName: "127.0.0.1"
+            insecureSkipVerify: true
 ```
 
 **Reference:** [VictoriaMetrics GitHub Issue #6476](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/6476)
@@ -854,10 +856,11 @@ kubeEtcd:
     enabled: true
     port: 2381
     targetPort: 2381
-  spec:
-    endpoints:
-      - port: http-metrics
-        scheme: http
+  vmScrape:
+    spec:
+      endpoints:
+        - port: http-metrics
+          scheme: http
 ```
 
 **Reference:** [Talos etcd Metrics Documentation](https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/etcd-metrics)

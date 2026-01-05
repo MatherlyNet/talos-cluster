@@ -32,4 +32,5 @@ spec:
       honorLabels: true
   selector:
     matchLabels:
-      app.kubernetes.io/name: envoy-gateway
+      app.kubernetes.io/name: gateway-helm
+      control-plane: envoy-gateway

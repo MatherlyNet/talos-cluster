@@ -34,4 +34,6 @@ spec:
       honorLabels: true
   selector:
     matchLabels:
-      app.kubernetes.io/name: envoy-gateway
+      #| Helm chart uses 'gateway-helm' not 'envoy-gateway' for app name #|
+      app.kubernetes.io/name: gateway-helm
+      control-plane: envoy-gateway
