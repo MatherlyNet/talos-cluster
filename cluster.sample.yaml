@@ -438,6 +438,11 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "20Gi")
 # rustfs_volume_size: "20Gi"
 
+# -- StorageClass for RustFS PVCs
+#    Falls back to global storage_class if not set
+#    (OPTIONAL) / (DEFAULT: uses storage_class or "local-path")
+# rustfs_storage_class: "proxmox-zfs"
+
 # -- RustFS root admin username
 #    (OPTIONAL) / (DEFAULT: "rustfsadmin")
 # rustfs_access_key: "rustfsadmin"
