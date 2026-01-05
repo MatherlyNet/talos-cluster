@@ -43,7 +43,8 @@ spec:
         replication_factor: 1
       schemaConfig:
         configs:
-          - from: 2024-01-01
+          #| Date must be quoted string for Loki 6.x parsing #|
+          - from: "2024-01-01"
             store: tsdb
             object_store: filesystem
             schema: v13

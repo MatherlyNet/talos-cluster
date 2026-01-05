@@ -594,6 +594,37 @@ persistence:
 
 **Lesson:** Always verify the exact parameter names in each chart's values.yaml - don't assume consistency across charts.
 
+### Issue 13: Loki SchemaConfig Date Parsing
+
+**Severity:** High
+**Discovery:** During actual cluster bootstrap
+**Problem:** Loki 6.x requires date values in schemaConfig to be explicitly quoted strings
+
+**Error:**
+```
+failed parsing config: parsing time "2024-01-01T00:00:00Z": extra text: "T00:00:00Z"
+```
+
+**Analysis:** YAML interprets unquoted `2024-01-01` as a date type, which Loki's Go parser then converts to `2024-01-01T00:00:00Z`. When Loki tries to parse this back, it fails because it expects a simple date string.
+
+**Solution:** Quote the date value in schemaConfig:
+
+```yaml
+# WRONG - YAML interprets as date type
+schemaConfig:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+
+# CORRECT - Explicit string ensures proper parsing
+schemaConfig:
+  configs:
+    - from: "2024-01-01"
+      store: tsdb
+```
+
+**Lesson:** Always quote date values in Loki schemaConfig to prevent YAML type coercion issues.
+
 ## Lessons Learned
 
 1. **Cross-Namespace Dependencies**: Always specify explicit `namespace` field in `dependsOn` when referencing Kustomizations in different namespaces
