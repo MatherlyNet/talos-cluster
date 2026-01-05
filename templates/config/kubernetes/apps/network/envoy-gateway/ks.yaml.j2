@@ -6,7 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager
-      namespace: flux-system
+      namespace: cert-manager
   interval: 1h
   retryInterval: 30s
   path: ./kubernetes/apps/network/envoy-gateway/app
