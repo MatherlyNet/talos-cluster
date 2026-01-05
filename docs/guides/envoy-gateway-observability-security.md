@@ -23,9 +23,9 @@ This guide provides step-by-step implementation instructions for enhancing the E
 - Gateway API CRDs v1.4.1 (experimental channel)
 - Existing `envoy-external` and `envoy-internal` gateways configured
 - **Prometheus Operator CRDs installed** (via `00-crds.yaml.j2` line 33-36, kube-prometheus-stack v80.10.0)
-- **Recommended:** Full observability stack deployed (see [observability-stack-implementation.md](./observability-stack-implementation.md) for the unified VictoriaMetrics + Loki + Grafana platform)
+- **Recommended:** Full observability stack deployed (kube-prometheus-stack + Loki + Grafana platform)
 
-> **Note:** This project installs kube-prometheus-stack **CRDs only** during bootstrap (PodMonitor, ServiceMonitor, etc.). The full observability platform (VictoriaMetrics, Grafana, Loki, Alloy) is documented in [observability-stack-implementation.md](./observability-stack-implementation.md). The existing Envoy `PodMonitor` works with any Prometheus-compatible scraper.
+> **Note:** This project installs kube-prometheus-stack **CRDs only** during bootstrap (PodMonitor, ServiceMonitor, etc.). The full observability platform (kube-prometheus-stack, Grafana, Loki, Alloy) is enabled via `monitoring_enabled: true` in `cluster.yaml`. The existing Envoy `PodMonitor` works with any Prometheus-compatible scraper.
 
 ---
 
@@ -646,7 +646,7 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 ## References
 
 ### Project Documentation
-- [Observability Stack Implementation](./observability-stack-implementation.md) - **Primary** - Unified VictoriaMetrics + Loki + Grafana platform
+- [Application Docs: kube-prometheus-stack](../APPLICATIONS.md#kube-prometheus-stack) - **Primary** - kube-prometheus-stack + Loki + Grafana platform
 - [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md) - Source research document
 - [k8s-at-home Patterns Implementation](./k8s-at-home-patterns-implementation.md) - General k8s-at-home patterns
 - [Bootstrap CRDs](../../templates/config/bootstrap/helmfile.d/00-crds.yaml.j2) - kube-prometheus-stack CRD installation

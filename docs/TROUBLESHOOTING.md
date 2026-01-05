@@ -254,7 +254,7 @@ kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
 | ------- | ------- | ---------- |
 | Pod can't resolve DNS | Missing DNS egress rule | Add egress to `kube-system/kube-dns` port 53 |
 | Pod can't reach API server | Missing API egress rule | Add egress to `kube-apiserver` entity |
-| Metrics not scraped | Missing vmagent ingress | Allow ingress from `monitoring/vmagent` |
+| Metrics not scraped | Missing prometheus ingress | Allow ingress from `monitoring/prometheus` |
 | External access blocked | Missing world egress | Add egress to `world` entity with port |
 | Cross-namespace blocked | Missing namespace selector | Use `io.kubernetes.pod.namespace` label |
 
