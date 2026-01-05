@@ -81,147 +81,54 @@ spec:
           folderAnnotation: grafana_folder
           provider:
             foldersFromFilesStructure: true
-      # Dashboard provisioning
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
           providers:
-            - name: infrastructure
-              folder: Infrastructure
+            - name: custom
+              folder: Custom
               type: file
               disableDeletion: false
               editable: true
               options:
-                path: /var/lib/grafana/dashboards/infrastructure
-            - name: network
-              folder: Network
-              type: file
-              disableDeletion: false
-              editable: true
-              options:
-                path: /var/lib/grafana/dashboards/network
-            - name: gitops
-              folder: GitOps
-              type: file
-              disableDeletion: false
-              editable: true
-              options:
-                path: /var/lib/grafana/dashboards/gitops
+                path: /var/lib/grafana/dashboards/custom
       dashboards:
-        infrastructure:
-          # Kubernetes Core (dotdc collection - uses both DS_PROMETHEUS and datasource)
-          kubernetes-global:
-            gnetId: 15757
-            revision: 43
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-              - name: datasource
-                value: Prometheus
-          kubernetes-nodes:
-            gnetId: 15759
-            revision: 32
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-              - name: datasource
-                value: Prometheus
-          kubernetes-pods:
-            gnetId: 15760
-            revision: 36
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-              - name: datasource
-                value: Prometheus
-          # Node metrics (uses both DS_PROMETHEUS and datasource variables)
-          node-exporter-full:
-            gnetId: 1860
-            revision: 37
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-              - name: datasource
-                value: Prometheus
-          # Control plane (uses datasource variable only)
-          kubernetes-etcd:
-            gnetId: 20330
-            revision: 1
-            datasource:
-              - name: datasource
-                value: Prometheus
-          # CoreDNS (uses both DS_PROMETHEUS and datasource)
-          kubernetes-coredns:
-            gnetId: 15762
-            revision: 18
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-              - name: datasource
-                value: Prometheus
-          # cert-manager (uses Datasource variable, not DS_PROMETHEUS)
+        custom:
           cert-manager:
-            gnetId: 11001
-            revision: 1
+            gnetId: 20842
+            revision: 3
             datasource:
-              - name: Datasource
+              - name: DS_PROMETHEUS
                 value: Prometheus
-        network:
-          # Cilium Agent (BPF operations, API latency, forwarding stats)
           cilium-agent:
             gnetId: 16611
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
-          # Cilium Operator (IPAM, node management)
           cilium-operator:
             gnetId: 16612
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
-          # Cilium Hubble (flows, drops, DNS, HTTP, TCP)
           cilium-hubble:
             gnetId: 16613
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
-          # Cilium Network Policy Verdicts (policy enforcement tracking)
-          cilium-policy-verdicts:
-            gnetId: 18015
+          flux-cluster:
+            gnetId: 16714
             revision: 1
             datasource:
               - name: DS_PROMETHEUS
                 value: Prometheus
-          # Cilium Network Monitoring (endpoints, BPF maps, connectivity)
-          cilium-network-monitoring:
-            gnetId: 24056
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
-                value: Prometheus
-          # Envoy Gateway (uses datasource variable, not DS_PROMETHEUS)
           envoy-gateway:
             gnetId: 24460
             revision: 1
             datasource:
               - name: datasource
-                value: Prometheus
-          # Envoy Proxy (uses DS_PROMETHEUS-04 variable)
-          envoy-proxy:
-            gnetId: 21329
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS-04
-                value: Prometheus
-        gitops:
-          flux2:
-            gnetId: 16714
-            revision: 1
-            datasource:
-              - name: DS_PROMETHEUS
                 value: Prometheus
       # Additional datasources for unified observability
       additionalDataSources:
