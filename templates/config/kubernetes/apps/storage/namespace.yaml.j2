@@ -5,8 +5,9 @@ kind: Namespace
 metadata:
   name: storage
   labels:
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/audit: restricted
+    #| RustFS init container requires baseline for volume initialization #|
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
     pod-security.kubernetes.io/warn: restricted
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
