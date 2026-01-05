@@ -48,9 +48,21 @@ spec:
             memory: 64Mi
           limits:
             memory: 128Mi
+        #| Allow scheduling before CCM initializes nodes (breaks bootstrap chicken-egg) #|
+        #| Ref: https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/ #|
+        tolerations:
+          - key: node.cloudprovider.kubernetes.io/uninitialized
+            operator: Exists
+            effect: NoSchedule
       ui:
         enabled: #{ hubble_ui_enabled | default(false) | lower }#
         replicas: 1
+        #| Allow scheduling before CCM initializes nodes (breaks bootstrap chicken-egg) #|
+        #| Ref: https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/ #|
+        tolerations:
+          - key: node.cloudprovider.kubernetes.io/uninitialized
+            operator: Exists
+            effect: NoSchedule
       metrics:
         enabled:
           - dns:query;ignoreAAAA

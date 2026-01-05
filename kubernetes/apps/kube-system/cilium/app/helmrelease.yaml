@@ -45,9 +45,17 @@ spec:
             memory: 64Mi
           limits:
             memory: 128Mi
+        tolerations:
+          - key: node.cloudprovider.kubernetes.io/uninitialized
+            operator: Exists
+            effect: NoSchedule
       ui:
         enabled: true
         replicas: 1
+        tolerations:
+          - key: node.cloudprovider.kubernetes.io/uninitialized
+            operator: Exists
+            effect: NoSchedule
       metrics:
         enabled:
           - dns:query;ignoreAAAA
