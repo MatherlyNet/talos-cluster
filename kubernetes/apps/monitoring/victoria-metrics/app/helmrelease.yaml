@@ -130,12 +130,14 @@ spec:
                 path: /var/lib/grafana/dashboards/gitops
       dashboards:
         infrastructure:
-          # Kubernetes Core (dotdc collection)
+          # Kubernetes Core (dotdc collection - uses both DS_PROMETHEUS and datasource)
           kubernetes-global:
             gnetId: 15757
             revision: 43
             datasource:
               - name: DS_PROMETHEUS
+                value: VictoriaMetrics
+              - name: datasource
                 value: VictoriaMetrics
           kubernetes-nodes:
             gnetId: 15759
@@ -143,11 +145,15 @@ spec:
             datasource:
               - name: DS_PROMETHEUS
                 value: VictoriaMetrics
+              - name: datasource
+                value: VictoriaMetrics
           kubernetes-pods:
             gnetId: 15760
             revision: 36
             datasource:
               - name: DS_PROMETHEUS
+                value: VictoriaMetrics
+              - name: datasource
                 value: VictoriaMetrics
           # Node metrics (uses both DS_PROMETHEUS and datasource variables)
           node-exporter-full:
@@ -158,19 +164,21 @@ spec:
                 value: VictoriaMetrics
               - name: datasource
                 value: VictoriaMetrics
-          # Control plane
+          # Control plane (uses datasource variable only)
           kubernetes-etcd:
             gnetId: 20330
             revision: 1
             datasource:
-              - name: DS_PROMETHEUS
+              - name: datasource
                 value: VictoriaMetrics
-          # CoreDNS
+          # CoreDNS (uses both DS_PROMETHEUS and datasource)
           kubernetes-coredns:
             gnetId: 15762
             revision: 18
             datasource:
               - name: DS_PROMETHEUS
+                value: VictoriaMetrics
+              - name: datasource
                 value: VictoriaMetrics
           # cert-manager (uses Datasource variable, not DS_PROMETHEUS)
           cert-manager:
