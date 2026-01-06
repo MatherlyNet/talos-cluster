@@ -34,7 +34,13 @@ spec:
 
           loki.write "default" {
             endpoint {
-              url = "http://loki:3100/loki/api/v1/push"
+#% if rustfs_enabled | default(false) %#
+              #| SimpleScalable mode: write to loki-write service #|
+              url = "http://loki-write.monitoring.svc:3100/loki/api/v1/push"
+#% else %#
+              #| SingleBinary mode: write to loki service #|
+              url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+#% endif %#
             }
           }
 

@@ -16,11 +16,16 @@
 >    - Reference: https://docs.rustfs.com/administration/iam/access-token.html
 >    - **See "Loki IAM Configuration" section below for step-by-step Console UI instructions**
 >
-> 2. **Tempo uses local filesystem storage, NOT RustFS/S3**
+> 2. **Loki SimpleScalable requires per-component `extraEnvFrom`** for S3 credentials
+>    - Top-level `extraEnvFrom` only applies to SingleBinary mode
+>    - Must set `extraEnvFrom` under `read`, `write`, AND `backend` sections
+>    - Secret keys MUST use AWS SDK standard names: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+>
+> 3. **Tempo uses local filesystem storage, NOT RustFS/S3**
 >    - All `tempo_s3_*` variables and Tempo bucket configuration in this doc are UNUSED
 >    - Remove all Tempo-related S3 configuration
 >
-> 3. **Corrected Implementation Files:**
+> 4. **Corrected Implementation Files:**
 >    - `secret.sops.yaml.j2` - Uses `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY` (not root-user/root-password)
 >    - `job-setup.yaml.j2` - Only creates buckets, NO `mc admin` commands
 >    - `httproute-console.yaml.j2` - NEW: Exposes RustFS Console via envoy-internal

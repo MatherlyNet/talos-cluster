@@ -142,7 +142,13 @@ spec:
         - name: Loki
           uid: loki
           type: loki
-          url: http://loki:3100
+#% if rustfs_enabled | default(false) %#
+          #| SimpleScalable mode: query from loki-read service #|
+          url: http://loki-read.monitoring.svc:3100
+#% else %#
+          #| SingleBinary mode: query from loki service #|
+          url: http://loki.monitoring.svc:3100
+#% endif %#
           access: proxy
           isDefault: false
           jsonData:
