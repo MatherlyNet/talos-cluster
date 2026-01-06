@@ -58,14 +58,33 @@ spec:
       query_frontend:
         search:
           max_duration: 0
+        metrics:
+          max_duration: 3h
+
+      overrides:
+        metrics_generator_processors:
+          - local-blocks
+          - service-graphs
+          - span-metrics
 
       # Metrics generation from traces
       metrics_generator:
         enabled: true
+        ring:
+          kvstore:
+            store: memberlist
         registry:
           external_labels:
             source: tempo
             cluster: "matherlynet"
+        processor:
+          local_blocks:
+            flush_to_storage: true
+            filter_server_spans: false
+          service_graphs:
+            max_items: 10000
+          span_metrics:
+            dimensions: []
         storage:
           path: /var/tempo/metrics-generator/wal
           remote_write:

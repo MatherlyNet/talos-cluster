@@ -21,11 +21,24 @@
 >    - Must set `extraEnvFrom` under `read`, `write`, AND `backend` sections
 >    - Secret keys MUST use AWS SDK standard names: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
 >
-> 3. **Tempo uses local filesystem storage, NOT RustFS/S3**
+> 3. **Loki SimpleScalable service naming differs from SingleBinary**
+>    - No `loki` service exists - only `loki-read`, `loki-write`, `loki-backend`
+>    - Grafana datasource must use `http://loki-read.monitoring.svc:3100` (not `http://loki:3100`)
+>    - Alloy must push to `http://loki-write.monitoring.svc:3100` (not `http://loki:3100`)
+>    - Updated templates: `alloy/app/helmrelease.yaml.j2`, `kube-prometheus-stack/app/helmrelease.yaml.j2`
+>    - **Pod restart behavior on mode transition (SingleBinary ↔ SimpleScalable):**
+>      - **Grafana**: Has `checksum/config` annotation - auto-restarts when datasource ConfigMap changes
+>      - **Alloy**: Has `config-reloader` sidecar for hot-reload, but restart recommended for mode transitions:
+>        ```bash
+>        kubectl rollout restart daemonset/alloy -n monitoring
+>        ```
+>      - Fresh deployments with `rustfs_enabled` set from start do NOT need manual restarts
+>
+> 4. **Tempo uses local filesystem storage, NOT RustFS/S3**
 >    - All `tempo_s3_*` variables and Tempo bucket configuration in this doc are UNUSED
 >    - Remove all Tempo-related S3 configuration
 >
-> 4. **Corrected Implementation Files:**
+> 5. **Corrected Implementation Files:**
 >    - `secret.sops.yaml.j2` - Uses `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY` (not root-user/root-password)
 >    - `job-setup.yaml.j2` - Only creates buckets, NO `mc admin` commands
 >    - `httproute-console.yaml.j2` - NEW: Exposes RustFS Console via envoy-internal
