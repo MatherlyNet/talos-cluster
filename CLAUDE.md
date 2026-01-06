@@ -236,7 +236,7 @@ Optional Keycloak OIDC Provider (Identity and Access Management):
 
 Optional Keycloak PostgreSQL Backup (requires RustFS):
 - `keycloak_s3_access_key`, `keycloak_s3_secret_key` - SOPS-encrypted credentials (created via RustFS Console)
-- `keycloak_backup_schedule` - Cron schedule for embedded mode pg_dump (default: "0 2 * * *")
+- `keycloak_backup_schedule` - Cron schedule for embedded mode pg_dump (default: "0 2 ** *")
 - `keycloak_backup_retention_days` - Retention for embedded mode pg_dump (default: 7)
 - When configured with rustfs_enabled, `keycloak_backup_enabled=true` (derived in plugin.py)
 - Embedded mode: pg_dump CronJob to `keycloak-backups` bucket

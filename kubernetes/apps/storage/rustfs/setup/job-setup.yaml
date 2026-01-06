@@ -70,6 +70,9 @@ spec:
               echo "cnpg-backups bucket created."
               echo "NOTE: Create CNPG backup access keys in RustFS Console and update cluster.yaml"
 
+              mc mb --ignore-existing rustfs/keycloak-backups
+              echo "keycloak-backups bucket created."
+              echo "NOTE: Create Keycloak backup access keys in RustFS Console and update cluster.yaml"
 
               echo ""
               echo "============================================="
@@ -102,6 +105,13 @@ spec:
               echo "  - Create 'cnpg-backup' user in databases group"
               echo "  - Update cnpg_s3_access_key/cnpg_s3_secret_key in cluster.yaml"
               echo "  - See: docs/guides/cnpg-implementation.md"
+              echo ""
+              echo "KEYCLOAK BACKUP (identity group):"
+              echo "  - Create 'keycloak-storage' policy scoped to keycloak-backups bucket"
+              echo "  - Create 'identity' group with policy attached"
+              echo "  - Create 'keycloak-backup' user in identity group"
+              echo "  - Update keycloak_s3_access_key/keycloak_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/guides/keycloak-implementation.md"
               echo ""
               echo "Then run: task configure && task reconcile"
               echo "============================================="
