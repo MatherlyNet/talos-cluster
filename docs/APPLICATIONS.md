@@ -662,7 +662,27 @@ kubectl -n monitoring logs ds/alloy
 - OTLP gRPC/HTTP receivers (ports 4317/4318)
 - Zipkin receiver (port 9411, for Envoy Gateway)
 - Metrics generation (RED metrics from traces)
+- **TraceQL metrics queries** (`{ } | rate()`, `{ } | count_over_time()`)
 - Grafana datasource auto-configured
+
+**TraceQL Metrics Configuration:**
+
+The Helm chart's default config template does NOT include `processor.local_blocks` configuration. We override the entire `config:` value to enable TraceQL metrics queries:
+
+```yaml
+metrics_generator:
+  processor:
+    local_blocks:
+      filter_server_spans: false  # Retain all spans, not just server spans
+      flush_to_storage: true      # Enable historical queries
+overrides:
+  defaults:
+    metrics_generator:
+      processors:
+        - local-blocks
+        - service-graphs
+        - span-metrics
+```
 
 **Configuration Variables:**
 
@@ -680,6 +700,13 @@ flux get hr -n monitoring tempo
 kubectl -n monitoring get pods -l app.kubernetes.io/name=tempo
 kubectl -n monitoring port-forward svc/tempo 3200:3200
 # Visit http://localhost:3200 for Tempo API
+
+# Verify metrics-generator ring
+kubectl exec -n monitoring tempo-0 -- wget -qO- http://localhost:3200/metrics-generator/ring
+# Should show: tempo-0 ACTIVE with tokens
+
+# Test TraceQL metrics query in Grafana
+# Query: { } | rate() by (resource.service.name)
 ```
 
 ---
