@@ -699,6 +699,57 @@
     "loki_s3_secret_key": {
       "type": "string",
       "minLength": 1
+    },
+    "cnpg_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "CloudNativePG Operator - Production PostgreSQL for Kubernetes REF: https://cloudnative-pg.io/ REF: docs/guides/cnpg-implementation.md Provides automated HA, backups, and monitoring for PostgreSQL clusters Shared infrastructure dependency for Keycloak and other database-backed apps"
+    },
+    "cnpg_postgres_image": {
+      "default": "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie",
+      "type": "string",
+      "pattern": "^ghcr\\.io/cloudnative-pg/"
+    },
+    "cnpg_storage_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cnpg_priority_class": {
+      "default": "system-cluster-critical",
+      "type": "string",
+      "minLength": 1
+    },
+    "cnpg_control_plane_only": {
+      "default": true,
+      "type": "boolean"
+    },
+    "cnpg_backup_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "CNPG Backups to RustFS S3 (requires rustfs_enabled: true) Credentials must be created manually via RustFS Console UI"
+    },
+    "cnpg_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cnpg_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cnpg_pgvector_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "pgvector Extension - Vector similarity search for AI/ML workloads REF: https://github.com/pgvector/pgvector Mounted via ImageVolume (Kubernetes 1.35+, PostgreSQL 18+)"
+    },
+    "cnpg_pgvector_image": {
+      "default": "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie",
+      "type": "string",
+      "pattern": "^ghcr\\.io/cloudnative-pg/"
+    },
+    "cnpg_pgvector_version": {
+      "default": "0.8.1",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     }
   },
   "required": [

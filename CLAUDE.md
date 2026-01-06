@@ -204,6 +204,26 @@ Optional Talos Backup (etcd snapshots to S3):
 - When configured, `talos_backup_enabled=true` (derived in plugin.py)
 - See `docs/CONFIGURATION.md` for all backup settings
 
+Optional CloudNativePG Operator (production PostgreSQL):
+- `cnpg_enabled` - Enable CloudNativePG operator for PostgreSQL cluster management
+- `cnpg_postgres_image` - PostgreSQL image (default: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie)
+- `cnpg_storage_class` - Storage class for PostgreSQL data volumes
+- `cnpg_control_plane_only` - Run operator on control-plane nodes (default: true)
+- When configured, `cnpg_enabled=true` (derived in plugin.py)
+- Shared infrastructure dependency for Keycloak and other database-backed apps
+- See `docs/guides/cnpg-implementation.md` for setup guide
+
+Optional CloudNativePG Backups (requires RustFS):
+- `cnpg_backup_enabled` - Enable PostgreSQL backups to RustFS S3
+- `cnpg_s3_access_key`, `cnpg_s3_secret_key` - SOPS-encrypted credentials (created via RustFS Console)
+- Backup credentials are separate from Loki S3 credentials
+
+Optional pgvector Extension (AI/ML vector search):
+- `cnpg_pgvector_enabled` - Enable pgvector via ImageVolume (requires cnpg_enabled)
+- `cnpg_pgvector_image` - pgvector image (default: ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie)
+- `cnpg_pgvector_version` - pgvector version (default: 0.8.1)
+- Mounted via ImageVolume pattern (Kubernetes 1.35+, PostgreSQL 18+ with extension_control_path)
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
@@ -233,6 +253,9 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `proxmox_vm_worker_defaults` - Merged worker VM settings
 - `rustfs_enabled` - true when rustfs_enabled is explicitly set to true
 - `loki_deployment_mode` - "SimpleScalable" when rustfs_enabled, "SingleBinary" otherwise
+- `cnpg_enabled` - true when cnpg_enabled is explicitly set to true
+- `cnpg_backup_enabled` - true when cnpg + rustfs + backup flag + credentials all set
+- `cnpg_pgvector_enabled` - true when cnpg_enabled and cnpg_pgvector_enabled both true
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -285,6 +308,8 @@ Deep context in `docs/ai-context/`:
 | Network policy blocking | `hubble observe --verdict DROPPED`, `kubectl get cnp -A` |
 | RustFS not ready | `kubectl get pods -n storage`, `kubectl logs -n storage -l app.kubernetes.io/name=rustfs` |
 | Loki S3 errors | `kubectl logs -n monitoring -l app.kubernetes.io/component=write` |
+| CNPG operator issues | `kubectl get pods -n cnpg-system`, `kubectl logs -n cnpg-system -l app.kubernetes.io/name=cloudnative-pg` |
+| PostgreSQL cluster issues | `kubectl cnpg status <cluster> -n <namespace>`, `kubectl get clusters -A` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

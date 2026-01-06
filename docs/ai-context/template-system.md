@@ -204,6 +204,15 @@ Computed from other values:
 | ---------- | --------------- |
 | `cilium_bgp_enabled` | All BGP keys present |
 | `spegel_enabled` | More than 1 node |
+| `unifi_dns_enabled` | unifi_host + unifi_api_key set |
+| `k8s_gateway_enabled` | unifi_dns_enabled is false |
+| `talos_backup_enabled` | backup_s3_endpoint + backup_s3_bucket set |
+| `oidc_enabled` | oidc_issuer_url + oidc_jwks_uri set |
+| `infrastructure_enabled` | proxmox_api_url + proxmox_node set |
+| `cnpg_enabled` | cnpg_enabled explicitly set to true |
+| `cnpg_backup_enabled` | cnpg + rustfs + backup flag + credentials set |
+| `cnpg_pgvector_enabled` | cnpg_enabled + cnpg_pgvector_enabled both true |
+| `loki_deployment_mode` | "SimpleScalable" when rustfs_enabled, else "SingleBinary" |
 
 ## Template Structure
 

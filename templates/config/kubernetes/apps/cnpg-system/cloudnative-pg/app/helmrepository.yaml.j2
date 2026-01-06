@@ -1,0 +1,10 @@
+#% if cnpg_enabled | default(false) %#
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cloudnative-pg
+spec:
+  interval: 24h
+  url: https://cloudnative-pg.github.io/charts
+#% endif %#

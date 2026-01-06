@@ -139,7 +139,9 @@ cilium
                     │           ├─> k8s-gateway
                     │           ├─> cloudflare-tunnel
                     │           └─> echo
-                    └─> spegel (if >1 node)
+                    ├─> spegel (if >1 node)
+                    ├─> cloudnative-pg (if cnpg_enabled)
+                    └─> rustfs (if rustfs_enabled)
 ```
 
 ## Secret Management

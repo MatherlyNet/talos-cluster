@@ -37,3 +37,6 @@ cloudflare_gateway_addr: "10.10.10.251"
 # External Secrets Operator (optional)
 # external_secrets_enabled: false
 # external_secrets_provider: "1password"
+
+# CloudNativePG Operator (optional)
+# cnpg_enabled: false

@@ -594,6 +594,84 @@ cloudflare_gateway_addr: ""
 # backup_age_public_key: ""
 
 # =============================================================================
+# CLOUDNATIVEPG OPERATOR - Production PostgreSQL for Kubernetes
+# =============================================================================
+# CloudNativePG provides production-grade PostgreSQL clusters with automated
+# failover, backups, and monitoring. Deployed as a shared cluster resource.
+# Single operator in cnpg-system namespace serves multiple database clusters.
+# REF: https://cloudnative-pg.io/documentation/
+# REF: docs/guides/cnpg-implementation.md
+#
+# SHARED RESOURCE PATTERN:
+#   cnpg-system/           # Operator namespace (deployed by this config)
+#   ├── cloudnative-pg     # Operator deployment
+#   identity/              # App namespace (Keycloak example)
+#   └── keycloak-postgres  # CNPG Cluster CR (app-specific)
+#
+# DEPENDENCY CHAIN: CloudNativePG → Keycloak → JWT/OIDC SecurityPolicy
+
+# -- Enable CloudNativePG operator deployment
+#    (OPTIONAL) / (DEFAULT: false)
+# cnpg_enabled: false
+
+# -- PostgreSQL image for new clusters
+#    Options: 18.1-standard-trixie (default, with JIT), 18.1-minimal-trixie (smaller)
+#    (OPTIONAL) / (DEFAULT: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie")
+# cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
+
+# -- Default storage class for CNPG clusters
+#    Falls back to global storage_class if not set
+#    (OPTIONAL) / (DEFAULT: uses storage_class or "local-path")
+# cnpg_storage_class: ""
+
+# -- Operator priority class
+#    (OPTIONAL) / (DEFAULT: "system-cluster-critical")
+# cnpg_priority_class: "system-cluster-critical"
+
+# -- Deploy operator on control-plane nodes only
+#    (OPTIONAL) / (DEFAULT: true for homelab single control-plane)
+# cnpg_control_plane_only: true
+
+# -- Enable CNPG backups to RustFS S3
+#    Requires rustfs_enabled: true
+#    Create access key via RustFS Console UI (see docs)
+#    (OPTIONAL) / (DEFAULT: false)
+# cnpg_backup_enabled: false
+
+# -- S3 access key for CNPG backups (created via RustFS Console)
+#    (REQUIRED when cnpg_backup_enabled: true)
+# cnpg_s3_access_key: ""
+
+# -- S3 secret key for CNPG backups (SOPS-encrypted)
+#    (REQUIRED when cnpg_backup_enabled: true)
+# cnpg_s3_secret_key: ""
+
+# =============================================================================
+# CLOUDNATIVEPG PGVECTOR EXTENSION - Vector similarity search for AI/ML
+# =============================================================================
+# pgvector provides native vector data types for similarity search, embedding
+# storage, and AI-driven use cases. Mounted via ImageVolume (no custom images).
+# REF: https://github.com/pgvector/pgvector
+# REF: https://cloudnative-pg.io/docs/1.28/imagevolume_extensions/
+#
+# REQUIREMENTS:
+#   - PostgreSQL 18+ (extension_control_path support)
+#   - Kubernetes 1.35+ (ImageVolume beta enabled by default)
+#   - CloudNativePG 1.27+ (extension mounting support)
+
+# -- Enable pgvector extension for CNPG clusters
+#    (OPTIONAL) / (DEFAULT: false)
+# cnpg_pgvector_enabled: false
+
+# -- pgvector extension image
+#    (OPTIONAL) / (DEFAULT: "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie")
+# cnpg_pgvector_image: "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie"
+
+# -- pgvector version (must match image tag)
+#    (OPTIONAL) / (DEFAULT: "0.8.1")
+# cnpg_pgvector_version: "0.8.1"
+
+# =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3
 # =============================================================================
 # VolSync provides restic-based PVC backups to S3-compatible storage.

@@ -262,6 +262,39 @@ class Plugin(makejinja.plugin.Plugin):
         if "spegel_enabled" not in data:
             data["spegel_enabled"] = len(data.get("nodes", [])) > 1
 
+        # CloudNativePG - enabled when cnpg_enabled is true
+        cnpg_enabled = data.get("cnpg_enabled", False)
+        data["cnpg_enabled"] = cnpg_enabled
+
+        # CNPG backup - enabled when cnpg, rustfs, and backup flag are all enabled with credentials
+        cnpg_backup_enabled = (
+            cnpg_enabled
+            and data.get("rustfs_enabled", False)
+            and data.get("cnpg_backup_enabled", False)
+            and data.get("cnpg_s3_access_key")
+            and data.get("cnpg_s3_secret_key")
+        )
+        data["cnpg_backup_enabled"] = cnpg_backup_enabled
+
+        # Default PostgreSQL image for CNPG clusters
+        cnpg_postgres_image = data.get(
+            "cnpg_postgres_image",
+            "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie",
+        )
+        data["cnpg_postgres_image"] = cnpg_postgres_image
+
+        # pgvector extension - enabled when cnpg and pgvector are both enabled
+        cnpg_pgvector_enabled = cnpg_enabled and data.get("cnpg_pgvector_enabled", False)
+        data["cnpg_pgvector_enabled"] = cnpg_pgvector_enabled
+
+        # Default pgvector image and version
+        cnpg_pgvector_image = data.get(
+            "cnpg_pgvector_image",
+            "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie",
+        )
+        data["cnpg_pgvector_image"] = cnpg_pgvector_image
+        data.setdefault("cnpg_pgvector_version", "0.8.1")
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)

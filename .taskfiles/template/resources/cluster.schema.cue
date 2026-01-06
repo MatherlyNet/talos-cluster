@@ -225,6 +225,30 @@ import (
 	// Must be created manually via RustFS Console UI (Identity -> Users -> Create Access Key)
 	loki_s3_access_key?: string & !=""
 	loki_s3_secret_key?: string & !=""
+
+	// CloudNativePG Operator - Production PostgreSQL for Kubernetes
+	// REF: https://cloudnative-pg.io/
+	// REF: docs/guides/cnpg-implementation.md
+	// Provides automated HA, backups, and monitoring for PostgreSQL clusters
+	// Shared infrastructure dependency for Keycloak and other database-backed apps
+	cnpg_enabled?:           *false | bool
+	cnpg_postgres_image?:    *"ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie" | string & =~"^ghcr\\.io/cloudnative-pg/"
+	cnpg_storage_class?:     string & !=""
+	cnpg_priority_class?:    *"system-cluster-critical" | string & !=""
+	cnpg_control_plane_only?: *true | bool
+
+	// CNPG Backups to RustFS S3 (requires rustfs_enabled: true)
+	// Credentials must be created manually via RustFS Console UI
+	cnpg_backup_enabled?:   *false | bool
+	cnpg_s3_access_key?:    string & !=""
+	cnpg_s3_secret_key?:    string & !=""
+
+	// pgvector Extension - Vector similarity search for AI/ML workloads
+	// REF: https://github.com/pgvector/pgvector
+	// Mounted via ImageVolume (Kubernetes 1.35+, PostgreSQL 18+)
+	cnpg_pgvector_enabled?: *false | bool
+	cnpg_pgvector_image?:   *"ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie" | string & =~"^ghcr\\.io/cloudnative-pg/"
+	cnpg_pgvector_version?: *"0.8.1" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 }
 
 #Config

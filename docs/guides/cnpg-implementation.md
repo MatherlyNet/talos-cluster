@@ -500,6 +500,10 @@ spec:
 
 ## Backup Configuration with RustFS
 
+> ⚠️ **IMPORTANT**: RustFS does NOT support `mc admin` commands for IAM management.
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+> See [RustFS IAM Documentation](https://docs.rustfs.com/administration/iam/access-token.html)
+
 ### Create RustFS Bucket
 
 Add `cnpg-backups` to the RustFS bucket setup job:
@@ -511,6 +515,112 @@ env:
   - name: BUCKETS
     value: "loki-chunks,loki-ruler,loki-admin,etcd-backups,cnpg-backups"
 ```
+
+### Create RustFS Access Key (Console UI)
+
+Following the same IAM pattern used for Loki (`monitoring` group) and Talos Backup (`backups` group), create a custom scoped policy for CNPG database backups.
+
+#### Step 1: Create Custom Policy
+
+Create this policy in RustFS Console → **Identity** → **Policies** → **Create Policy**:
+
+**Policy Name:** `database-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::cnpg-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::cnpg-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+**Why This Policy:**
+
+| Requirement | Permission | Purpose |
+| ----------- | ---------- | ------- |
+| List objects | `s3:ListBucket` | List WAL files and base backups for retention |
+| Read backups | `s3:GetObject` | Download backups for restore/PITR |
+| Write backups | `s3:PutObject` | Upload base backups and WAL segments |
+| Delete objects | `s3:DeleteObject` | Retention cleanup of old backups |
+| Bucket location | `s3:GetBucketLocation` | Barman Cloud SDK compatibility |
+
+**Why Not Built-in `readwrite`:**
+- The `readwrite` policy grants access to **ALL** buckets
+- The custom `database-storage` policy scopes access to only `cnpg-backups` bucket
+- This protects other buckets (loki-chunks, etcd-backups, etc.) from database backup access (principle of least privilege)
+
+#### Step 2: Create Database Group
+
+1. Navigate to **Identity** → **Groups** → **Create Group**
+2. **Name:** `databases`
+3. **Assign Policy:** `database-storage`
+4. Click **Save**
+
+#### Step 3: Create CNPG Service Account
+
+1. Navigate to **Identity** → **Users** → **Create User**
+2. **Access Key:** `cnpg-backup` (or any meaningful name)
+3. **Assign to Group:** `databases`
+4. Click **Save**
+
+#### Step 4: Generate Access Key
+
+1. Click on the newly created user (`cnpg-backup`)
+2. Navigate to **Service Accounts** tab
+3. Click **Create Access Key**
+4. ⚠️ **Copy and save both keys immediately** - the secret key won't be shown again!
+
+#### Step 5: Update cluster.yaml
+
+```yaml
+cnpg_s3_access_key: "<access-key-from-step-4>"
+cnpg_s3_secret_key: "<secret-key-from-step-4>"
+```
+
+#### Step 6: Apply Changes
+
+```bash
+task configure
+task reconcile
+```
+
+### IAM Architecture Summary
+
+The CNPG IAM structure mirrors Loki and Talos Backup:
+
+| Component | Loki (Monitoring) | Talos Backup | CNPG |
+| --------- | ----------------- | ------------ | ---- |
+| **Policy** | `loki-storage` | `backup-storage` | `database-storage` |
+| **Scoped Buckets** | `loki-chunks`, `loki-ruler`, `loki-admin` | `etcd-backups` | `cnpg-backups` |
+| **Group** | `monitoring` | `backups` | `databases` |
+| **User** | `loki` | `talos-backup` | `cnpg-backup` |
+| **Permissions** | Full CRUD on loki-* | Full CRUD on etcd-backups | Full CRUD on cnpg-backups |
+
+This pattern ensures:
+- **Principle of least privilege**: Each service only accesses its own buckets
+- **Audit trail**: User/group structure enables access tracking
+- **Scalability**: Future PostgreSQL clusters can share the same credentials or have dedicated users in the `databases` group
 
 ### Create Backup Credentials Secret
 
@@ -1261,6 +1371,7 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 ### Project Documentation
 - [Keycloak Implementation](./keycloak-implementation.md) - Primary CNPG consumer
 - [RustFS Implementation](../research/rustfs-shared-storage-loki-simplescalable-jan-2026.md) - Backup storage
+- [Talos Backup with RustFS](./talos-backup-rustfs-implementation.md) - IAM pattern reference
 - [Cilium Network Policies](../research/cilium-network-policies-jan-2026.md) - Network isolation
 
 ---
@@ -1271,3 +1382,4 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 | ---- | ------ |
 | 2026-01 | Initial implementation guide created |
 | 2026-01-06 | Added pgvector extension with ImageVolume support |
+| 2026-01-06 | Added comprehensive RustFS IAM instructions (database-storage policy, databases group, cnpg-backup user) |

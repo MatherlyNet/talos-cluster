@@ -129,3 +129,20 @@ kubernetes_version: "1.35.0"
 # rustfs_secret_key: "test-secret-key"
 # loki_s3_access_key: "PLACEHOLDER_CREATE_IN_RUSTFS_CONSOLE"
 # loki_s3_secret_key: "test-loki-secret"
+
+# CloudNativePG Operator (optional - uncomment to test)
+# REF: docs/guides/cnpg-implementation.md
+# NOTE: Shared infrastructure dependency for Keycloak and database-backed apps
+# cnpg_enabled: true
+# cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
+# cnpg_storage_class: "local-path"
+# cnpg_priority_class: "system-cluster-critical"
+# cnpg_control_plane_only: true
+# CNPG backups require rustfs_enabled: true
+# cnpg_backup_enabled: false
+# cnpg_s3_access_key: "test-cnpg-access"
+# cnpg_s3_secret_key: "test-cnpg-secret"
+# pgvector extension for AI/ML workloads
+# cnpg_pgvector_enabled: false
+# cnpg_pgvector_image: "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie"
+# cnpg_pgvector_version: "0.8.1"
