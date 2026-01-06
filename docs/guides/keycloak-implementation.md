@@ -1198,12 +1198,35 @@ backup:
 | Issue | Cause | Solution |
 | ----- | ----- | -------- |
 | Operator pod CrashLoopBackOff | Missing CRDs | Apply CRDs first, restart operator |
+| Operator pod Error: read-only filesystem | Missing /tmp emptyDir volume | Add emptyDir volume for Vert.x cache |
+| Operator RBAC 403 errors | Missing RBAC permissions | See RBAC requirements below |
 | Keycloak CR not progressing | Database not ready | Check PostgreSQL pod/service |
 | 502 Bad Gateway | HTTPRoute service name wrong | Use `keycloak-service` (operator default) |
 | JWKS fetch timeout | Network policy blocking | Add egress rule for Keycloak |
 | Token validation fails | Issuer mismatch | Verify realm URL matches config |
 | Admin login fails | Wrong credentials | Check `keycloak-initial-admin` secret |
 | Clustering issues | JGroups DNS not resolving | Check headless service `keycloak-discovery` |
+| Unrecognized config key warning | Normal - bundle config for OLM | Can be safely ignored |
+
+### RBAC Requirements (v26.5.0)
+
+The Keycloak operator requires specific RBAC permissions. If you see 403 errors in logs, ensure these are configured:
+
+**ClusterRole requirements:**
+- `apiextensions.k8s.io/customresourcedefinitions` - get, list, watch (for ServiceMonitor CRD detection)
+- `k8s.keycloak.org/*` - full CRUD for Keycloak CRs
+- `""/namespaces` - get, list
+
+**Namespace Role requirements:**
+- `""/configmaps, secrets, services` - full CRUD
+- `""/pods` - list
+- `""/pods/log` - get
+- `apps/statefulsets` - full CRUD
+- `networking.k8s.io/ingresses, networkpolicies` - full CRUD
+- `batch/jobs` - full CRUD
+- `monitoring.coreos.com/servicemonitors` - full CRUD (if Prometheus installed)
+
+**REF:** https://github.com/keycloak/keycloak-k8s-resources/blob/26.5.0/kubernetes/kubernetes.yml
 
 ### Debug Commands
 
