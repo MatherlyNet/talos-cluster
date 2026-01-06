@@ -224,10 +224,21 @@ Optional pgvector Extension (AI/ML vector search):
 - `cnpg_pgvector_version` - pgvector version (default: 0.8.1)
 - Mounted via ImageVolume pattern (Kubernetes 1.35+, PostgreSQL 18+ with extension_control_path)
 
+Optional Keycloak OIDC Provider (Identity and Access Management):
+- `keycloak_enabled` - Enable Keycloak deployment (official Keycloak Operator)
+- `keycloak_subdomain` - Subdomain (default: "auth", creates auth.${cloudflare_domain})
+- `keycloak_realm` - Realm name (default: "matherlynet")
+- `keycloak_db_mode` - Database mode: "embedded" (dev) or "cnpg" (production)
+- When keycloak_enabled, derives: `keycloak_hostname`, `keycloak_issuer_url`, `keycloak_jwks_uri`
+- CNPG mode requires `cnpg_enabled: true`
+- Uses CRD split pattern (operator Kustomization → instance Kustomization)
+- See `docs/guides/keycloak-implementation.md` for setup guide
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
 - Creates SecurityPolicy targeting HTTPRoutes with label `security: jwt-protected`
+- Note: Keycloak auto-derives these values when keycloak_enabled is true
 
 Optional Proxmox Infrastructure (VM provisioning via OpenTofu):
 - `proxmox_api_url`, `proxmox_node` (both required to enable)
@@ -256,6 +267,10 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `cnpg_enabled` - true when cnpg_enabled is explicitly set to true
 - `cnpg_backup_enabled` - true when cnpg + rustfs + backup flag + credentials all set
 - `cnpg_pgvector_enabled` - true when cnpg_enabled and cnpg_pgvector_enabled both true
+- `keycloak_enabled` - true when keycloak_enabled is explicitly set to true
+- `keycloak_hostname` - auto-derived from keycloak_subdomain + cloudflare_domain
+- `keycloak_issuer_url` - auto-derived OIDC issuer URL for SecurityPolicy
+- `keycloak_jwks_uri` - auto-derived JWKS endpoint for JWT validation
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -310,6 +325,9 @@ Deep context in `docs/ai-context/`:
 | Loki S3 errors | `kubectl logs -n monitoring -l app.kubernetes.io/component=write` |
 | CNPG operator issues | `kubectl get pods -n cnpg-system`, `kubectl logs -n cnpg-system -l app.kubernetes.io/name=cloudnative-pg` |
 | PostgreSQL cluster issues | `kubectl cnpg status <cluster> -n <namespace>`, `kubectl get clusters -A` |
+| Keycloak operator issues | `kubectl get pods -n identity -l app.kubernetes.io/name=keycloak-operator` |
+| Keycloak CR not ready | `kubectl -n identity get keycloak keycloak -o yaml`, `kubectl -n identity logs -l app.kubernetes.io/name=keycloak` |
+| Keycloak DB connection | `kubectl -n identity exec -it keycloak-postgres-0 -- psql -U keycloak -c "SELECT 1"` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

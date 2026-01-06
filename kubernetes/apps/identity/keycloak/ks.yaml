@@ -1,0 +1,61 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak-operator
+spec:
+  dependsOn:
+    - name: coredns
+      namespace: kube-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: keycloak-operator
+      namespace: identity
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/identity/keycloak/operator
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: identity
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak
+spec:
+  dependsOn:
+    - name: keycloak-operator
+    - name: cert-manager
+      namespace: cert-manager
+    - name: cloudnative-pg
+      namespace: cnpg-system
+  healthChecks:
+    - apiVersion: k8s.keycloak.org/v2alpha1
+      kind: Keycloak
+      name: keycloak
+      namespace: identity
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/identity/keycloak/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: identity
+  timeout: 15m
+  wait: true

@@ -1,0 +1,13 @@
+#% if keycloak_enabled | default(false) %#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: identity
+  labels:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    #| Use baseline PSA - Keycloak operator needs some elevated capabilities #|
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+#% endif %#

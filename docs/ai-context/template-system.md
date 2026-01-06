@@ -213,6 +213,10 @@ Computed from other values:
 | `cnpg_backup_enabled` | cnpg + rustfs + backup flag + credentials set |
 | `cnpg_pgvector_enabled` | cnpg_enabled + cnpg_pgvector_enabled both true |
 | `loki_deployment_mode` | "SimpleScalable" when rustfs_enabled, else "SingleBinary" |
+| `keycloak_enabled` | keycloak_enabled explicitly set to true |
+| `keycloak_hostname` | Auto-derived: subdomain + cloudflare_domain |
+| `keycloak_issuer_url` | Auto-derived: https://hostname/realms/realm |
+| `keycloak_jwks_uri` | Auto-derived: issuer_url + /protocol/openid-connect/certs |
 
 ## Template Structure
 

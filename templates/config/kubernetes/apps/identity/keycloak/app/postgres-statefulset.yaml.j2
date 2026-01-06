@@ -1,0 +1,114 @@
+#% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'embedded' %#
+---
+#| ============================================================================= #|
+#| EMBEDDED POSTGRESQL - Development/Testing Only                                #|
+#| For production, use CloudNativePG (keycloak_db_mode: "cnpg")                  #|
+#| ============================================================================= #|
+#| PostgreSQL Service for Keycloak database connection #|
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-postgres
+  namespace: identity
+  labels:
+    app: keycloak-postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: keycloak-postgres
+---
+#| PostgreSQL StatefulSet #|
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: keycloak-postgres
+  namespace: identity
+  labels:
+    app: keycloak-postgres
+spec:
+  serviceName: keycloak-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak-postgres
+  template:
+    metadata:
+      labels:
+        app: keycloak-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "#{ keycloak_db_name | default('keycloak') }#"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-secret
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "#{ keycloak_db_user | default('keycloak') }#"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - "#{ keycloak_db_user | default('keycloak') }#"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 70
+            seccompProfile:
+              type: RuntimeDefault
+      securityContext:
+        fsGroup: 70
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: "#{ storage_class | default('local-path') }#"
+        resources:
+          requests:
+            storage: "#{ keycloak_storage_size | default('5Gi') }#"
+#% endif %#

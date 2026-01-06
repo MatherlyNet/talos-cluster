@@ -40,3 +40,6 @@ cloudflare_gateway_addr: "10.10.10.251"
 
 # CloudNativePG Operator (optional)
 # cnpg_enabled: false
+
+# Keycloak OIDC Provider (optional)
+# keycloak_enabled: false

@@ -515,37 +515,6 @@ cloudflare_gateway_addr: ""
 # onepassword_connect_host: ""
 
 # =============================================================================
-# OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
-# =============================================================================
-# JWT-based authentication for API endpoints, validating tokens against JWKS.
-# When configured, creates a SecurityPolicy targeting HTTPRoutes with
-# label "security: jwt-protected".
-# REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
-# REF: docs/guides/envoy-gateway-observability-security.md
-
-# -- OIDC provider name (used in SecurityPolicy)
-#    (OPTIONAL) / (DEFAULT: "keycloak")
-# oidc_provider_name: "keycloak"
-
-# -- OIDC issuer URL (JWT token issuer - must match "iss" claim in tokens)
-#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm")
-# oidc_issuer_url: ""
-
-# -- OIDC JWKS URI for JWT validation (public keys endpoint)
-#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs")
-# oidc_jwks_uri: ""
-
-# -- Additional claims to extract from JWT and pass as headers
-#    (OPTIONAL) / Headers must start with "X-"
-#    Example:
-#    oidc_additional_claims:
-#      - name: "preferred_username"
-#        header: "X-Username"
-#      - name: "realm_access.roles"
-#        header: "X-User-Roles"
-# oidc_additional_claims: []
-
-# =============================================================================
 # TALOS BACKUP - Automated etcd snapshots with S3 storage
 # =============================================================================
 # Talos Backup creates periodic etcd snapshots and uploads them to S3-compatible
@@ -670,6 +639,100 @@ cloudflare_gateway_addr: ""
 # -- pgvector version (must match image tag)
 #    (OPTIONAL) / (DEFAULT: "0.8.1")
 # cnpg_pgvector_version: "0.8.1"
+
+# =============================================================================
+# KEYCLOAK OIDC PROVIDER - Identity and Access Management
+# =============================================================================
+# Keycloak provides OIDC/OAuth2 authentication for JWT SecurityPolicy (API auth)
+# and OIDC SecurityPolicy (web SSO). Deploys in the 'identity' namespace using
+# the official Keycloak Operator (version-matched, CRD-based).
+# REF: https://www.keycloak.org/operator/installation
+# REF: docs/guides/keycloak-implementation.md
+#
+# DEPLOYMENT OPTIONS:
+#   embedded: Uses in-cluster PostgreSQL StatefulSet (dev/testing)
+#   cnpg: Uses CloudNativePG Cluster (production) - requires cnpg_enabled: true
+#
+# DEPENDENCY CHAIN: CloudNativePG (if cnpg mode) → Keycloak → JWT/OIDC SecurityPolicy
+
+# -- Enable Keycloak deployment
+#    (OPTIONAL) / (DEFAULT: false)
+# keycloak_enabled: false
+
+# -- Keycloak subdomain (creates auth.${cloudflare_domain})
+#    (OPTIONAL) / (DEFAULT: "auth")
+# keycloak_subdomain: "auth"
+
+# -- Keycloak realm name (for application tokens)
+#    (OPTIONAL) / (DEFAULT: "matherlynet")
+# keycloak_realm: "matherlynet"
+
+# -- Keycloak admin password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    Note: Admin username is always "admin" (operator default)
+#    (REQUIRED when keycloak_enabled: true)
+# keycloak_admin_password: ""
+
+# -- Keycloak database mode: "embedded" or "cnpg"
+#    embedded: Uses in-cluster PostgreSQL StatefulSet (dev/testing)
+#    cnpg: Uses CloudNativePG Cluster (production, requires cnpg_enabled: true)
+#    (OPTIONAL) / (DEFAULT: "embedded")
+# keycloak_db_mode: "embedded"
+
+# -- PostgreSQL credentials (SOPS-encrypted)
+#    Used by both embedded PostgreSQL and CloudNativePG modes
+#    (REQUIRED when keycloak_enabled: true)
+# keycloak_db_user: "keycloak"
+# keycloak_db_password: ""
+# keycloak_db_name: "keycloak"
+
+# -- Keycloak storage size (for PostgreSQL PVC)
+#    (OPTIONAL) / (DEFAULT: "5Gi" for embedded, "10Gi" for cnpg)
+# keycloak_storage_size: "5Gi"
+
+# -- Keycloak replicas (1 for dev, 2+ for HA)
+#    When >1, distributed Infinispan cache is enabled for session clustering
+#    (OPTIONAL) / (DEFAULT: 1)
+# keycloak_replicas: 1
+
+# -- PostgreSQL instances (only for cnpg mode, 1 for dev, 3 for HA)
+#    (OPTIONAL) / (DEFAULT: 1)
+# keycloak_db_instances: 1
+
+# -- Keycloak Operator version
+#    (OPTIONAL) / (DEFAULT: "26.5.0")
+# keycloak_operator_version: "26.5.0"
+
+# =============================================================================
+# OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
+# =============================================================================
+# JWT-based authentication for API endpoints, validating tokens against JWKS.
+# When configured, creates a SecurityPolicy targeting HTTPRoutes with
+# label "security: jwt-protected".
+# REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
+# REF: docs/guides/envoy-gateway-observability-security.md
+
+# -- OIDC provider name (used in SecurityPolicy)
+#    (OPTIONAL) / (DEFAULT: "keycloak")
+# oidc_provider_name: "keycloak"
+
+# -- OIDC issuer URL (JWT token issuer - must match "iss" claim in tokens)
+#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm")
+# oidc_issuer_url: ""
+
+# -- OIDC JWKS URI for JWT validation (public keys endpoint)
+#    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs")
+# oidc_jwks_uri: ""
+
+# -- Additional claims to extract from JWT and pass as headers
+#    (OPTIONAL) / Headers must start with "X-"
+#    Example:
+#    oidc_additional_claims:
+#      - name: "preferred_username"
+#        header: "X-Username"
+#      - name: "realm_access.roles"
+#        header: "X-User-Roles"
+# oidc_additional_claims: []
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3

@@ -750,6 +750,65 @@
       "default": "0.8.1",
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "keycloak_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Keycloak OIDC Provider - Identity and Access Management REF: https://www.keycloak.org/operator/installation REF: docs/guides/keycloak-implementation.md Provides OIDC/OAuth2 authentication for JWT SecurityPolicy and web SSO"
+    },
+    "keycloak_subdomain": {
+      "default": "auth",
+      "type": "string",
+      "minLength": 1
+    },
+    "keycloak_realm": {
+      "default": "matherlynet",
+      "type": "string",
+      "minLength": 1
+    },
+    "keycloak_admin_password": {
+      "type": "string",
+      "pattern": ".{8,}"
+    },
+    "keycloak_db_mode": {
+      "default": "embedded",
+      "type": "string"
+    },
+    "keycloak_db_user": {
+      "default": "keycloak",
+      "type": "string",
+      "minLength": 1
+    },
+    "keycloak_db_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "keycloak_db_name": {
+      "default": "keycloak",
+      "type": "string",
+      "minLength": 1
+    },
+    "keycloak_storage_size": {
+      "default": "5Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "keycloak_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "keycloak_db_instances": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "keycloak_operator_version": {
+      "default": "26.5.0",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     }
   },
   "required": [

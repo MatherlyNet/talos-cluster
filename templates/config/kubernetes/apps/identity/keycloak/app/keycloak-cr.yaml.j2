@@ -1,0 +1,100 @@
+#% if keycloak_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| KEYCLOAK CUSTOM RESOURCE - Managed by Keycloak Operator                       #|
+#| REF: https://www.keycloak.org/operator/basic-deployment                       #|
+#| ============================================================================= #|
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/version: "#{ keycloak_operator_version | default('26.5.0') }#"
+spec:
+  #| Number of Keycloak instances (1 for dev, 2+ for HA) #|
+  instances: #{ keycloak_replicas | default(1) }#
+
+  #| Database configuration #|
+  db:
+    vendor: postgres
+#% if (keycloak_db_mode | default('embedded')) == 'embedded' %#
+    host: keycloak-postgres
+#% else %#
+    #| CloudNativePG creates a service named <cluster>-rw for read-write connections #|
+    host: keycloak-postgres-rw
+#% endif %#
+    port: 5432
+    database: #{ keycloak_db_name | default('keycloak') }#
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+
+  #| HTTP configuration - TLS termination happens at Envoy Gateway #|
+  http:
+    httpEnabled: true
+    httpPort: 8080
+    httpsPort: 8443
+
+  #| Hostname configuration #|
+  hostname:
+    hostname: "#{ keycloak_hostname }#"
+    strict: false
+    backchannelDynamic: true
+
+  #| Proxy configuration for Gateway API (Envoy Gateway handles TLS) #|
+  proxy:
+    headers: xforwarded
+
+  #| Disable operator-managed ingress (using HTTPRoute instead) #|
+  ingress:
+    enabled: false
+
+  #| Feature flags #|
+  features:
+    enabled:
+      - token-exchange
+      - admin-fine-grained-authz
+
+  #| Additional server options #|
+  additionalOptions:
+    - name: health-enabled
+      value: "true"
+    - name: metrics-enabled
+      value: "true"
+#% if (keycloak_replicas | default(1)) > 1 %#
+    #| Distributed cache for HA deployments #|
+    - name: cache
+      value: "ispn"
+    - name: cache-stack
+      value: "kubernetes"
+#% endif %#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1700Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+  #| Startup configuration #|
+  startOptimized: false
+
+#% if (keycloak_replicas | default(1)) > 1 %#
+  #| Unsupported - advanced customization for HA clustering #|
+  unsupported:
+    podTemplate:
+      spec:
+        containers:
+          - name: keycloak
+            env:
+              - name: JAVA_OPTS_APPEND
+                value: "-Djgroups.dns.query=keycloak-discovery.identity.svc.cluster.local"
+#% endif %#
+#% endif %#

@@ -1,0 +1,111 @@
+#% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#
+---
+#| ============================================================================= #|
+#| CLOUDNATIVEPG POSTGRESQL CLUSTER - Production Database for Keycloak          #|
+#| REF: https://cloudnative-pg.io/documentation/                                 #|
+#| ============================================================================= #|
+#| Requires: cnpg_enabled: true (CloudNativePG operator deployed)                #|
+#| ============================================================================= #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: keycloak-postgres
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak-postgres
+    app.kubernetes.io/part-of: keycloak
+spec:
+  #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
+  instances: #{ keycloak_db_instances | default(1) }#
+
+  #| PostgreSQL image #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
+
+  #| Bootstrap from initdb (fresh database) #|
+  bootstrap:
+    initdb:
+      database: #{ keycloak_db_name | default('keycloak') }#
+      owner: #{ keycloak_db_user | default('keycloak') }#
+      secret:
+        name: keycloak-db-secret
+
+  #| Storage configuration #|
+  storage:
+    size: #{ keycloak_storage_size | default('10Gi') }#
+    storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+  #| Monitoring (if prometheus-stack enabled) #|
+  monitoring:
+    enablePodMonitor: #{ 'true' if monitoring_enabled | default(false) else 'false' }#
+
+  #| PostgreSQL configuration optimized for Keycloak #|
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+      effective_cache_size: "512MB"
+      work_mem: "4MB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "8MB"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      min_wal_size: "256MB"
+      max_wal_size: "1GB"
+
+  #| Affinity rules for HA deployments #|
+#% if (keycloak_db_instances | default(1)) > 1 %#
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+#% endif %#
+
+  #| Priority class for critical database workload #|
+  priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
+
+#% if cnpg_backup_enabled | default(false) %#
+  #| Backup configuration using RustFS S3 #|
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://cnpg-backups/keycloak"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+#% endif %#
+
+#% if cnpg_pgvector_enabled | default(false) %#
+  #| pgvector extension mounted via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
+  #| REF: https://cloudnative-pg.io/docs/1.28/imagevolume_extensions/ #|
+  imageCatalogRef:
+    kind: ImageCatalog
+    name: postgresql-extensions
+---
+#| ImageCatalog for pgvector extension #|
+apiVersion: postgresql.cnpg.io/v1
+kind: ImageCatalog
+metadata:
+  name: postgresql-extensions
+  namespace: identity
+spec:
+  images:
+    - major: 18
+      image: #{ cnpg_pgvector_image | default('ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie') }#
+#% endif %#
+#% endif %#

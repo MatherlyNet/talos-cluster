@@ -1,6 +1,6 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 2.5.0
+> **Document Version:** 2.6.0
 > **Assessment Date:** January 2026
 > **Status:** Living Document
 > **Sources:**
@@ -35,7 +35,7 @@ This document tracks **remaining work only**. Completed components are documente
 
 | Category | Remaining Items |
 | -------- | --------------- |
-| **Shared Infrastructure** | Keycloak (~3-4 hours) |
+| **Templates Complete** | Keycloak (ready for deployment) |
 | **Templates Needed** | VolSync (~2 hours) |
 | **Verified ✅** | CloudNativePG (operational, January 6, 2026), Talos Backup (operational, January 6, 2026), tuppr (operational, January 6, 2026) |
 | **Adopt When Needed** | gRPC Routing (~1-2 hours per service) |
@@ -213,11 +213,11 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 
 ---
 
-### 6. Keycloak OIDC Provider - TEMPLATES NEEDED
+### 6. Keycloak OIDC Provider - ✅ TEMPLATES COMPLETE
 
 > **Implementation Guide:** [keycloak-implementation.md](../guides/keycloak-implementation.md)
 
-**Status:** Templates documented in guide but not created. Requires PostgreSQL (CloudNativePG or embedded).
+**Status:** Templates complete (January 6, 2026). Ready for deployment with `keycloak_enabled: true`.
 
 **Use Case:** Self-hosted OIDC/OAuth2 provider enabling JWT SecurityPolicy (API auth) and OIDC SecurityPolicy (web SSO).
 
@@ -228,24 +228,24 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 - HTTPRoute for Gateway API integration
 - Automatic JWKS/issuer URL derivation for SecurityPolicy
 
-**Required Work:**
-1. Create `templates/config/kubernetes/apps/identity/` directory structure:
-   - `kustomization.yaml.j2`
-   - `namespace.yaml.j2`
-   - `keycloak/ks.yaml.j2` (two Kustomizations: operator + instance)
-   - `keycloak/operator/kustomization.yaml.j2`
-   - `keycloak/operator/keycloak-operator.yaml.j2` (ServiceAccount, RBAC, Deployment)
-   - `keycloak/app/kustomization.yaml.j2`
-   - `keycloak/app/keycloak-cr.yaml.j2`
-   - `keycloak/app/secret.sops.yaml.j2`
-   - `keycloak/app/httproute.yaml.j2`
-   - `keycloak/app/postgres-statefulset.yaml.j2` (embedded mode only)
-2. Add derived variables to `templates/scripts/plugin.py`:
-   - `keycloak_enabled`, `keycloak_hostname`
-   - `keycloak_issuer_url`, `keycloak_jwks_uri` (auto-derived)
-3. Update `templates/config/kubernetes/apps/kustomization.yaml.j2` to include identity
-4. Configure variables in `cluster.yaml`
-5. Post-deploy: Create realm, client, and test user via Admin Console
+**Implementation Completed:**
+- ✅ Identity namespace templates: `kustomization.yaml.j2`, `namespace.yaml.j2`
+- ✅ Keycloak operator: `ks.yaml.j2`, `operator/kustomization.yaml.j2`, `operator/keycloak-operator.yaml.j2`
+- ✅ Keycloak app: `app/kustomization.yaml.j2`, `keycloak-cr.yaml.j2`, `secret.sops.yaml.j2`, `httproute.yaml.j2`
+- ✅ Embedded PostgreSQL: `postgres-statefulset.yaml.j2` (dev/testing mode)
+- ✅ CloudNativePG cluster: `cnpg-cluster.yaml.j2` (production mode with backups)
+- ✅ Derived variables in `plugin.py`: `keycloak_enabled`, `keycloak_hostname`, `keycloak_issuer_url`, `keycloak_jwks_uri`
+- ✅ Root kustomization updated to include identity namespace conditionally
+- ✅ `cluster.sample.yaml` updated with complete Keycloak configuration section
+- ✅ CUE schema validation rules added
+
+**Enhancements Beyond Guide:**
+- Pod Security Admission labels (baseline level) on identity namespace
+- Security contexts on operator deployment
+- Conditional CNPG dependency in ks.yaml.j2 for production database mode
+- Conditional headless service for JGroups clustering when `keycloak_replicas > 1`
+- Conditional affinity rules for HA PostgreSQL deployments
+- pgvector extension support via ImageCatalog when `cnpg_pgvector_enabled`
 
 **cluster.yaml variables:**
 ```yaml
@@ -256,11 +256,20 @@ keycloak_admin_password: ""            # SOPS-encrypted
 keycloak_db_mode: "embedded"           # "embedded" or "cnpg"
 keycloak_db_user: "keycloak"
 keycloak_db_password: ""               # SOPS-encrypted
+keycloak_db_name: "keycloak"
+keycloak_db_instances: 1               # PostgreSQL instances (CNPG mode)
 keycloak_replicas: 1
+keycloak_storage_size: "5Gi"
 keycloak_operator_version: "26.5.0"
 ```
 
-**Effort:** ~3-4 hours (including PostgreSQL setup and realm configuration)
+**Remaining Work:** Deploy and verify
+1. Configure `keycloak_enabled: true` and credentials in `cluster.yaml`
+2. Run `task configure` to generate manifests
+3. Commit and push, then `task reconcile`
+4. Create realm, client, and test user via Admin Console
+
+**Effort:** Completed (templates). ~1-2 hours remaining for deployment and realm setup.
 
 **Dependency Chain:** (CloudNativePG if cnpg mode) → Keycloak → JWT/OIDC SecurityPolicy
 
@@ -333,13 +342,16 @@ spec:
 
 ### Medium Priority (Shared Infrastructure)
 
-1. **Keycloak OIDC Provider** (~3-4 hours) - Enables authentication features
-2. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
+1. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
 
 ### Low Priority (Adopt When Needed)
 
 1. **JWT SecurityPolicy Configuration** - After Keycloak deployed
 2. **gRPC Routing** - When first gRPC service deployed
+
+### Templates Complete (Ready for Deployment)
+
+1. **Keycloak OIDC Provider** - Templates created January 6, 2026 (~1-2 hours for deployment + realm setup)
 
 ### Completed ✅
 
@@ -405,3 +417,4 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 2.3.0 | CloudNativePG deployed and operational: templates created, derived variables added, CUE schema validation, RustFS IAM instructions documented, moved to "Completed ✅" |
 | 2026-01-06 | 2.4.0 | CNPG backup infrastructure: added `secret-backup.sops.yaml.j2` template, updated RustFS bucket setup job to create `cnpg-backups` bucket, updated kustomization to include backup secret when `cnpg_backup_enabled` is true |
 | 2026-01-06 | 2.5.0 | CNPG observability: added ServiceMonitor, PrometheusRule (7 alerts), and Grafana dashboard ConfigMap templates (conditional on `monitoring_enabled`) |
+| 2026-01-06 | 2.6.0 | Keycloak OIDC Provider templates complete: 11 template files created, plugin.py updated with derived variables, CUE schema validation added, cluster.sample.yaml updated; ready for deployment |

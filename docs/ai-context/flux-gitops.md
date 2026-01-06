@@ -141,6 +141,9 @@ cilium
                     │           └─> echo
                     ├─> spegel (if >1 node)
                     ├─> cloudnative-pg (if cnpg_enabled)
+                    │     └─> keycloak (if keycloak_enabled && db_mode=cnpg)
+                    ├─> keycloak-operator (if keycloak_enabled)
+                    │     └─> keycloak (keycloak CR)
                     └─> rustfs (if rustfs_enabled)
 ```
 

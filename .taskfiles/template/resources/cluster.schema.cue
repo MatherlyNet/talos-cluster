@@ -249,6 +249,23 @@ import (
 	cnpg_pgvector_enabled?: *false | bool
 	cnpg_pgvector_image?:   *"ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie" | string & =~"^ghcr\\.io/cloudnative-pg/"
 	cnpg_pgvector_version?: *"0.8.1" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+	// Keycloak OIDC Provider - Identity and Access Management
+	// REF: https://www.keycloak.org/operator/installation
+	// REF: docs/guides/keycloak-implementation.md
+	// Provides OIDC/OAuth2 authentication for JWT SecurityPolicy and web SSO
+	keycloak_enabled?:          *false | bool
+	keycloak_subdomain?:        *"auth" | string & !=""
+	keycloak_realm?:            *"matherlynet" | string & !=""
+	keycloak_admin_password?:   string & =~".{8,}"  // Minimum 8 characters
+	keycloak_db_mode?:          *"embedded" | "cnpg"
+	keycloak_db_user?:          *"keycloak" | string & !=""
+	keycloak_db_password?:      string & !=""
+	keycloak_db_name?:          *"keycloak" | string & !=""
+	keycloak_storage_size?:     *"5Gi" | string & =~"^[0-9]+[KMGT]i$"
+	keycloak_replicas?:         *1 | int & >=1 & <=10
+	keycloak_db_instances?:     *1 | int & >=1 & <=5  // Only for cnpg mode
+	keycloak_operator_version?: *"26.5.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 }
 
 #Config

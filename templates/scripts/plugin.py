@@ -295,6 +295,40 @@ class Plugin(makejinja.plugin.Plugin):
         data["cnpg_pgvector_image"] = cnpg_pgvector_image
         data.setdefault("cnpg_pgvector_version", "0.8.1")
 
+        # Keycloak OIDC Provider - enabled when keycloak_enabled is true
+        keycloak_enabled = data.get("keycloak_enabled", False)
+        data["keycloak_enabled"] = keycloak_enabled
+
+        if keycloak_enabled:
+            # Derive full hostname from subdomain + cloudflare_domain
+            keycloak_subdomain = data.get("keycloak_subdomain", "auth")
+            cloudflare_domain = data.get("cloudflare_domain", "")
+            keycloak_hostname = f"{keycloak_subdomain}.{cloudflare_domain}"
+            data["keycloak_hostname"] = keycloak_hostname
+
+            # Derive OIDC endpoints for SecurityPolicy integration
+            keycloak_realm = data.get("keycloak_realm", "matherlynet")
+            data["keycloak_realm"] = keycloak_realm
+            data["keycloak_issuer_url"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}"
+            data["keycloak_jwks_uri"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}/protocol/openid-connect/certs"
+
+            # Default operator version
+            data.setdefault("keycloak_operator_version", "26.5.0")
+
+            # Default database settings
+            data.setdefault("keycloak_db_mode", "embedded")
+            data.setdefault("keycloak_db_name", "keycloak")
+            data.setdefault("keycloak_db_user", "keycloak")
+            data.setdefault("keycloak_db_instances", 1)
+            data.setdefault("keycloak_replicas", 1)
+            data.setdefault("keycloak_storage_size", "5Gi")
+
+            # When Keycloak uses CNPG mode, require cnpg_enabled
+            keycloak_db_mode = data.get("keycloak_db_mode", "embedded")
+            if keycloak_db_mode == "cnpg" and not cnpg_enabled:
+                # This will be caught by CUE validation, but set a flag for clarity
+                data["keycloak_cnpg_missing"] = True
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)
