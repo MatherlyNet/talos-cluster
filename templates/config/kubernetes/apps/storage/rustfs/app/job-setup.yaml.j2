@@ -34,7 +34,8 @@ spec:
             - -c
             - |
               echo "Waiting for RustFS to be ready..."
-              until wget -q --spider http://rustfs-svc.storage.svc:9000/minio/health/ready; do
+              #| RustFS uses /health endpoint, not MinIO's /minio/health/ready #|
+              until wget -q --spider http://rustfs-svc.storage.svc:9000/health; do
                 echo "RustFS not ready, waiting..."
                 sleep 10
               done

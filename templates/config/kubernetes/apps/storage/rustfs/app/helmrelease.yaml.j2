@@ -104,17 +104,17 @@ spec:
                       - rustfs
               topologyKey: kubernetes.io/hostname
 
-    #| Liveness and readiness probes #|
+    #| Liveness and readiness probes - RustFS uses /health, not MinIO endpoints #|
     livenessProbe:
       httpGet:
-        path: /minio/health/live
+        path: /health
         port: 9000
       initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
     readinessProbe:
       httpGet:
-        path: /minio/health/ready
+        path: /health
         port: 9000
       initialDelaySeconds: 5
       periodSeconds: 5
