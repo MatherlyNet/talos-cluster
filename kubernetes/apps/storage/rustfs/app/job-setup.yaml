@@ -32,7 +32,7 @@ spec:
             - -c
             - |
               echo "Waiting for RustFS to be ready..."
-              until wget -q --spider http://rustfs.storage.svc:9000/minio/health/ready; do
+              until wget -q --spider http://rustfs-svc.storage.svc:9000/minio/health/ready; do
                 echo "RustFS not ready, waiting..."
                 sleep 10
               done
@@ -53,7 +53,7 @@ spec:
               set -e
 
               echo "Configuring mc alias for RustFS..."
-              mc alias set rustfs http://rustfs.storage.svc:9000 "$RUSTFS_ROOT_USER" "$RUSTFS_ROOT_PASSWORD"
+              mc alias set rustfs http://rustfs-svc.storage.svc:9000 "$RUSTFS_ROOT_USER" "$RUSTFS_ROOT_PASSWORD"
 
               echo "Creating buckets..."
               # Loki buckets
