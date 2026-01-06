@@ -59,54 +59,34 @@ spec:
       query_frontend:
         search:
           max_duration: 0
-        #| TraceQL metrics query configuration #|
-        metrics:
-          #| Maximum time range for metrics queries (default 3h) #|
-          max_duration: 3h
 
-      #| =========================================================================== #|
-      #| CRITICAL: Enable processors for TraceQL metrics queries                     #|
-      #| Without local-blocks, queries like { } | rate() fail with "empty ring"      #|
-      #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/       #|
-      #|            metrics-queries/configure-traceql-metrics/                        #|
-      #| =========================================================================== #|
-      overrides:
-        #| Enable all metrics processors for TraceQL functionality #|
-        metrics_generator_processors:
-          - local-blocks
-          - service-graphs
-          - span-metrics
-
-      # Metrics generation from traces
+      # Metrics generation from traces (basic config - processors enabled via overrides)
       metrics_generator:
         enabled: true
-        #| Ring configuration for memberlist coordination #|
-        ring:
-          kvstore:
-            store: memberlist
         registry:
           external_labels:
             source: tempo
             cluster: "#{ cluster_name | default('matherlynet') }#"
-        #| Processor-specific configuration #|
-        processor:
-          #| local-blocks: Required for TraceQL metrics queries #|
-          local_blocks:
-            #| Flush to storage for historical metrics queries #|
-            flush_to_storage: true
-            #| Query all spans, not just server spans #|
-            filter_server_spans: false
-          #| service-graphs: Service relationship mapping #|
-          service_graphs:
-            max_items: 10000
-          #| span-metrics: RED metrics (Rate, Error, Duration) #|
-          span_metrics:
-            dimensions: []
         storage:
           path: /var/tempo/metrics-generator/wal
           remote_write:
             - url: http://kube-prometheus-stack-prometheus:9090/api/v1/write
               send_exemplars: true
+
+    #| =========================================================================== #|
+    #| CRITICAL: Enable processors for TraceQL metrics queries                     #|
+    #| Without local-blocks, queries like { } | rate() fail with "empty ring"      #|
+    #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/       #|
+    #|            metrics-queries/configure-traceql-metrics/                        #|
+    #| Note: overrides must be at root level (not under tempo:) per Helm chart     #|
+    #| =========================================================================== #|
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - local-blocks
+            - service-graphs
+            - span-metrics
 
     # Persistence
     persistence:
