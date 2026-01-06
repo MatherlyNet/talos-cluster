@@ -4,3 +4,7 @@ kind: Kustomization
 resources:
   - ./helmrepository.yaml
   - ./helmrelease.yaml
+  - ./secret-backup.sops.yaml
+  - ./servicemonitor.yaml
+  - ./prometheusrule.yaml
+  - ./dashboard-configmap.yaml

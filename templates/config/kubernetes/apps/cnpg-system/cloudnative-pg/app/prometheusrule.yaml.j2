@@ -1,0 +1,86 @@
+#% if cnpg_enabled | default(false) and monitoring_enabled | default(false) %#
+---
+#| PrometheusRule for CloudNativePG alerts #|
+#| Monitors cluster health, replication lag, and backup status #|
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnative-pg-alerts
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: cnpg.rules
+      rules:
+        #| Alert when CNPG cluster is not healthy #|
+        - alert: CNPGClusterNotHealthy
+          expr: cnpg_cluster_status != 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "CNPG cluster {{ $labels.cluster }} is not healthy"
+            description: "CloudNativePG cluster {{ $labels.cluster }} in namespace {{ $labels.namespace }} has been unhealthy for more than 5 minutes."
+            runbook_url: "https://cloudnative-pg.io/documentation/current/troubleshooting/"
+
+        #| Alert when replication lag exceeds threshold #|
+        - alert: CNPGReplicationLagHigh
+          expr: cnpg_pg_replication_lag > 60
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG cluster {{ $labels.cluster }} has high replication lag"
+            description: "CloudNativePG cluster {{ $labels.cluster }} replica has replication lag of {{ $value | humanizeDuration }} which exceeds 60 seconds."
+
+        #| Alert when backup has failed #|
+        - alert: CNPGBackupFailed
+          expr: cnpg_pg_backup_last_failed_time > cnpg_pg_backup_last_successful_time
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "CNPG backup failed for {{ $labels.cluster }}"
+            description: "CloudNativePG cluster {{ $labels.cluster }} backup has failed. Last failed backup at {{ $value | humanizeTimestamp }}."
+
+        #| Alert when no successful backup in 24 hours #|
+        - alert: CNPGBackupMissing
+          expr: time() - cnpg_pg_backup_last_successful_time > 86400
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG backup missing for {{ $labels.cluster }}"
+            description: "CloudNativePG cluster {{ $labels.cluster }} has not had a successful backup in over 24 hours."
+
+        #| Alert when WAL archiving is failing #|
+        - alert: CNPGWALArchivingFailing
+          expr: cnpg_pg_wal_archive_failures_total > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG WAL archiving failing for {{ $labels.cluster }}"
+            description: "CloudNativePG cluster {{ $labels.cluster }} has {{ $value }} WAL archive failures."
+
+        #| Alert when database connections are exhausted #|
+        - alert: CNPGConnectionsExhausted
+          expr: cnpg_pg_stat_activity_count / cnpg_pg_settings_setting{name="max_connections"} > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG cluster {{ $labels.cluster }} connections near limit"
+            description: "CloudNativePG cluster {{ $labels.cluster }} is using {{ $value | humanizePercentage }} of available connections."
+
+        #| Alert when database storage is running low #|
+        - alert: CNPGStorageLow
+          expr: cnpg_pg_database_size_bytes / cnpg_pg_data_capacity_bytes > 0.8
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG cluster {{ $labels.cluster }} storage running low"
+            description: "CloudNativePG cluster {{ $labels.cluster }} is using {{ $value | humanizePercentage }} of storage capacity."
+#% endif %#

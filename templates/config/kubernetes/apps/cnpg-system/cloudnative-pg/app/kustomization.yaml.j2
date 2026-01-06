@@ -5,4 +5,12 @@ kind: Kustomization
 resources:
   - ./helmrepository.yaml
   - ./helmrelease.yaml
+#% if cnpg_backup_enabled | default(false) %#
+  - ./secret-backup.sops.yaml
+#% endif %#
+#% if monitoring_enabled | default(false) %#
+  - ./servicemonitor.yaml
+  - ./prometheusrule.yaml
+  - ./dashboard-configmap.yaml
+#% endif %#
 #% endif %#

@@ -76,6 +76,14 @@ spec:
               echo "etcd-backups bucket created."
               echo "NOTE: Create Talos backup access keys in RustFS Console and update cluster.yaml"
 
+#% if cnpg_backup_enabled | default(false) %#
+              #| CNPG PostgreSQL backup bucket - access keys created manually in RustFS UI #|
+              #| See: docs/guides/cnpg-implementation.md #|
+              mc mb --ignore-existing rustfs/cnpg-backups
+              echo "cnpg-backups bucket created."
+              echo "NOTE: Create CNPG backup access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
               echo ""
               echo "============================================="
               echo "Bucket setup complete!"
@@ -103,6 +111,15 @@ spec:
               echo "  - Create 'talos-backup' user in backups group"
               echo "  - Update backup_s3_access_key/backup_s3_secret_key in cluster.yaml"
               echo ""
+#% if cnpg_backup_enabled | default(false) %#
+              echo "CNPG BACKUP (databases group):"
+              echo "  - Create 'database-storage' policy scoped to cnpg-backups bucket"
+              echo "  - Create 'databases' group with policy attached"
+              echo "  - Create 'cnpg-backup' user in databases group"
+              echo "  - Update cnpg_s3_access_key/cnpg_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/guides/cnpg-implementation.md"
+              echo ""
+#% endif %#
               echo "Then run: task configure && task reconcile"
               echo "============================================="
           env:

@@ -1,6 +1,6 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 2.3.0
+> **Document Version:** 2.5.0
 > **Assessment Date:** January 2026
 > **Status:** Living Document
 > **Sources:**
@@ -188,6 +188,14 @@ This document tracks **remaining work only**. Completed components are documente
 - ✅ `cluster.sample.yaml` and GitHub test files updated with CNPG options
 - ✅ RustFS IAM instructions documented for CNPG backups (`databases` group, `cnpg-backup` user)
 - ✅ pgvector extension support documented (ImageVolume pattern for K8s 1.35+)
+- ✅ Backup infrastructure templates created:
+  - `secret-backup.sops.yaml.j2` - CNPG S3 backup credentials (conditional on `cnpg_backup_enabled`)
+  - RustFS bucket setup job updated to create `cnpg-backups` bucket
+  - Kustomization updated to include backup secret when enabled
+- ✅ Observability templates created (conditional on `monitoring_enabled`):
+  - `servicemonitor.yaml.j2` - Prometheus metrics scraping for operator
+  - `prometheusrule.yaml.j2` - Alerts for cluster health, replication, backups
+  - `dashboard-configmap.yaml.j2` - Grafana dashboard (auto-provisioned via sidecar)
 
 **cluster.yaml variables:**
 ```yaml
@@ -395,3 +403,5 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 2.1.0 | Talos Backup templates enhanced: conditional wrapping, RustFS internal support, `backup_s3_internal` derived variable, etcd-backups bucket in setup job; section #2 updated to "TEMPLATES COMPLETE, CONFIG READY" |
 | 2026-01-06 | 2.2.0 | Talos Backup deployed and operational: fixed secret naming collision (`talos-backup-secrets` → `talos-backup-s3-credentials`), added verification results table, moved to "Completed ✅" |
 | 2026-01-06 | 2.3.0 | CloudNativePG deployed and operational: templates created, derived variables added, CUE schema validation, RustFS IAM instructions documented, moved to "Completed ✅" |
+| 2026-01-06 | 2.4.0 | CNPG backup infrastructure: added `secret-backup.sops.yaml.j2` template, updated RustFS bucket setup job to create `cnpg-backups` bucket, updated kustomization to include backup secret when `cnpg_backup_enabled` is true |
+| 2026-01-06 | 2.5.0 | CNPG observability: added ServiceMonitor, PrometheusRule (7 alerts), and Grafana dashboard ConfigMap templates (conditional on `monitoring_enabled`) |
