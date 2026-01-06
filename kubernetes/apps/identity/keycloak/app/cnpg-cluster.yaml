@@ -67,8 +67,10 @@ spec:
     retentionPolicy: "7d"
 
   imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
     kind: ImageCatalog
     name: postgresql-extensions
+    major: 18
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ImageCatalog

@@ -92,10 +92,12 @@ spec:
 
 #% if cnpg_pgvector_enabled | default(false) %#
   #| pgvector extension mounted via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
-  #| REF: https://cloudnative-pg.io/docs/1.28/imagevolume_extensions/ #|
+  #| REF: https://cloudnative-pg.io/documentation/current/image_catalog/ #|
   imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
     kind: ImageCatalog
     name: postgresql-extensions
+    major: 18
 ---
 #| ImageCatalog for pgvector extension #|
 apiVersion: postgresql.cnpg.io/v1
