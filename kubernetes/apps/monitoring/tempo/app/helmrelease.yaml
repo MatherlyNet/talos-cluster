@@ -59,26 +59,15 @@ spec:
         search:
           max_duration: 0
 
-      # Metrics generation from traces (basic config - processors enabled via overrides)
-      metrics_generator:
-        enabled: true
-        registry:
-          external_labels:
-            source: tempo
-            cluster: "matherlynet"
-        storage:
-          path: /var/tempo/metrics-generator/wal
-          remote_write:
-            - url: http://kube-prometheus-stack-prometheus:9090/api/v1/write
-              send_exemplars: true
+    metricsGenerator:
+      enabled: true
+      remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
 
     overrides:
-      defaults:
-        metrics_generator:
-          processors:
-            - local-blocks
-            - service-graphs
-            - span-metrics
+      metrics_generator_processors:
+        - local-blocks
+        - service-graphs
+        - span-metrics
 
     # Persistence
     persistence:
