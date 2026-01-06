@@ -60,29 +60,26 @@ spec:
         search:
           max_duration: 0
 
-    #| =========================================================================== #|
-    #| Metrics Generator Configuration                                             #|
-    #| Enables TraceQL metrics queries like { } | rate()                           #|
-    #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/       #|
-    #| =========================================================================== #|
-    #| NOTE: metricsGenerator is a ROOT-LEVEL Helm value (not under tempo:)        #|
-    #| =========================================================================== #|
-    metricsGenerator:
-      enabled: true
-      remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
+      #| =========================================================================== #|
+      #| Metrics Generator Configuration (UNDER tempo: key)                          #|
+      #| Enables TraceQL metrics queries like { } | rate()                           #|
+      #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/       #|
+      #| =========================================================================== #|
+      metricsGenerator:
+        enabled: true
+        remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
 
-    #| =========================================================================== #|
-    #| Overrides: Enable local-blocks processor for TraceQL metrics               #|
-    #| The chart v1.24.1 uses legacyConfig format - use flat keys, NOT defaults   #|
-    #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/      #|
-    #| =========================================================================== #|
-    overrides:
-      #| Enable local-blocks processor for TraceQL metrics queries like { } | rate() #|
-      #| Legacy format: metrics_generator_processors (NOT defaults.metrics_generator.processors) #|
-      metrics_generator_processors:
-        - local-blocks
-        - service-graphs
-        - span-metrics
+      #| =========================================================================== #|
+      #| Overrides: Enable local-blocks processor for TraceQL metrics               #|
+      #| Legacy format: metrics_generator_processors (NOT defaults.metrics_generator) #|
+      #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/      #|
+      #| =========================================================================== #|
+      overrides:
+        #| Enable local-blocks processor for TraceQL metrics queries #|
+        metrics_generator_processors:
+          - local-blocks
+          - service-graphs
+          - span-metrics
 
     # Persistence
     persistence:

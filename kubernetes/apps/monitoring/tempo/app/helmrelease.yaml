@@ -59,15 +59,15 @@ spec:
         search:
           max_duration: 0
 
-    metricsGenerator:
-      enabled: true
-      remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
+      metricsGenerator:
+        enabled: true
+        remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
 
-    overrides:
-      metrics_generator_processors:
-        - local-blocks
-        - service-graphs
-        - span-metrics
+      overrides:
+        metrics_generator_processors:
+          - local-blocks
+          - service-graphs
+          - span-metrics
 
     # Persistence
     persistence:
