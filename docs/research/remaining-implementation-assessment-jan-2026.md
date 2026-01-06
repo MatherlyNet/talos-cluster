@@ -1,6 +1,6 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 1.5.0
+> **Document Version:** 1.7.0
 > **Assessment Date:** January 2026
 > **Status:** Living Document
 > **Sources:**
@@ -18,6 +18,8 @@
 > - [Native OIDC SecurityPolicy](../guides/native-oidc-securitypolicy-implementation.md)
 > - [OAuth2-Proxy ext_authz](../guides/oauth2-proxy-ext-authz-implementation.md)
 > - [gRPC Routing](../guides/grpc-routing-implementation.md)
+> - [Keycloak OIDC Provider](../guides/keycloak-implementation.md)
+> - [CloudNativePG Operator](../guides/cnpg-implementation.md)
 
 ---
 
@@ -110,7 +112,7 @@ This document tracks **remaining work only**. Completed components are documente
 ```
 
 **Required Work:**
-1. Deploy OIDC provider (e.g., Keycloak)
+1. Deploy Keycloak OIDC provider - see [Keycloak Implementation Guide](../guides/keycloak-implementation.md)
 2. Create realm and configure token claims
 3. Note JWKS URI endpoint
 4. Configure `oidc_*` variables in `cluster.yaml`
@@ -118,7 +120,7 @@ This document tracks **remaining work only**. Completed components are documente
 6. Label HTTPRoutes with `security: jwt-protected`
 7. Test with `curl -H "Authorization: Bearer $TOKEN"`
 
-**Effort:** Variable (depends on OIDC provider setup)
+**Effort:** ~3-4 hours (with Keycloak guide)
 
 ---
 
@@ -204,3 +206,6 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 1.3.0 | Added Envoy Gateway examples analysis; updated source doc with current status |
 | 2026-01-06 | 1.4.0 | Added OIDC integration analysis; clarified JWT vs OIDC SSO distinction |
 | 2026-01-06 | 1.5.0 | Added 7 new implementation guides: VolSync/RustFS, Talos Backup/RustFS, JWT SecurityPolicy, tuppr verification, Native OIDC, OAuth2-Proxy ext_authz, gRPC Routing |
+| 2026-01-06 | 1.6.0 | Added Keycloak OIDC Provider implementation guide; updated JWT SecurityPolicy effort estimate |
+| 2026-01-06 | 1.7.0 | Added CloudNativePG Operator implementation guide for shared PostgreSQL clusters |
+| 2026-01-06 | 1.8.0 | Enhanced CNPG guide with pgvector extension support via Kubernetes ImageVolume |
