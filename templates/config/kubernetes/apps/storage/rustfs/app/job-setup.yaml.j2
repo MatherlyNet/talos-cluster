@@ -42,7 +42,8 @@ spec:
               echo "RustFS is ready!"
       containers:
         - name: setup
-          image: minio/mc:latest
+          #| Pin mc version for reproducibility - RELEASE.2024-11-21T17-21-54Z #|
+          image: minio/mc:RELEASE.2024-11-21T17-21-54Z
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -56,110 +57,55 @@ spec:
               set -e
 
               echo "Configuring mc alias for RustFS..."
-              mc alias set rustfs http://rustfs-svc.storage.svc:9000 "$RUSTFS_ROOT_USER" "$RUSTFS_ROOT_PASSWORD"
+              mc alias set rustfs http://rustfs-svc.storage.svc:9000 "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY"
 
               echo "Creating buckets..."
 #% if loki_enabled | default(false) %#
-              # Loki buckets
+              #| Loki buckets - access keys must be created manually in RustFS UI #|
+              #| See: https://docs.rustfs.com/administration/iam/access-token.html #|
               mc mb --ignore-existing rustfs/loki-chunks
               mc mb --ignore-existing rustfs/loki-ruler
               mc mb --ignore-existing rustfs/loki-admin
               echo "Loki buckets created."
-
-              # Create Loki service account
-              echo "Creating Loki service account..."
-              mc admin user add rustfs "$LOKI_ACCESS_KEY" "$LOKI_SECRET_KEY" || echo "Loki user may already exist"
-
-              # Create and attach Loki policy
-              cat > /tmp/loki-policy.json << 'EOF'
-              {
-                "Version": "2012-10-17",
-                "Statement": [
-                  {
-                    "Effect": "Allow",
-                    "Action": ["s3:*"],
-                    "Resource": [
-                      "arn:aws:s3:::loki-*",
-                      "arn:aws:s3:::loki-*/*"
-                    ]
-                  }
-                ]
-              }
-              EOF
-              mc admin policy create rustfs loki-policy /tmp/loki-policy.json 2>/dev/null || echo "Loki policy may already exist"
-              mc admin policy attach rustfs loki-policy --user "$LOKI_ACCESS_KEY" 2>/dev/null || echo "Loki policy may already be attached"
-              echo "Loki service account configured."
+              echo "NOTE: Create Loki access keys in RustFS Console (port 9001) and update cluster.yaml"
 #% endif %#
 
-#% if tracing_enabled | default(false) %#
-              # Tempo bucket
-              mc mb --ignore-existing rustfs/tempo
-              echo "Tempo bucket created."
-
-              # Create Tempo service account
-              echo "Creating Tempo service account..."
-              mc admin user add rustfs "$TEMPO_ACCESS_KEY" "$TEMPO_SECRET_KEY" || echo "Tempo user may already exist"
-
-              # Create and attach Tempo policy
-              cat > /tmp/tempo-policy.json << 'EOF'
-              {
-                "Version": "2012-10-17",
-                "Statement": [
-                  {
-                    "Effect": "Allow",
-                    "Action": ["s3:*"],
-                    "Resource": [
-                      "arn:aws:s3:::tempo",
-                      "arn:aws:s3:::tempo/*"
-                    ]
-                  }
-                ]
-              }
-              EOF
-              mc admin policy create rustfs tempo-policy /tmp/tempo-policy.json 2>/dev/null || echo "Tempo policy may already exist"
-              mc admin policy attach rustfs tempo-policy --user "$TEMPO_ACCESS_KEY" 2>/dev/null || echo "Tempo policy may already be attached"
-              echo "Tempo service account configured."
-#% endif %#
-
-              # General backup bucket
+              #| General backup bucket #|
               mc mb --ignore-existing rustfs/backups
               echo "Backup bucket created."
 
+              echo ""
+              echo "============================================="
               echo "Bucket setup complete!"
+              echo "============================================="
               mc ls rustfs/
-          env:
-            - name: RUSTFS_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: rustfs-credentials
-                  key: root-user
-            - name: RUSTFS_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rustfs-credentials
-                  key: root-password
+              echo ""
+              echo "NEXT STEPS:"
+              echo "1. Access RustFS Console at https://rustfs.#{ cloudflare_domain }#"
+              echo "2. Login with RUSTFS_ACCESS_KEY / RUSTFS_SECRET_KEY"
 #% if loki_enabled | default(false) %#
-            - name: LOKI_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: loki-s3-credentials
-                  key: access-key
-            - name: LOKI_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: loki-s3-credentials
-                  key: secret-key
+              echo "3. Navigate to Identity -> Users -> Create Access Key for Loki"
+              echo "4. Update loki_s3_access_key/loki_s3_secret_key in cluster.yaml"
+              echo "5. Run 'task configure' and 'task reconcile' to apply changes"
+#% else %#
+              echo "3. RustFS is ready for use!"
 #% endif %#
-#% if tracing_enabled | default(false) %#
-            - name: TEMPO_ACCESS_KEY
+              echo "============================================="
+          env:
+            #| Fix for mc permission denied: mc needs writable HOME for config #|
+            - name: HOME
+              value: "/tmp"
+            - name: MC_CONFIG_DIR
+              value: "/tmp/.mc"
+            #| Use updated secret key names matching RustFS expectations #|
+            - name: RUSTFS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: tempo-s3-credentials
-                  key: access-key
-            - name: TEMPO_SECRET_KEY
+                  name: rustfs-credentials
+                  key: RUSTFS_ACCESS_KEY
+            - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: tempo-s3-credentials
-                  key: secret-key
-#% endif %#
+                  name: rustfs-credentials
+                  key: RUSTFS_SECRET_KEY
 #% endif %#

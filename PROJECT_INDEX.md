@@ -27,7 +27,7 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 - Proxmox CSI for persistent storage on Proxmox VMs
 - Proxmox CCM for node lifecycle management on Proxmox infrastructure
 - Full observability stack (kube-prometheus-stack, Loki, Alloy, Tempo, Hubble, PrometheusRule alerts)
-- RustFS shared S3-compatible storage (alpha) for Loki SimpleScalable/Tempo backends
+- RustFS shared S3-compatible storage (alpha) for Loki SimpleScalable backend
 
 **Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
 
@@ -133,7 +133,7 @@ matherlynet-talos-cluster/
 | `monitoring` | tempo | Distributed tracing (optional) |
 | `kube-system` | hubble | Network observability via Cilium (optional) |
 | `external-secrets` | external-secrets | External secret management - 1Password/Bitwarden/Vault (optional) |
-| `storage` | rustfs | S3-compatible object storage for Loki/Tempo (optional) |
+| `storage` | rustfs | S3-compatible object storage for Loki SimpleScalable (optional) |
 
 ## Tool Dependencies
 

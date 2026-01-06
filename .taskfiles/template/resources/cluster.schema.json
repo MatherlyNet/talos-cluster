@@ -656,7 +656,7 @@
     "rustfs_enabled": {
       "default": false,
       "type": "boolean",
-      "description": "RustFS Shared Object Storage - S3-compatible storage for cluster services REF: https://rustfs.com/ REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production"
+      "description": "RustFS Shared Object Storage - S3-compatible storage for cluster services REF: https://rustfs.com/ REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production NOTE: RustFS does NOT support 'mc admin' commands for user/policy management. Loki access keys must be created manually via RustFS Console UI. Tempo uses local filesystem storage, not RustFS/S3."
     },
     "rustfs_replicas": {
       "default": 1,
@@ -691,27 +691,12 @@
       "default": "DataAnalytics",
       "type": "string"
     },
-    "rustfs_console_enabled": {
-      "default": false,
-      "type": "boolean"
-    },
     "loki_s3_access_key": {
-      "default": "loki",
       "type": "string",
       "minLength": 1,
-      "description": "RustFS Service Account Credentials for Loki (when rustfs_enabled && loki_enabled)"
+      "description": "RustFS Service Account Credentials for Loki (when rustfs_enabled && loki_enabled) Must be created manually via RustFS Console UI (Identity -> Users -> Create Access Key)"
     },
     "loki_s3_secret_key": {
-      "type": "string",
-      "minLength": 1
-    },
-    "tempo_s3_access_key": {
-      "default": "tempo",
-      "type": "string",
-      "minLength": 1,
-      "description": "RustFS Service Account Credentials for Tempo (when rustfs_enabled && tracing_enabled)"
-    },
-    "tempo_s3_secret_key": {
       "type": "string",
       "minLength": 1
     }

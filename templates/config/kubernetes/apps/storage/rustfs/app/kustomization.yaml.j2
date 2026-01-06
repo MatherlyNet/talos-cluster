@@ -6,13 +6,8 @@ resources:
   - ./helmrepository.yaml
   - ./helmrelease.yaml
   - ./secret.sops.yaml
-#% if loki_enabled | default(false) %#
-  - ./secret-loki.sops.yaml
-#% endif %#
-#% if tracing_enabled | default(false) %#
-  - ./secret-tempo.sops.yaml
-#% endif %#
   - ./job-setup.yaml
+  - ./httproute-console.yaml
 #% if monitoring_enabled | default(false) %#
   - ./servicemonitor.yaml
 #% endif %#

@@ -187,7 +187,10 @@ Optional Observability Stack (metrics, logs, traces):
 Optional RustFS Shared Object Storage (S3-compatible):
 - `rustfs_enabled` - Enable RustFS for shared S3 storage
 - When enabled, Loki automatically switches to SimpleScalable mode with S3 backend
-- `rustfs_secret_key`, `loki_s3_secret_key`, `tempo_s3_secret_key` - SOPS-encrypted credentials
+- `rustfs_secret_key`, `loki_s3_access_key`, `loki_s3_secret_key` - SOPS-encrypted credentials
+- ⚠️ **IMPORTANT**: RustFS does NOT support `mc admin` commands for user/policy management
+- Loki access keys must be created manually via RustFS Console UI (port 9001)
+- Tempo uses local filesystem storage by default, NOT RustFS/S3
 - ⚠️ RustFS is currently alpha software (v1.0.0-alpha.78) - test before production
 - See `docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md` for implementation
 

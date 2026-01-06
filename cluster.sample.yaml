@@ -419,6 +419,23 @@ cloudflare_gateway_addr: ""
 # When enabled, Loki automatically switches to SimpleScalable mode with S3.
 # Performance: 2.3x faster than MinIO for small objects, Apache 2.0 license.
 # REF: https://github.com/rustfs/rustfs
+#
+# IMPORTANT: RustFS does NOT support 'mc admin' commands for user/policy management.
+# Access keys for services (Loki, etc.) must be created manually via the Console UI.
+# REF: https://docs.rustfs.com/administration/iam/access-token.html
+#
+# SETUP WORKFLOW:
+#   1. Enable rustfs_enabled and set rustfs_secret_key below
+#   2. Run 'task configure' and 'task reconcile' to deploy RustFS
+#   3. Wait for rustfs-bucket-setup job to complete (creates buckets)
+#   4. Access RustFS Console at https://rustfs.<your-domain>
+#   5. Login with rustfs_access_key / rustfs_secret_key (root credentials)
+#   6. Navigate to: Identity -> Users -> Create Access Key
+#   7. Copy the generated access key and secret key
+#   8. Update loki_s3_access_key / loki_s3_secret_key below with generated values
+#   9. Run 'task configure' and 'task reconcile' to apply Loki credentials
+#
+# NOTE: Tempo uses local filesystem storage by default, not RustFS/S3.
 
 # -- Enable RustFS shared storage
 #    When enabled, Loki uses SimpleScalable mode with S3 backend
@@ -460,27 +477,16 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "DataAnalytics")
 # rustfs_buffer_profile: "DataAnalytics"
 
-# -- Enable RustFS console UI
-#    (OPTIONAL) / (DEFAULT: false)
-# rustfs_console_enabled: false
+# -- Loki S3 access key (created manually via RustFS Console UI)
+#    After deploying RustFS, create an access key in Console -> Identity -> Users
+#    Copy the generated access key here
+#    (REQUIRED when rustfs_enabled and loki_enabled)
+# loki_s3_access_key: "PLACEHOLDER_CREATE_IN_RUSTFS_CONSOLE"
 
-# -- Loki S3 access key (created as RustFS access key)
-#    (OPTIONAL) / (DEFAULT: "loki")
-# loki_s3_access_key: "loki"
-
-# -- Loki S3 secret key (SOPS-encrypted)
-#    Generate with: openssl rand -base64 32
+# -- Loki S3 secret key (created manually via RustFS Console UI, SOPS-encrypted)
+#    Copy the generated secret key from RustFS Console here
 #    (REQUIRED when rustfs_enabled and loki_enabled)
 # loki_s3_secret_key: ""
-
-# -- Tempo S3 access key (created as RustFS access key)
-#    (OPTIONAL) / (DEFAULT: "tempo")
-# tempo_s3_access_key: "tempo"
-
-# -- Tempo S3 secret key (SOPS-encrypted)
-#    Generate with: openssl rand -base64 32
-#    (REQUIRED when rustfs_enabled and tracing_enabled)
-# tempo_s3_secret_key: ""
 
 # =============================================================================
 # EXTERNAL SECRETS OPERATOR - Sync secrets from external providers

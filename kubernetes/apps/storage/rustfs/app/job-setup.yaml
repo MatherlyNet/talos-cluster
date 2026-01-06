@@ -39,7 +39,7 @@ spec:
               echo "RustFS is ready!"
       containers:
         - name: setup
-          image: minio/mc:latest
+          image: minio/mc:RELEASE.2024-11-21T17-21-54Z
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -53,101 +53,43 @@ spec:
               set -e
 
               echo "Configuring mc alias for RustFS..."
-              mc alias set rustfs http://rustfs-svc.storage.svc:9000 "$RUSTFS_ROOT_USER" "$RUSTFS_ROOT_PASSWORD"
+              mc alias set rustfs http://rustfs-svc.storage.svc:9000 "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY"
 
               echo "Creating buckets..."
-              # Loki buckets
               mc mb --ignore-existing rustfs/loki-chunks
               mc mb --ignore-existing rustfs/loki-ruler
               mc mb --ignore-existing rustfs/loki-admin
               echo "Loki buckets created."
+              echo "NOTE: Create Loki access keys in RustFS Console (port 9001) and update cluster.yaml"
 
-              # Create Loki service account
-              echo "Creating Loki service account..."
-              mc admin user add rustfs "$LOKI_ACCESS_KEY" "$LOKI_SECRET_KEY" || echo "Loki user may already exist"
-
-              # Create and attach Loki policy
-              cat > /tmp/loki-policy.json << 'EOF'
-              {
-                "Version": "2012-10-17",
-                "Statement": [
-                  {
-                    "Effect": "Allow",
-                    "Action": ["s3:*"],
-                    "Resource": [
-                      "arn:aws:s3:::loki-*",
-                      "arn:aws:s3:::loki-*/*"
-                    ]
-                  }
-                ]
-              }
-              EOF
-              mc admin policy create rustfs loki-policy /tmp/loki-policy.json 2>/dev/null || echo "Loki policy may already exist"
-              mc admin policy attach rustfs loki-policy --user "$LOKI_ACCESS_KEY" 2>/dev/null || echo "Loki policy may already be attached"
-              echo "Loki service account configured."
-
-              # Tempo bucket
-              mc mb --ignore-existing rustfs/tempo
-              echo "Tempo bucket created."
-
-              # Create Tempo service account
-              echo "Creating Tempo service account..."
-              mc admin user add rustfs "$TEMPO_ACCESS_KEY" "$TEMPO_SECRET_KEY" || echo "Tempo user may already exist"
-
-              # Create and attach Tempo policy
-              cat > /tmp/tempo-policy.json << 'EOF'
-              {
-                "Version": "2012-10-17",
-                "Statement": [
-                  {
-                    "Effect": "Allow",
-                    "Action": ["s3:*"],
-                    "Resource": [
-                      "arn:aws:s3:::tempo",
-                      "arn:aws:s3:::tempo/*"
-                    ]
-                  }
-                ]
-              }
-              EOF
-              mc admin policy create rustfs tempo-policy /tmp/tempo-policy.json 2>/dev/null || echo "Tempo policy may already exist"
-              mc admin policy attach rustfs tempo-policy --user "$TEMPO_ACCESS_KEY" 2>/dev/null || echo "Tempo policy may already be attached"
-              echo "Tempo service account configured."
-
-              # General backup bucket
               mc mb --ignore-existing rustfs/backups
               echo "Backup bucket created."
 
+              echo ""
+              echo "============================================="
               echo "Bucket setup complete!"
+              echo "============================================="
               mc ls rustfs/
+              echo ""
+              echo "NEXT STEPS:"
+              echo "1. Access RustFS Console at https://rustfs.matherly.net"
+              echo "2. Login with RUSTFS_ACCESS_KEY / RUSTFS_SECRET_KEY"
+              echo "3. Navigate to Identity -> Users -> Create Access Key for Loki"
+              echo "4. Update loki_s3_access_key/loki_s3_secret_key in cluster.yaml"
+              echo "5. Run 'task configure' and 'task reconcile' to apply changes"
+              echo "============================================="
           env:
-            - name: RUSTFS_ROOT_USER
+            - name: HOME
+              value: "/tmp"
+            - name: MC_CONFIG_DIR
+              value: "/tmp/.mc"
+            - name: RUSTFS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: root-user
-            - name: RUSTFS_ROOT_PASSWORD
+                  key: RUSTFS_ACCESS_KEY
+            - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: root-password
-            - name: LOKI_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: loki-s3-credentials
-                  key: access-key
-            - name: LOKI_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: loki-s3-credentials
-                  key: secret-key
-            - name: TEMPO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tempo-s3-credentials
-                  key: access-key
-            - name: TEMPO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tempo-s3-credentials
-                  key: secret-key
+                  key: RUSTFS_SECRET_KEY

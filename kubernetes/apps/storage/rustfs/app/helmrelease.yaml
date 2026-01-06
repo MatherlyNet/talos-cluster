@@ -50,7 +50,7 @@ spec:
       RUSTFS_BUFFER_PROFILE: "DataAnalytics"
       RUSTFS_ENABLE_SCANNER: "true"
       RUSTFS_ENABLE_HEAL: "true"
-      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ENABLE: "false"
 
     existingSecret: rustfs-credentials
 

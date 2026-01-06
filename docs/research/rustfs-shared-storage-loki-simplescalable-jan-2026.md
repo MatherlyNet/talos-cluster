@@ -2,7 +2,31 @@
 
 **Date:** January 2026
 **Status:** Implementation Ready (with caveats)
-**Purpose:** Deploy RustFS as shared S3-compatible storage for cluster services (Loki, Tempo, backups, future apps)
+**Purpose:** Deploy RustFS as shared S3-compatible storage for cluster services (Loki SimpleScalable backend)
+
+---
+
+> 🔴 **CRITICAL IMPLEMENTATION UPDATE (January 2026)**
+>
+> This research document was written BEFORE implementation. During implementation, critical issues were discovered:
+>
+> 1. **RustFS does NOT support `mc admin` commands** for user/policy management ([GitHub Issue #567](https://github.com/rustfs/rustfs/issues/567))
+>    - Access keys for Loki must be created **manually via RustFS Console UI** (port 9001)
+>    - All `mc admin user add`, `mc admin policy create`, `mc admin policy attach` commands in this doc are INVALID
+>    - Reference: https://docs.rustfs.com/administration/iam/access-token.html
+>
+> 2. **Tempo uses local filesystem storage, NOT RustFS/S3**
+>    - All `tempo_s3_*` variables and Tempo bucket configuration in this doc are UNUSED
+>    - Remove all Tempo-related S3 configuration
+>
+> 3. **Corrected Implementation Files:**
+>    - `secret.sops.yaml.j2` - Uses `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY` (not root-user/root-password)
+>    - `job-setup.yaml.j2` - Only creates buckets, NO `mc admin` commands
+>    - `httproute-console.yaml.j2` - NEW: Exposes RustFS Console via envoy-internal
+>    - `monitoring/loki/app/secret-s3.sops.yaml.j2` - Loki credentials (manual creation via Console)
+>    - DELETED: `secret-loki.sops.yaml.j2`, `secret-tempo.sops.yaml.j2` from storage namespace
+>
+> **The actual implementation has been corrected in the templates. See `cluster.sample.yaml` for setup workflow.**
 
 ---
 

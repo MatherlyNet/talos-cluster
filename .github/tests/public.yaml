@@ -118,13 +118,14 @@ kubernetes_version: "1.35.0"
 
 # RustFS Shared Object Storage (optional - uncomment to test)
 # REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
+# NOTE: RustFS does NOT support 'mc admin' commands for user/policy management.
+#       Loki access keys must be created manually via RustFS Console UI.
+#       Tempo uses local filesystem storage, not RustFS/S3.
 # rustfs_enabled: true
 # rustfs_replicas: 1
 # rustfs_data_volume_size: "20Gi"
 # rustfs_log_volume_size: "1Gi"
 # rustfs_access_key: "rustfsadmin"
 # rustfs_secret_key: "test-secret-key"
-# loki_s3_access_key: "loki"
+# loki_s3_access_key: "PLACEHOLDER_CREATE_IN_RUSTFS_CONSOLE"
 # loki_s3_secret_key: "test-loki-secret"
-# tempo_s3_access_key: "tempo"
-# tempo_s3_secret_key: "test-tempo-secret"

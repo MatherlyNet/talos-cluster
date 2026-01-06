@@ -251,7 +251,7 @@
     {
       "namespace": "storage",
       "name": "rustfs",
-      "purpose": "S3-compatible object storage for Loki/Tempo (alpha)",
+      "purpose": "S3-compatible object storage for Loki SimpleScalable (alpha)",
       "conditional": "rustfs_enabled"
     }
   ],
