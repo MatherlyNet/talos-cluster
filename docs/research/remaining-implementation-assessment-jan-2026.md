@@ -1,6 +1,6 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 2.2.0
+> **Document Version:** 2.3.0
 > **Assessment Date:** January 2026
 > **Status:** Living Document
 > **Sources:**
@@ -35,9 +35,9 @@ This document tracks **remaining work only**. Completed components are documente
 
 | Category | Remaining Items |
 | -------- | --------------- |
-| **Shared Infrastructure** | CloudNativePG (~2-3 hours), Keycloak (~3-4 hours) |
+| **Shared Infrastructure** | Keycloak (~3-4 hours) |
 | **Templates Needed** | VolSync (~2 hours) |
-| **Verified ✅** | Talos Backup (operational, January 6, 2026), tuppr (operational, January 6, 2026) |
+| **Verified ✅** | CloudNativePG (operational, January 6, 2026), Talos Backup (operational, January 6, 2026), tuppr (operational, January 6, 2026) |
 | **Adopt When Needed** | gRPC Routing (~1-2 hours per service) |
 
 ---
@@ -162,39 +162,36 @@ This document tracks **remaining work only**. Completed components are documente
 
 ---
 
-### 5. CloudNativePG Operator - TEMPLATES NEEDED
+### 5. CloudNativePG Operator - ✅ DEPLOYED AND OPERATIONAL
 
 > **Implementation Guide:** [cnpg-implementation.md](../guides/cnpg-implementation.md)
 
-**Status:** Templates documented in guide but not created. Shared infrastructure dependency for Keycloak.
+**Status:** Fully deployed and operational (January 6, 2026). Shared infrastructure ready for Keycloak.
 
 **Use Case:** Production-grade PostgreSQL operator providing automated HA, backups, and monitoring for database-dependent applications (Keycloak, future apps).
 
-**Key Features:**
-- CNCF Incubating project with PostgreSQL 18 support
-- Automated quorum-based failover (stable in CNPG 1.28)
-- Barman Cloud backups to RustFS S3
-- pgvector extension support via ImageVolume (K8s 1.35+)
-- Single operator serves multiple database clusters
+**Verification Results:**
 
-**Required Work:**
-1. Create `templates/config/kubernetes/apps/cnpg-system/` directory structure:
-   - `kustomization.yaml.j2`
-   - `namespace.yaml.j2`
-   - `cloudnative-pg/ks.yaml.j2`
-   - `cloudnative-pg/app/kustomization.yaml.j2`
-   - `cloudnative-pg/app/helmrepository.yaml.j2`
-   - `cloudnative-pg/app/helmrelease.yaml.j2`
-2. Add derived variables to `templates/scripts/plugin.py`:
-   - `cnpg_enabled`, `cnpg_backup_enabled`, `cnpg_postgres_image`
-   - `cnpg_pgvector_enabled`, `cnpg_pgvector_image` (optional)
-3. Update `templates/config/kubernetes/apps/kustomization.yaml.j2` to include cnpg-system
-4. Configure `cnpg_enabled: true` in `cluster.yaml`
-5. (Optional) Create RustFS access key for CNPG backups
+| Check | Status | Details |
+| ----- | ------ | ------- |
+| Kustomization | ✅ | Ready=True, Applied revision |
+| HelmRelease | ✅ | cloudnative-pg@0.27.0, Helm install succeeded |
+| Operator Pod | ✅ | Running (1/1) in cnpg-system namespace |
+| CRDs Installed | ✅ | 10 CRDs (clusters, backups, poolers, etc.) |
+| PostgreSQL Clusters | ⏳ | None deployed yet (ready for Keycloak) |
+
+**Implementation Completed:**
+- ✅ All cnpg-system templates created with `cnpg_enabled` conditional
+- ✅ Derived variables added to `plugin.py`: `cnpg_enabled`, `cnpg_backup_enabled`, `cnpg_pgvector_enabled`
+- ✅ Root kustomization updated to include cnpg-system
+- ✅ CUE schema validation for CNPG configuration variables
+- ✅ `cluster.sample.yaml` and GitHub test files updated with CNPG options
+- ✅ RustFS IAM instructions documented for CNPG backups (`databases` group, `cnpg-backup` user)
+- ✅ pgvector extension support documented (ImageVolume pattern for K8s 1.35+)
 
 **cluster.yaml variables:**
 ```yaml
-cnpg_enabled: false                    # Enable operator deployment
+cnpg_enabled: true                     # Enable operator deployment
 cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
 cnpg_storage_class: ""                 # Defaults to storage_class
 cnpg_backup_enabled: false             # Enable S3 backups to RustFS
@@ -202,9 +199,9 @@ cnpg_priority_class: "system-cluster-critical"
 cnpg_control_plane_only: true          # Schedule operator on control-plane
 ```
 
-**Effort:** ~2-3 hours
+**Effort:** Completed
 
-**Dependency Chain:** CloudNativePG → Keycloak → JWT/OIDC SecurityPolicy
+**Dependency Chain:** CloudNativePG ✅ → Keycloak → JWT/OIDC SecurityPolicy
 
 ---
 
@@ -328,9 +325,8 @@ spec:
 
 ### Medium Priority (Shared Infrastructure)
 
-1. **CloudNativePG Operator** (~2-3 hours) - Production PostgreSQL for apps
-2. **Keycloak OIDC Provider** (~3-4 hours) - Enables authentication features
-3. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
+1. **Keycloak OIDC Provider** (~3-4 hours) - Enables authentication features
+2. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
 
 ### Low Priority (Adopt When Needed)
 
@@ -339,8 +335,9 @@ spec:
 
 ### Completed ✅
 
-1. **Talos Backup Deployment** - Deployed January 6, 2026 (etcd disaster recovery)
-2. **tuppr Deployment Verification** - Verified January 6, 2026
+1. **CloudNativePG Operator** - Deployed January 6, 2026 (shared PostgreSQL infrastructure)
+2. **Talos Backup Deployment** - Deployed January 6, 2026 (etcd disaster recovery)
+3. **tuppr Deployment Verification** - Verified January 6, 2026
 
 ---
 
@@ -397,3 +394,4 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 2.0.0 | tuppr deployment verified operational; section #4 updated with verification results table; added to "Completed ✅" in Priority Order |
 | 2026-01-06 | 2.1.0 | Talos Backup templates enhanced: conditional wrapping, RustFS internal support, `backup_s3_internal` derived variable, etcd-backups bucket in setup job; section #2 updated to "TEMPLATES COMPLETE, CONFIG READY" |
 | 2026-01-06 | 2.2.0 | Talos Backup deployed and operational: fixed secret naming collision (`talos-backup-secrets` → `talos-backup-s3-credentials`), added verification results table, moved to "Completed ✅" |
+| 2026-01-06 | 2.3.0 | CloudNativePG deployed and operational: templates created, derived variables added, CUE schema validation, RustFS IAM instructions documented, moved to "Completed ✅" |
