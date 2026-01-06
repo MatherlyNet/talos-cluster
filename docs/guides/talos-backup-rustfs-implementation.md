@@ -89,16 +89,127 @@ backup_s3_secret_key: "ENC[AES256_GCM,...]"
 backup_age_public_key: "age1..."
 ```
 
-### Step 2: Create RustFS Access Key
+### Step 2: Create RustFS Access Key (Console UI)
 
-Since RustFS doesn't support `mc admin` for user management, create access keys via the Console UI:
+> ⚠️ **IMPORTANT**: RustFS does NOT support `mc admin` commands for IAM management.
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+> See [RustFS IAM Documentation](https://docs.rustfs.com/administration/iam/access-token.html)
 
-1. Access RustFS Console: `https://rustfs.matherly.net`
-2. Login with admin credentials (`rustfs_access_key`/`rustfs_secret_key`)
-3. Navigate to: **Identity → Users → Create Access Key**
-4. Create key with description: "talos-backup"
-5. Copy the access key and secret key
-6. Update `backup_s3_access_key` and `backup_s3_secret_key` in cluster.yaml
+The built-in `readwrite` policy is too permissive (grants access to ALL buckets). Following the same pattern used for Loki, create a custom scoped policy for backup operations.
+
+#### 2.1 Custom Backup Policy (Recommended)
+
+Create this policy in RustFS Console → **Identity** → **Policies** → **Create Policy**:
+
+**Policy Name:** `backup-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::etcd-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::etcd-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+**Why This Policy:**
+
+| Requirement | Permission | Purpose |
+| ----------- | ---------- | ------- |
+| List objects | `s3:ListBucket` | List backup files for retention cleanup |
+| Read backups | `s3:GetObject` | Download backups for restore |
+| Write backups | `s3:PutObject` | Upload new backup snapshots |
+| Delete objects | `s3:DeleteObject` | Retention cleanup of old backups |
+| Bucket location | `s3:GetBucketLocation` | AWS SDK compatibility |
+
+**Why Not Built-in `readwrite`:**
+- The `readwrite` policy grants access to **ALL** buckets
+- The custom `backup-storage` policy scopes access to only `etcd-backups` bucket
+- This protects other buckets (loki-chunks, tempo, etc.) from backup job access (principle of least privilege)
+
+#### 2.2 Step-by-Step Console UI Instructions
+
+1. **Access RustFS Console**
+   ```
+   https://rustfs.<your-domain>
+   ```
+   Login with `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` from `cluster.yaml`
+
+2. **Create Custom Policy**
+   - Navigate to **Identity** → **Policies**
+   - Click **Create Policy**
+   - Name: `backup-storage`
+   - Paste the JSON policy above
+   - Click **Save**
+
+3. **Create Backups Group** (Recommended)
+   - Navigate to **Identity** → **Groups**
+   - Click **Create Group**
+   - Name: `backups`
+   - Assign Policy: `backup-storage`
+   - Click **Save**
+
+4. **Create Talos Backup Service Account**
+   - Navigate to **Identity** → **Users**
+   - Click **Create User**
+   - Access Key: `talos-backup` (or any meaningful name)
+   - Assign to Group: `backups`
+   - Click **Save**
+
+5. **Generate Access Key**
+   - Click on the newly created user (`talos-backup`)
+   - Navigate to **Service Accounts** tab
+   - Click **Create Access Key**
+   - ⚠️ **Copy and save both keys immediately** - the secret key won't be shown again!
+
+6. **Update cluster.yaml**
+   ```yaml
+   backup_s3_access_key: "<access-key-from-step-5>"
+   backup_s3_secret_key: "<secret-key-from-step-5>"
+   ```
+
+7. **Apply Changes**
+   ```bash
+   task configure
+   task reconcile
+   ```
+
+#### 2.3 IAM Architecture Summary
+
+The backup IAM structure mirrors the Loki setup:
+
+| Component | Loki (Monitoring) | Talos Backup |
+| --------- | ----------------- | ------------ |
+| **Policy** | `loki-storage` | `backup-storage` |
+| **Scoped Buckets** | `loki-chunks`, `loki-ruler`, `loki-admin` | `etcd-backups` |
+| **Group** | `monitoring` | `backups` |
+| **User** | `loki` | `talos-backup` |
+| **Permissions** | Full CRUD on loki-* | Full CRUD on etcd-backups |
+
+This pattern ensures:
+- **Principle of least privilege**: Each service only accesses its own buckets
+- **Audit trail**: User/group structure enables access tracking
+- **Scalability**: New backup consumers can be added to the `backups` group
 
 ### Step 3: Add etcd-backups Bucket to RustFS Setup
 
@@ -400,7 +511,10 @@ histogram_quantile(0.95, sum(rate(job_duration_seconds_bucket{job_name=~"talos-b
 | ----- | ----- | -------- |
 | Backup job fails with S3 error | Wrong endpoint or credentials | Verify RustFS access key, check service DNS |
 | Connection refused | RustFS not ready | Check RustFS pods, wait for startup |
-| Access denied | Missing bucket or permissions | Create bucket via Console, verify access key |
+| Access denied | Missing bucket or permissions | Create bucket via Console, verify access key and policy |
+| Access denied (specific bucket) | Policy not scoped correctly | Verify `backup-storage` policy includes `etcd-backups` bucket |
+| User has no access | User not in group | Verify `talos-backup` user is in `backups` group |
+| Policy not attached | Group missing policy | Verify `backups` group has `backup-storage` policy attached |
 | Age encryption fails | Missing or wrong public key | Verify `backup_age_public_key` matches age.key |
 | Job stuck pending | Node selector mismatch | Check control-plane node labels |
 
@@ -443,6 +557,7 @@ kubectl -n kube-system get secret talos-backup-secrets -o jsonpath='{.data.aws-a
 ### External Documentation
 - [talos-backup GitHub](https://github.com/siderolabs/talos-backup)
 - [RustFS Documentation](https://docs.rustfs.com/)
+- [RustFS IAM Access Tokens](https://docs.rustfs.com/administration/iam/access-token.html)
 - [Talos etcd Disaster Recovery](https://www.talos.dev/v1.12/advanced/disaster-recovery/)
 
 ### Project Documentation
@@ -456,3 +571,4 @@ kubectl -n kube-system get secret talos-backup-secrets -o jsonpath='{.data.aws-a
 | Date | Change |
 | ---- | ------ |
 | 2026-01 | Initial implementation guide for RustFS backend |
+| 2026-01-06 | Enhanced IAM configuration with custom `backup-storage` policy, `backups` group, and step-by-step Console UI instructions (mirrors Loki IAM pattern) |

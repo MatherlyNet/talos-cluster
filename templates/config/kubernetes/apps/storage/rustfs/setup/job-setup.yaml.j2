@@ -70,9 +70,11 @@ spec:
               echo "NOTE: Create Loki access keys in RustFS Console (port 9001) and update cluster.yaml"
 #% endif %#
 
-              #| General backup bucket #|
-              mc mb --ignore-existing rustfs/backups
-              echo "Backup bucket created."
+              #| Talos etcd backup bucket - access keys created manually in RustFS UI #|
+              #| See: docs/guides/talos-backup-rustfs-implementation.md #|
+              mc mb --ignore-existing rustfs/etcd-backups
+              echo "etcd-backups bucket created."
+              echo "NOTE: Create Talos backup access keys in RustFS Console and update cluster.yaml"
 
               echo ""
               echo "============================================="
@@ -83,13 +85,25 @@ spec:
               echo "NEXT STEPS:"
               echo "1. Access RustFS Console at https://rustfs.#{ cloudflare_domain }#"
               echo "2. Login with RUSTFS_ACCESS_KEY / RUSTFS_SECRET_KEY"
+              echo ""
+              echo "For each service, create a scoped policy, group, and user:"
+              echo "(See: docs/guides/talos-backup-rustfs-implementation.md)"
+              echo ""
 #% if loki_enabled | default(false) %#
-              echo "3. Navigate to Identity -> Users -> Create Access Key for Loki"
-              echo "4. Update loki_s3_access_key/loki_s3_secret_key in cluster.yaml"
-              echo "5. Run 'task configure' and 'task reconcile' to apply changes"
-#% else %#
-              echo "3. RustFS is ready for use!"
+              echo "LOKI (monitoring group):"
+              echo "  - Create 'loki-storage' policy scoped to loki-* buckets"
+              echo "  - Create 'monitoring' group with policy attached"
+              echo "  - Create 'loki' user in monitoring group"
+              echo "  - Update loki_s3_access_key/loki_s3_secret_key in cluster.yaml"
+              echo ""
 #% endif %#
+              echo "TALOS BACKUP (backups group):"
+              echo "  - Create 'backup-storage' policy scoped to etcd-backups bucket"
+              echo "  - Create 'backups' group with policy attached"
+              echo "  - Create 'talos-backup' user in backups group"
+              echo "  - Update backup_s3_access_key/backup_s3_secret_key in cluster.yaml"
+              echo ""
+              echo "Then run: task configure && task reconcile"
               echo "============================================="
           env:
             #| Fix for mc permission denied: mc needs writable HOME for config #|

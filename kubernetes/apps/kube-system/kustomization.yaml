@@ -14,3 +14,4 @@ resources:
   - ./reloader/ks.yaml
   - ./proxmox-ccm/ks.yaml
   - ./spegel/ks.yaml
+  - ./talos-backup/ks.yaml

@@ -550,16 +550,37 @@ cloudflare_gateway_addr: ""
 # =============================================================================
 # Talos Backup creates periodic etcd snapshots and uploads them to S3-compatible
 # storage with Age encryption. Required for disaster recovery.
+#
+# OPTION A: Internal RustFS (when rustfs_enabled: true)
+#   backup_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+#   backup_s3_bucket: "etcd-backups"
+#   - Create access key via RustFS Console (see docs/guides/talos-backup-rustfs-implementation.md)
+#   - Benefits: No egress costs, low latency, unified storage
+#   - Limitation: Backups lost if cluster is destroyed
+#
+# OPTION B: External Cloudflare R2 (true disaster recovery)
+#   backup_s3_endpoint: "https://<account-id>.r2.cloudflarestorage.com"
+#   backup_s3_bucket: "cluster-backups"
+#   - Benefits: Survives cluster destruction, free egress
+#   - Setup: Create R2 bucket + API token in Cloudflare dashboard
+#
+# REF: docs/guides/talos-backup-rustfs-implementation.md
 
-# -- S3-compatible endpoint for backups (Cloudflare R2 recommended)
-#    (OPTIONAL) / (e.g. "https://<account-id>.r2.cloudflarestorage.com")
+# -- S3-compatible endpoint for backups
+#    For RustFS internal: "http://rustfs-svc.storage.svc.cluster.local:9000"
+#    For Cloudflare R2: "https://<account-id>.r2.cloudflarestorage.com"
+#    (OPTIONAL) / (Enables talos_backup_enabled when set with backup_s3_bucket)
 # backup_s3_endpoint: ""
 
 # -- S3 bucket name for backups
-#    (OPTIONAL) / (e.g. "cluster-backups")
+#    For RustFS: "etcd-backups" (created by RustFS bucket setup job)
+#    For R2: your bucket name (e.g. "cluster-backups")
+#    (OPTIONAL)
 # backup_s3_bucket: ""
 
 # -- S3 access key ID
+#    For RustFS: Create via Console UI with 'backup-storage' policy
+#    For R2: Cloudflare API token with R2 write access
 #    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
 # backup_s3_access_key: ""
 
@@ -568,6 +589,7 @@ cloudflare_gateway_addr: ""
 # backup_s3_secret_key: ""
 
 # -- Age public key for backup encryption (use same as cluster Age key)
+#    Get from: cat age.key | grep "public key"
 #    (OPTIONAL) / (e.g. "age1...")
 # backup_age_public_key: ""
 

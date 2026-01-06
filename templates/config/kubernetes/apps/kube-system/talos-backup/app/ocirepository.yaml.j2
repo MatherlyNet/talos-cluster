@@ -1,3 +1,4 @@
+#% if talos_backup_enabled | default(false) %#
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
@@ -11,3 +12,4 @@ spec:
   ref:
     tag: 0.1.2
   url: oci://ghcr.io/sergelogvinov/charts/talos-backup
+#% endif %#

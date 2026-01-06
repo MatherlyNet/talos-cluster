@@ -282,8 +282,63 @@ talosctl etcd status -n <cp-ip>
 # Members
 talosctl etcd members -n <cp-ip>
 
-# Snapshot (backup)
+# Manual snapshot (one-time backup)
 talosctl etcd snapshot db.snapshot -n <cp-ip>
+```
+
+## Automated Etcd Backup (Talos Backup)
+
+Talos Backup provides automated, encrypted etcd snapshots to S3-compatible storage. This is the **recommended approach** for production disaster recovery.
+
+### Configuration
+
+Enabled automatically when both `backup_s3_endpoint` and `backup_s3_bucket` are set in `cluster.yaml`:
+
+```yaml
+# Option A: Internal RustFS (when rustfs_enabled: true)
+backup_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+backup_s3_bucket: "etcd-backups"
+
+# Option B: External Cloudflare R2 (true disaster recovery)
+backup_s3_endpoint: "https://<account-id>.r2.cloudflarestorage.com"
+backup_s3_bucket: "cluster-backups"
+```
+
+### Derived Variables
+
+- `talos_backup_enabled` - True when endpoint + bucket configured
+- `backup_s3_internal` - True when endpoint contains `.svc.cluster.local`
+
+Internal RustFS automatically sets `S3_FORCE_PATH_STYLE=true` and `S3_USE_SSL=false`.
+
+### Components
+
+| Component | Description |
+| --------- | ----------- |
+| `talos.dev/v1alpha1/ServiceAccount` | Grants `os:etcd:backup` role to backup pod |
+| `HelmRelease` | Deploys talos-backup chart |
+| `Secret` | Age public key + S3 credentials (SOPS encrypted) |
+
+### IAM for RustFS
+
+When using internal RustFS, create credentials via Console UI:
+1. Create `backup-storage` policy (Identity → Policies)
+2. Create `backups` group with policy attached
+3. Create user in group, generate access key
+
+See: `docs/guides/talos-backup-rustfs-implementation.md`
+
+### Verification
+
+```bash
+# Check backup pod
+kubectl -n kube-system get pods -l app.kubernetes.io/name=talos-backup
+
+# Check backup logs
+kubectl -n kube-system logs -l app.kubernetes.io/name=talos-backup
+
+# List backups in RustFS
+kubectl -n storage exec -it deploy/rustfs -- mc ls local/etcd-backups
 ```
 
 ### Reset Operations

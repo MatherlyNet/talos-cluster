@@ -1,3 +1,4 @@
+#% if talos_backup_enabled | default(false) %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -10,6 +11,7 @@ spec:
   interval: 12h
   values:
     priorityClassName: system-cluster-critical
+    #| Schedule: every 6 hours #|
     schedule: "0 */6 * * *"
     env:
       - name: CLUSTER_NAME
@@ -20,6 +22,13 @@ spec:
         value: "#{ backup_s3_bucket }#"
       - name: S3_PREFIX
         value: "#{ cluster_name | default('talos-cluster') }#/etcd-backups"
+#% if backup_s3_internal | default(false) %#
+      #| Internal RustFS: use path-style URLs and disable SSL #|
+      - name: S3_FORCE_PATH_STYLE
+        value: "true"
+      - name: S3_USE_SSL
+        value: "false"
+#% endif %#
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:
@@ -41,3 +50,4 @@ spec:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+#% endif %#

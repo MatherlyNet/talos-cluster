@@ -4,6 +4,9 @@ kind: Kustomization
 metadata:
   name: talos-backup
 spec:
+  dependsOn:
+    - name: rustfs
+      namespace: storage
   interval: 12h
   retryInterval: 30s
   path: ./kubernetes/apps/kube-system/talos-backup/app

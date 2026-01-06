@@ -1,6 +1,6 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 1.7.0
+> **Document Version:** 2.1.0
 > **Assessment Date:** January 2026
 > **Status:** Living Document
 > **Sources:**
@@ -20,6 +20,10 @@
 > - [gRPC Routing](../guides/grpc-routing-implementation.md)
 > - [Keycloak OIDC Provider](../guides/keycloak-implementation.md)
 > - [CloudNativePG Operator](../guides/cnpg-implementation.md)
+>
+> **Shared Infrastructure (Deploy First):**
+> - CloudNativePG → Keycloak (database dependency)
+> - Keycloak → JWT SecurityPolicy, OIDC SecurityPolicy (OIDC provider dependency)
 
 ---
 
@@ -31,9 +35,11 @@ This document tracks **remaining work only**. Completed components are documente
 
 | Category | Remaining Items |
 | -------- | --------------- |
-| Templates Needed | VolSync (~2 hours) |
-| Config Needed | Talos Backup S3, JWT/OIDC |
-| Deployment Pending | tuppr verification |
+| **Shared Infrastructure** | CloudNativePG (~2-3 hours), Keycloak (~3-4 hours) |
+| **Templates Needed** | VolSync (~2 hours) |
+| **Config Ready** | Talos Backup (~30 min IAM setup) |
+| **Verified ✅** | tuppr (operational, January 6, 2026) |
+| **Adopt When Needed** | gRPC Routing (~1-2 hours per service) |
 
 ---
 
@@ -62,35 +68,47 @@ This document tracks **remaining work only**. Completed components are documente
 
 ---
 
-### 2. Talos Backup - CONFIG INCOMPLETE
+### 2. Talos Backup - ✅ TEMPLATES COMPLETE, CONFIG READY
 
 > Source: [gitops-components-implementation.md](../guides/gitops-components-implementation.md#12-talos-backup)
 > **Implementation Guide:** [talos-backup-rustfs-implementation.md](../guides/talos-backup-rustfs-implementation.md)
 
-**Status:** Templates complete. S3 configuration not set.
+**Status:** Templates enhanced (January 6, 2026). S3 configuration not set.
 
-**cluster.yaml variables COMMENTED OUT:**
+**Template Updates (Completed):**
+- ✅ All talos-backup templates wrapped with `talos_backup_enabled` conditional
+- ✅ HelmRelease supports internal RustFS (`S3_FORCE_PATH_STYLE`, `S3_USE_SSL`)
+- ✅ Kustomization depends on RustFS when `backup_s3_internal` is true
+- ✅ `backup_s3_internal` derived variable added to `plugin.py`
+- ✅ RustFS bucket setup job creates `etcd-backups` bucket
+- ✅ `cluster.sample.yaml` documents both RustFS and R2 options
+
+**cluster.yaml variables (uncomment to enable):**
 ```yaml
-# backup_s3_endpoint: ""
-# backup_s3_bucket: ""
-# backup_s3_access_key: ""
-# backup_s3_secret_key: ""
-# backup_age_public_key: ""
+# OPTION A: Internal RustFS
+backup_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+backup_s3_bucket: "etcd-backups"
+
+# OPTION B: External Cloudflare R2
+# backup_s3_endpoint: "https://<account-id>.r2.cloudflarestorage.com"
+# backup_s3_bucket: "cluster-backups"
+
+# Both options require:
+backup_s3_access_key: ""  # Create via RustFS Console or R2 API token
+backup_s3_secret_key: ""
+backup_age_public_key: "" # From: cat age.key | grep "public key"
 ```
 
-**Required Work (RustFS Backend - Recommended):**
-1. Create RustFS access key via Console UI (port 9001)
-2. Configure `backup_s3_endpoint: "http://rustfs.storage.svc.cluster.local:9000"`
-3. Configure `backup_s3_bucket: "etcd-backups"`
-4. Add `etcd-backups` to RustFS bucket setup job
+**Required Work (RustFS Backend):**
+1. Create `backup-storage` policy in RustFS Console (see guide)
+2. Create `backups` group with policy attached
+3. Create `talos-backup` user in group
+4. Generate access key and update cluster.yaml
 5. Run `task configure` to encrypt secrets
 6. Deploy via `task reconcile`
 7. Test: `kubectl -n kube-system create job --from=cronjob/talos-backup test-backup`
 
-**Alternative (Cloudflare R2 - External DR):**
-- See implementation guide for R2 configuration if external backup storage preferred
-
-**Effort:** ~1 hour
+**Effort:** ~30 minutes (IAM setup only)
 
 ---
 
@@ -124,22 +142,192 @@ This document tracks **remaining work only**. Completed components are documente
 
 ---
 
-### 4. tuppr - DEPLOYMENT VERIFICATION PENDING
+### 4. tuppr - ✅ VERIFIED AND OPERATIONAL
 
 > Source: [gitops-components-implementation.md](../guides/gitops-components-implementation.md#11-talos-upgrade-controller-tuppr)
 > **Verification Guide:** [tuppr-verification-guide.md](../guides/tuppr-verification-guide.md)
 
-**Status:** Templates complete. Configuration complete. Deployment needs verification.
+**Status:** Fully verified and operational (January 6, 2026).
 
-**Verification Steps:**
-1. Verify Talos API patch applied: `talosctl get machineconfig -n <node> -o yaml | grep kubernetesTalosAPIAccess`
-2. Check `allowedRoles` includes `os:admin`
-3. Check tuppr pods: `kubectl -n system-upgrade get pods`
-4. Validate CRDs: `kubectl get crd | grep tuppr`
-5. Validate CRs: `kubectl get talosupgrade,kubernetesupgrade`
-6. Check health check CEL expressions evaluate correctly
+**Verification Results:**
 
-**Effort:** ~30 minutes
+| Check | Status | Details |
+| ------- | -------- | --------- |
+| Talos API patch | ✅ | `kubernetesTalosAPIAccess` enabled with `os:admin`, `os:etcd:backup` roles |
+| tuppr pod | ✅ | Running in `system-upgrade` namespace |
+| CRDs | ✅ | `talosupgrades.tuppr.home-operations.com`, `kubernetesupgrades.tuppr.home-operations.com` |
+| TalosUpgrade CR | ✅ | Phase: Completed, Version: v1.12.0 |
+| KubernetesUpgrade CR | ✅ | Phase: Completed, Version: v1.35.0 |
+| Health checks | ✅ | All 6 nodes showing Ready=True |
+| Logs | ✅ | No errors, reconciling successfully |
+
+**Notes:**
+- ServiceMonitor not created despite `enabled: true` - chart issue (non-blocking)
+- Upgrade automation ready for next version bump in `cluster.yaml`
+
+**Effort:** Completed
+
+---
+
+### 5. CloudNativePG Operator - TEMPLATES NEEDED
+
+> **Implementation Guide:** [cnpg-implementation.md](../guides/cnpg-implementation.md)
+
+**Status:** Templates documented in guide but not created. Shared infrastructure dependency for Keycloak.
+
+**Use Case:** Production-grade PostgreSQL operator providing automated HA, backups, and monitoring for database-dependent applications (Keycloak, future apps).
+
+**Key Features:**
+- CNCF Incubating project with PostgreSQL 18 support
+- Automated quorum-based failover (stable in CNPG 1.28)
+- Barman Cloud backups to RustFS S3
+- pgvector extension support via ImageVolume (K8s 1.35+)
+- Single operator serves multiple database clusters
+
+**Required Work:**
+1. Create `templates/config/kubernetes/apps/cnpg-system/` directory structure:
+   - `kustomization.yaml.j2`
+   - `namespace.yaml.j2`
+   - `cloudnative-pg/ks.yaml.j2`
+   - `cloudnative-pg/app/kustomization.yaml.j2`
+   - `cloudnative-pg/app/helmrepository.yaml.j2`
+   - `cloudnative-pg/app/helmrelease.yaml.j2`
+2. Add derived variables to `templates/scripts/plugin.py`:
+   - `cnpg_enabled`, `cnpg_backup_enabled`, `cnpg_postgres_image`
+   - `cnpg_pgvector_enabled`, `cnpg_pgvector_image` (optional)
+3. Update `templates/config/kubernetes/apps/kustomization.yaml.j2` to include cnpg-system
+4. Configure `cnpg_enabled: true` in `cluster.yaml`
+5. (Optional) Create RustFS access key for CNPG backups
+
+**cluster.yaml variables:**
+```yaml
+cnpg_enabled: false                    # Enable operator deployment
+cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
+cnpg_storage_class: ""                 # Defaults to storage_class
+cnpg_backup_enabled: false             # Enable S3 backups to RustFS
+cnpg_priority_class: "system-cluster-critical"
+cnpg_control_plane_only: true          # Schedule operator on control-plane
+```
+
+**Effort:** ~2-3 hours
+
+**Dependency Chain:** CloudNativePG → Keycloak → JWT/OIDC SecurityPolicy
+
+---
+
+### 6. Keycloak OIDC Provider - TEMPLATES NEEDED
+
+> **Implementation Guide:** [keycloak-implementation.md](../guides/keycloak-implementation.md)
+
+**Status:** Templates documented in guide but not created. Requires PostgreSQL (CloudNativePG or embedded).
+
+**Use Case:** Self-hosted OIDC/OAuth2 provider enabling JWT SecurityPolicy (API auth) and OIDC SecurityPolicy (web SSO).
+
+**Key Features:**
+- Keycloak 26.5.0 with official Keycloak Operator (NOT Codecentric Helm)
+- Two database modes: `embedded` (dev) or `cnpg` (production)
+- CRD split pattern: operator Kustomization → instance Kustomization
+- HTTPRoute for Gateway API integration
+- Automatic JWKS/issuer URL derivation for SecurityPolicy
+
+**Required Work:**
+1. Create `templates/config/kubernetes/apps/identity/` directory structure:
+   - `kustomization.yaml.j2`
+   - `namespace.yaml.j2`
+   - `keycloak/ks.yaml.j2` (two Kustomizations: operator + instance)
+   - `keycloak/operator/kustomization.yaml.j2`
+   - `keycloak/operator/keycloak-operator.yaml.j2` (ServiceAccount, RBAC, Deployment)
+   - `keycloak/app/kustomization.yaml.j2`
+   - `keycloak/app/keycloak-cr.yaml.j2`
+   - `keycloak/app/secret.sops.yaml.j2`
+   - `keycloak/app/httproute.yaml.j2`
+   - `keycloak/app/postgres-statefulset.yaml.j2` (embedded mode only)
+2. Add derived variables to `templates/scripts/plugin.py`:
+   - `keycloak_enabled`, `keycloak_hostname`
+   - `keycloak_issuer_url`, `keycloak_jwks_uri` (auto-derived)
+3. Update `templates/config/kubernetes/apps/kustomization.yaml.j2` to include identity
+4. Configure variables in `cluster.yaml`
+5. Post-deploy: Create realm, client, and test user via Admin Console
+
+**cluster.yaml variables:**
+```yaml
+keycloak_enabled: false
+keycloak_subdomain: "auth"             # Creates auth.${cloudflare_domain}
+keycloak_realm: "matherlynet"
+keycloak_admin_password: ""            # SOPS-encrypted
+keycloak_db_mode: "embedded"           # "embedded" or "cnpg"
+keycloak_db_user: "keycloak"
+keycloak_db_password: ""               # SOPS-encrypted
+keycloak_replicas: 1
+keycloak_operator_version: "26.5.0"
+```
+
+**Effort:** ~3-4 hours (including PostgreSQL setup and realm configuration)
+
+**Dependency Chain:** (CloudNativePG if cnpg mode) → Keycloak → JWT/OIDC SecurityPolicy
+
+---
+
+### 7. gRPC Routing - ADOPT WHEN NEEDED
+
+> **Implementation Guide:** [grpc-routing-implementation.md](../guides/grpc-routing-implementation.md)
+
+**Status:** Pattern documented. Adopt when first gRPC service is deployed.
+
+**Use Case:** Native gRPC traffic management via Gateway API GRPCRoute (GA since v1.1.0).
+
+**Key Features:**
+- Service/method-level routing matching
+- Traffic splitting for canary deployments
+- Request mirroring for shadow testing
+- Header-based routing (gRPC metadata)
+- JWT authentication works; OIDC (session-based) does NOT work for gRPC
+
+**Required Work (When First gRPC Service Deployed):**
+1. Add gRPC listener to internal Gateway:
+   ```yaml
+   - name: grpc
+     protocol: HTTPS
+     port: 443
+     hostname: "grpc.${SECRET_DOMAIN}"
+     allowedRoutes:
+       kinds:
+         - kind: GRPCRoute
+   ```
+2. Create GRPCRoute per service following template pattern
+3. (Optional) Configure cluster-level variables
+
+**cluster.yaml variables (optional):**
+```yaml
+grpc_gateway_enabled: false            # Enable gRPC listener on Gateway
+grpc_hostname: "grpc.matherly.net"     # gRPC services hostname
+grpc_default_port: 50051               # Default gRPC port
+```
+
+**Per-Service Template Pattern:**
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: <service>
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  hostnames:
+    - "grpc.${SECRET_DOMAIN}"
+  rules:
+    - matches:
+        - method:
+            service: "<package>.<Service>"
+      backendRefs:
+        - name: <service>
+          port: 50051
+```
+
+**Effort:** ~1-2 hours per gRPC service
+
+**Note:** Hostname uniqueness enforced between GRPCRoute and HTTPRoute - use dedicated gRPC hostname.
 
 ---
 
@@ -148,15 +336,21 @@ This document tracks **remaining work only**. Completed components are documente
 ### High Priority (Operations & Disaster Recovery)
 
 1. **Talos Backup Configuration** (~1 hour) - Essential for DR
-2. **tuppr Deployment Verification** (~30 min) - Validates upgrade automation
 
-### Medium Priority
+### Medium Priority (Shared Infrastructure)
 
-1. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
+1. **CloudNativePG Operator** (~2-3 hours) - Production PostgreSQL for apps
+2. **Keycloak OIDC Provider** (~3-4 hours) - Enables authentication features
+3. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
 
-### Low Priority (When OIDC Provider Available)
+### Low Priority (Adopt When Needed)
 
-1. **JWT SecurityPolicy Configuration** - Requires OIDC provider first
+1. **JWT SecurityPolicy Configuration** - After Keycloak deployed
+2. **gRPC Routing** - When first gRPC service deployed
+
+### Completed ✅
+
+1. **tuppr Deployment Verification** - Verified January 6, 2026
 
 ---
 
@@ -209,3 +403,6 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 1.6.0 | Added Keycloak OIDC Provider implementation guide; updated JWT SecurityPolicy effort estimate |
 | 2026-01-06 | 1.7.0 | Added CloudNativePG Operator implementation guide for shared PostgreSQL clusters |
 | 2026-01-06 | 1.8.0 | Enhanced CNPG guide with pgvector extension support via Kubernetes ImageVolume |
+| 2026-01-06 | 1.9.0 | Added detailed sub-sections for CloudNativePG (#5), Keycloak (#6), and gRPC Routing (#7); updated Quick Status and Priority Order to reflect shared infrastructure dependencies |
+| 2026-01-06 | 2.0.0 | tuppr deployment verified operational; section #4 updated with verification results table; added to "Completed ✅" in Priority Order |
+| 2026-01-06 | 2.1.0 | Talos Backup templates enhanced: conditional wrapping, RustFS internal support, `backup_s3_internal` derived variable, etcd-backups bucket in setup job; section #2 updated to "TEMPLATES COMPLETE, CONFIG READY" |

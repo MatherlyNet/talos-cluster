@@ -231,6 +231,12 @@ class Plugin(makejinja.plugin.Plugin):
         )
         data["talos_backup_enabled"] = talos_backup_enabled
 
+        # Talos Backup - detect internal vs external S3 endpoint
+        # Internal RustFS uses .svc.cluster.local DNS, requires path-style URLs and no SSL
+        backup_s3_endpoint = data.get("backup_s3_endpoint", "")
+        backup_s3_internal = "svc.cluster.local" in backup_s3_endpoint
+        data["backup_s3_internal"] = backup_s3_internal
+
         # OIDC/JWT authentication - enabled when issuer URL and JWKS URI are configured
         # Both oidc_issuer_url and oidc_jwks_uri must be set to enable
         oidc_enabled = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))

@@ -1,9 +1,16 @@
+#% if talos_backup_enabled | default(false) %#
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: talos-backup
 spec:
+#% if backup_s3_internal | default(false) %#
+  #| Depend on RustFS when using internal S3 storage #|
+  dependsOn:
+    - name: rustfs
+      namespace: storage
+#% endif %#
   interval: 12h
   retryInterval: 30s
   path: ./kubernetes/apps/kube-system/talos-backup/app
@@ -18,3 +25,4 @@ spec:
     namespace: flux-system
   targetNamespace: kube-system
   wait: false
+#% endif %#
