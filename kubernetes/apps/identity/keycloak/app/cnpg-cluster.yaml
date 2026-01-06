@@ -10,7 +10,11 @@ metadata:
 spec:
   instances: 1
 
-  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ImageCatalog
+    name: postgresql-extensions
+    major: 18
 
   bootstrap:
     initdb:
@@ -66,11 +70,6 @@ spec:
         compression: gzip
     retentionPolicy: "7d"
 
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ImageCatalog
-    name: postgresql-extensions
-    major: 18
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ImageCatalog

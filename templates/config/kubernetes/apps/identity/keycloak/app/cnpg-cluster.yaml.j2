@@ -18,8 +18,18 @@ spec:
   #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ keycloak_db_instances | default(1) }#
 
-  #| PostgreSQL image #|
+#% if cnpg_pgvector_enabled | default(false) %#
+  #| pgvector extension via ImageCatalog (mutually exclusive with imageName) #|
+  #| REF: https://cloudnative-pg.io/documentation/current/image_catalog/ #|
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ImageCatalog
+    name: postgresql-extensions
+    major: 18
+#% else %#
+  #| PostgreSQL image (only when NOT using ImageCatalog) #|
   imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
+#% endif %#
 
   #| Bootstrap from initdb (fresh database) #|
   bootstrap:
@@ -91,13 +101,6 @@ spec:
 #% endif %#
 
 #% if cnpg_pgvector_enabled | default(false) %#
-  #| pgvector extension mounted via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
-  #| REF: https://cloudnative-pg.io/documentation/current/image_catalog/ #|
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ImageCatalog
-    name: postgresql-extensions
-    major: 18
 ---
 #| ImageCatalog for pgvector extension #|
 apiVersion: postgresql.cnpg.io/v1
