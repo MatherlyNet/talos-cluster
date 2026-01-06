@@ -36,6 +36,7 @@ Thumbs.db
 # AI
 .claude/
 .serena/
+docs/serena-archive/
 # IDE
 local_docs/
 templates/scripts/__pycache__/

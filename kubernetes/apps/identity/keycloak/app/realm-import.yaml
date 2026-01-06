@@ -1,0 +1,29 @@
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: matherlynet-realm
+  namespace: identity
+spec:
+  keycloakCRName: keycloak
+  realm:
+    realm: matherlynet
+    enabled: true
+    displayName: Matherlynet Realm
+    ssoSessionIdleTimeout: 1800
+    ssoSessionMaxLifespan: 36000
+    accessTokenLifespan: 300
+    accessTokenLifespanForImplicitFlow: 900
+    registrationAllowed: false
+    resetPasswordAllowed: true
+    rememberMe: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+    bruteForceProtected: true
+    permanentLockout: false
+    maxFailureWaitSeconds: 900
+    minimumQuickLoginWaitSeconds: 60
+    waitIncrementSeconds: 60
+    quickLoginCheckMilliSeconds: 1000
+    maxDeltaTimeSeconds: 43200
+    failureFactor: 5

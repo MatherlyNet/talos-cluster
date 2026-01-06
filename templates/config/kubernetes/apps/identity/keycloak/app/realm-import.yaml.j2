@@ -1,0 +1,35 @@
+#% if keycloak_enabled | default(false) %#
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: #{ keycloak_realm | default('matherlynet') }#-realm
+  namespace: identity
+spec:
+  keycloakCRName: keycloak
+  realm:
+    realm: #{ keycloak_realm | default('matherlynet') }#
+    enabled: true
+    #| SSO Session Settings #|
+    displayName: #{ keycloak_realm | default('matherlynet') | title }# Realm
+    ssoSessionIdleTimeout: 1800
+    ssoSessionMaxLifespan: 36000
+    #| Access Token Settings #|
+    accessTokenLifespan: 300
+    accessTokenLifespanForImplicitFlow: 900
+    #| Login Settings #|
+    registrationAllowed: false
+    resetPasswordAllowed: true
+    rememberMe: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+    #| Brute Force Protection #|
+    bruteForceProtected: true
+    permanentLockout: false
+    maxFailureWaitSeconds: 900
+    minimumQuickLoginWaitSeconds: 60
+    waitIncrementSeconds: 60
+    quickLoginCheckMilliSeconds: 1000
+    maxDeltaTimeSeconds: 43200
+    failureFactor: 5
+#% endif %#

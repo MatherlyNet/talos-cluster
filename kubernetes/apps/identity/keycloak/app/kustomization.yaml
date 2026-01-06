@@ -6,3 +6,4 @@ resources:
   - ./cnpg-cluster.yaml
   - ./keycloak-cr.yaml
   - ./httproute.yaml
+  - ./realm-import.yaml
