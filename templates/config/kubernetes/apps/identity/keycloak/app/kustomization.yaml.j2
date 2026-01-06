@@ -5,9 +5,12 @@ kind: Kustomization
 resources:
   - ./secret.sops.yaml
 #% if (keycloak_db_mode | default('embedded')) == 'embedded' %#
-  - ./postgres-statefulset.yaml
+  - ./postgres-embedded.yaml
+#% if keycloak_backup_enabled | default(false) %#
+  - ./postgres-backup-cronjob.yaml
+#% endif %#
 #% else %#
-  - ./cnpg-cluster.yaml
+  - ./postgres-cnpg.yaml
 #% endif %#
   - ./keycloak-cr.yaml
   - ./httproute.yaml

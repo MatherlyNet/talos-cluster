@@ -1,0 +1,185 @@
+#% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'embedded' and keycloak_backup_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| EMBEDDED POSTGRESQL BACKUP CRONJOB - pg_dump to RustFS S3                     #|
+#| ============================================================================= #|
+#| For embedded mode only. CNPG mode uses barmanObjectStore (WAL + PITR).        #|
+#| Creates daily pg_dump backups to keycloak-backups bucket in RustFS.           #|
+#| REF: docs/guides/keycloak-implementation.md#backup-strategy                   #|
+#| ============================================================================= #|
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keycloak-postgres-backup
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak-postgres-backup
+    app.kubernetes.io/part-of: keycloak
+    app.kubernetes.io/component: backup
+spec:
+  #| Daily backup at 2:00 AM UTC #|
+  schedule: "#{ keycloak_backup_schedule | default('0 2 * * *') }#"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: keycloak-postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: postgres:17-alpine
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  BACKUP_FILE="/backup/keycloak-${TIMESTAMP}.sql.gz"
+
+                  echo "Starting Keycloak PostgreSQL backup at ${TIMESTAMP}..."
+
+                  #| Create compressed pg_dump backup #|
+                  PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
+                    -h keycloak-postgres \
+                    -U "${POSTGRES_USER}" \
+                    -d "${POSTGRES_DB}" \
+                    --no-owner \
+                    --no-acl \
+                    --clean \
+                    --if-exists \
+                    | gzip > "${BACKUP_FILE}"
+
+                  if [ ! -s "${BACKUP_FILE}" ]; then
+                    echo "ERROR: Backup file is empty or not created"
+                    exit 1
+                  fi
+
+                  BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
+                  echo "Backup created: ${BACKUP_FILE} (${BACKUP_SIZE})"
+
+                  echo "Backup ready for upload to S3..."
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-db-secret
+                      key: username
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-db-secret
+                      key: password
+                - name: POSTGRES_DB
+                  value: "#{ keycloak_db_name | default('keycloak') }#"
+              volumeMounts:
+                - name: backup-volume
+                  mountPath: /backup
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+            - name: s3-upload
+              #| MinIO Client for S3 upload #|
+              image: minio/mc:RELEASE.2024-11-21T17-21-54Z
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: false
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  #| Wait for pg_dump container to create backup #|
+                  echo "Waiting for backup file..."
+                  TIMEOUT=300
+                  ELAPSED=0
+                  while [ ! -f /backup/keycloak-*.sql.gz ] && [ $ELAPSED -lt $TIMEOUT ]; do
+                    sleep 5
+                    ELAPSED=$((ELAPSED + 5))
+                    echo "Waiting... (${ELAPSED}s)"
+                  done
+
+                  if [ ! -f /backup/keycloak-*.sql.gz ]; then
+                    echo "ERROR: Backup file not found after ${TIMEOUT}s"
+                    exit 1
+                  fi
+
+                  BACKUP_FILE=$(ls -t /backup/keycloak-*.sql.gz | head -1)
+                  echo "Found backup file: ${BACKUP_FILE}"
+
+                  echo "Configuring mc alias for RustFS..."
+                  mc alias set rustfs http://rustfs-svc.storage.svc:9000 "${ACCESS_KEY_ID}" "${SECRET_ACCESS_KEY}"
+
+                  #| Upload to keycloak-backups bucket with embedded/ prefix #|
+                  DEST_PATH="keycloak-backups/embedded/$(basename ${BACKUP_FILE})"
+                  echo "Uploading to s3://${DEST_PATH}..."
+                  mc cp "${BACKUP_FILE}" "rustfs/${DEST_PATH}"
+
+                  echo "Upload complete!"
+
+                  #| Cleanup old backups (retain last 7 days) #|
+                  RETENTION_DAYS=#{ keycloak_backup_retention_days | default(7) }#
+                  echo "Cleaning up backups older than ${RETENTION_DAYS} days..."
+                  mc rm --recursive --force --older-than "${RETENTION_DAYS}d" rustfs/keycloak-backups/embedded/ 2>/dev/null || true
+
+                  #| List remaining backups #|
+                  echo "Current backups:"
+                  mc ls rustfs/keycloak-backups/embedded/
+              env:
+                - name: HOME
+                  value: "/tmp"
+                - name: MC_CONFIG_DIR
+                  value: "/tmp/.mc"
+                - name: ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-credentials
+                      key: ACCESS_KEY_ID
+                - name: SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-backup-credentials
+                      key: SECRET_ACCESS_KEY
+              volumeMounts:
+                - name: backup-volume
+                  mountPath: /backup
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: backup-volume
+              emptyDir:
+                sizeLimit: 1Gi
+#% endif %#

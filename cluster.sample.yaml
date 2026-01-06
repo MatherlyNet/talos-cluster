@@ -703,6 +703,29 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "26.5.0")
 # keycloak_operator_version: "26.5.0"
 
+# -- Keycloak S3 access key for PostgreSQL backups (created via RustFS Console)
+#    Create policy 'keycloak-storage' scoped to keycloak-backups bucket only
+#    Create group 'identity' with keycloak-storage policy attached
+#    Create user 'keycloak-backup' in identity group
+#    (REQUIRED when keycloak_backup_enabled: true)
+# keycloak_s3_access_key: ""
+
+# -- Keycloak S3 secret key for PostgreSQL backups (SOPS-encrypted)
+#    (REQUIRED when keycloak_backup_enabled: true)
+# keycloak_s3_secret_key: ""
+
+# -- Backup schedule for embedded mode pg_dump (cron format)
+#    Only applies when keycloak_db_mode: "embedded"
+#    CNPG mode uses continuous WAL archiving instead
+#    (OPTIONAL) / (DEFAULT: "0 2 * * *" - daily at 2:00 AM UTC)
+# keycloak_backup_schedule: "0 2 * * *"
+
+# -- Backup retention days for embedded mode pg_dump
+#    Only applies when keycloak_db_mode: "embedded"
+#    CNPG mode uses retentionPolicy in barmanObjectStore
+#    (OPTIONAL) / (DEFAULT: 7)
+# keycloak_backup_retention_days: 7
+
 # =============================================================================
 # OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
 # =============================================================================

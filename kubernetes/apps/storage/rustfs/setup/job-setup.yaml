@@ -70,6 +70,7 @@ spec:
               echo "cnpg-backups bucket created."
               echo "NOTE: Create CNPG backup access keys in RustFS Console and update cluster.yaml"
 
+
               echo ""
               echo "============================================="
               echo "Bucket setup complete!"

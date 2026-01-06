@@ -329,6 +329,17 @@ class Plugin(makejinja.plugin.Plugin):
                 # This will be caught by CUE validation, but set a flag for clarity
                 data["keycloak_cnpg_missing"] = True
 
+            # Keycloak PostgreSQL backup - enabled when RustFS and credentials are provided
+            # Works with both CNPG mode (barmanObjectStore) and embedded mode (pg_dump CronJob)
+            keycloak_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("keycloak_s3_access_key")
+                and data.get("keycloak_s3_secret_key")
+            )
+            data["keycloak_backup_enabled"] = keycloak_backup_enabled
+        else:
+            data["keycloak_backup_enabled"] = False
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)

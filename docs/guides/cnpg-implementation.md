@@ -431,7 +431,7 @@ spec:
 
 Update the Keycloak implementation to use CNPG:
 
-**File:** `templates/config/kubernetes/apps/identity/keycloak/app/cnpg-cluster.yaml.j2`
+**File:** `templates/config/kubernetes/apps/identity/keycloak/app/postgres-cnpg.yaml.j2`
 
 ```yaml
 #% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#

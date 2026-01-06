@@ -232,8 +232,8 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 - ✅ Identity namespace templates: `kustomization.yaml.j2`, `namespace.yaml.j2`
 - ✅ Keycloak operator: `ks.yaml.j2`, `operator/kustomization.yaml.j2`, `operator/keycloak-operator.yaml.j2`
 - ✅ Keycloak app: `app/kustomization.yaml.j2`, `keycloak-cr.yaml.j2`, `secret.sops.yaml.j2`, `httproute.yaml.j2`
-- ✅ Embedded PostgreSQL: `postgres-statefulset.yaml.j2` (dev/testing mode)
-- ✅ CloudNativePG cluster: `cnpg-cluster.yaml.j2` (production mode with backups)
+- ✅ Embedded PostgreSQL: `postgres-embedded.yaml.j2` (dev/testing mode)
+- ✅ CloudNativePG cluster: `postgres-cnpg.yaml.j2` (production mode with backups)
 - ✅ Derived variables in `plugin.py`: `keycloak_enabled`, `keycloak_hostname`, `keycloak_issuer_url`, `keycloak_jwks_uri`
 - ✅ Root kustomization updated to include identity namespace conditionally
 - ✅ `cluster.sample.yaml` updated with complete Keycloak configuration section

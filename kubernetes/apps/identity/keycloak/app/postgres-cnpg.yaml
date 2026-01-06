@@ -55,17 +55,3 @@ spec:
 
   priorityClassName: system-cluster-critical
 
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://cnpg-backups/keycloak"
-      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
-      s3Credentials:
-        accessKeyId:
-          name: cnpg-backup-credentials
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: cnpg-backup-credentials
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-    retentionPolicy: "7d"

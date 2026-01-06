@@ -217,6 +217,7 @@ Computed from other values:
 | `keycloak_hostname` | Auto-derived: subdomain + cloudflare_domain |
 | `keycloak_issuer_url` | Auto-derived: https://hostname/realms/realm |
 | `keycloak_jwks_uri` | Auto-derived: issuer_url + /protocol/openid-connect/certs |
+| `keycloak_backup_enabled` | rustfs_enabled + keycloak S3 credentials set |
 
 ## Template Structure
 

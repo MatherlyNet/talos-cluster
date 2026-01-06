@@ -43,3 +43,5 @@ cloudflare_gateway_addr: "10.10.10.251"
 
 # Keycloak OIDC Provider (optional)
 # keycloak_enabled: false
+# keycloak_s3_access_key: "test-keycloak-access"
+# keycloak_s3_secret_key: "test-keycloak-secret"

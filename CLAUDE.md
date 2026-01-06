@@ -234,6 +234,14 @@ Optional Keycloak OIDC Provider (Identity and Access Management):
 - Uses CRD split pattern (operator Kustomization → instance Kustomization)
 - See `docs/guides/keycloak-implementation.md` for setup guide
 
+Optional Keycloak PostgreSQL Backup (requires RustFS):
+- `keycloak_s3_access_key`, `keycloak_s3_secret_key` - SOPS-encrypted credentials (created via RustFS Console)
+- `keycloak_backup_schedule` - Cron schedule for embedded mode pg_dump (default: "0 2 * * *")
+- `keycloak_backup_retention_days` - Retention for embedded mode pg_dump (default: 7)
+- When configured with rustfs_enabled, `keycloak_backup_enabled=true` (derived in plugin.py)
+- Embedded mode: pg_dump CronJob to `keycloak-backups` bucket
+- CNPG mode: barmanObjectStore with continuous WAL archiving
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
@@ -271,6 +279,7 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `keycloak_hostname` - auto-derived from keycloak_subdomain + cloudflare_domain
 - `keycloak_issuer_url` - auto-derived OIDC issuer URL for SecurityPolicy
 - `keycloak_jwks_uri` - auto-derived JWKS endpoint for JWT validation
+- `keycloak_backup_enabled` - true when rustfs_enabled + keycloak S3 credentials set
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 

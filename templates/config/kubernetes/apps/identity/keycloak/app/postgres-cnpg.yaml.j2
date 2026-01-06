@@ -80,18 +80,21 @@ spec:
   #| Priority class for critical database workload #|
   priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
 
-#% if cnpg_backup_enabled | default(false) %#
-  #| Backup configuration using RustFS S3 #|
+#% if keycloak_backup_enabled | default(false) %#
+  #| =========================================================================== #|
+  #| CNPG Backup via barmanObjectStore to Keycloak-specific RustFS bucket        #|
+  #| Uses keycloak-backup-credentials (keycloak-storage policy scoped access)    #|
+  #| =========================================================================== #|
   backup:
     barmanObjectStore:
-      destinationPath: "s3://cnpg-backups/keycloak"
+      destinationPath: "s3://keycloak-backups"
       endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
       s3Credentials:
         accessKeyId:
-          name: cnpg-backup-credentials
+          name: keycloak-backup-credentials
           key: ACCESS_KEY_ID
         secretAccessKey:
-          name: cnpg-backup-credentials
+          name: keycloak-backup-credentials
           key: SECRET_ACCESS_KEY
       wal:
         compression: gzip

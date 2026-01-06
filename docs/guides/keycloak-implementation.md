@@ -166,7 +166,8 @@ templates/config/kubernetes/apps/identity/
         ├── keycloak-cr.yaml.j2           # Keycloak Custom Resource
         ├── secret.sops.yaml.j2           # Admin & DB credentials
         ├── httproute.yaml.j2             # Gateway API routing
-        └── postgres-statefulset.yaml.j2  # Only for embedded mode
+        ├── postgres-embedded.yaml.j2      # Embedded PostgreSQL (dev/test)
+        └── postgres-cnpg.yaml.j2          # CloudNativePG Cluster (production)
 ```
 
 > **Note:** The CRD split pattern is used here (like tuppr/rustfs) to ensure CRDs are installed before CRs are created. This prevents "no matches for kind 'Keycloak'" errors.
@@ -512,7 +513,7 @@ spec:
 
 ### Step 9: Create Embedded PostgreSQL (Development)
 
-**File:** `templates/config/kubernetes/apps/identity/keycloak/app/postgres-statefulset.yaml.j2`
+**File:** `templates/config/kubernetes/apps/identity/keycloak/app/postgres-embedded.yaml.j2`
 
 ```yaml
 #% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'embedded' %#
@@ -637,7 +638,9 @@ kind: Kustomization
 resources:
   - ./secret.sops.yaml
 #% if (keycloak_db_mode | default('embedded')) == 'embedded' %#
-  - ./postgres-statefulset.yaml
+  - ./postgres-embedded.yaml
+#% else %#
+  - ./postgres-cnpg.yaml
 #% endif %#
   - ./keycloak-cr.yaml
   - ./httproute.yaml
@@ -733,14 +736,14 @@ echo $TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 
 ---
 
-## Automated Realm Import (Optional)
+## Automated Realm Import (Automatic)
 
-For GitOps-managed realm configuration, use the `KeycloakRealmImport` CRD.
+When `keycloak_enabled: true`, a realm is automatically created via the `KeycloakRealmImport` CRD. The realm name is configured via `keycloak_realm` (default: "matherlynet").
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/realm-import.yaml.j2`
 
 ```yaml
-#% if keycloak_enabled | default(false) and keycloak_realm_import | default(false) %#
+#% if keycloak_enabled | default(false) %#
 ---
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: KeycloakRealmImport
@@ -750,36 +753,47 @@ metadata:
 spec:
   keycloakCRName: keycloak
   realm:
-    realm: "#{ keycloak_realm | default('matherlynet') }#"
+    realm: #{ keycloak_realm | default('matherlynet') }#
     enabled: true
-    displayName: "#{ keycloak_realm | default('matherlynet') | title }#"
+    displayName: #{ keycloak_realm | default('matherlynet') | title }# Realm
 
-    #| Default token settings #|
-    accessTokenLifespan: 300
     ssoSessionIdleTimeout: 1800
     ssoSessionMaxLifespan: 36000
+    accessTokenLifespan: 300
+    accessTokenLifespanForImplicitFlow: 900
 
-    #| Clients #|
-    clients:
-      - clientId: "api-clients"
-        enabled: true
-        publicClient: true
-        directAccessGrantsEnabled: true
-        standardFlowEnabled: false
-        implicitFlowEnabled: false
-        protocol: "openid-connect"
-        redirectUris:
-          - "*"
-        webOrigins:
-          - "*"
-        defaultClientScopes:
-          - "openid"
-          - "profile"
-          - "email"
+    registrationAllowed: false
+    resetPasswordAllowed: true
+    rememberMe: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+
+    bruteForceProtected: true
+    permanentLockout: false
+    maxFailureWaitSeconds: 900
+    minimumQuickLoginWaitSeconds: 60
+    waitIncrementSeconds: 60
+    quickLoginCheckMilliSeconds: 1000
+    maxDeltaTimeSeconds: 43200
+    failureFactor: 5
 #% endif %#
 ```
 
-**Note:** KeycloakRealmImport only creates new realms; it cannot update existing ones. For updates, use the Admin Console or Admin API.
+**Notes:**
+- The realm is created automatically when Keycloak is enabled (no separate toggle required)
+- KeycloakRealmImport only creates new realms; it cannot update existing ones
+- For updates to existing realms, use the Admin Console or Admin API
+- Clients can be added to the realm spec above or created manually via Admin Console
+
+### Verify Realm Creation
+
+```bash
+# Check KeycloakRealmImport status
+kubectl -n identity get keycloakrealmimport
+
+# Verify realm exists via OIDC discovery
+curl -s https://auth.matherly.net/realms/matherlynet/.well-known/openid-configuration | jq '.issuer'
+```
 
 ---
 
@@ -894,7 +908,7 @@ keycloak_operator_version: "26.5.0"
 
 ```bash
 # Regenerate templates
-task configure
+task configure -y
 
 # Verify secrets are encrypted
 cat kubernetes/apps/identity/keycloak/app/secret.sops.yaml
@@ -964,7 +978,7 @@ When `keycloak_db_mode: "cnpg"`, use the shared CloudNativePG operator. See the 
 - Deploy CNPG operator first: `cnpg_enabled: true` in cluster.yaml
 - The CNPG guide includes a complete Keycloak Cluster CR example
 
-**File:** `templates/config/kubernetes/apps/identity/keycloak/app/cnpg-cluster.yaml.j2`
+**File:** `templates/config/kubernetes/apps/identity/keycloak/app/postgres-cnpg.yaml.j2`
 
 ```yaml
 #% if keycloak_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#
@@ -1009,17 +1023,17 @@ spec:
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname
 
-#% if cnpg_backup_enabled | default(false) %#
+#% if keycloak_backup_enabled | default(false) %#
   backup:
     barmanObjectStore:
-      destinationPath: "s3://cnpg-backups/keycloak"
+      destinationPath: "s3://keycloak-backups"
       endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
       s3Credentials:
         accessKeyId:
-          name: cnpg-backup-credentials
+          name: keycloak-backup-credentials
           key: ACCESS_KEY_ID
         secretAccessKey:
-          name: cnpg-backup-credentials
+          name: keycloak-backup-credentials
           key: SECRET_ACCESS_KEY
       wal:
         compression: gzip
@@ -1052,22 +1066,115 @@ spec:
 
 ### Backup Strategy
 
-With CloudNativePG, configure scheduled backups:
+Keycloak PostgreSQL backups use a dedicated RustFS bucket (`keycloak-backups`) with Keycloak-specific credentials, following the established IAM pattern.
+
+#### Prerequisites
+
+- RustFS deployed and healthy (`rustfs_enabled: true`)
+- Keycloak S3 credentials configured in `cluster.yaml`
+
+#### RustFS IAM Setup
+
+> **IMPORTANT:** RustFS does NOT support `mc admin` commands. All user/policy operations must be performed via the **RustFS Console UI** at `https://rustfs.${cloudflare_domain}`.
+
+##### Step 1: Create Keycloak Storage Policy
+
+Create in RustFS Console → **Identity** → **Policies** → **Create Policy**:
+
+**Policy Name:** `keycloak-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::keycloak-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::keycloak-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+##### Step 2: Create Identity Group
+
+1. Navigate to **Identity** → **Groups** → **Create Group**
+2. **Name:** `identity`
+3. **Assign Policy:** `keycloak-storage`
+4. Click **Save**
+
+##### Step 3: Create Keycloak Service Account
+
+1. Navigate to **Identity** → **Users** → **Create User**
+2. **Access Key:** `keycloak-backup`
+3. **Assign to Group:** `identity`
+4. Click **Save**
+5. Generate access key and **save both keys immediately**
+
+##### Step 4: Update cluster.yaml
+
+```yaml
+keycloak_s3_access_key: "keycloak-backup"
+keycloak_s3_secret_key: "ENC[AES256_GCM,...]"  # SOPS-encrypted
+```
+
+#### CNPG Mode Backup Configuration
+
+When `keycloak_db_mode: "cnpg"`, the CNPG Cluster CR automatically includes:
 
 ```yaml
 backup:
   barmanObjectStore:
-    destinationPath: "s3://keycloak-backups/pgdata"
+    destinationPath: "s3://keycloak-backups"
     endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
     s3Credentials:
       accessKeyId:
-        name: cnpg-backup-credentials
+        name: keycloak-backup-credentials
         key: ACCESS_KEY_ID
       secretAccessKey:
-        name: cnpg-backup-credentials
+        name: keycloak-backup-credentials
         key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
   retentionPolicy: "7d"
 ```
+
+#### Verify Backups
+
+```bash
+# Check CNPG cluster backup status
+kubectl cnpg status keycloak-postgres -n identity
+
+# Check for recent WAL archives
+kubectl -n identity logs -l cnpg.io/cluster=keycloak-postgres -c postgres | grep -i wal
+```
+
+#### IAM Architecture Summary
+
+| Component | Value |
+| --------- | ----- |
+| **Bucket** | `keycloak-backups` |
+| **Policy** | `keycloak-storage` (scoped to keycloak-backups only) |
+| **Group** | `identity` |
+| **User** | `keycloak-backup` |
+| **Cluster.yaml vars** | `keycloak_s3_access_key`, `keycloak_s3_secret_key` |
+| **K8s Secret** | `keycloak-backup-credentials` (in identity namespace) |
 
 ---
 

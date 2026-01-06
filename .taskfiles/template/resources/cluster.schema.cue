@@ -266,6 +266,15 @@ import (
 	keycloak_replicas?:         *1 | int & >=1 & <=10
 	keycloak_db_instances?:     *1 | int & >=1 & <=5  // Only for cnpg mode
 	keycloak_operator_version?: *"26.5.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	// Keycloak PostgreSQL Backup - S3 credentials for RustFS
+	// Works with both embedded (pg_dump CronJob) and cnpg (barmanObjectStore) modes
+	// Requires rustfs_enabled: true and credentials created via RustFS Console
+	keycloak_s3_access_key?:    string & !=""
+	keycloak_s3_secret_key?:    string & !=""
+	// Backup schedule for embedded mode pg_dump (cron format)
+	// CNPG mode uses continuous WAL archiving instead
+	keycloak_backup_schedule?:       *"0 2 * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+	keycloak_backup_retention_days?: *7 | int & >=1 & <=365
 }
 
 #Config
