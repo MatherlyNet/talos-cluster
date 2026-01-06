@@ -17,6 +17,9 @@ spec:
 
     read:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -26,6 +29,9 @@ spec:
 
     write:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -39,6 +45,9 @@ spec:
 
     backend:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -107,9 +116,6 @@ spec:
       pattern_ingester:
         enabled: true
 
-    extraEnvFrom:
-      - secretRef:
-          name: loki-s3-credentials
 
     minio:
       enabled: false

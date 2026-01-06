@@ -24,6 +24,9 @@ spec:
     #| Read path - handles queries #|
     read:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -34,6 +37,9 @@ spec:
     #| Write path - handles ingestion #|
     write:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -49,6 +55,9 @@ spec:
     #| Backend - compactor, ruler, index gateway #|
     backend:
       replicas: 2
+      extraEnvFrom:
+        - secretRef:
+            name: loki-s3-credentials
       resources:
         requests:
           cpu: 50m
@@ -170,12 +179,8 @@ spec:
       pattern_ingester:
         enabled: true
 
-#% if rustfs_enabled | default(false) %#
-    #| S3 credentials from secret #|
-    extraEnvFrom:
-      - secretRef:
-          name: loki-s3-credentials
-#% endif %#
+    #| S3 credentials: extraEnvFrom set per-component (read/write/backend) above #|
+    #| Top-level extraEnvFrom only works for SingleBinary mode #|
 
     #| Disable built-in MinIO - using RustFS when enabled #|
     minio:
