@@ -23,9 +23,9 @@ spec:
   values:
     mode:
       standalone:
-        enabled: false
-      distributed:
         enabled: true
+      distributed:
+        enabled: false
 
     replicaCount: 1
 

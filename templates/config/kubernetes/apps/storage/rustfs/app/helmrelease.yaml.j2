@@ -22,14 +22,15 @@ spec:
     remediation:
       retries: 2
   values:
-    #| MNMD: Multi-Node Multi-Drive distributed mode #|
+    #| Mode selection: standalone for 1 replica, distributed for 4/16 replicas #|
+    #| Helm chart only creates data PVCs for 1 (standalone), 4, or 16 (distributed) replicas #|
     mode:
       standalone:
-        enabled: false
+        enabled: #{ 'true' if (rustfs_replicas | default(1) | int) == 1 else 'false' }#
       distributed:
-        enabled: true
+        enabled: #{ 'true' if (rustfs_replicas | default(1) | int) in [4, 16] else 'false' }#
 
-    #| Number of RustFS nodes - use 1 for single-node, 4/16 for distributed #|
+    #| Number of RustFS nodes - use 1 for standalone, 4/16 for distributed #|
     replicaCount: #{ rustfs_replicas | default(1) }#
 
     #| Container image #|
