@@ -39,7 +39,7 @@ The `secrets.sops.yaml.j2` template generates placeholder values like `"CHANGE-M
 #### 1. Schema Files (2 files)
 
 | File | Change Required |
-|------|-----------------|
+| ------ | ----------------- |
 | `.taskfiles/template/resources/cluster.schema.cue` | Add 5 new optional fields |
 | `.taskfiles/template/resources/cluster.schema.json` | Auto-generated from CUE |
 
@@ -62,7 +62,7 @@ proxmox_api_token_secret?: string & !=""
 #### 2. Sample Configuration (1 file)
 
 | File | Change Required |
-|------|-----------------|
+| ------ | ----------------- |
 | `cluster.sample.yaml` | Add new fields in Infrastructure section |
 
 **Add to Infrastructure Section (lines ~255-275):**
@@ -92,7 +92,7 @@ proxmox_api_token_secret?: string & !=""
 #### 3. Template Files (2 files)
 
 | File | Change Required |
-|------|-----------------|
+| ------ | ----------------- |
 | `templates/config/infrastructure/secrets.sops.yaml.j2` | Use cluster.yaml values instead of placeholders |
 | `templates/config/infrastructure/tofu/providers.tf.j2` | Remove "Use task infra:secrets-edit" comment |
 
@@ -121,7 +121,7 @@ proxmox_api_token_secret: "#{ proxmox_api_token_secret }#"
 #### 4. Taskfile Changes (1 file)
 
 | File | Change Required |
-|------|-----------------|
+| ------ | ----------------- |
 | `.taskfiles/template/Taskfile.yaml` | Add conditional infra:init step |
 
 **Add after `validate-talos-config` in `:configure`:**
@@ -162,7 +162,7 @@ maybe-init-infra:
 #### 5. Documentation Files (12 files)
 
 | File | Lines | Change Required |
-|------|-------|-----------------|
+| ------ | ------- | ----------------- |
 | `README.md` | 262-276, 307 | Remove/update secrets-edit steps |
 | `CLAUDE.md` | 52-57, 268 | Update command reference |
 | `AGENTS.md` | 74-79 | Update command reference |
@@ -179,7 +179,7 @@ maybe-init-infra:
 #### 6. Plugin File (1 file)
 
 | File | Change Required |
-|------|-----------------|
+| ------ | ----------------- |
 | `templates/scripts/plugin.py` | No changes needed - infrastructure_enabled logic already exists |
 
 ## Implementation Plan
@@ -197,30 +197,30 @@ maybe-init-infra:
 
 ### Phase 2: Template Updates
 
-4. Update `templates/config/infrastructure/secrets.sops.yaml.j2`:
+1. Update `templates/config/infrastructure/secrets.sops.yaml.j2`:
    - Replace placeholder values with template variables
    - Remove "Edit with task infra:secrets-edit" comments
 
-5. Update `templates/config/infrastructure/tofu/providers.tf.j2`:
+2. Update `templates/config/infrastructure/tofu/providers.tf.j2`:
    - Remove line 6 comment about secrets-edit
 
-6. Update `templates/config/infrastructure/tofu/backend.tf.j2`:
+3. Update `templates/config/infrastructure/tofu/backend.tf.j2`:
    - Remove lines 9-10 about secrets-edit
 
 ### Phase 3: Workflow Automation
 
-7. Update `.taskfiles/template/Taskfile.yaml`:
+1. Update `.taskfiles/template/Taskfile.yaml`:
    - Add `maybe-init-infra` internal task
    - Add to `:configure` command list
 
 ### Phase 4: Documentation Updates
 
-8. Update all 12 documentation files:
+1. Update all 12 documentation files:
    - Remove `task infra:secrets-edit` from required steps
    - Update workflow descriptions
    - Note that secrets now come from `cluster.yaml`
 
-9. Keep `task infra:secrets-edit` available but document as:
+2. Keep `task infra:secrets-edit` available but document as:
    - "For credential rotation"
    - "For troubleshooting"
    - Not required for initial setup
@@ -274,7 +274,7 @@ Add to release notes:
 ## Summary of Changes
 
 | Category | Files | Additions | Modifications |
-|----------|-------|-----------|---------------|
+| ---------- | ------- | ----------- | --------------- |
 | Schema | 2 | 5 new fields | - |
 | Sample Config | 1 | ~20 lines | - |
 | Templates | 2 | - | Replace placeholders |

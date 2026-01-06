@@ -58,6 +58,16 @@ kubernetes/apps/network/envoy-gateway/
 | `HTTPRoute (redirect)` | ✅ Deployed | HTTP→HTTPS redirect |
 | Wildcard Certificate | ✅ Deployed | `*.${SECRET_DOMAIN}` via cert-manager |
 
+**OIDC Implementation Status (Updated January 2026):**
+
+| Component | Status | Notes |
+| --------- | ------ | ----- |
+| JWT SecurityPolicy | ⏳ **TEMPLATES READY** | `securitypolicy-jwt.yaml.j2` exists, API auth |
+| Native OIDC SecurityPolicy | ❌ **NOT IMPLEMENTED** | `securitypolicy-oidc.yaml.j2` needed for web SSO |
+| OIDC Secret | ❌ **NOT IMPLEMENTED** | `secret-oidc.sops.yaml.j2` needed |
+| OAuth2-Proxy | ❌ **NOT IMPLEMENTED** | Phase 2 - for claims forwarding |
+| cluster.yaml OIDC vars | ⏳ **DEFINED** | `oidc_issuer_url`, `oidc_jwks_uri` commented out |
+
 **Template Variables Available:**
 - `#{ cloudflare_domain }#` → Domain name
 - `#{ cloudflare_gateway_addr }#` → External gateway LoadBalancer IP

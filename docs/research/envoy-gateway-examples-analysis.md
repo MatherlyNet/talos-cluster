@@ -77,13 +77,24 @@ templates/config/kubernetes/apps/network/envoy-gateway/app/
 | **Prometheus Metrics** | ✅ Configured | PodMonitor with Gzip compression |
 | **TLS Certificates** | ✅ Configured | Wildcard via cert-manager |
 
-### Current Gaps Identified
+### Current Implementation Status (Updated January 2026)
+
+| Feature | Status | Notes |
+| ------- | ------ | ----- |
+| JSON Access Logging | ✅ **DEPLOYED** | Official JSON format in `envoy.yaml.j2` lines 27-59 |
+| Distributed Tracing | ✅ **DEPLOYED** | Zipkin/Tempo integration, `tracing_enabled: true` |
+| JWT SecurityPolicy | ⏳ **TEMPLATES READY** | `securitypolicy-jwt.yaml.j2` exists, OIDC config needed |
+| Prometheus Metrics | ✅ **DEPLOYED** | Gzip compression enabled |
+| OTel Metrics Sink | ❌ Not implemented | Optional unified observability |
+| gRPC Routing | ❌ Not implemented | Adopt when gRPC services deployed |
+| TCP/TLS Passthrough | ❌ Not implemented | Adopt when needed |
+
+### Remaining Gaps
 
 | Gap | Impact | Priority |
 | ----- | -------- | ---------- |
-| Access Logging | No structured logging for traffic analysis | High |
-| Distributed Tracing | No request tracing capability | Medium |
-| JWT/OIDC Auth | No native authentication (see separate research) | High |
+| JWT/OIDC Config | OIDC provider variables commented out | High (when OIDC available) |
+| OTel Metrics Sink | Missing unified observability option | Low |
 | gRPC Routing | Not configured (may be needed for services) | Low |
 | TCP/TLS Passthrough | Not configured | Low |
 

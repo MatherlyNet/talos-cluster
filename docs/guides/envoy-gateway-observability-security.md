@@ -2,20 +2,20 @@
 
 > **Created:** 2026-01-03
 > **Based on:** [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md)
-> **Status:** ✅ Implemented (Phases 1-3 templates complete, pending `task configure`)
+> **Status:** Phases 1 & 3 DEPLOYED, Phase 2 templates complete (OIDC config pending)
 > **Version:** Envoy Gateway v0.0.0-latest (K8s 1.35 compatible)
 
 ## Overview
 
 This guide provides step-by-step implementation instructions for enhancing the Envoy Gateway deployment with observability and security features based on the research analysis of official Envoy Gateway examples.
 
-### Implementation Priorities
+### Implementation Status
 
-| Phase | Feature | Priority | Effort | Impact |
-| ----- | ------- | -------- | ------ | ------ |
-| **1** | JSON Access Logging | P0 | Low | High |
-| **2** | JWT SecurityPolicy | P0 | Medium | High |
-| **3** | Distributed Tracing | P1 | Medium | Medium |
+| Phase | Feature | Status | Notes |
+| ----- | ------- | ------ | ----- |
+| **1** | JSON Access Logging | ✅ **DEPLOYED** | Always active in `envoy.yaml.j2` |
+| **2** | JWT SecurityPolicy | ⏳ **TEMPLATES READY** | Needs OIDC config in `cluster.yaml` |
+| **3** | Distributed Tracing | ✅ **DEPLOYED** | `tracing_enabled: true` configured |
 
 ### Prerequisites
 
