@@ -120,8 +120,8 @@ kubernetes_version: "1.35.0"
 # REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
 # rustfs_enabled: true
 # rustfs_replicas: 3
-# rustfs_volumes_per_node: 4
-# rustfs_volume_size: "20Gi"
+# rustfs_data_volume_size: "20Gi"
+# rustfs_log_volume_size: "1Gi"
 # rustfs_access_key: "rustfsadmin"
 # rustfs_secret_key: "test-secret-key"
 # loki_s3_access_key: "loki"

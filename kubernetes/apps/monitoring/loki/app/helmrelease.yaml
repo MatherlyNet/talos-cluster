@@ -9,40 +9,48 @@ spec:
     kind: OCIRepository
     name: loki
   interval: 1h
+  dependsOn:
+    - name: rustfs
+      namespace: storage
   values:
-    deploymentMode: SingleBinary
-    singleBinary:
-      replicas: 1
+    deploymentMode: SimpleScalable
+
+    read:
+      replicas: 2
       resources:
         requests:
-          cpu: 100m
-          memory: 256Mi
+          cpu: 50m
+          memory: 128Mi
         limits:
-          memory: 512Mi
+          memory: 256Mi
+
+    write:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
       persistence:
         enabled: true
         storageClass: "proxmox-zfs"
-        size: "50Gi"
-      # Health probes for reliability
-      readinessProbe:
-        httpGet:
-          path: /ready
-          port: 3100
-        initialDelaySeconds: 15
-        periodSeconds: 10
-        timeoutSeconds: 1
-      livenessProbe:
-        httpGet:
-          path: /ready
-          port: 3100
-        initialDelaySeconds: 45
-        periodSeconds: 30
-        timeoutSeconds: 5
+        size: 10Gi
+
     backend:
-      replicas: 0
-    read:
-      replicas: 0
-    write:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+      persistence:
+        enabled: true
+        storageClass: "proxmox-zfs"
+        size: 10Gi
+
+    singleBinary:
       replicas: 0
     ingester:
       replicas: 0
@@ -67,13 +75,25 @@ spec:
       auth_enabled: false
       commonConfig:
         replication_factor: 1
+        path_prefix: /var/loki
       storage:
-        type: filesystem
+        type: s3
+        bucketNames:
+          chunks: loki-chunks
+          ruler: loki-ruler
+          admin: loki-admin
+        s3:
+          endpoint: http://rustfs.storage.svc:9000
+          region: us-east-1
+          accessKeyId: ${LOKI_S3_ACCESS_KEY}
+          secretAccessKey: ${LOKI_S3_SECRET_KEY}
+          s3ForcePathStyle: true
+          insecure: true
       schemaConfig:
         configs:
           - from: "2024-01-01"
             store: tsdb
-            object_store: filesystem
+            object_store: s3
             schema: v13
             index:
               prefix: index_
@@ -89,6 +109,9 @@ spec:
       pattern_ingester:
         enabled: true
 
+    extraEnvFrom:
+      - secretRef:
+          name: loki-s3-credentials
 
     minio:
       enabled: false

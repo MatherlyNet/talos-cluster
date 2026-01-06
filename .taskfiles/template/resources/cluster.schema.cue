@@ -209,11 +209,11 @@ import (
 	// REF: https://rustfs.com/
 	// REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
 	// WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production
-	rustfs_enabled?:          *false | bool
-	rustfs_replicas?:         *3 | int & >=1 & <=16
-	rustfs_volumes_per_node?: *4 | int & >=1 & <=16
-	rustfs_volume_size?:      *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
-	rustfs_storage_class?:    string & !=""
+	rustfs_enabled?:           *false | bool
+	rustfs_replicas?:          *3 | int & >=1 & <=16
+	rustfs_data_volume_size?:  *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+	rustfs_log_volume_size?:   *"1Gi" | string & =~"^[0-9]+[KMGT]i$"
+	rustfs_storage_class?:     string & !=""
 	rustfs_access_key?:       *"rustfsadmin" | string & !=""
 	rustfs_secret_key?:       string & !=""
 	rustfs_buffer_profile?:   *"DataAnalytics" | "General" | "Streaming" | "Archival"

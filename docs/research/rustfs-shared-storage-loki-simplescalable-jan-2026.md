@@ -188,14 +188,15 @@ Add to `cluster.yaml`:
 #    (OPTIONAL) / (DEFAULT: 3)
 # rustfs_replicas: 3
 
-# -- Number of volumes per RustFS node (affects erasure coding)
-#    4 volumes per node enables 4+2 erasure coding for optimal redundancy
-#    (OPTIONAL) / (DEFAULT: 4)
-# rustfs_volumes_per_node: 4
-
-# -- Data storage size per volume
+# -- Data storage size per RustFS node
+#    Used for volumeClaimTemplates via storageclass.dataStorageSize
 #    (OPTIONAL) / (DEFAULT: "20Gi")
-# rustfs_volume_size: "20Gi"
+# rustfs_data_volume_size: "20Gi"
+
+# -- Log storage size per RustFS node
+#    Used for volumeClaimTemplates via storageclass.logStorageSize
+#    (OPTIONAL) / (DEFAULT: "1Gi")
+# rustfs_log_volume_size: "1Gi"
 
 # -- RustFS root admin username
 #    (OPTIONAL) / (DEFAULT: "rustfsadmin")
@@ -396,9 +397,6 @@ spec:
     #| Number of RustFS nodes #|
     replicaCount: #{ rustfs_replicas | default(3) }#
 
-    #| Volumes per node (4 enables erasure coding) #|
-    volumesPerServer: #{ rustfs_volumes_per_node | default(4) }#
-
     #| Container image #|
     image:
       repository: rustfs/rustfs
@@ -413,6 +411,12 @@ spec:
       limits:
         memory: 1Gi
 
+    #| StorageClass configuration - uses storageclass.name per RustFS Helm chart #|
+    storageclass:
+      name: "#{ rustfs_storage_class | default(storage_class) | default('local-path') }#"
+      dataStorageSize: "#{ rustfs_data_volume_size | default('20Gi') }#"
+      logStorageSize: "#{ rustfs_log_volume_size | default('1Gi') }#"
+
     #| Environment variables #|
     environment:
       RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
@@ -423,13 +427,6 @@ spec:
 
     #| Use existing secret for credentials #|
     existingSecret: rustfs-credentials
-
-    #| Persistence configuration #|
-    persistence:
-      enabled: true
-      storageClass: "#{ storage_class | default('local-path') }#"
-      size: "#{ rustfs_volume_size | default('20Gi') }#"
-      accessMode: ReadWriteOnce
 
     #| Service configuration #|
     service:

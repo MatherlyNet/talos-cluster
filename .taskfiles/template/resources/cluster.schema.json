@@ -664,14 +664,13 @@
       "minimum": 1,
       "maximum": 16
     },
-    "rustfs_volumes_per_node": {
-      "default": 4,
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 16
-    },
-    "rustfs_volume_size": {
+    "rustfs_data_volume_size": {
       "default": "20Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "rustfs_log_volume_size": {
+      "default": "1Gi",
       "type": "string",
       "pattern": "^[0-9]+[KMGT]i$"
     },

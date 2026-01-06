@@ -1,4 +1,3 @@
-#% if rustfs_enabled | default(false) %#
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -22,23 +21,19 @@ spec:
     remediation:
       retries: 2
   values:
-    #| MNMD: Multi-Node Multi-Drive distributed mode #|
     mode:
       standalone:
         enabled: false
       distributed:
         enabled: true
 
-    #| Number of RustFS nodes #|
-    replicaCount: #{ rustfs_replicas | default(3) }#
+    replicaCount: 3
 
-    #| Container image #|
     image:
       repository: rustfs/rustfs
       tag: "latest"
       pullPolicy: IfNotPresent
 
-    #| Resource limits #|
     resources:
       requests:
         cpu: 100m
@@ -46,40 +41,32 @@ spec:
       limits:
         memory: 1Gi
 
-    #| StorageClass configuration - uses storageclass.name per RustFS Helm chart #|
     storageclass:
-      name: "#{ rustfs_storage_class | default(storage_class) | default('local-path') }#"
-      dataStorageSize: "#{ rustfs_data_volume_size | default('20Gi') }#"
-      logStorageSize: "#{ rustfs_log_volume_size | default('1Gi') }#"
+      name: "proxmox-zfs"
+      dataStorageSize: "20Gi"
+      logStorageSize: "1Gi"
 
-    #| Environment variables #|
     environment:
-      RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
+      RUSTFS_BUFFER_PROFILE: "DataAnalytics"
       RUSTFS_ENABLE_SCANNER: "true"
       RUSTFS_ENABLE_HEAL: "true"
-      #| Console UI disabled in production by default - use mc CLI #|
-      RUSTFS_CONSOLE_ENABLE: "#{ rustfs_console_enabled | default(false) | string | lower }#"
+      RUSTFS_CONSOLE_ENABLE: "true"
 
-    #| Use existing secret for credentials #|
     existingSecret: rustfs-credentials
 
-    #| Service configuration #|
     service:
       type: ClusterIP
       port: 9000
       consolePort: 9001
 
-    #| Ingress disabled - internal service only #|
     ingress:
       enabled: false
 
-    #| Pod security context #|
     podSecurityContext:
       runAsUser: 10001
       runAsGroup: 10001
       fsGroup: 10001
 
-    #| Container security context #|
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -89,7 +76,6 @@ spec:
       seccompProfile:
         type: RuntimeDefault
 
-    #| Pod anti-affinity for HA #|
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -103,7 +89,6 @@ spec:
                       - rustfs
               topologyKey: kubernetes.io/hostname
 
-    #| Liveness and readiness probes #|
     livenessProbe:
       httpGet:
         path: /minio/health/live
@@ -118,4 +103,3 @@ spec:
       initialDelaySeconds: 5
       periodSeconds: 5
       timeoutSeconds: 3
-#% endif %#

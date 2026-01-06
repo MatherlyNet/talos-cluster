@@ -1,0 +1,18 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rustfs
+  labels:
+    app.kubernetes.io/name: rustfs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustfs
+  endpoints:
+    - port: api
+      path: /minio/v2/metrics/cluster
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - storage
