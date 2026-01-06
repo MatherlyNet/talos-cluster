@@ -41,8 +41,9 @@ spec:
     httpsPort: 8443
 
   #| Hostname configuration #|
+  #| NOTE: backchannelDynamic requires full URL format (with https://) #|
   hostname:
-    hostname: "#{ keycloak_hostname }#"
+    hostname: "https://#{ keycloak_hostname }#"
     strict: false
     backchannelDynamic: true
 

@@ -28,7 +28,7 @@ spec:
     httpsPort: 8443
 
   hostname:
-    hostname: "sso.matherly.net"
+    hostname: "https://sso.matherly.net"
     strict: false
     backchannelDynamic: true
 
