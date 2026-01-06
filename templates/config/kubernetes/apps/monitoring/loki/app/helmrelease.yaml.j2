@@ -137,8 +137,8 @@ spec:
         s3:
           endpoint: http://rustfs.storage.svc:9000
           region: us-east-1
-          accessKeyId: ${LOKI_S3_ACCESS_KEY}
-          secretAccessKey: ${LOKI_S3_SECRET_KEY}
+          #| Credentials auto-detected from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY env vars #|
+          #| Set via extraEnvFrom secretRef below - DO NOT specify here #|
           s3ForcePathStyle: true
           insecure: true
 #% else %#

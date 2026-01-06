@@ -14,6 +14,7 @@
 >    - Access keys for Loki must be created **manually via RustFS Console UI** (port 9001)
 >    - All `mc admin user add`, `mc admin policy create`, `mc admin policy attach` commands in this doc are INVALID
 >    - Reference: https://docs.rustfs.com/administration/iam/access-token.html
+>    - **See "Loki IAM Configuration" section below for step-by-step Console UI instructions**
 >
 > 2. **Tempo uses local filesystem storage, NOT RustFS/S3**
 >    - All `tempo_s3_*` variables and Tempo bucket configuration in this doc are UNUSED
@@ -759,6 +760,128 @@ spec:
       - storage
 #% endif %#
 ```
+
+### Phase 2.5: Loki IAM Configuration (Manual via Console UI)
+
+> ⚠️ **IMPORTANT**: RustFS does NOT support `mc admin` commands for IAM management.
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+
+After RustFS is deployed and buckets are created by the setup job, you must manually create
+Loki credentials via the RustFS Console UI. The built-in `readwrite` policy is too permissive
+(grants access to ALL buckets), so a custom scoped policy is recommended.
+
+#### 2.5.1 Custom Loki Policy (Recommended)
+
+Create this policy in RustFS Console → **Identity** → **Policies** → **Create Policy**:
+
+**Policy Name:** `loki-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::loki-chunks",
+        "arn:aws:s3:::loki-ruler",
+        "arn:aws:s3:::loki-admin"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::loki-chunks/*",
+        "arn:aws:s3:::loki-ruler/*",
+        "arn:aws:s3:::loki-admin/*"
+      ]
+    }
+  ]
+}
+```
+
+**Why This Policy:**
+
+| Requirement | Permission | Purpose |
+| ----------- | ---------- | ------- |
+| List objects | `s3:ListBucket` | Index discovery, compaction |
+| Read chunks | `s3:GetObject` | Query execution |
+| Write chunks | `s3:PutObject` | Log ingestion |
+| Delete objects | `s3:DeleteObject` | Compaction, retention cleanup |
+| Bucket location | `s3:GetBucketLocation` | AWS SDK compatibility |
+
+**Why Not Built-in `readwrite`:**
+- The `readwrite` policy grants access to **ALL** buckets
+- The custom `loki-storage` policy scopes access to only `loki-*` buckets
+- This protects the `backups` bucket from Loki access (principle of least privilege)
+
+#### 2.5.2 Step-by-Step Console UI Instructions
+
+1. **Access RustFS Console**
+   ```
+   https://rustfs.<your-domain>
+   ```
+   Login with `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` from `cluster.yaml`
+
+2. **Create Custom Policy**
+   - Navigate to **Identity** → **Policies**
+   - Click **Create Policy**
+   - Name: `loki-storage`
+   - Paste the JSON policy above
+   - Click **Save**
+
+3. **Create Monitoring Group** (Optional but Recommended)
+   - Navigate to **Identity** → **Groups**
+   - Click **Create Group**
+   - Name: `monitoring`
+   - Assign Policy: `loki-storage`
+   - Click **Save**
+
+4. **Create Loki Service Account**
+   - Navigate to **Identity** → **Users**
+   - Click **Create User**
+   - Access Key: `loki` (or any meaningful name)
+   - Assign to Group: `monitoring`
+   - Click **Save**
+
+5. **Generate Access Key**
+   - Click on the newly created user (`loki`)
+   - Navigate to **Service Accounts** tab
+   - Click **Create Access Key**
+   - ⚠️ **Copy and save both keys immediately** - the secret key won't be shown again!
+
+6. **Update cluster.yaml**
+   ```yaml
+   loki_s3_access_key: "<access-key-from-step-5>"
+   loki_s3_secret_key: "<secret-key-from-step-5>"
+   ```
+
+7. **Apply Changes**
+   ```bash
+   task configure
+   task reconcile
+   ```
+
+#### 2.5.3 All Three Buckets Use Same Policy
+
+Loki's storage architecture uses all three buckets with identical access patterns:
+
+| Bucket | Purpose | Access Pattern |
+| ------ | ------- | -------------- |
+| `loki-chunks` | Log data storage | Read/write during ingestion, read during queries |
+| `loki-ruler` | Alert/recording rule state | Read/write |
+| `loki-admin` | Compactor state, tenant configs | Read/write |
+
+There's no benefit to separate policies per bucket—Loki needs full CRUD on all three.
 
 ### Phase 3: Loki SimpleScalable Migration
 

@@ -430,12 +430,18 @@ cloudflare_gateway_addr: ""
 #   3. Wait for rustfs-bucket-setup job to complete (creates buckets)
 #   4. Access RustFS Console at https://rustfs.<your-domain>
 #   5. Login with rustfs_access_key / rustfs_secret_key (root credentials)
-#   6. Navigate to: Identity -> Users -> Create Access Key
-#   7. Copy the generated access key and secret key
-#   8. Update loki_s3_access_key / loki_s3_secret_key below with generated values
-#   9. Run 'task configure' and 'task reconcile' to apply Loki credentials
+#   6. Create custom 'loki-storage' policy (Identity -> Policies -> Create Policy)
+#      See: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
+#      Section: "Phase 2.5: Loki IAM Configuration" for policy JSON
+#   7. Create 'monitoring' group with 'loki-storage' policy attached
+#   8. Create 'loki' user in 'monitoring' group
+#   9. Generate Access Key for 'loki' user (Service Accounts tab)
+#   10. Copy access key and secret key (secret shown only once!)
+#   11. Update loki_s3_access_key / loki_s3_secret_key below with generated values
+#   12. Run 'task configure' and 'task reconcile' to apply Loki credentials
 #
 # NOTE: Tempo uses local filesystem storage by default, not RustFS/S3.
+# NOTE: Custom 'loki-storage' policy scopes access to only loki-* buckets (least privilege).
 
 # -- Enable RustFS shared storage
 #    When enabled, Loki uses SimpleScalable mode with S3 backend
