@@ -270,17 +270,17 @@ spec:
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:
-            name: talos-backup-secrets
+            name: talos-backup-s3-credentials
             key: age-public-key
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
           secretKeyRef:
-            name: talos-backup-secrets
+            name: talos-backup-s3-credentials
             key: aws-access-key-id
       - name: AWS_SECRET_ACCESS_KEY
         valueFrom:
           secretKeyRef:
-            name: talos-backup-secrets
+            name: talos-backup-s3-credentials
             key: aws-secret-access-key
     tolerations:
       - effect: NoSchedule
@@ -289,6 +289,17 @@ spec:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 ```
+
+### Secret Naming Convention
+
+> ⚠️ **IMPORTANT**: The Talos `ServiceAccount` CRD automatically creates a secret named `<serviceaccount-name>-secrets` for Talos API tokens. To avoid naming collisions, our S3 credentials secret uses a different name.
+
+| Secret | Owner | Purpose |
+| -------- | ------- | --------- |
+| `talos-backup-secrets` | Talos ServiceAccount controller | Talos API access tokens (auto-generated) |
+| `talos-backup-s3-credentials` | Flux Kustomization (SOPS) | S3 access keys + Age public key |
+
+The HelmRelease references `talos-backup-s3-credentials` for S3 credentials, while the Talos ServiceAccount auto-provisions `talos-backup-secrets` for etcd API access.
 
 ### Conditional Logic for RustFS
 
@@ -420,12 +431,12 @@ spec:
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
-                      name: talos-backup-secrets
+                      name: talos-backup-s3-credentials
                       key: aws-access-key-id
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: talos-backup-secrets
+                      name: talos-backup-s3-credentials
                       key: aws-secret-access-key
           restartPolicy: OnFailure
           nodeSelector:
@@ -532,7 +543,7 @@ kubectl -n kube-system run s3-test --rm -it --image=minio/mc -- \
 kubectl -n kube-system get serviceaccount talos-backup -o yaml
 
 # Check secret values (base64 decode)
-kubectl -n kube-system get secret talos-backup-secrets -o jsonpath='{.data.aws-access-key-id}' | base64 -d
+kubectl -n kube-system get secret talos-backup-s3-credentials -o jsonpath='{.data.aws-access-key-id}' | base64 -d
 ```
 
 ---
