@@ -3,6 +3,7 @@
 #| ============================================================================= #|
 #| KEYCLOAK CUSTOM RESOURCE - Managed by Keycloak Operator                       #|
 #| REF: https://www.keycloak.org/operator/basic-deployment                       #|
+#| REF: https://www.keycloak.org/operator/advanced-configuration                 #|
 #| ============================================================================= #|
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
@@ -15,6 +16,18 @@ metadata:
 spec:
   #| Number of Keycloak instances (1 for dev, 2+ for HA) #|
   instances: #{ keycloak_replicas | default(1) }#
+
+  #| =========================================================================== #|
+  #| BOOTSTRAP ADMIN - Initial admin credentials from pre-created secret        #|
+  #| =========================================================================== #|
+  #| This tells the operator to use our GitOps-managed secret instead of        #|
+  #| auto-generating random credentials. The secret must contain 'username'     #|
+  #| and 'password' keys. Using a different secret name than the operator's     #|
+  #| default (keycloak-initial-admin) avoids GitHub Issue #35862.               #|
+  #| =========================================================================== #|
+  bootstrapAdmin:
+    user:
+      secret: keycloak-admin-credentials
 
   #| Database configuration #|
   db:

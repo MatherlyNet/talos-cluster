@@ -1,7 +1,19 @@
 #% if keycloak_enabled | default(false) %#
 ---
+#| ============================================================================= #|
+#| KEYCLOAK OPERATOR KUSTOMIZATION                                               #|
+#| ============================================================================= #|
+#| CRDs are fetched from upstream GitHub to ensure complete schema support.      #|
+#| The official CRD is ~5000 lines with 28 spec fields; inline CRDs were missing #|
+#| critical fields (bootstrapAdmin, env, scheduling, etc.) causing operator      #|
+#| failures with "field not declared in schema" errors.                          #|
+#| ============================================================================= #|
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  #| Official Keycloak CRDs from upstream (pinned to operator version) #|
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+  #| Operator RBAC and Deployment #|
   - ./keycloak-operator.yaml
 #% endif %#

@@ -283,203 +283,41 @@ spec:
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/operator/kustomization.yaml.j2`
 
+> **IMPORTANT:** CRDs are fetched from upstream GitHub to ensure complete schema support. The official CRD is ~5000 lines with 28 spec fields; inline CRDs were missing critical fields (`bootstrapAdmin`, `env`, `scheduling`, etc.) causing operator failures with "field not declared in schema" errors.
+
 ```yaml
 #% if keycloak_enabled | default(false) %#
 ---
+#| ============================================================================= #|
+#| KEYCLOAK OPERATOR KUSTOMIZATION                                               #|
+#| ============================================================================= #|
+#| CRDs are fetched from upstream GitHub to ensure complete schema support.      #|
+#| The official CRD is ~5000 lines with 28 spec fields; inline CRDs were missing #|
+#| critical fields (bootstrapAdmin, env, scheduling, etc.) causing operator      #|
+#| failures with "field not declared in schema" errors.                          #|
+#| ============================================================================= #|
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  #| Official Keycloak CRDs from upstream (pinned to operator version) #|
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+  - https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+  #| Operator RBAC and Deployment #|
   - ./keycloak-operator.yaml
 #% endif %#
 ```
 
-### Step 5: Create Keycloak Operator with CRDs
+### Step 5: Create Keycloak Operator RBAC and Deployment
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/operator/keycloak-operator.yaml.j2`
 
-> **Note:** CRDs are applied directly as raw manifests (like flux-operator pattern). The operator image version matches the CRD version for compatibility.
-
-```yaml
-#% if keycloak_enabled | default(false) %#
----
-#| ============================================================================= #|
-#| KEYCLOAK OPERATOR - CRDs + Deployment                                          #|
-#| Source: https://github.com/keycloak/keycloak-k8s-resources/tree/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes #|
-#| ============================================================================= #|
-#| CRDs are installed first (Keycloak, KeycloakRealmImport), then the operator    #|
-#| The operator watches the namespace where it's deployed                         #|
-#| ============================================================================= #|
-#| NOTE: For production, consider pre-installing CRDs via:                        #|
-#|   kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.5.0/kubernetes/keycloaks.k8s.keycloak.org-v1.yml     #|
-#|   kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.5.0/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml #|
-#| ============================================================================= #|
-#| Keycloak Operator - Watches the identity namespace #|
-#| Source: https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/#{ keycloak_operator_version | default('26.5.0') }#/kubernetes/kubernetes.yml #|
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: keycloak-operator
-  namespace: identity
-  labels:
-    app.kubernetes.io/name: keycloak-operator
-    app.kubernetes.io/version: "#{ keycloak_operator_version | default('26.5.0') }#"
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: keycloak-operator-clusterrole
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - k8s.keycloak.org
-    resources:
-      - keycloaks
-      - keycloaks/status
-      - keycloaks/finalizers
-      - keycloakrealmimports
-      - keycloakrealmimports/status
-      - keycloakrealmimports/finalizers
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: keycloak-operator-clusterrole-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: keycloak-operator-clusterrole
-subjects:
-  - kind: ServiceAccount
-    name: keycloak-operator
-    namespace: identity
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: keycloak-operator-role
-  namespace: identity
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
-  - apiGroups:
-      - apps
-    resources:
-      - statefulsets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
-  - apiGroups:
-      - networking.k8s.io
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: keycloak-operator-role-binding
-  namespace: identity
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: keycloak-operator-role
-subjects:
-  - kind: ServiceAccount
-    name: keycloak-operator
-    namespace: identity
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: keycloak-operator
-  namespace: identity
-  labels:
-    app.kubernetes.io/name: keycloak-operator
-    app.kubernetes.io/version: "#{ keycloak_operator_version | default('26.5.0') }#"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: keycloak-operator
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: keycloak-operator
-    spec:
-      serviceAccountName: keycloak-operator
-      containers:
-        - name: keycloak-operator
-          image: "quay.io/keycloak/keycloak-operator:#{ keycloak_operator_version | default('26.5.0') }#"
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: KUBERNETES_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: RELATED_IMAGE_KEYCLOAK
-              value: "quay.io/keycloak/keycloak:#{ keycloak_operator_version | default('26.5.0') }#"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-          livenessProbe:
-            httpGet:
-              path: /q/health/live
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /q/health/ready
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
-#% endif %#
-```
+> **Note:** CRDs are installed via Kustomize remote resources (Step 4). This file contains only RBAC and Deployment. See the actual template for the full implementation including security contexts, probes, and production-hardened configuration.
 
 ### Step 6: Create Keycloak Custom Resource
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/keycloak-cr.yaml.j2`
+
+> **IMPORTANT:** The `bootstrapAdmin` section is required to use GitOps-managed admin credentials. Without this, the operator generates random credentials. Using a secret name different from the operator's default (`keycloak-initial-admin`) avoids GitHub Issue #35862 where the operator tries to CREATE a secret that already exists.
 
 ```yaml
 #% if keycloak_enabled | default(false) %#
@@ -493,13 +331,30 @@ metadata:
     app.kubernetes.io/name: keycloak
     app.kubernetes.io/version: "#{ keycloak_operator_version | default('26.5.0') }#"
 spec:
-  #| Number of Keycloak instances #|
+  #| Number of Keycloak instances (1 for dev, 2+ for HA) #|
   instances: #{ keycloak_replicas | default(1) }#
+
+  #| =========================================================================== #|
+  #| BOOTSTRAP ADMIN - Initial admin credentials from pre-created secret        #|
+  #| =========================================================================== #|
+  #| This tells the operator to use our GitOps-managed secret instead of        #|
+  #| auto-generating random credentials. The secret must contain 'username'     #|
+  #| and 'password' keys. Using a different secret name than the operator's     #|
+  #| default (keycloak-initial-admin) avoids GitHub Issue #35862.               #|
+  #| =========================================================================== #|
+  bootstrapAdmin:
+    user:
+      secret: keycloak-admin-credentials
 
   #| Database configuration #|
   db:
     vendor: postgres
+#% if (keycloak_db_mode | default('embedded')) == 'embedded' %#
     host: keycloak-postgres
+#% else %#
+    #| CloudNativePG creates a service named <cluster>-rw for read-write connections #|
+    host: keycloak-postgres-rw
+#% endif %#
     port: 5432
     database: #{ keycloak_db_name | default('keycloak') }#
     usernameSecret:
@@ -509,19 +364,20 @@ spec:
       name: keycloak-db-secret
       key: password
 
-  #| HTTP configuration - TLS termination at gateway #|
+  #| HTTP configuration - TLS termination happens at Envoy Gateway #|
   http:
     httpEnabled: true
     httpPort: 8080
     httpsPort: 8443
 
   #| Hostname configuration #|
+  #| NOTE: backchannelDynamic requires full URL format (with https://) #|
   hostname:
-    hostname: "#{ keycloak_hostname }#"
+    hostname: "https://#{ keycloak_hostname }#"
     strict: false
     backchannelDynamic: true
 
-  #| Proxy configuration for Gateway API #|
+  #| Proxy configuration for Gateway API (Envoy Gateway handles TLS) #|
   proxy:
     headers: xforwarded
 
@@ -541,10 +397,13 @@ spec:
       value: "true"
     - name: metrics-enabled
       value: "true"
+#% if (keycloak_replicas | default(1)) > 1 %#
+    #| Distributed cache for HA deployments #|
     - name: cache
       value: "ispn"
     - name: cache-stack
       value: "kubernetes"
+#% endif %#
 
   #| Resource limits #|
   resources:
@@ -558,7 +417,8 @@ spec:
   #| Startup configuration #|
   startOptimized: false
 
-  #| Unsupported - advanced customization (use sparingly) #|
+#% if (keycloak_replicas | default(1)) > 1 %#
+  #| Unsupported - advanced customization for HA clustering #|
   unsupported:
     podTemplate:
       spec:
@@ -568,34 +428,46 @@ spec:
               - name: JAVA_OPTS_APPEND
                 value: "-Djgroups.dns.query=keycloak-discovery.identity.svc.cluster.local"
 #% endif %#
+#% endif %#
 ```
 
 ### Step 7: Create Secrets
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/secret.sops.yaml.j2`
 
-> **IMPORTANT:** The `keycloak-initial-admin` secret is **pre-created by Flux** with credentials from `cluster.yaml`.
-> The Keycloak operator checks for this secret BEFORE creating the instance - if it exists, the operator
-> uses the pre-created credentials instead of generating random ones.
-> REF: https://www.keycloak.org/operator/basic-deployment
-> REF: https://github.com/keycloak/keycloak/issues/9843
+> **IMPORTANT:** The admin secret is named `keycloak-admin-credentials` (NOT `keycloak-initial-admin`) to avoid GitHub Issue #35862 where the operator tries to CREATE a secret that already exists instead of adopting it. The secret is referenced by `spec.bootstrapAdmin.user.secret` in the Keycloak CR.
+>
+> REF: https://www.keycloak.org/operator/advanced-configuration
+> REF: https://github.com/keycloak/keycloak/issues/35862
 
 ```yaml
 #% if keycloak_enabled | default(false) %#
 ---
-#| Initial admin credentials - pre-created for Keycloak Operator #|
-#| Secret name MUST be: {keycloak-cr-name}-initial-admin #|
+#| ============================================================================= #|
+#| ADMIN CREDENTIALS - GitOps-managed bootstrap admin secret                     #|
+#| ============================================================================= #|
+#| This secret is referenced by spec.bootstrapAdmin.user.secret in the Keycloak  #|
+#| CR. Using a DIFFERENT name than the operator's default (keycloak-initial-admin)#|
+#| avoids GitHub Issue #35862 where the operator tries to CREATE a secret that   #|
+#| already exists instead of adopting it.                                        #|
+#| REF: https://www.keycloak.org/operator/advanced-configuration                 #|
+#| REF: https://github.com/keycloak/keycloak/issues/35862                        #|
+#| ============================================================================= #|
 apiVersion: v1
 kind: Secret
 metadata:
-  name: keycloak-initial-admin
+  name: keycloak-admin-credentials
   namespace: identity
-type: kubernetes.io/basic-auth
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: admin-credentials
+type: Opaque
 stringData:
   username: "admin"
   password: "#{ keycloak_admin_password }#"
 ---
 #| Database credentials for PostgreSQL connection #|
+#| Used by both embedded PostgreSQL and CloudNativePG Cluster #|
 apiVersion: v1
 kind: Secret
 metadata:
@@ -1203,18 +1075,19 @@ backup:
 
 | Issue | Cause | Solution |
 | ----- | ----- | -------- |
-| Operator pod CrashLoopBackOff | Missing CRDs | Apply CRDs first, restart operator |
+| Operator pod CrashLoopBackOff | Missing CRDs | CRDs now fetched via Kustomize remote resources - ensure network access to GitHub |
 | Operator pod Error: read-only filesystem | Missing /tmp emptyDir volume | Add emptyDir volume for Vert.x cache |
 | Operator RBAC 403 errors | Missing RBAC permissions | See RBAC requirements below |
 | Keycloak CR not progressing | Database not ready | Check PostgreSQL pod/service |
 | 502 Bad Gateway | HTTPRoute service name wrong | Use `keycloak-service` (operator default) |
 | JWKS fetch timeout | Network policy blocking | Add egress rule for Keycloak |
 | Token validation fails | Issuer mismatch | Verify realm URL matches config |
-| Admin login fails | Wrong credentials | Verify `keycloak-initial-admin` secret matches `keycloak_admin_password` in cluster.yaml |
+| Admin login fails | Wrong credentials | Verify `keycloak-admin-credentials` secret matches `keycloak_admin_password` in cluster.yaml |
 | Clustering issues | JGroups DNS not resolving | Check headless service `keycloak-discovery` |
 | Unrecognized config key warning | Normal - bundle config for OLM | Can be safely ignored |
 | `hostname-backchannel-dynamic must be false` | hostname not full URL | Use `https://hostname` when `backchannelDynamic: true` |
-| `secrets "keycloak-initial-admin" already exists` | Race condition on first deploy | Pre-created secret is correct - restart operator to adopt it |
+| `secrets "keycloak-initial-admin" already exists` | Operator tries POST not PATCH | Use `bootstrapAdmin.user.secret` with a different secret name (we use `keycloak-admin-credentials`) |
+| `field not declared in schema` errors | Incomplete CRD installed | Use official CRDs via Kustomize remote resources (see Step 4) |
 | Operator exhausted retries | Previous error blocked reconciliation | Restart operator: `kubectl rollout restart deployment/keycloak-operator -n identity` |
 
 ### RBAC Requirements (v26.5.0)
@@ -1272,8 +1145,9 @@ kubectl -n identity get statefulset,service,secret -l app.kubernetes.io/managed-
 
 ### Admin Credentials
 
-- **Pre-created secret approach:** The `keycloak-initial-admin` secret is created by Flux with credentials from `cluster.yaml`
-- The operator detects the pre-existing secret and uses those credentials instead of generating random ones
+- **bootstrapAdmin approach:** The `keycloak-admin-credentials` secret is created by Flux with credentials from `cluster.yaml`
+- The Keycloak CR references this secret via `spec.bootstrapAdmin.user.secret`
+- Using a different name than `keycloak-initial-admin` avoids GitHub Issue #35862 (operator POST vs PATCH)
 - Admin credentials are managed via GitOps (SOPS-encrypted in `cluster.yaml`)
 - Username: `admin` (hardcoded for consistency)
 - Password: Set via `keycloak_admin_password` in `cluster.yaml`
@@ -1332,5 +1206,8 @@ Key features available in this version:
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-06 | Fixed CRD schema errors by using Kustomize remote resources for official CRDs |
+| 2026-01-06 | Fixed secret collision (GitHub #35862) via `bootstrapAdmin.user.secret` with renamed secret |
+| 2026-01-06 | Added `https://` prefix to hostname for `backchannelDynamic` compatibility |
 | 2026-01-06 | Refactored guide to use Keycloak Operator instead of Codecentric Helm chart |
 | 2026-01 | Initial implementation guide created |

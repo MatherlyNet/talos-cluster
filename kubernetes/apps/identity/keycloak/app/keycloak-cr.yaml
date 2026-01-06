@@ -10,6 +10,10 @@ metadata:
 spec:
   instances: 1
 
+  bootstrapAdmin:
+    user:
+      secret: keycloak-admin-credentials
+
   db:
     vendor: postgres
     host: keycloak-postgres-rw
