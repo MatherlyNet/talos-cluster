@@ -64,10 +64,12 @@ spec:
         remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
 
       overrides:
-        metrics_generator_processors:
-          - local-blocks
-          - service-graphs
-          - span-metrics
+        defaults:
+          metrics_generator:
+            processors:
+              - local-blocks
+              - service-graphs
+              - span-metrics
 
     # Persistence
     persistence:

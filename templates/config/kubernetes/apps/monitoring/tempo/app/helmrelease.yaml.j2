@@ -71,15 +71,18 @@ spec:
 
       #| =========================================================================== #|
       #| Overrides: Enable local-blocks processor for TraceQL metrics               #|
-      #| Legacy format: metrics_generator_processors (NOT defaults.metrics_generator) #|
-      #| Reference: https://grafana.com/docs/tempo/latest/metrics-from-traces/      #|
+      #| MUST use NEW format (defaults.metrics_generator.processors) consistently   #|
+      #| Mixing formats triggers legacyConfig parsing error                         #|
+      #| Reference: https://github.com/grafana/tempo/tree/main/example/docker-compose #|
       #| =========================================================================== #|
       overrides:
-        #| Enable local-blocks processor for TraceQL metrics queries #|
-        metrics_generator_processors:
-          - local-blocks
-          - service-graphs
-          - span-metrics
+        defaults:
+          metrics_generator:
+            #| Enable processors for TraceQL metrics queries like { } | rate() #|
+            processors:
+              - local-blocks
+              - service-graphs
+              - span-metrics
 
     # Persistence
     persistence:
