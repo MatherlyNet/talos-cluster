@@ -574,17 +574,23 @@ spec:
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/secret.sops.yaml.j2`
 
+> **IMPORTANT:** The `keycloak-initial-admin` secret is **pre-created by Flux** with credentials from `cluster.yaml`.
+> The Keycloak operator checks for this secret BEFORE creating the instance - if it exists, the operator
+> uses the pre-created credentials instead of generating random ones.
+> REF: https://www.keycloak.org/operator/basic-deployment
+> REF: https://github.com/keycloak/keycloak/issues/9843
+
 ```yaml
 #% if keycloak_enabled | default(false) %#
 ---
-#| Initial admin credentials - operator creates admin user from this secret #|
-#| Secret name must be: {keycloak-cr-name}-initial-admin #|
+#| Initial admin credentials - pre-created for Keycloak Operator #|
+#| Secret name MUST be: {keycloak-cr-name}-initial-admin #|
 apiVersion: v1
 kind: Secret
 metadata:
   name: keycloak-initial-admin
   namespace: identity
-type: Opaque
+type: kubernetes.io/basic-auth
 stringData:
   username: "admin"
   password: "#{ keycloak_admin_password }#"
@@ -1204,9 +1210,12 @@ backup:
 | 502 Bad Gateway | HTTPRoute service name wrong | Use `keycloak-service` (operator default) |
 | JWKS fetch timeout | Network policy blocking | Add egress rule for Keycloak |
 | Token validation fails | Issuer mismatch | Verify realm URL matches config |
-| Admin login fails | Wrong credentials | Check `keycloak-initial-admin` secret |
+| Admin login fails | Wrong credentials | Verify `keycloak-initial-admin` secret matches `keycloak_admin_password` in cluster.yaml |
 | Clustering issues | JGroups DNS not resolving | Check headless service `keycloak-discovery` |
 | Unrecognized config key warning | Normal - bundle config for OLM | Can be safely ignored |
+| `hostname-backchannel-dynamic must be false` | hostname not full URL | Use `https://hostname` when `backchannelDynamic: true` |
+| `secrets "keycloak-initial-admin" already exists` | Race condition on first deploy | Pre-created secret is correct - restart operator to adopt it |
+| Operator exhausted retries | Previous error blocked reconciliation | Restart operator: `kubectl rollout restart deployment/keycloak-operator -n identity` |
 
 ### RBAC Requirements (v26.5.0)
 
@@ -1263,10 +1272,12 @@ kubectl -n identity get statefulset,service,secret -l app.kubernetes.io/managed-
 
 ### Admin Credentials
 
-- **Change default password immediately** after first login
-- Enable MFA for admin accounts
-- Use a strong password (24+ characters)
-- The operator reads from `{cr-name}-initial-admin` secret
+- **Pre-created secret approach:** The `keycloak-initial-admin` secret is created by Flux with credentials from `cluster.yaml`
+- The operator detects the pre-existing secret and uses those credentials instead of generating random ones
+- Admin credentials are managed via GitOps (SOPS-encrypted in `cluster.yaml`)
+- Username: `admin` (hardcoded for consistency)
+- Password: Set via `keycloak_admin_password` in `cluster.yaml`
+- Enable MFA for admin accounts after first login
 
 ### Network Security
 
