@@ -9,5 +9,4 @@ resources:
   - ./kube-system
   - ./monitoring
   - ./network
-  - ./storage
   - ./system-upgrade
