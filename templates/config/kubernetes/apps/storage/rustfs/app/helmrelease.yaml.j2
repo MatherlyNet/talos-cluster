@@ -58,11 +58,13 @@ spec:
       RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
       RUSTFS_ENABLE_SCANNER: "true"
       RUSTFS_ENABLE_HEAL: "true"
-      #| Console UI disabled in production by default - use mc CLI #|
-      RUSTFS_CONSOLE_ENABLE: "#{ rustfs_console_enabled | default(false) | string | lower }#"
+      #| Console UI always enabled for access key management (RustFS doesn't support mc admin) #|
+      RUSTFS_CONSOLE_ENABLE: "true"
 
-    #| Use existing secret for credentials #|
-    existingSecret: rustfs-credentials
+    #| Use existing secret for credentials - must be under 'secret' key per RustFS Helm chart #|
+    #| REF: https://github.com/rustfs/rustfs/blob/main/helm/README.md #|
+    secret:
+      existingSecret: rustfs-credentials
 
     #| Service configuration #|
     service:
