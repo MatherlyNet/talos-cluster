@@ -5,6 +5,5 @@ resources:
   - ./helmrepository.yaml
   - ./helmrelease.yaml
   - ./secret.sops.yaml
-  - ./job-setup.yaml
   - ./httproute-console.yaml
   - ./servicemonitor.yaml
