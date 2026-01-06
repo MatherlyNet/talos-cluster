@@ -97,16 +97,15 @@ spec:
               value: "/tmp"
             - name: MC_CONFIG_DIR
               value: "/tmp/.mc"
-            #| Secret keys use 'access_key'/'secret_key' per RustFS Helm chart convention #|
-            #| REF: https://github.com/rustfs/rustfs/blob/main/helm/README.md #|
+            #| Secret uses RUSTFS_ prefixed keys (envFrom.secretRef loads keys as-is) #|
             - name: RUSTFS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: access_key
+                  key: RUSTFS_ACCESS_KEY
             - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: secret_key
+                  key: RUSTFS_SECRET_KEY
 #% endif %#

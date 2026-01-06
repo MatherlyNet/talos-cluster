@@ -87,9 +87,9 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: access_key
+                  key: RUSTFS_ACCESS_KEY
             - name: RUSTFS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: rustfs-credentials
-                  key: secret_key
+                  key: RUSTFS_SECRET_KEY
