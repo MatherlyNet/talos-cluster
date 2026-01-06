@@ -1,6 +1,4 @@
 ---
-# Note: Tempo's Helm chart does not support OCI registry (GitHub Issue #3068).
-# Using HelmRepository (grafana) from Alloy deployment.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -17,31 +15,18 @@ spec:
   interval: 1h
   timeout: 10m
   values:
-    # ==========================================================================
-    # TEMPO SINGLE BINARY MODE (Recommended for homelab)
-    # ==========================================================================
-    # For production/scale: use tempo-distributed chart instead
     tempo:
-      # Server configuration
-      server:
-        http_listen_port: 3200
-        grpc_listen_port: 9095
+      metricsGenerator:
+        enabled: true
+        remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
 
-      # Storage configuration (filesystem for homelab)
-      storage:
-        trace:
-          backend: local
-          local:
-            path: /var/tempo/traces
-          wal:
-            path: /var/tempo/wal
-
-      # Retention
+    config: |
+      multitenancy_enabled: false
+      usage_report:
+        reporting_enabled: false
       compactor:
         compaction:
-          block_retention: "72h"
-
-      # Distributor - receive traces
+          block_retention: 72h
       distributor:
         receivers:
           otlp:
@@ -50,19 +35,46 @@ spec:
                 endpoint: "0.0.0.0:4317"
               http:
                 endpoint: "0.0.0.0:4318"
-          # Zipkin receiver for Envoy Gateway (alternative to OTLP)
           zipkin:
             endpoint: "0.0.0.0:9411"
-
-      # Query frontend
+      ingester:
+        max_block_duration: 5m
+      server:
+        http_listen_port: 3200
+        grpc_listen_port: 9095
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /var/tempo/traces
+          wal:
+            path: /var/tempo/wal
+      querier:
+        max_concurrent_queries: 20
       query_frontend:
         search:
           max_duration: 0
-
-      metricsGenerator:
-        enabled: true
-        remoteWriteUrl: "http://kube-prometheus-stack-prometheus:9090/api/v1/write"
-
+      metrics_generator:
+        processor:
+          local_blocks:
+            filter_server_spans: false
+            flush_to_storage: true
+          service_graphs:
+            histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
+            dimensions: []
+          span_metrics:
+            histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384]
+            dimensions: []
+        registry:
+          collection_interval: 15s
+          stale_duration: 15m
+        storage:
+          path: /var/tempo/generator/wal
+          remote_write:
+            - url: http://kube-prometheus-stack-prometheus:9090/api/v1/write
+              send_exemplars: true
+        traces_storage:
+          path: /var/tempo/generator/traces
       overrides:
         defaults:
           metrics_generator:
@@ -71,13 +83,11 @@ spec:
               - service-graphs
               - span-metrics
 
-    # Persistence
     persistence:
       enabled: true
       storageClassName: "proxmox-zfs"
       size: "10Gi"
 
-    # Resources (homelab-appropriate)
     resources:
       requests:
         cpu: 100m
@@ -85,7 +95,6 @@ spec:
       limits:
         memory: 1Gi
 
-    # Health probes for reliability
     readinessProbe:
       httpGet:
         path: /ready
@@ -100,6 +109,5 @@ spec:
       periodSeconds: 30
       timeoutSeconds: 5
 
-    # ServiceMonitor for Prometheus to scrape Tempo metrics
     serviceMonitor:
       enabled: true
