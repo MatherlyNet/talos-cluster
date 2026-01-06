@@ -425,9 +425,11 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: false)
 # rustfs_enabled: false
 
-# -- Number of RustFS nodes (3 or 4 recommended for distributed mode)
-#    (OPTIONAL) / (DEFAULT: 3)
-# rustfs_replicas: 3
+# -- Number of RustFS nodes
+#    Single node (1) for simple deployments, 4+ for distributed mode
+#    Note: Helm chart creates data PVCs only for 1, 4, or 16 replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# rustfs_replicas: 1
 
 # -- Data storage size per RustFS node
 #    Used for volumeClaimTemplates via storageclass.dataStorageSize

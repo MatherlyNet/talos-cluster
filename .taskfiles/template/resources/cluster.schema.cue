@@ -210,7 +210,7 @@ import (
 	// REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
 	// WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production
 	rustfs_enabled?:           *false | bool
-	rustfs_replicas?:          *3 | int & >=1 & <=16
+	rustfs_replicas?:          *1 | int & >=1 & <=16
 	rustfs_data_volume_size?:  *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
 	rustfs_log_volume_size?:   *"1Gi" | string & =~"^[0-9]+[KMGT]i$"
 	rustfs_storage_class?:     string & !=""

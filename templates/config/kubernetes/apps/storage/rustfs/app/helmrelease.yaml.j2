@@ -29,8 +29,8 @@ spec:
       distributed:
         enabled: true
 
-    #| Number of RustFS nodes #|
-    replicaCount: #{ rustfs_replicas | default(3) }#
+    #| Number of RustFS nodes - use 1 for single-node, 4/16 for distributed #|
+    replicaCount: #{ rustfs_replicas | default(1) }#
 
     #| Container image #|
     image:

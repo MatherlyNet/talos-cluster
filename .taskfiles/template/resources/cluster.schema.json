@@ -659,7 +659,7 @@
       "description": "RustFS Shared Object Storage - S3-compatible storage for cluster services REF: https://rustfs.com/ REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production"
     },
     "rustfs_replicas": {
-      "default": 3,
+      "default": 1,
       "type": "integer",
       "minimum": 1,
       "maximum": 16

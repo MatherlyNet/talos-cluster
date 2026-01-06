@@ -119,7 +119,7 @@ kubernetes_version: "1.35.0"
 # RustFS Shared Object Storage (optional - uncomment to test)
 # REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md
 # rustfs_enabled: true
-# rustfs_replicas: 3
+# rustfs_replicas: 1
 # rustfs_data_volume_size: "20Gi"
 # rustfs_log_volume_size: "1Gi"
 # rustfs_access_key: "rustfsadmin"

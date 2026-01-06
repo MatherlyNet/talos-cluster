@@ -184,9 +184,11 @@ Add to `cluster.yaml`:
 #    (OPTIONAL) / (DEFAULT: false)
 # rustfs_enabled: false
 
-# -- Number of RustFS nodes (3 or 4 recommended for distributed mode)
-#    (OPTIONAL) / (DEFAULT: 3)
-# rustfs_replicas: 3
+# -- Number of RustFS nodes
+#    Single node (1) for simple deployments, 4+ for distributed mode
+#    Note: Helm chart creates data PVCs only for 1, 4, or 16 replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# rustfs_replicas: 1
 
 # -- Data storage size per RustFS node
 #    Used for volumeClaimTemplates via storageclass.dataStorageSize
@@ -394,8 +396,8 @@ spec:
       distributed:
         enabled: true
 
-    #| Number of RustFS nodes #|
-    replicaCount: #{ rustfs_replicas | default(3) }#
+    #| Number of RustFS nodes - use 1 for single-node, 4/16 for distributed #|
+    replicaCount: #{ rustfs_replicas | default(1) }#
 
     #| Container image #|
     image:
@@ -1198,9 +1200,10 @@ export TEMPO_S3_SECRET_KEY=$(openssl rand -base64 32)
 cat >> cluster.yaml << EOF
 # RustFS Object Storage
 rustfs_enabled: true
-rustfs_replicas: 3
-rustfs_volumes_per_node: 4
-rustfs_volume_size: "20Gi"
+rustfs_replicas: 1  # Single-node deployment; use 4/16 for distributed
+rustfs_data_volume_size: "20Gi"
+rustfs_log_volume_size: "1Gi"
+rustfs_storage_class: "proxmox-zfs"  # Or your StorageClass
 rustfs_secret_key: "$RUSTFS_SECRET_KEY"
 loki_s3_secret_key: "$LOKI_S3_SECRET_KEY"
 tempo_s3_secret_key: "$TEMPO_S3_SECRET_KEY"

@@ -27,7 +27,7 @@ spec:
       distributed:
         enabled: true
 
-    replicaCount: 3
+    replicaCount: 1
 
     image:
       repository: rustfs/rustfs
