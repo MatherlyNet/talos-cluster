@@ -1125,6 +1125,10 @@ variables["cnpg_pgvector_version"] = cnpg_pgvector_version
 
 **Example:** AI/ML database cluster with vector search capabilities:
 
+> **IMPORTANT:** Use `postgresql.extensions` (ImageVolume) to mount extensions, NOT `imageCatalogRef`.
+> The extension images (e.g., `ghcr.io/cloudnative-pg/pgvector:*`) are scratch-based images containing only
+> extension files - they are NOT full PostgreSQL images and cannot be used as the main container image.
+
 ```yaml
 #% if cnpg_enabled | default(false) %#
 ---
@@ -1135,8 +1139,8 @@ metadata:
   namespace: ai-workloads
 spec:
   instances: 3
-  #| Use minimal image - extensions mount separately #|
-  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-minimal-trixie
+  #| Always use full PostgreSQL image - extensions mount via ImageVolume #|
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
 
   bootstrap:
     initdb:
@@ -1149,14 +1153,17 @@ spec:
     size: 50Gi
     storageClass: #{ storage_class | default('local-path') }#
 
-  #% if cnpg_pgvector_enabled | default(false) %#
-  #| Mount pgvector extension via ImageVolume #|
   postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+#% if cnpg_pgvector_enabled | default(false) %#
+    #| Mount pgvector extension via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
     extensions:
       - name: pgvector
         image:
           reference: #{ cnpg_pgvector_image }#
-  #% endif %#
+#% endif %#
 
   monitoring:
     enablePodMonitor: #{ 'true' if monitoring_enabled | default(false) else 'false' }#
@@ -1332,6 +1339,8 @@ To upgrade pgvector versions:
 
 | Issue | Cause | Solution |
 | ----- | ----- | -------- |
+| `initdb: executable file not found` | Using extension image as main image | Use full PostgreSQL image (`imageName`), mount extension via `postgresql.extensions` |
+| `imageName and imageCatalogRef are mutually exclusive` | Using ImageCatalog instead of ImageVolume | Remove `imageCatalogRef`, use `postgresql.extensions` block instead |
 | Extension not found | ImageVolume not mounted | Verify K8s 1.35+, check pod events |
 | CREATE EXTENSION fails | Version mismatch | Ensure Database version matches image |
 | Slow vector queries | Missing index | Create HNSW or IVFFlat index |
@@ -1383,3 +1392,4 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 | 2026-01 | Initial implementation guide created |
 | 2026-01-06 | Added pgvector extension with ImageVolume support |
 | 2026-01-06 | Added comprehensive RustFS IAM instructions (database-storage policy, databases group, cnpg-backup user) |
+| 2026-01-06 | Fixed pgvector config: Use `postgresql.extensions` (ImageVolume), NOT `imageCatalogRef` - extension images are scratch-based |

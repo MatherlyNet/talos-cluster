@@ -10,11 +10,7 @@ metadata:
 spec:
   instances: 1
 
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ImageCatalog
-    name: postgresql-extensions
-    major: 18
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
 
   bootstrap:
     initdb:
@@ -51,6 +47,10 @@ spec:
       effective_io_concurrency: "200"
       min_wal_size: "256MB"
       max_wal_size: "1GB"
+    extensions:
+      - name: pgvector
+        image:
+          reference: ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie
 
 
   priorityClassName: system-cluster-critical
@@ -69,14 +69,3 @@ spec:
       wal:
         compression: gzip
     retentionPolicy: "7d"
-
----
-apiVersion: postgresql.cnpg.io/v1
-kind: ImageCatalog
-metadata:
-  name: postgresql-extensions
-  namespace: identity
-spec:
-  images:
-    - major: 18
-      image: ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie

@@ -18,18 +18,8 @@ spec:
   #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ keycloak_db_instances | default(1) }#
 
-#% if cnpg_pgvector_enabled | default(false) %#
-  #| pgvector extension via ImageCatalog (mutually exclusive with imageName) #|
-  #| REF: https://cloudnative-pg.io/documentation/current/image_catalog/ #|
-  imageCatalogRef:
-    apiGroup: postgresql.cnpg.io
-    kind: ImageCatalog
-    name: postgresql-extensions
-    major: 18
-#% else %#
-  #| PostgreSQL image (only when NOT using ImageCatalog) #|
+  #| PostgreSQL image - always use full image, extensions mount via ImageVolume #|
   imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
-#% endif %#
 
   #| Bootstrap from initdb (fresh database) #|
   bootstrap:
@@ -71,6 +61,14 @@ spec:
       effective_io_concurrency: "200"
       min_wal_size: "256MB"
       max_wal_size: "1GB"
+#% if cnpg_pgvector_enabled | default(false) %#
+    #| pgvector extension via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
+    #| REF: https://cloudnative-pg.io/documentation/current/imagevolume_extensions/ #|
+    extensions:
+      - name: pgvector
+        image:
+          reference: #{ cnpg_pgvector_image | default('ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie') }#
+#% endif %#
 
   #| Affinity rules for HA deployments #|
 #% if (keycloak_db_instances | default(1)) > 1 %#
@@ -98,19 +96,5 @@ spec:
       wal:
         compression: gzip
     retentionPolicy: "7d"
-#% endif %#
-
-#% if cnpg_pgvector_enabled | default(false) %#
----
-#| ImageCatalog for pgvector extension #|
-apiVersion: postgresql.cnpg.io/v1
-kind: ImageCatalog
-metadata:
-  name: postgresql-extensions
-  namespace: identity
-spec:
-  images:
-    - major: 18
-      image: #{ cnpg_pgvector_image | default('ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie') }#
 #% endif %#
 #% endif %#
