@@ -144,10 +144,10 @@ spec:
           ruler: loki-ruler
           admin: loki-admin
         s3:
-          endpoint: http://rustfs.storage.svc:9000
+          endpoint: http://rustfs-svc.storage.svc:9000
           region: us-east-1
           #| Credentials auto-detected from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY env vars #|
-          #| Set via extraEnvFrom secretRef below - DO NOT specify here #|
+          #| Set via extraEnvFrom secretRef per-component - DO NOT specify here #|
           s3ForcePathStyle: true
           insecure: true
 #% else %#
