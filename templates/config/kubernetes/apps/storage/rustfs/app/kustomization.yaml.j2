@@ -9,7 +9,11 @@ resources:
   #| job-setup.yaml moved to ../setup/ with separate Kustomization dependency #|
   - ./httproute-console.yaml
 #% if rustfs_monitoring_enabled | default(false) %#
-  - ./servicemonitor.yaml
+  #| NOTE: RustFS does NOT support Prometheus pull-based metrics like MinIO. #|
+  #|       It uses OpenTelemetry (OTLP) push mode instead.                   #|
+  #|       ServiceMonitor removed - dashboard will show data when OTLP       #|
+  #|       is configured via RUSTFS_OBS_METRIC_ENDPOINT env var.             #|
+  #|       REF: https://github.com/rustfs/rustfs/issues/1228                 #|
   - ./dashboard-storage.yaml
 #% endif %#
 #% endif %#

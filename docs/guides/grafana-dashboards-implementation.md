@@ -49,14 +49,24 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 
 1. **Keycloak deployed** with `keycloak_enabled: true`
 2. **Metrics enabled** in Keycloak CR (already configured: `metrics-enabled: "true"`)
-3. **ServiceMonitor created** for Prometheus scraping
+3. **ServiceMonitor automatically created** by Keycloak Operator when metrics enabled
 4. **kube-prometheus-stack deployed** with `monitoring_enabled: true`
+
+> **Note:** The Keycloak Operator automatically creates a ServiceMonitor when `metrics-enabled: "true"` is set in the Keycloak CR. We do NOT need to create a separate ServiceMonitor template.
 
 ### For RustFS Dashboard
 
+> **⚠️ IMPORTANT LIMITATION:** RustFS does **NOT** support Prometheus pull-based metrics like MinIO. It uses OpenTelemetry (OTLP) push mode instead. The dashboard ConfigMap is deployed but will not show data without additional OTEL collector configuration.
+>
+> **References:**
+> - [GitHub Issue #1228](https://github.com/rustfs/rustfs/issues/1228) - Confirms OTLP-only metrics
+> - [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability) - Reference configuration
+
 1. **RustFS deployed** with `rustfs_enabled: true`
-2. **ServiceMonitor created** (already exists: `servicemonitor.yaml.j2`)
+2. **OpenTelemetry Collector configured** to receive OTLP and export to Prometheus (NOT yet implemented)
 3. **kube-prometheus-stack deployed** with `monitoring_enabled: true`
+
+**Future Enhancement:** Configure Alloy to receive RustFS OTLP metrics and export to Prometheus.
 
 ---
 
@@ -64,49 +74,21 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 
 ### Part 1: Keycloak Dashboards
 
-#### Step 1.1: Create Keycloak ServiceMonitor
+#### Step 1.1: Keycloak ServiceMonitor (Operator-Managed)
 
-**File:** `templates/config/kubernetes/apps/identity/keycloak/app/servicemonitor.yaml.j2`
+> **Note:** The **Keycloak Operator automatically creates a ServiceMonitor** when `metrics-enabled: "true"` is set in the Keycloak CR's `additionalOptions`. We do NOT need to create a separate ServiceMonitor template.
+>
+> The operator-created ServiceMonitor:
+> - Scrapes the management interface (port 9000)
+> - Uses path `/metrics`
+> - Has proper label selectors for Keycloak service
 
-> **CRITICAL:** Keycloak exposes metrics on the **management interface (port 9000)**, NOT the HTTP port (8080). The Keycloak Operator creates a service with port named `management` for this purpose.
+**No template required** - the ServiceMonitor is managed by the Keycloak Operator.
 
-```yaml
-#% if keycloak_enabled | default(false) and monitoring_enabled | default(false) %#
----
-#| ============================================================================= #|
-#| KEYCLOAK SERVICEMONITOR - Prometheus metrics scraping                          #|
-#| ============================================================================= #|
-#| REF: https://www.keycloak.org/observability/configuration-metrics              #|
-#| REF: https://www.keycloak.org/server/management-interface                      #|
-#| IMPORTANT: Metrics are on port 9000 (management), NOT port 8080 (http)         #|
-#| ============================================================================= #|
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: keycloak
-  namespace: identity
-  labels:
-    app.kubernetes.io/name: keycloak
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: keycloak
-      #| Keycloak operator creates service with this label #|
-      app.kubernetes.io/managed-by: keycloak-operator
-  endpoints:
-    #| Keycloak exposes metrics on management interface (port 9000) #|
-    #| The operator creates a service port named "management" for this #|
-    - port: management
-      path: /metrics
-      interval: 30s
-      scrapeTimeout: 10s
-  namespaceSelector:
-    matchNames:
-      - identity
-#% endif %#
+**Verify the operator-created ServiceMonitor:**
+```bash
+kubectl get servicemonitor -n identity keycloak -o yaml
 ```
-
-> **Note:** If the Keycloak operator service doesn't have a `management` port named, you may need to verify the service definition. The service should expose port 9000 for the management interface. Alternative: use `targetPort: 9000` with port number instead of name.
 
 #### Step 1.2: Create Keycloak Dashboard ConfigMaps
 
@@ -203,12 +185,17 @@ resources:
 
 ### Part 2: RustFS Dashboard
 
-#### Step 2.1: RustFS ServiceMonitor (Already Exists)
+#### Step 2.1: RustFS Metrics (OTLP Push Mode)
 
-The project already has a ServiceMonitor at:
-`templates/config/kubernetes/apps/storage/rustfs/app/servicemonitor.yaml.j2`
+> **⚠️ IMPORTANT:** Unlike MinIO, RustFS does **NOT** support Prometheus pull-based metrics via `/minio/v2/metrics/cluster`. RustFS uses OpenTelemetry (OTLP) push mode exclusively.
+>
+> **Current Status:** The RustFS dashboard ConfigMap is deployed but will show no data until an OTEL collector is configured to:
+> 1. Receive OTLP metrics from RustFS (ports 4317 gRPC / 4318 HTTP)
+> 2. Export to Prometheus via a Prometheus exporter (typically port 8889)
+>
+> **Reference:** [RustFS OTEL Collector Config](https://raw.githubusercontent.com/rustfs/rustfs/main/.docker/observability/otel-collector-config.yaml)
 
-It scrapes `/minio/v2/metrics/cluster` which is the MinIO-compatible metrics endpoint.
+**ServiceMonitor Removed:** The original ServiceMonitor template has been removed since RustFS doesn't support Prometheus scraping.
 
 #### Step 2.2: Create RustFS Dashboard ConfigMap
 
@@ -441,21 +428,42 @@ Keycloak 26.5.0 introduced significant observability enhancements:
 
 ## RustFS Metrics Requirements
 
-### Metrics Exposed by RustFS
+> **⚠️ IMPORTANT:** RustFS does **NOT** expose MinIO-compatible metrics at `/minio/v2/metrics/cluster`. Unlike MinIO, RustFS uses OpenTelemetry (OTLP) push mode exclusively.
 
-RustFS exposes MinIO-compatible metrics at `/minio/v2/metrics/cluster`:
+### RustFS Metrics Architecture
 
-| Metric Category | Example Metrics | Notes |
-| --------------- | --------------- | ----- |
-| **Cluster Health** | `minio_cluster_health_status` | 0=offline, 1=online |
-| **Capacity** | `minio_cluster_capacity_usable_*` | Total/free bytes |
-| **Buckets** | `minio_cluster_bucket_total` | Bucket count |
-| **Objects** | `minio_cluster_objects_count` | Object count |
-| **S3 Traffic** | `minio_s3_traffic_*` | Ingress/egress bytes |
-| **S3 Requests** | `minio_s3_requests_*` | Request rates, errors |
-| **Node Resources** | `minio_node_*` | CPU, memory, I/O |
+```
+RustFS App → OTLP (4317/4318) → OTEL Collector → Prometheus Exporter (8889) → Prometheus scrapes
+```
 
-### Current RustFS Metrics Gap
+**Reference:** [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability)
+
+### Required Configuration for RustFS Metrics
+
+To enable RustFS metrics in Prometheus, you need:
+
+1. **Deploy an OpenTelemetry Collector** with:
+   - OTLP receivers on ports 4317 (gRPC) and 4318 (HTTP)
+   - Prometheus exporter on port 8889
+
+2. **Configure RustFS environment variables:**
+   ```yaml
+   RUSTFS_OBS_METRIC_ENDPOINT: "http://otel-collector:4318/v1/metrics"
+   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
+   ```
+
+3. **Add Prometheus scrape config** or ServiceMonitor for `otel-collector:8889`
+
+### Current Status (NOT IMPLEMENTED)
+
+The RustFS dashboard ConfigMap is deployed but will show no data because:
+- No OTEL Collector is deployed for RustFS metrics
+- RustFS is not configured to send OTLP metrics
+- Prometheus is not scraping the collector
+
+**Future Enhancement:** Deploy dedicated OTEL Collector or configure Alloy to receive RustFS OTLP metrics.
+
+### Current RustFS Metrics Available
 
 Per [GitHub Discussion #601](https://github.com/orgs/rustfs/discussions/601), RustFS currently exports basic metrics via OpenTelemetry:
 - cpu usage, cpu util percent, io read, io write
@@ -585,7 +593,8 @@ kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:909
 | Dashboard in wrong folder | Missing annotation | Add `grafana_folder` annotation |
 | No metrics in panels | ServiceMonitor not scraping | Check Prometheus targets, verify endpoints |
 | Keycloak metrics empty | Metrics not enabled | Verify `metrics-enabled: "true"` in Keycloak CR |
-| RustFS metrics empty | Wrong metrics path | Verify ServiceMonitor uses `/minio/v2/metrics/cluster` |
+| Keycloak ServiceMonitor missing | Operator doesn't create it | Ensure Keycloak CR has `metrics-enabled: "true"` in additionalOptions |
+| RustFS metrics empty | **RustFS uses OTLP push, not Prometheus pull** | Deploy OTEL Collector and configure RustFS env vars (see RustFS Metrics Requirements) |
 | Template variables empty | Job label mismatch | Update dashboard queries to match ServiceMonitor job name |
 
 ---
@@ -735,10 +744,11 @@ After deploying:
 
 | File | Description |
 | ---- | ----------- |
-| `templates/config/kubernetes/apps/identity/keycloak/app/servicemonitor.yaml.j2` | Keycloak metrics scraping |
+| `templates/config/kubernetes/apps/identity/keycloak/app/servicemonitor.yaml.j2` | ~~Keycloak metrics scraping~~ **REMOVED** - Operator creates automatically |
 | `templates/config/kubernetes/apps/identity/keycloak/app/dashboard-troubleshooting.yaml.j2` | Keycloak SLO/JVM/HTTP dashboard (~6.6K lines) |
 | `templates/config/kubernetes/apps/identity/keycloak/app/dashboard-capacity-planning.yaml.j2` | Keycloak events dashboard (~887 lines) |
-| `templates/config/kubernetes/apps/storage/rustfs/app/dashboard-storage.yaml.j2` | RustFS/MinIO storage dashboard (~3.6K lines) |
+| `templates/config/kubernetes/apps/storage/rustfs/app/servicemonitor.yaml.j2` | ~~RustFS metrics scraping~~ **REMOVED** - RustFS uses OTLP push |
+| `templates/config/kubernetes/apps/storage/rustfs/app/dashboard-storage.yaml.j2` | RustFS/MinIO storage dashboard (~3.6K lines) - **No data until OTEL configured** |
 | `templates/config/kubernetes/apps/monitoring/loki/app/dashboard-stack-monitoring.yaml.j2` | Loki stack monitoring (~2.4K lines) |
 
 ---
@@ -747,6 +757,9 @@ After deploying:
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-07 | **UPDATED** - Removed Keycloak ServiceMonitor from kustomization (operator creates automatically) |
+| 2026-01-07 | **UPDATED** - Removed RustFS ServiceMonitor (RustFS uses OTLP push, not Prometheus pull) |
+| 2026-01-07 | **DOCUMENTED** - RustFS metrics require OTEL Collector deployment (future enhancement) |
 | 2026-01-07 | **IMPLEMENTED** - All dashboard templates created with embedded JSON |
 | 2026-01-07 | Added `*_monitoring_enabled` derived variables to plugin.py |
 | 2026-01-07 | Updated kustomization files with conditional resource inclusion |

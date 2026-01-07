@@ -241,35 +241,56 @@ The `cnpg-implementation.md` guide mentions network policies but doesn't include
 
 **File:** `templates/config/kubernetes/apps/cnpg-system/cloudnative-pg/app/networkpolicy-operator.yaml.j2`
 
+> **Note:** This follows the project's `enableDefaultDeny` pattern from `monitoring/network-policies/`.
+
 ```yaml
 #% if cnpg_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
 ---
-#| CiliumNetworkPolicy for CNPG operator egress #|
+#| CiliumNetworkPolicy for CNPG operator #|
 #| Allows operator to access all CNPG cluster pods for health checks #|
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: cnpg-operator-egress
+  name: cnpg-operator
+  namespace: cnpg-system
   labels:
     app.kubernetes.io/name: cloudnative-pg
     app.kubernetes.io/component: operator
 spec:
-  description: "Allow CloudNativePG operator to access cluster pods"
+  description: "CNPG operator: Access cluster pods, Kubernetes API"
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: cloudnative-pg
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| Prometheus metrics scraping on port 8080 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress:
-    #| Allow operator to reach all CNPG cluster pods on status port #|
-    - toEndpoints:
-        - matchExpressions:
-            - key: cnpg.io/cluster
-              operator: Exists
+    #| Access Kubernetes API for CR management #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Access all CNPG cluster pods on status port 8000 #|
+    - toEntities:
+        - cluster
       toPorts:
         - ports:
             - port: "8000"
               protocol: TCP
-
-    #| Allow DNS resolution #|
+    #| DNS resolution #|
     - toEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: kube-system
@@ -278,16 +299,6 @@ spec:
         - ports:
             - port: "53"
               protocol: UDP
-            - port: "53"
-              protocol: TCP
-
-    #| Allow Kubernetes API access for CR management #|
-    - toEntities:
-        - kube-apiserver
-      toPorts:
-        - ports:
-            - port: "6443"
-              protocol: TCP
 #% endif %#
 ```
 
@@ -295,25 +306,32 @@ spec:
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/networkpolicy-postgres.yaml.j2`
 
+> **Note:** This follows the project's `enableDefaultDeny` pattern and combines ingress/egress in a single policy.
+
 ```yaml
 #% if keycloak_enabled | default(false) and network_policies_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
 ---
 #| CiliumNetworkPolicy for Keycloak PostgreSQL cluster #|
-#| Controls ingress to Keycloak's CNPG database pods #|
+#| Controls ingress/egress for CNPG database pods #|
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: keycloak-postgres-access
+  name: keycloak-postgres
+  namespace: identity
   labels:
     app.kubernetes.io/name: keycloak-postgres
     app.kubernetes.io/component: database
 spec:
-  description: "Control access to Keycloak PostgreSQL cluster"
+  description: "Keycloak PostgreSQL: Database access, replication, backups"
   endpointSelector:
     matchLabels:
       cnpg.io/cluster: keycloak-postgres
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
   ingress:
-    #| Allow CNPG operator health checks on port 8000 #|
+    #| CNPG operator health checks on port 8000 #|
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: cloudnative-pg
@@ -322,8 +340,7 @@ spec:
         - ports:
             - port: "8000"
               protocol: TCP
-
-    #| Allow Keycloak pods to connect on port 5432 #|
+    #| Keycloak application access on port 5432 #|
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: keycloak
@@ -331,8 +348,7 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-
-    #| Allow inter-pod replication between cluster instances #|
+    #| Inter-pod replication between cluster instances #|
     - fromEndpoints:
         - matchLabels:
             cnpg.io/cluster: keycloak-postgres
@@ -340,9 +356,8 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-
 #% if monitoring_enabled | default(false) %#
-    #| Allow Prometheus to scrape metrics on port 9187 #|
+    #| Prometheus metrics scraping on port 9187 #|
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: prometheus
@@ -350,6 +365,35 @@ spec:
       toPorts:
         - ports:
             - port: "9187"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    #| Inter-pod replication #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: keycloak-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% if keycloak_backup_enabled | default(false) %#
+    #| Backup to RustFS S3 endpoint #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: rustfs
+            io.kubernetes.pod.namespace: storage
+      toPorts:
+        - ports:
+            - port: "9000"
               protocol: TCP
 #% endif %#
 #% endif %#
