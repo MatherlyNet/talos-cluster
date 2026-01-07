@@ -5,4 +5,5 @@ resources:
   - ./helmrepository.yaml
   - ./helmrelease.yaml
   - ./secret.sops.yaml
+  - ./referencegrant.yaml
   - ./dashboard-storage.yaml

@@ -1,0 +1,26 @@
+#| =========================================================================== #|
+#| REFERENCEGRANT - Allow network namespace to reference Grafana service      #|
+#| =========================================================================== #|
+#| Gateway API requires explicit grants for HTTPRoutes in one namespace to    #|
+#| reference Services in another namespace. This grant is placed in the       #|
+#| TARGET namespace (monitoring) where the Grafana service lives.             #|
+#|                                                                             #|
+#| Pattern: HTTPRoute (network) → ReferenceGrant (monitoring) → Service       #|
+#| =========================================================================== #|
+#% if monitoring_enabled | default(false) and monitoring_stack == 'prometheus' %#
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-network-httproutes
+  namespace: #{ observability_namespace | default('monitoring') }#
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: kube-prometheus-stack-grafana
+#% endif %#

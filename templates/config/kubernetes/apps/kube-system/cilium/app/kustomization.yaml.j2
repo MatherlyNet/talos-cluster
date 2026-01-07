@@ -9,3 +9,7 @@ resources:
   - ./secret.sops.yaml
 #% endif %#
 #| NOTE: Hubble UI HTTPRoute moved to network/envoy-gateway for OIDC protection #|
+#% if hubble_enabled | default(false) %#
+  #| ReferenceGrant must be in kube-system (target namespace) for cross-ns routing #|
+  - ./referencegrant.yaml
+#% endif %#

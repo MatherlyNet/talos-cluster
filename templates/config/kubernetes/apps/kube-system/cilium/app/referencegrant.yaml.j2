@@ -1,0 +1,26 @@
+#| =========================================================================== #|
+#| REFERENCEGRANT - Allow network namespace to reference Hubble UI service    #|
+#| =========================================================================== #|
+#| Gateway API requires explicit grants for HTTPRoutes in one namespace to    #|
+#| reference Services in another namespace. This grant is placed in the       #|
+#| TARGET namespace (kube-system) where the Hubble UI service lives.          #|
+#|                                                                             #|
+#| Pattern: HTTPRoute (network) → ReferenceGrant (kube-system) → Service      #|
+#| =========================================================================== #|
+#% if hubble_enabled | default(false) %#
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-network-httproutes
+  namespace: kube-system
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: hubble-ui
+#% endif %#

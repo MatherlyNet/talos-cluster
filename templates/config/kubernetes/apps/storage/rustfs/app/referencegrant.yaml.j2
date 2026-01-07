@@ -1,0 +1,26 @@
+#| =========================================================================== #|
+#| REFERENCEGRANT - Allow network namespace to reference RustFS Console       #|
+#| =========================================================================== #|
+#| Gateway API requires explicit grants for HTTPRoutes in one namespace to    #|
+#| reference Services in another namespace. This grant is placed in the       #|
+#| TARGET namespace (storage) where the RustFS service lives.                 #|
+#|                                                                             #|
+#| Pattern: HTTPRoute (network) → ReferenceGrant (storage) → Service          #|
+#| =========================================================================== #|
+#% if rustfs_enabled | default(false) %#
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-network-httproutes
+  namespace: storage
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: rustfs-svc
+#% endif %#

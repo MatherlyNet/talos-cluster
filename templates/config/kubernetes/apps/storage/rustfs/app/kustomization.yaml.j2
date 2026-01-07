@@ -8,6 +8,8 @@ resources:
   - ./secret.sops.yaml
   #| job-setup.yaml moved to ../setup/ with separate Kustomization dependency #|
   #| NOTE: RustFS Console HTTPRoute moved to network/envoy-gateway for OIDC protection #|
+  #| ReferenceGrant must be in storage (target namespace) for cross-ns routing #|
+  - ./referencegrant.yaml
 #% if rustfs_monitoring_enabled | default(false) %#
   #| NOTE: RustFS does NOT support Prometheus pull-based metrics like MinIO. #|
   #|       It uses OpenTelemetry (OTLP) push mode instead.                   #|

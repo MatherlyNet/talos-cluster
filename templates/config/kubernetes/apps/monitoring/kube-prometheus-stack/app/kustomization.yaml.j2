@@ -7,4 +7,6 @@ resources:
   - ./helmrelease.yaml
   - ./secret.sops.yaml
 #| NOTE: Grafana HTTPRoute moved to network/envoy-gateway for OIDC protection #|
+  #| ReferenceGrant must be in monitoring (target namespace) for cross-ns routing #|
+  - ./referencegrant.yaml
 #% endif %#
