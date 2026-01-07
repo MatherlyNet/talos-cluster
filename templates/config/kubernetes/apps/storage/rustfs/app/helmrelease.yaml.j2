@@ -53,18 +53,23 @@ spec:
       dataStorageSize: "#{ rustfs_data_volume_size | default('20Gi') }#"
       logStorageSize: "#{ rustfs_log_volume_size | default('1Gi') }#"
 
-    #| Environment variables #|
-    environment:
-      RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
-      RUSTFS_ENABLE_SCANNER: "true"
-      RUSTFS_ENABLE_HEAL: "true"
-      #| Console UI always enabled for access key management (RustFS doesn't support mc admin) #|
-      RUSTFS_CONSOLE_ENABLE: "true"
+    #| RustFS configuration - converted to RUSTFS_* env vars via ConfigMap #|
+    #| REF: https://charts.rustfs.com/ #|
+    config:
+      rustfs:
+        #| Buffer profile for workload optimization #|
+        buffer_profile: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
+        #| Enable background scanner for data integrity #|
+        enable_scanner: "true"
+        #| Enable self-healing for corrupted data #|
+        enable_heal: "true"
+        #| Console UI always enabled for access key management (RustFS doesn't support mc admin) #|
+        console_enable: "true"
 #% if rustfs_monitoring_enabled | default(false) %#
-      #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
-      #| RustFS does NOT support Prometheus pull-based metrics like MinIO #|
-      #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
-      RUSTFS_OBS_METRIC_ENDPOINT: "http://alloy.monitoring.svc:4318/v1/metrics"
+        #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
+        #| RustFS does NOT support Prometheus pull-based metrics like MinIO #|
+        #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
+        obs_metric_endpoint: "http://alloy.monitoring.svc:4318/v1/metrics"
 #% endif %#
 
     #| Use existing secret for credentials - must be under 'secret' key per RustFS Helm chart #|

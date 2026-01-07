@@ -221,21 +221,26 @@ prometheus.remote_write "default" {
 
 **File:** `templates/config/kubernetes/apps/storage/rustfs/app/helmrelease.yaml.j2`
 
-Add OTLP environment variable when monitoring is enabled:
+Add OTLP config in `config.rustfs` section (chart converts these to `RUSTFS_*` env vars via ConfigMap):
 
 ```yaml
-    #| Environment variables #|
-    environment:
-      RUSTFS_BUFFER_PROFILE: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
-      RUSTFS_ENABLE_SCANNER: "true"
-      RUSTFS_ENABLE_HEAL: "true"
-      RUSTFS_CONSOLE_ENABLE: "true"
+    #| RustFS configuration - converted to RUSTFS_* env vars via ConfigMap #|
+    #| REF: https://charts.rustfs.com/ #|
+    config:
+      rustfs:
+        buffer_profile: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
+        enable_scanner: "true"
+        enable_heal: "true"
+        console_enable: "true"
 #% if rustfs_monitoring_enabled | default(false) %#
-      #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
-      #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
-      RUSTFS_OBS_METRIC_ENDPOINT: "http://alloy.monitoring.svc:4318/v1/metrics"
+        #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
+        #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
+        obs_metric_endpoint: "http://alloy.monitoring.svc:4318/v1/metrics"
 #% endif %#
 ```
+
+**Note:** The RustFS Helm chart uses `config.rustfs.*` values which are converted to uppercase
+`RUSTFS_*` environment variables via a ConfigMap. Direct `environment:` blocks are NOT supported.
 
 ### Phase 3: Update Documentation
 
@@ -257,11 +262,11 @@ kubectl get svc -n monitoring alloy -o yaml | grep -A 20 "ports:"
 # Should show ports 4317, 4318, and 12345
 ```
 
-### 2. Verify RustFS Environment Variables
+### 2. Verify RustFS ConfigMap (Environment Variables)
 
 ```bash
-kubectl get pods -n storage -l app.kubernetes.io/name=rustfs -o jsonpath='{.items[0].spec.containers[0].env}' | jq .
-# Should include RUSTFS_OBS_METRIC_ENDPOINT
+kubectl get configmap -n storage -l app.kubernetes.io/name=rustfs -o yaml | grep -i obs_metric
+# Should show RUSTFS_OBS_METRIC_ENDPOINT in ConfigMap data
 ```
 
 ### 3. Check Alloy Logs for Metrics Reception
@@ -382,3 +387,4 @@ The OTLP pipeline uses cluster-internal HTTP:
 | 2026-01-07 | **IMPLEMENTED** - Updated Alloy HelmRelease with OTLP receiver, metrics pipeline, extraPorts |
 | 2026-01-07 | **IMPLEMENTED** - Updated RustFS HelmRelease with RUSTFS_OBS_METRIC_ENDPOINT env var |
 | 2026-01-07 | **FIXED** - Corrected YAML structure (extraPorts inside alloy: block, not duplicate key) |
+| 2026-01-07 | **FIXED** - Corrected RustFS HelmRelease to use `config.rustfs` format (chart uses ConfigMap, not direct env) |
