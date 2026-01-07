@@ -32,4 +32,46 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
+#% if keycloak_bootstrap_oidc_client | default(false) %#
+    #| =========================================================================== #|
+    #| OIDC CLIENT BOOTSTRAP - Envoy Gateway SSO Client                            #|
+    #| Auto-created when keycloak_enabled + oidc_sso_enabled + oidc_client_secret  #|
+    #| The client secret is shared with Envoy Gateway SecurityPolicy               #|
+    #| =========================================================================== #|
+    clients:
+      - clientId: "#{ oidc_client_id | default('envoy-gateway') }#"
+        name: "Envoy Gateway SSO"
+        description: "OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications"
+        enabled: true
+        #| Client type: confidential (requires secret) #|
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        #| The secret is provided from cluster.yaml (SOPS-encrypted) #|
+        secret: "#{ oidc_client_secret }#"
+        #| OAuth2 flows #|
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        #| Redirect URIs - wildcard for multi-app SSO #|
+        redirectUris:
+          - "https://*.#{ cloudflare_domain }#/oauth2/callback"
+        #| Web origins for CORS #|
+        webOrigins:
+          - "https://*.#{ cloudflare_domain }#"
+        #| Security: Require PKCE for authorization code flow #|
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://*.#{ cloudflare_domain }#/*"
+        #| Default scopes for this client #|
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
+#% endif %#
 #% endif %#

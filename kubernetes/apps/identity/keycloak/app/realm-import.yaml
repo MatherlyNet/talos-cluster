@@ -27,3 +27,31 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
+    clients:
+      - clientId: "envoy-gateway"
+        name: "Envoy Gateway SSO"
+        description: "OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "fm7BunhHfJ3tOlbRMrbpNPCRJHz+85qRlOvxVMH6aWY="
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://*.matherly.net/oauth2/callback"
+        webOrigins:
+          - "https://*.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://*.matherly.net/*"
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"

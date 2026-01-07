@@ -406,6 +406,17 @@ class Plugin(makejinja.plugin.Plugin):
         )
         data["oidc_sso_enabled"] = oidc_sso_enabled
 
+        # Keycloak OIDC client bootstrap - auto-create envoy-gateway client in realm import
+        # When keycloak_enabled + oidc_sso_enabled + oidc_client_secret are all set,
+        # the OIDC client is automatically bootstrapped with the provided secret.
+        # This eliminates manual Keycloak admin console setup for the Envoy Gateway client.
+        keycloak_bootstrap_oidc_client = (
+            keycloak_enabled
+            and oidc_sso_enabled
+            and data.get("oidc_client_secret")
+        )
+        data["keycloak_bootstrap_oidc_client"] = keycloak_bootstrap_oidc_client
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)

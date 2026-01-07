@@ -1,0 +1,32 @@
+---
+# SecurityPolicy for OIDC-based Web SSO authentication
+# REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/
+# REF: docs/guides/native-oidc-securitypolicy-implementation.md
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: oidc-sso
+  namespace: network
+spec:
+  # Target HTTPRoutes with the security: oidc-protected label
+  # NOTE: SecurityPolicy can only target resources in the same namespace
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        security: oidc-protected
+  oidc:
+    provider:
+      issuer: "https://sso.matherly.net/realms/matherlynet"
+    clientID: "envoy-gateway"
+    clientSecret:
+      name: oidc-client-secret
+    redirectURL: "https://*.matherly.net/oauth2/callback"
+    logoutPath: "/logout"
+    cookieDomain: "matherly.net"
+    scopes:
+      - "openid"
+      - "profile"
+      - "email"
+    # Forward access token to backend services
+    forwardAccessToken: true

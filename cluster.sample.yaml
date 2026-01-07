@@ -815,13 +815,19 @@ cloudflare_gateway_addr: ""
 #
 # SETUP WORKFLOW:
 #   1. Enable keycloak_enabled (provides OIDC issuer) OR set oidc_issuer_url manually
-#   2. Create OIDC client in Keycloak for Envoy Gateway:
-#      - Client type: confidential
-#      - Valid redirect URIs: https://*.${cloudflare_domain}/oauth2/callback
-#      - Copy client ID and secret
-#   3. Set the values below
+#   2. Generate a secure client secret (e.g., openssl rand -base64 32)
+#   3. Set oidc_client_secret below (SOPS-encrypted after task configure)
 #   4. Run 'task configure' and 'task reconcile'
 #   5. Label HTTPRoutes with 'security: oidc-protected' to enable SSO
+#
+# AUTOMATIC CLIENT BOOTSTRAP (when keycloak_enabled: true):
+#   When both keycloak_enabled and oidc_sso_enabled are true, the 'envoy-gateway'
+#   OIDC client is automatically created in the Keycloak realm with:
+#   - Confidential client type with the provided oidc_client_secret
+#   - Wildcard redirect URIs: https://*.${cloudflare_domain}/oauth2/callback
+#   - PKCE enabled for enhanced security
+#   - Default scopes: openid, profile, email
+#   No manual Keycloak admin console setup required!
 #
 # KEY DIFFERENCES FROM JWT SecurityPolicy:
 #   JWT: Stateless API auth, validates Bearer tokens against JWKS (label: jwt-protected)
@@ -833,15 +839,17 @@ cloudflare_gateway_addr: ""
 # oidc_sso_enabled: false
 
 # -- OIDC client ID registered in your identity provider
-#    (REQUIRED when oidc_sso_enabled: true) / (e.g. "envoy-gateway")
-#    Create in Keycloak: Clients → Create client → Client ID: "envoy-gateway"
-# oidc_client_id: ""
+#    (REQUIRED when oidc_sso_enabled: true) / (DEFAULT: "envoy-gateway")
+#    When keycloak_enabled: true, this client is auto-created via realm import.
+#    For external IdPs: Create a client with this ID in your IdP.
+# oidc_client_id: "envoy-gateway"
 
 # -- OIDC client secret (SOPS-encrypted)
 #    (REQUIRED when oidc_sso_enabled: true)
-#    Obtain from Keycloak: Clients → envoy-gateway → Credentials → Client secret
-#    Copy the secret value and paste here (will be SOPS-encrypted after task configure)
-#    NOTE: This is NOT generated locally - it's copied from your IdP client configuration
+#    GENERATE: openssl rand -base64 32
+#    When keycloak_enabled: true, this secret is automatically configured in Keycloak
+#    via realm import - no manual Keycloak admin console setup required!
+#    For external IdPs: Copy the client secret from your IdP's client configuration.
 # oidc_client_secret: ""
 
 # -- OAuth2 callback URL for OIDC redirect
