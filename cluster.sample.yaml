@@ -413,6 +413,30 @@ cloudflare_gateway_addr: ""
 # environment: "production"
 
 # =============================================================================
+# OBSERVABILITY - Grafana Dashboard Monitoring (Component-Specific)
+# =============================================================================
+# Component-specific toggles for Grafana dashboards and ServiceMonitors.
+# Each requires monitoring_enabled: true as a prerequisite.
+# REF: docs/guides/grafana-dashboards-implementation.md
+
+# -- Enable Keycloak Grafana monitoring (ServiceMonitor + Dashboards)
+#    Deploys Keycloak Troubleshooting and Capacity Planning dashboards
+#    Also deploys ServiceMonitor for metrics collection on management port 9000
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true, keycloak_enabled: true)
+# keycloak_monitoring_enabled: false
+
+# -- Enable RustFS Grafana monitoring (ServiceMonitor + Dashboard)
+#    Deploys MinIO-compatible storage dashboard for RustFS metrics
+#    Also deploys ServiceMonitor for /minio/v2/metrics/cluster endpoint
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true, rustfs_enabled: true)
+# rustfs_monitoring_enabled: false
+
+# -- Enable Loki Grafana monitoring (Stack Monitoring Dashboard)
+#    Deploys Loki Stack Monitoring dashboard (grafana.com ID: 14055)
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true, loki_enabled: true)
+# loki_monitoring_enabled: false
+
+# =============================================================================
 # RUSTFS SHARED OBJECT STORAGE - S3-compatible storage for cluster services
 # =============================================================================
 # RustFS is a high-performance, Rust-based S3-compatible object storage system.

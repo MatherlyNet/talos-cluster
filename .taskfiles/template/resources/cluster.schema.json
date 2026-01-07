@@ -845,6 +845,21 @@
       "default": "0.1",
       "type": "string",
       "pattern": "^[01](\\.\\d+)?$"
+    },
+    "keycloak_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Keycloak Grafana Monitoring - ServiceMonitor + Dashboards When enabled (and monitoring_enabled: true), deploys Keycloak metrics and dashboards"
+    },
+    "rustfs_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "RustFS Grafana Monitoring - ServiceMonitor + Dashboard When enabled (and monitoring_enabled: true), deploys RustFS S3 storage dashboard"
+    },
+    "loki_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Loki Grafana Monitoring - Stack Monitoring Dashboard When enabled (and monitoring_enabled: true), deploys Loki stack monitoring dashboard"
     }
   },
   "required": [

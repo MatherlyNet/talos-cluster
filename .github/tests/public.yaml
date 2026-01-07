@@ -84,6 +84,11 @@ kubernetes_version: "1.35.0"
 # cluster_name: "matherlynet"
 # observability_namespace: "monitoring"
 # environment: "production"
+# Grafana Dashboard Monitoring (component-specific toggles, require monitoring_enabled: true)
+# REF: docs/guides/grafana-dashboards-implementation.md
+# keycloak_monitoring_enabled: true  # Keycloak ServiceMonitor + Dashboards
+# rustfs_monitoring_enabled: true    # RustFS S3 storage dashboard
+# loki_monitoring_enabled: true      # Loki stack monitoring dashboard
 
 # OIDC/JWT Configuration (optional - uncomment to test SecurityPolicy)
 # oidc_provider_name: "keycloak"

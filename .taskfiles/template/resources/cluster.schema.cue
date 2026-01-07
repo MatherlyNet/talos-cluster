@@ -280,6 +280,22 @@ import (
 	// REF: https://www.keycloak.org/observability/tracing
 	keycloak_tracing_enabled?:     *false | bool
 	keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
+
+	// Grafana Dashboard Monitoring - Component-specific dashboard toggles
+	// Each requires monitoring_enabled: true as a prerequisite
+	// REF: docs/guides/grafana-dashboards-implementation.md
+
+	// Keycloak Grafana Monitoring - ServiceMonitor + Dashboards
+	// When enabled (and monitoring_enabled: true), deploys Keycloak metrics and dashboards
+	keycloak_monitoring_enabled?: *false | bool
+
+	// RustFS Grafana Monitoring - ServiceMonitor + Dashboard
+	// When enabled (and monitoring_enabled: true), deploys RustFS S3 storage dashboard
+	rustfs_monitoring_enabled?: *false | bool
+
+	// Loki Grafana Monitoring - Stack Monitoring Dashboard
+	// When enabled (and monitoring_enabled: true), deploys Loki stack monitoring dashboard
+	loki_monitoring_enabled?: *false | bool
 }
 
 #Config
