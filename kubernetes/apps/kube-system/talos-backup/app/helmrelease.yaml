@@ -23,7 +23,7 @@ spec:
       - name: AWS_REGION
         value: "us-east-1"
       - name: USE_PATH_STYLE
-        value: "true"
+        value: "false"
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:

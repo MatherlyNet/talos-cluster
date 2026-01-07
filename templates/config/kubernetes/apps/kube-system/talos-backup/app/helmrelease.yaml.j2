@@ -28,9 +28,10 @@ spec:
       - name: AWS_REGION
         value: "#{ backup_s3_region | default('us-east-1') }#"
 #% if 'svc.cluster.local' in backup_s3_endpoint %#
-      #| USE_PATH_STYLE required for S3-compatible storage like RustFS/MinIO #|
+      #| USE_PATH_STYLE="false" enables path-style URLs (inverted logic in talos-backup code!) #|
+      #| See: https://github.com/siderolabs/talos-backup/blob/v0.1.0-beta.2/pkg/config/service.go #|
       - name: USE_PATH_STYLE
-        value: "true"
+        value: "false"
 #% endif %#
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
