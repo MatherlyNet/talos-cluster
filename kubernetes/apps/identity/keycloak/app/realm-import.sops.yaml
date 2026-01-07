@@ -39,25 +39,29 @@ spec:
         - name: user
           description: Basic authenticated user access to standard applications
     clients:
-      - clientId: ENC[AES256_GCM,data:+c2I786s1UKqyKoJiw==,iv:EXxnQbz+FUoumtniRB0uN/PScLk9YFOI4edRhQmgfLM=,tag:UWDdmbvoWyDOubG4s/O0kA==,type:str]
+      - clientId: ENC[AES256_GCM,data:exu8SG36I8YhnD119w==,iv:UGG5S6xE9F4Vr8V3/qckuucTYwnifiAY8JWj3XrhX0s=,tag:R0LCfU6PeGnr/t2bDOW4Hg==,type:str]
         name: Envoy Gateway SSO
         description: OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications
         enabled: true
         publicClient: false
         clientAuthenticatorType: client-secret
-        secret: ENC[AES256_GCM,data:4EhiZ9z7IyVPpA0AQTpNr/ogkeMM1lrbPzbTH3N1pAcKSGU+kj081iKo1Yw=,iv:WkBgpg8HgaCNjeIqMILM5vTesnzelshf/fDUSDrOypU=,tag:Z8sBdRgHIaUaeorgMjqHgA==,type:str]
+        secret: ENC[AES256_GCM,data:rvKxF+1UBjg2dTkUF+C2aQghOUbZLY2pJ7ql7pEdbBEW7GuP9HjWfjNnZN0=,iv:YplZpF9xWoOO6SmZkN9T9CzhAljc+uoE2+2cn+mX4rY=,tag:atTS4J3cjgtd+1zHN32yCg==,type:str]
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
         implicitFlowEnabled: false
         protocol: openid-connect
         redirectUris:
-          - https://*.matherly.net/oauth2/callback
+          - https://hubble.matherly.net/oauth2/callback
+          - https://grafana.matherly.net/oauth2/callback
+          - https://rustfs.matherly.net/oauth2/callback
         webOrigins:
-          - https://*.matherly.net
+          - https://hubble.matherly.net
+          - https://grafana.matherly.net
+          - https://rustfs.matherly.net
         attributes:
           pkce.code.challenge.method: S256
-          post.logout.redirect.uris: https://*.matherly.net/*
+          post.logout.redirect.uris: https://hubble.matherly.net/*##https://grafana.matherly.net/*##https://rustfs.matherly.net/*
         defaultClientScopes:
           - openid
           - profile
@@ -76,8 +80,8 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: first broker login
         config:
-          clientId: ENC[AES256_GCM,data:Agot+AtkeQKVuYuoulxwgJ45QAAFtnFwPrqGeHDHJlBbXfyX2Pezh6ywxEMfAnXzXDV9tHCthiMX9JKSHFwMiWNzMw2Ge1qK,iv:7LTUKf+RldHfFNcaArtBqnbrVLoHTSigEBNmqOgWlL0=,tag:CTdodBYRmL0cJuOMO+O5sg==,type:str]
-          clientSecret: ENC[AES256_GCM,data:MG84f9bnUvI+f2Ys9SVyeyllHq1W+GeTyQUXCgUzjLEZwv0=,iv:FdWKDlLmNvKAdFQ6aYPaL29TFa2v7jnS4Y6ROO4FZIU=,tag:xL9k5iMYBZIJxTTGMTObiQ==,type:str]
+          clientId: ENC[AES256_GCM,data:dtWm0MEnLCkYKzOPSvpHYcxB8MYrFPCsfm9qMLu1SG/Vt4z8VP81plL89edtfWLJHVzAuUjut3dWwMmvwitRSPb9s+ZseXlP,iv:y0W9D9Am6ek5cr2AoiAsW0W91zzOVJQTCp8nF47kdrc=,tag:yANk5kQ/oWuAEcrQu3a6Pw==,type:str]
+          clientSecret: ENC[AES256_GCM,data:W+a4lRWGMuAiYklgAUGuZABLoOA5ilgqlEk0YgFI6e0k5/w=,iv:S05cfAlPGwG7PQAUvP6+ftH0S6aHcxwE8/D5XxdbQh4=,tag:EORY9kPCknjuqKNipnx78g==,type:str]
           defaultScope: openid profile email
           syncMode: IMPORT
     identityProviderMappers:
@@ -92,14 +96,14 @@ sops:
     - recipient: age1rqvr6f3l6hxc5dn9q2n7edzvrklj2sz3q9djlp9rtqc8hfa6447saqpaqn
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBwWFc0aDR3MDk5ZVRtczVh
-        MFN4S29GVzZhTW1GcHk0MHpFdXMveU9OVWpRCmY2WUlhODhVcXcxNWFINmtrKzVC
-        KzV5Wk5GK1RoNkdFZmkxb21EMkpZOVkKLS0tIEFTSUZZRHNBY0tFWGM4YjB4U3Nj
-        cy9jOEtsT2U1QnMrcHlUc2YveHFGT3cKRvd9uXrRnNlGnmRzM7mUE3TEShFSXT3n
-        eNKul1b3poyZ/WQZNU/2t5GRErtV6eLcu0Zy3Z1pc5X93NNkTLcFZg==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiQ3hBQ3l6dU84SFVmNFI5
+        TmpRQk9TY04rKzRWeFVxVFBUck4yRC9YUkU4CmxWVmx3V1hnR3RuZ2ZBYkpIZGx3
+        VmxvU0syRDFNYndPZzBNZUhhOFZVVTgKLS0tIFlVd2FjTkNaYXZSVnhHLzBJSVRn
+        bU4rYTJZZkdVYXFlNmN0eWloc3VHOFkKEKeCYL/hzkqoE4hPKxiRw/nRgV10EHyc
+        UdDpJelMobQw+21Wj2iui6rnASvFo9RxDT/UaJALTSftvRmvS+NEfQ==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2026-01-07T22:48:01Z"
-  mac: ENC[AES256_GCM,data:UHBwwMXnhHEo6KZUr7kxqAErpyVcPvcISu16WvwESx+pCX6UOJV9HKlkFm3CVp5jClT0hTuS+a8gbKgzZD6Fj+MCRPRWF9DF/B03DpvFbOoLNFEofnQyxLlgzK4EEv6p3DfROn70a7YU+oEefXWUDwiE5WAiA4fq9WqvIu5mJX4=,iv:XKI6gcZSvhM4/7l1QqoobkU4gC/qqApgoO0DI2gWkoE=,tag:SNx+WEwxZ9YlVTR4e3tN+g==,type:str]
+  lastmodified: "2026-01-07T23:47:26Z"
+  mac: ENC[AES256_GCM,data:LqEuZ+vVxjhqQwRqhU6SJDo+Rhd4bi0osSRwf3KZ4fSnKtSbHt67TmV8JFg7imNfTYywPi0Y9Bz5kfsCEQkk4wd/I+r/NvEo5zhtNqAHrJo9moOHABaOz/R6HAeRjNm+AYiGKC6MDkQ5oHd0ipuYQHbih6YQpG1gHYTy7i1Z/xs=,iv:uAfRq6D3OjrSO6RROANKdusI4gx5YZnBOV/cuQQhEa4=,tag:SUBh7osG4fFOBDsZ2Kac1A==,type:str]
   encrypted_regex: ^(clientId|clientSecret|secret)$
   mac_only_encrypted: true
   version: 3.11.0

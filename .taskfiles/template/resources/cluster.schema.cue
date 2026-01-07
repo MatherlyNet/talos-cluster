@@ -226,6 +226,7 @@ import (
 	//       Loki access keys must be created manually via RustFS Console UI.
 	//       Tempo uses local filesystem storage, not RustFS/S3.
 	rustfs_enabled?:           *false | bool
+	rustfs_subdomain?:         *"rustfs" | string & !=""
 	rustfs_replicas?:          *1 | int & >=1 & <=16
 	rustfs_data_volume_size?:  *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
 	rustfs_log_volume_size?:   *"1Gi" | string & =~"^[0-9]+[KMGT]i$"

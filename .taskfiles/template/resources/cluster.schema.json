@@ -705,6 +705,11 @@
       "type": "boolean",
       "description": "RustFS Shared Object Storage - S3-compatible storage for cluster services REF: https://rustfs.com/ REF: docs/research/rustfs-shared-storage-loki-simplescalable-jan-2026.md WARNING: RustFS is currently alpha software (v1.0.0-alpha.78) - test before production NOTE: RustFS does NOT support 'mc admin' commands for user/policy management. Loki access keys must be created manually via RustFS Console UI. Tempo uses local filesystem storage, not RustFS/S3."
     },
+    "rustfs_subdomain": {
+      "default": "rustfs",
+      "type": "string",
+      "minLength": 1
+    },
     "rustfs_replicas": {
       "default": 1,
       "type": "integer",

@@ -147,6 +147,7 @@ kubernetes_version: "1.35.0"
 #       Loki access keys must be created manually via RustFS Console UI.
 #       Tempo uses local filesystem storage, not RustFS/S3.
 # rustfs_enabled: true
+# rustfs_subdomain: "rustfs"
 # rustfs_replicas: 1
 # rustfs_data_volume_size: "20Gi"
 # rustfs_log_volume_size: "1Gi"

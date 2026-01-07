@@ -115,16 +115,59 @@ spec:
         serviceAccountsEnabled: false
         implicitFlowEnabled: false
         protocol: "openid-connect"
-        #| Redirect URIs - wildcard for multi-app SSO #|
+        #| =========================================================================== #|
+        #| Redirect URIs - Explicit per-service (Keycloak does NOT support subdomain   #|
+        #| wildcards like https://*.domain.com - only path wildcards are supported)    #|
+        #| Each OIDC-protected service must be listed explicitly.                      #|
+        #| REF: https://github.com/keycloak/keycloak/issues/8929                       #|
+        #| =========================================================================== #|
         redirectUris:
-          - "https://*.#{ cloudflare_domain }#/oauth2/callback"
-        #| Web origins for CORS #|
+#% if hubble_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ hubble_subdomain | default('hubble') }#.#{ cloudflare_domain }#/oauth2/callback"
+#% endif %#
+#% if monitoring_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#/oauth2/callback"
+#% endif %#
+#% if rustfs_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ rustfs_subdomain | default('rustfs') }#.#{ cloudflare_domain }#/oauth2/callback"
+#% endif %#
+#% if oidc_additional_redirect_uris is defined and oidc_additional_redirect_uris %#
+#%   for uri in oidc_additional_redirect_uris %#
+          - "#{ uri }#"
+#%   endfor %#
+#% endif %#
+        #| Web origins for CORS - explicit per-service #|
         webOrigins:
-          - "https://*.#{ cloudflare_domain }#"
+#% if hubble_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ hubble_subdomain | default('hubble') }#.#{ cloudflare_domain }#"
+#% endif %#
+#% if monitoring_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#"
+#% endif %#
+#% if rustfs_enabled | default(false) and oidc_sso_enabled | default(false) %#
+          - "https://#{ rustfs_subdomain | default('rustfs') }#.#{ cloudflare_domain }#"
+#% endif %#
+#% if oidc_additional_web_origins is defined and oidc_additional_web_origins %#
+#%   for origin in oidc_additional_web_origins %#
+          - "#{ origin }#"
+#%   endfor %#
+#% endif %#
         #| Security: Require PKCE for authorization code flow #|
         attributes:
           pkce.code.challenge.method: "S256"
-          post.logout.redirect.uris: "https://*.#{ cloudflare_domain }#/*"
+          #| Post-logout redirect URIs - explicit per-service #|
+          post.logout.redirect.uris: >-
+#% set logout_uris = [] %#
+#% if hubble_enabled | default(false) and oidc_sso_enabled | default(false) %#
+#%   set _ = logout_uris.append('https://' ~ (hubble_subdomain | default('hubble')) ~ '.' ~ cloudflare_domain ~ '/*') %#
+#% endif %#
+#% if monitoring_enabled | default(false) and oidc_sso_enabled | default(false) %#
+#%   set _ = logout_uris.append('https://' ~ (grafana_subdomain | default('grafana')) ~ '.' ~ cloudflare_domain ~ '/*') %#
+#% endif %#
+#% if rustfs_enabled | default(false) and oidc_sso_enabled | default(false) %#
+#%   set _ = logout_uris.append('https://' ~ (rustfs_subdomain | default('rustfs')) ~ '.' ~ cloudflare_domain ~ '/*') %#
+#% endif %#
+            #{ logout_uris | join('##') }#
         #| Default scopes for this client #|
         defaultClientScopes:
           - "openid"

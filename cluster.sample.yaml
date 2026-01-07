@@ -472,6 +472,10 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: false)
 # rustfs_enabled: false
 
+# -- RustFS subdomain (creates rustfs.<cloudflare_domain>)
+#    (OPTIONAL) / (DEFAULT: "rustfs")
+# rustfs_subdomain: "rustfs"
+
 # -- Number of RustFS nodes
 #    Single node (1) for simple deployments, 4+ for distributed mode
 #    Note: Helm chart creates data PVCs only for 1, 4, or 16 replicas

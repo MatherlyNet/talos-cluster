@@ -90,7 +90,7 @@ metadata:
 #% endif %#
 spec:
   hostnames:
-    - "rustfs.${SECRET_DOMAIN}"
+    - "#{ rustfs_subdomain | default('rustfs') }#.${SECRET_DOMAIN}"
   parentRefs:
     - name: envoy-internal
       namespace: network

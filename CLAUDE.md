@@ -186,6 +186,7 @@ Optional Observability Stack (metrics, logs, traces):
 
 Optional RustFS Shared Object Storage (S3-compatible):
 - `rustfs_enabled` - Enable RustFS for shared S3 storage
+- `rustfs_subdomain` - Subdomain for RustFS Console UI (default: "rustfs", creates rustfs.${cloudflare_domain})
 - When enabled, Loki automatically switches to SimpleScalable mode with S3 backend
 - `rustfs_secret_key`, `loki_s3_access_key`, `loki_s3_secret_key` - SOPS-encrypted credentials
 - ⚠️ **IMPORTANT**: RustFS does NOT support `mc admin` commands for user/policy management
