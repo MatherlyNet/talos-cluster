@@ -32,7 +32,15 @@ spec:
     clientID: "#{ oidc_client_id }#"
     clientSecret:
       name: oidc-client-secret
+    #| =========================================================================== #|
+    #| REDIRECT URL CONFIGURATION                                                  #|
+    #| If oidc_redirect_url is NOT specified, Envoy Gateway uses the dynamic      #|
+    #| default: %REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback      #|
+    #| This allows multi-subdomain SSO without hardcoding each hostname           #|
+    #| =========================================================================== #|
+    #% if oidc_redirect_url is defined and oidc_redirect_url and '*' not in oidc_redirect_url %#
     redirectURL: "#{ oidc_redirect_url }#"
+    #% endif %#
     logoutPath: "#{ oidc_logout_path | default('/logout') }#"
     #% if oidc_cookie_domain is defined %#
     cookieDomain: "#{ oidc_cookie_domain }#"
