@@ -14,18 +14,14 @@ spec:
     env:
       - name: CLUSTER_NAME
         value: "matherlynet"
-      - name: S3_ENDPOINT
+      - name: CUSTOM_S3_ENDPOINT
         value: "http://rustfs-svc.storage.svc.cluster.local:9000"
-      - name: S3_BUCKET
+      - name: BUCKET
         value: "etcd-backups"
       - name: S3_PREFIX
         value: "matherlynet/etcd-backups"
       - name: AWS_REGION
         value: "us-east-1"
-      - name: S3_FORCE_PATH_STYLE
-        value: "true"
-      - name: S3_USE_SSL
-        value: "false"
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:

@@ -16,22 +16,17 @@ spec:
     env:
       - name: CLUSTER_NAME
         value: "#{ cluster_name | default('talos-cluster') }#"
-      - name: S3_ENDPOINT
+      #| CUSTOM_S3_ENDPOINT is the correct env var name for talos-backup #|
+      - name: CUSTOM_S3_ENDPOINT
         value: "#{ backup_s3_endpoint }#"
-      - name: S3_BUCKET
+      #| BUCKET is the correct env var name for talos-backup (not S3_BUCKET) #|
+      - name: BUCKET
         value: "#{ backup_s3_bucket }#"
       - name: S3_PREFIX
         value: "#{ cluster_name | default('talos-cluster') }#/etcd-backups"
       #| AWS SDK requires a region even for S3-compatible storage #|
       - name: AWS_REGION
         value: "#{ backup_s3_region | default('us-east-1') }#"
-#% if backup_s3_internal | default(false) %#
-      #| Internal RustFS: use path-style URLs and disable SSL #|
-      - name: S3_FORCE_PATH_STYLE
-        value: "true"
-      - name: S3_USE_SSL
-        value: "false"
-#% endif %#
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:
