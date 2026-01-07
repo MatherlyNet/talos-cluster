@@ -22,6 +22,9 @@ spec:
         value: "#{ backup_s3_bucket }#"
       - name: S3_PREFIX
         value: "#{ cluster_name | default('talos-cluster') }#/etcd-backups"
+      #| AWS SDK requires a region even for S3-compatible storage #|
+      - name: AWS_REGION
+        value: "#{ backup_s3_region | default('us-east-1') }#"
 #% if backup_s3_internal | default(false) %#
       #| Internal RustFS: use path-style URLs and disable SSL #|
       - name: S3_FORCE_PATH_STYLE

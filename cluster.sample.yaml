@@ -557,6 +557,10 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (Will be SOPS-encrypted after task configure)
 # backup_s3_secret_key: ""
 
+# -- S3 region (required by AWS SDK, any value works for S3-compatible storage)
+#    (OPTIONAL) / (DEFAULT: "us-east-1")
+# backup_s3_region: "us-east-1"
+
 # -- Age public key for backup encryption (use same as cluster Age key)
 #    Get from: cat age.key | grep "public key"
 #    (OPTIONAL) / (e.g. "age1...")

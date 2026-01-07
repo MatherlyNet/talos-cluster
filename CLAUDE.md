@@ -201,6 +201,7 @@ Optional CiliumNetworkPolicies (zero-trust networking):
 
 Optional Talos Backup (etcd snapshots to S3):
 - `backup_s3_endpoint`, `backup_s3_bucket` (both required to enable)
+- `backup_s3_region` - AWS SDK region (default: "us-east-1", any value works for S3-compatible storage)
 - When configured, `talos_backup_enabled=true` (derived in plugin.py)
 - See `docs/CONFIGURATION.md` for all backup settings
 

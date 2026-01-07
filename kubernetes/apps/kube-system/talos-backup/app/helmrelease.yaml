@@ -20,6 +20,8 @@ spec:
         value: "etcd-backups"
       - name: S3_PREFIX
         value: "matherlynet/etcd-backups"
+      - name: AWS_REGION
+        value: "us-east-1"
       - name: S3_FORCE_PATH_STYLE
         value: "true"
       - name: S3_USE_SSL

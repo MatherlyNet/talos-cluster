@@ -200,6 +200,11 @@
       "type": "string",
       "minLength": 1
     },
+    "backup_s3_region": {
+      "default": "us-east-1",
+      "type": "string",
+      "minLength": 1
+    },
     "backup_age_public_key": {
       "type": "string",
       "pattern": "^age1"

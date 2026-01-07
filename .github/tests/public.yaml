@@ -170,3 +170,6 @@ kubernetes_version: "1.35.0"
 # Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
 # keycloak_tracing_enabled: true
 # keycloak_tracing_sample_rate: "0.1"
+
+# Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
+# backup_s3_region: "us-east-1"

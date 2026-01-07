@@ -60,6 +60,7 @@ import (
 	backup_s3_bucket?:      string & !=""
 	backup_s3_access_key?:  string & !=""
 	backup_s3_secret_key?:  string & !=""
+	backup_s3_region?:      *"us-east-1" | string & !=""  // Required by AWS SDK, any value works for S3-compatible
 	backup_age_public_key?: string & =~"^age1"
 
 	// Proxmox CSI Configuration - Optional for persistent storage
