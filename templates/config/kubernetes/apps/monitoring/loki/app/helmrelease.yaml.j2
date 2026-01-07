@@ -194,10 +194,11 @@ spec:
       enabled: true
 #% if rustfs_enabled | default(false) %#
       #| In SimpleScalable mode without gateway, connect directly to loki-read #|
-      lokiurl: http://loki-read.monitoring.svc.cluster.local:3100
+      #| Note: chart prepends 'http://' so only specify host:port #|
+      lokiurl: loki-read.monitoring.svc.cluster.local:3100
 #% else %#
       #| In SingleBinary mode, connect directly to loki service #|
-      lokiurl: http://loki.monitoring.svc.cluster.local:3100
+      lokiurl: loki.monitoring.svc.cluster.local:3100
 #% endif %#
 
     # COHESION: Disable components deployed by kube-prometheus-stack
