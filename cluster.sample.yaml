@@ -726,6 +726,18 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: 7)
 # keycloak_backup_retention_days: 7
 
+# -- Enable Keycloak OpenTelemetry tracing
+#    Requires tracing_enabled: true (Tempo deployed in monitoring namespace)
+#    When enabled, Keycloak exports traces to Tempo via OTLP gRPC (port 4317)
+#    (OPTIONAL) / (DEFAULT: false)
+# keycloak_tracing_enabled: false
+
+# -- Keycloak tracing sample rate (0.0 to 1.0)
+#    1.0 = trace 100% of requests; 0.1 = trace 10% of requests
+#    Production recommended: 0.1 (10%); Development: 1.0 (100%)
+#    (OPTIONAL) / (DEFAULT: "0.1")
+# keycloak_tracing_sample_rate: "0.1"
+
 # =============================================================================
 # OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
 # =============================================================================

@@ -242,6 +242,12 @@ Optional Keycloak PostgreSQL Backup (requires RustFS):
 - Embedded mode: pg_dump CronJob to `keycloak-backups` bucket
 - CNPG mode: barmanObjectStore with continuous WAL archiving
 
+Optional Keycloak OpenTelemetry Tracing (requires tracing_enabled):
+- `keycloak_tracing_enabled` - Enable trace export to Tempo via OTLP gRPC (default: false)
+- `keycloak_tracing_sample_rate` - Sample rate 0.0-1.0 (default: "0.1" = 10%)
+- When both `tracing_enabled` and `keycloak_tracing_enabled` are true, traces are exported to Tempo
+- See `docs/guides/keycloak-implementation.md#opentelemetry-tracing-integration` for details
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
@@ -280,6 +286,7 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `keycloak_issuer_url` - auto-derived OIDC issuer URL for SecurityPolicy
 - `keycloak_jwks_uri` - auto-derived JWKS endpoint for JWT validation
 - `keycloak_backup_enabled` - true when rustfs_enabled + keycloak S3 credentials set
+- `keycloak_tracing_enabled` - true when tracing_enabled + keycloak_tracing_enabled both true
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 

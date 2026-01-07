@@ -167,3 +167,6 @@ kubernetes_version: "1.35.0"
 # keycloak_s3_secret_key: "test-keycloak-secret"
 # keycloak_backup_schedule: "0 2 * * *"
 # keycloak_backup_retention_days: 7
+# Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
+# keycloak_tracing_enabled: true
+# keycloak_tracing_sample_rate: "0.1"

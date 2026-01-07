@@ -52,6 +52,20 @@ spec:
       value: "true"
     - name: metrics-enabled
       value: "true"
+    - name: tracing-enabled
+      value: "true"
+    - name: tracing-endpoint
+      value: "http://tempo.monitoring.svc:4317"
+    - name: tracing-protocol
+      value: "grpc"
+    - name: tracing-sampler-type
+      value: "traceidratio"
+    - name: tracing-sampler-ratio
+      value: "0.1"
+    - name: telemetry-service-name
+      value: "keycloak"
+    - name: telemetry-resource-attributes
+      value: "k8s.namespace.name=identity,service.version=26.5.0,k8s.cluster.name=matherlynet"
 
   resources:
     requests:

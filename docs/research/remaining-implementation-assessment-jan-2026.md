@@ -269,7 +269,13 @@ keycloak_operator_version: "26.5.0"
 3. Commit and push, then `task reconcile`
 4. Create realm, client, and test user via Admin Console
 
-**Effort:** Completed (templates). ~1-2 hours remaining for deployment and realm setup.
+**Optional Enhancement: OpenTelemetry Tracing**
+- Keycloak 26.5.0 has full OpenTelemetry support (graduated from preview)
+- Can export traces to existing Tempo deployment (`tempo.monitoring.svc:4317`)
+- New variables: `keycloak_tracing_enabled`, `keycloak_tracing_sample_rate`
+- See: [Keycloak Implementation Guide - Tracing Section](../guides/keycloak-implementation.md#opentelemetry-tracing-integration)
+
+**Effort:** Completed (templates). ~1-2 hours remaining for deployment and realm setup. +30 min for tracing integration.
 
 **Dependency Chain:** (CloudNativePG if cnpg mode) → Keycloak → JWT/OIDC SecurityPolicy
 

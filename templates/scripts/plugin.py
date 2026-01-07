@@ -337,8 +337,17 @@ class Plugin(makejinja.plugin.Plugin):
                 and data.get("keycloak_s3_secret_key")
             )
             data["keycloak_backup_enabled"] = keycloak_backup_enabled
+
+            # Keycloak OpenTelemetry tracing - requires global tracing_enabled
+            # When both are true, Keycloak exports traces to Tempo via OTLP gRPC
+            keycloak_tracing_enabled = (
+                data.get("tracing_enabled", False)
+                and data.get("keycloak_tracing_enabled", False)
+            )
+            data["keycloak_tracing_enabled"] = keycloak_tracing_enabled
         else:
             data["keycloak_backup_enabled"] = False
+            data["keycloak_tracing_enabled"] = False
 
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled

@@ -275,6 +275,10 @@ import (
 	// CNPG mode uses continuous WAL archiving instead
 	keycloak_backup_schedule?:       *"0 2 * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
 	keycloak_backup_retention_days?: *7 | int & >=1 & <=365
+	// Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
+	// REF: https://www.keycloak.org/observability/tracing
+	keycloak_tracing_enabled?:     *false | bool
+	keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
 }
 
 #Config

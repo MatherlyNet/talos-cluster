@@ -1248,6 +1248,201 @@ kubectl -n identity get statefulset,service,secret -l app.kubernetes.io/managed-
 
 ---
 
+## OpenTelemetry Tracing Integration
+
+> **Status:** Optional Enhancement
+> **Requirements:** `tracing_enabled: true` in cluster.yaml, Tempo deployed
+> **Keycloak Version:** 26.5.0+ (OpenTelemetry fully supported, graduated from preview in 26.1.0)
+
+Keycloak 26.5.0 includes full OpenTelemetry support for distributed tracing, allowing you to trace authentication flows, token operations, and admin API calls through your existing Tempo infrastructure.
+
+### Why Enable Tracing?
+
+| Use Case | Benefit |
+| -------- | ------- |
+| **Authentication debugging** | Trace login flows, identify slow steps |
+| **Token lifecycle** | Track token issuance, validation, refresh |
+| **Cross-service correlation** | Link Keycloak traces to application traces |
+| **Performance analysis** | Identify bottlenecks in auth flows |
+| **Audit trails** | Detailed request flow for compliance |
+
+### Prerequisites
+
+1. **Observability stack deployed** with `tracing_enabled: true`
+2. **Tempo running** in the monitoring namespace
+3. **Keycloak 26.5.0+** (already the default version)
+
+Verify Tempo is available:
+```bash
+kubectl get svc tempo -n monitoring
+# Expected: tempo ClusterIP with ports including:
+#   - 4317 (grpc-tempo-otlp) - OTLP gRPC (used by Keycloak)
+#   - 4318 (tempo-otlp-http) - OTLP HTTP
+#   - 9411 (tempo-zipkin) - Zipkin (used by Envoy Gateway)
+```
+
+### Configuration Variables
+
+Add to `cluster.yaml`:
+
+```yaml
+# Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
+keycloak_tracing_enabled: true           # Enable Keycloak → Tempo tracing
+keycloak_tracing_sample_rate: "0.1"      # 10% sampling for production (0.0-1.0)
+```
+
+### Sampling Rate Recommendations
+
+| Environment | Sample Rate | Rationale |
+| ----------- | ----------- | --------- |
+| Development | `1.0` (100%) | Capture all traces for debugging |
+| Staging | `0.5` (50%) | Moderate visibility, reasonable overhead |
+| Production | `0.1` (10%) | Cost-effective, captures representative sample |
+| High-Traffic | `0.01` (1%) | Minimize overhead while maintaining visibility |
+
+### Keycloak CR Changes
+
+Update `templates/config/kubernetes/apps/identity/keycloak/app/keycloak-cr.yaml.j2`:
+
+```yaml
+spec:
+  #| Feature flags #|
+  features:
+    enabled:
+      - token-exchange
+      - admin-fine-grained-authz
+      - opentelemetry  # Enabled by default in 26.5.0, explicit for clarity
+
+  #| Additional server options #|
+  additionalOptions:
+    - name: health-enabled
+      value: "true"
+    - name: metrics-enabled
+      value: "true"
+#% if tracing_enabled | default(false) and keycloak_tracing_enabled | default(false) %#
+    #| =========================================================================== #|
+    #| OpenTelemetry Tracing - Export traces to Tempo                              #|
+    #| REF: https://www.keycloak.org/observability/tracing                         #|
+    #| =========================================================================== #|
+    - name: tracing-enabled
+      value: "true"
+    - name: tracing-endpoint
+      value: "http://tempo.monitoring.svc:4317"
+    - name: tracing-protocol
+      value: "grpc"
+    - name: tracing-sampler-type
+      value: "traceidratio"
+    - name: tracing-sampler-ratio
+      value: "#{ keycloak_tracing_sample_rate | default('0.1') }#"
+    - name: telemetry-service-name
+      value: "keycloak"
+    - name: telemetry-resource-attributes
+      value: "k8s.namespace.name=identity,service.version=#{ keycloak_operator_version | default('26.5.0') }#,k8s.cluster.name=#{ cluster_name | default('matherlynet') }#"
+#% endif %#
+```
+
+### CUE Schema Updates
+
+Add to `.taskfiles/template/resources/cluster.schema.cue`:
+
+```cue
+// Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
+// REF: https://www.keycloak.org/observability/tracing
+keycloak_tracing_enabled?:     *false | bool
+keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
+```
+
+### Plugin.py Derived Variables
+
+Add to `templates/scripts/plugin.py` in the Keycloak section:
+
+```python
+# Keycloak tracing - enabled when both global tracing and keycloak tracing are enabled
+data["keycloak_tracing_enabled"] = (
+    data.get("tracing_enabled", False)
+    and data.get("keycloak_tracing_enabled", False)
+)
+```
+
+### Network Policy Updates
+
+If `network_policies_enabled: true`, add egress rule for Keycloak → Tempo:
+
+```yaml
+# In keycloak network policy
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: tempo
+  ports:
+    - protocol: TCP
+      port: 4317  # OTLP gRPC
+```
+
+### Verification
+
+After enabling tracing:
+
+```bash
+# Check Keycloak logs for tracing initialization
+kubectl -n identity logs -l app.kubernetes.io/name=keycloak | grep -i "tracing\|opentelemetry"
+
+# Verify traces in Grafana
+# 1. Open Grafana → Explore → Select Tempo data source
+# 2. Search for service.name = "keycloak"
+# 3. You should see traces for login flows, token operations, etc.
+```
+
+### What Gets Traced
+
+Keycloak OpenTelemetry traces include:
+
+| Operation | Trace Span |
+| --------- | ---------- |
+| User login | `keycloak.login` with realm, client, user info |
+| Token issuance | `keycloak.token` with grant type |
+| Token validation | `keycloak.verify-token` |
+| Admin API calls | `keycloak.admin.*` operations |
+| User federation | `keycloak.federation.*` |
+| Session operations | `keycloak.session.*` |
+
+### Grafana Dashboard
+
+Create a Keycloak-specific dashboard with:
+- Authentication latency percentiles
+- Token operations per second
+- Error rates by operation type
+- Trace exemplars linked to metrics
+
+### Troubleshooting
+
+**Traces not appearing in Tempo:**
+```bash
+# Verify Tempo is receiving traces
+kubectl -n monitoring logs tempo-0 | grep -i "keycloak"
+
+# Check Tempo is healthy (HTTP port 3200)
+kubectl -n monitoring exec -it tempo-0 -- wget -q -O- http://localhost:3200/ready
+
+# Verify network connectivity from Keycloak to Tempo (OTLP gRPC port 4317)
+kubectl -n identity exec -it keycloak-0 -- nc -zv tempo.monitoring.svc 4317
+```
+
+**Warning messages about tracing options:**
+If you see warnings like "tracing-resource-attributes: Available only when Tracing is enabled", this is expected when `keycloak_tracing_enabled: false` but those options are still in the CR. The warnings are informational only.
+
+### References
+
+- [Keycloak Tracing Documentation](https://www.keycloak.org/observability/tracing)
+- [Keycloak 26.5.0 Release Notes](https://www.keycloak.org/2026/01/keycloak-2650-released) - OpenTelemetry updates
+- [OpenTelemetry Keycloak Benchmark](https://www.keycloak.org/keycloak-benchmark/kubernetes-guide/latest/util/otel)
+- [Tempo Documentation](https://grafana.com/docs/tempo/latest/)
+
+---
+
 ## Security Considerations
 
 ### Admin Credentials
@@ -1313,6 +1508,7 @@ Key features available in this version:
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-06 | Added OpenTelemetry Tracing Integration section with Tempo support |
 | 2026-01-06 | Fixed CRD schema errors by using Kustomize remote resources for official CRDs |
 | 2026-01-06 | Fixed secret collision (GitHub #35862) via `bootstrapAdmin.user.secret` with renamed secret |
 | 2026-01-06 | Added `https://` prefix to hostname for `backchannelDynamic` compatibility |

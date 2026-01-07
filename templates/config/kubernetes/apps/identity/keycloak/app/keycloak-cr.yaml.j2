@@ -87,6 +87,26 @@ spec:
     - name: cache-stack
       value: "kubernetes"
 #% endif %#
+#% if tracing_enabled | default(false) and keycloak_tracing_enabled | default(false) %#
+    #| =========================================================================== #|
+    #| OpenTelemetry Tracing - Export traces to Tempo                              #|
+    #| REF: https://www.keycloak.org/observability/tracing                         #|
+    #| =========================================================================== #|
+    - name: tracing-enabled
+      value: "true"
+    - name: tracing-endpoint
+      value: "http://tempo.#{ observability_namespace | default('monitoring') }#.svc:4317"
+    - name: tracing-protocol
+      value: "grpc"
+    - name: tracing-sampler-type
+      value: "traceidratio"
+    - name: tracing-sampler-ratio
+      value: "#{ keycloak_tracing_sample_rate | default('0.1') }#"
+    - name: telemetry-service-name
+      value: "keycloak"
+    - name: telemetry-resource-attributes
+      value: "k8s.namespace.name=identity,service.version=#{ keycloak_operator_version | default('26.5.0') }#,k8s.cluster.name=#{ cluster_name | default('matherlynet') }#"
+#% endif %#
 
   #| Resource limits #|
   resources:

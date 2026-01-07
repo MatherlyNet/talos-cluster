@@ -830,6 +830,16 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 365
+    },
+    "keycloak_tracing_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Keycloak OpenTelemetry Tracing (requires tracing_enabled: true) REF: https://www.keycloak.org/observability/tracing"
+    },
+    "keycloak_tracing_sample_rate": {
+      "default": "0.1",
+      "type": "string",
+      "pattern": "^[01](\\.\\d+)?$"
     }
   },
   "required": [

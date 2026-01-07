@@ -218,6 +218,7 @@ Computed from other values:
 | `keycloak_issuer_url` | Auto-derived: https://hostname/realms/realm |
 | `keycloak_jwks_uri` | Auto-derived: issuer_url + /protocol/openid-connect/certs |
 | `keycloak_backup_enabled` | rustfs_enabled + keycloak S3 credentials set |
+| `keycloak_tracing_enabled` | tracing_enabled + keycloak_tracing_enabled both true |
 
 ## Template Structure
 
