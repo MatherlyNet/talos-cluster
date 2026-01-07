@@ -893,7 +893,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "properties": {}
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
       },
       "description": "Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns Roles are created during realm import and used by IdP mappers/JWT claims REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/"
     },
@@ -1002,7 +1011,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "properties": {}
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
       }
     }
   },
