@@ -58,12 +58,12 @@ oidc_provider_name: "keycloak"
 # -- OIDC issuer URL (JWT token issuer - must match "iss" claim in tokens)
 #    (REQUIRED for JWT auth)
 #    Example: "https://auth.example.com/realms/myrealm"
-oidc_issuer_url: "https://auth.matherly.net/realms/matherlynet"
+oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
 
 # -- OIDC JWKS URI for JWT validation (public keys endpoint)
 #    (REQUIRED for JWT auth)
 #    Example: "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs"
-oidc_jwks_uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
 
 # -- Additional claims to extract from JWT and pass as headers
 #    Headers must start with "X-"
@@ -195,15 +195,15 @@ After JWT validation, your backend receives these headers:
    - Add any custom mappers for additional claims
 
 4. **Note Endpoints:**
-   - **Issuer URL:** `https://auth.matherly.net/realms/matherlynet`
-   - **JWKS URI:** `https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs`
+   - **Issuer URL:** `https://sso.matherly.net/realms/matherlynet`
+   - **JWKS URI:** `https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs`
 
 ### Test Token Generation
 
 ```bash
 # Get a test token (password grant - for testing only)
 TOKEN=$(curl -s -X POST \
-  "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/token" \
+  "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
   -d "client_id=api-clients" \
@@ -223,8 +223,8 @@ echo $TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 ```yaml
 # JWT Authentication Configuration
 oidc_provider_name: "keycloak"
-oidc_issuer_url: "https://auth.matherly.net/realms/matherlynet"
-oidc_jwks_uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
+oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
 oidc_additional_claims:
   - name: "preferred_username"
     header: "X-Username"
@@ -312,9 +312,9 @@ spec:
   jwt:
     providers:
       - name: keycloak
-        issuer: "https://auth.matherly.net/realms/matherlynet"
+        issuer: "https://sso.matherly.net/realms/matherlynet"
         remoteJWKS:
-          uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+          uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
   authorization:
     rules:
       - action: Allow
@@ -335,9 +335,9 @@ Support tokens from multiple IdPs:
 jwt:
   providers:
     - name: keycloak
-      issuer: "https://auth.matherly.net/realms/matherlynet"
+      issuer: "https://sso.matherly.net/realms/matherlynet"
       remoteJWKS:
-        uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+        uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
     - name: auth0
       issuer: "https://your-tenant.auth0.com/"
       remoteJWKS:
@@ -350,7 +350,7 @@ Adjust cache duration for performance vs freshness:
 
 ```yaml
 remoteJWKS:
-  uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+  uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
   cacheDuration: 300s  # 5 minutes (default)
   # Use shorter duration if keys rotate frequently
   # Use longer duration for better performance
@@ -364,9 +364,9 @@ Use `recomputeRoute: true` to route based on claims:
 jwt:
   providers:
     - name: keycloak
-      issuer: "https://auth.matherly.net/realms/matherlynet"
+      issuer: "https://sso.matherly.net/realms/matherlynet"
       remoteJWKS:
-        uri: "https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+        uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
       recomputeRoute: true
       claimToHeaders:
         - claim: user_tier
@@ -414,7 +414,7 @@ kubectl describe securitypolicy jwt-auth -n network
 
 # Test JWKS endpoint accessibility
 kubectl run curl-test --rm -it --image=curlimages/curl -- \
-  curl -v https://auth.matherly.net/realms/matherlynet/protocol/openid-connect/certs
+  curl -v https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs
 
 # View Envoy logs for auth events
 kubectl logs -n network -l gateway.envoyproxy.io/owning-gateway-name=envoy-internal -c envoy | grep -i jwt
