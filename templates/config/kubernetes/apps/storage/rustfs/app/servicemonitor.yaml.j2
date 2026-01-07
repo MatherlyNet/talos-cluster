@@ -11,7 +11,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: rustfs
   endpoints:
-    - port: api
+    - port: endpoint
       path: /minio/v2/metrics/cluster
       interval: 30s
   namespaceSelector:
