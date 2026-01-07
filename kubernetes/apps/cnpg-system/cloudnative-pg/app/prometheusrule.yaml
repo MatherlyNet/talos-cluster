@@ -73,3 +73,30 @@ spec:
           annotations:
             summary: "CNPG cluster {{ $labels.cluster }} storage running low"
             description: "CloudNativePG cluster {{ $labels.cluster }} is using {{ $value | humanizePercentage }} of storage capacity."
+
+        - alert: CNPGFailoverOccurred
+          expr: changes(cnpg_pg_replication_is_wal_receiver_up[5m]) > 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG failover occurred for {{ $labels.cluster }}"
+            description: "Primary instance changed for cluster {{ $labels.cluster }} in namespace {{ $labels.namespace }}. Verify application connectivity."
+
+        - alert: CNPGInstanceFenced
+          expr: cnpg_pg_replication_fenced == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "CNPG instance fenced in {{ $labels.cluster }}"
+            description: "Instance {{ $labels.pod }} in cluster {{ $labels.cluster }} is fenced and isolated from the cluster."
+
+        - alert: CNPGCheckpointSlow
+          expr: rate(cnpg_pg_stat_bgwriter_checkpoint_write_time[5m]) > 30
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CNPG checkpoint writes slow for {{ $labels.cluster }}"
+            description: "Checkpoint write time is elevated for cluster {{ $labels.cluster }}. Consider tuning checkpoint_completion_target or storage performance."

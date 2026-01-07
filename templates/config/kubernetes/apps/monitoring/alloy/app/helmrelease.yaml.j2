@@ -2,7 +2,7 @@
 ---
 # Alloy is Grafana's distribution of the OpenTelemetry Collector.
 # It replaces Promtail (EOL March 2026) and Grafana Agent (EOL November 2025).
-# Unified collector for logs (to Loki) and traces (to Tempo).
+# Unified collector for logs (to Loki), traces (to Tempo), and metrics (to Prometheus).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -44,11 +44,11 @@ spec:
             }
           }
 
-#% if tracing_enabled | default(false) %#
+#% if tracing_enabled | default(false) or rustfs_monitoring_enabled | default(false) %#
           // =========================================================================
-          // TRACES PIPELINE: OTLP -> Tempo (when tracing enabled)
+          // OTLP PIPELINE: Receive traces and/or metrics via OpenTelemetry
           // =========================================================================
-          // Receive traces via OTLP (from Envoy Gateway, applications, etc.)
+          // Receive OTLP telemetry (from Envoy Gateway, RustFS, applications, etc.)
           otelcol.receiver.otlp "default" {
             grpc {
               endpoint = "0.0.0.0:4317"
@@ -57,18 +57,28 @@ spec:
               endpoint = "0.0.0.0:4318"
             }
             output {
-              traces = [otelcol.processor.batch.default.input]
+#% if tracing_enabled | default(false) %#
+              traces = [otelcol.processor.batch.traces.input]
+#% endif %#
+#% if rustfs_monitoring_enabled | default(false) %#
+              metrics = [otelcol.processor.batch.metrics.input]
+#% endif %#
             }
           }
+#% endif %#
 
-          // Batch processor for efficiency
-          otelcol.processor.batch "default" {
+#% if tracing_enabled | default(false) %#
+          // =========================================================================
+          // TRACES PIPELINE: OTLP -> Tempo
+          // =========================================================================
+          // Batch processor for traces
+          otelcol.processor.batch "traces" {
             output {
               traces = [otelcol.exporter.otlp.tempo.input]
             }
           }
 
-          // Export to Tempo
+          // Export traces to Tempo
           otelcol.exporter.otlp "tempo" {
             client {
               endpoint = "tempo:4317"
@@ -77,6 +87,45 @@ spec:
               }
             }
           }
+#% endif %#
+
+#% if rustfs_monitoring_enabled | default(false) %#
+          // =========================================================================
+          // METRICS PIPELINE: OTLP -> Prometheus (RustFS metrics)
+          // =========================================================================
+          // REF: https://github.com/rustfs/rustfs/issues/1228
+          // RustFS uses OTLP push mode - metrics are converted to Prometheus format
+
+          // Batch processor for metrics
+          otelcol.processor.batch "metrics" {
+            output {
+              metrics = [otelcol.exporter.prometheus.default.input]
+            }
+          }
+
+          // Convert OTLP metrics to Prometheus format
+          otelcol.exporter.prometheus "default" {
+            forward_to = [prometheus.remote_write.default.receiver]
+          }
+
+          // Export metrics to Prometheus via remote write
+          prometheus.remote_write "default" {
+            endpoint {
+              url = "http://kube-prometheus-stack-prometheus.monitoring.svc:9090/api/v1/write"
+            }
+          }
+#% endif %#
+#% if tracing_enabled | default(false) or rustfs_monitoring_enabled | default(false) %#
+      #| Expose OTLP ports for receiving telemetry (traces and/or metrics) #|
+      extraPorts:
+        - name: otlp-grpc
+          port: 4317
+          targetPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          port: 4318
+          targetPort: 4318
+          protocol: TCP
 #% endif %#
     controller:
       type: daemonset
@@ -100,8 +149,8 @@ spec:
         initialDelaySeconds: 30
         periodSeconds: 30
         timeoutSeconds: 5
-#% if tracing_enabled | default(false) %#
-    # Service for receiving OTLP traces
+#% if tracing_enabled | default(false) or rustfs_monitoring_enabled | default(false) %#
+    #| Service for receiving OTLP telemetry (traces and/or metrics) #|
     service:
       enabled: true
 #% endif %#

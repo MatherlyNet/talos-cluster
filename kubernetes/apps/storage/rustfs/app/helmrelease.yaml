@@ -51,6 +51,7 @@ spec:
       RUSTFS_ENABLE_SCANNER: "true"
       RUSTFS_ENABLE_HEAL: "true"
       RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_METRIC_ENDPOINT: "http://alloy.monitoring.svc:4318/v1/metrics"
 
     secret:
       existingSecret: rustfs-credentials

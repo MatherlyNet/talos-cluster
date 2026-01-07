@@ -9,3 +9,4 @@ resources:
   - ./realm-import.yaml
   - ./dashboard-troubleshooting.yaml
   - ./dashboard-capacity-planning.yaml
+  - ./networkpolicy-postgres.yaml

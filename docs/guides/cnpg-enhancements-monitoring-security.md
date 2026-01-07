@@ -1,7 +1,7 @@
 # CNPG Enhancements: Monitoring, Cilium, and External Secrets
 
 > **Created:** January 2026
-> **Status:** Research Complete - Implementation Ready
+> **Status:** ✅ Implemented
 > **Based On:** CloudNativePG v1.28 Documentation
 > **Dependencies:** cnpg_enabled, monitoring_enabled, network_policies_enabled
 
@@ -13,8 +13,8 @@ This document analyzes three CNPG enhancement areas from the official documentat
 
 | Enhancement Area | Current Status | Recommendation | Priority |
 | ---------------- | -------------- | -------------- | -------- |
-| **Monitoring Enhancements** | Partial | Add TLS metrics, custom queries | Medium |
-| **Cilium Network Policies** | Not Implemented | Add CNPG-specific policies | High |
+| **Monitoring Enhancements** | ✅ Implemented | PodMonitor + 9 alert rules | Medium |
+| **Cilium Network Policies** | ✅ Implemented | 2 policies (operator + keycloak-postgres) | High |
 | **External Secrets Integration** | Templates exist, disabled | Consider for credential rotation | Low |
 
 ---
@@ -23,11 +23,13 @@ This document analyzes three CNPG enhancement areas from the official documentat
 
 ### Current Implementation Analysis
 
-Your project already has solid CNPG monitoring:
+Your project now has comprehensive CNPG monitoring:
 - ✅ ServiceMonitor for operator metrics (port 8080)
-- ✅ PrometheusRule with 6 alert rules
+- ✅ PodMonitor for cluster instance metrics (port 9187) - **Implemented**
+- ✅ PrometheusRule with 9 alert rules (added failover, fencing, checkpoint) - **Implemented**
 - ✅ Grafana dashboard with key metrics
-- ⚠️ Uses deprecated `enablePodMonitor: true` in Cluster CRs
+- ✅ Prometheus egress policy includes port 9187 - **Implemented**
+- ⚠️ Uses deprecated `enablePodMonitor: true` in Cluster CRs (functional, recommend removal in future)
 
 ### Recommended Enhancements
 
@@ -231,11 +233,16 @@ spec:
 
 ### Current Status
 
-Your project has `network_policies_enabled: true` with `network_policies_mode: "audit"`, but **no CNPG-specific CiliumNetworkPolicies exist**.
+✅ **Implemented** - CNPG network policies are now deployed:
 
-The `cnpg-implementation.md` guide mentions network policies but doesn't include actual template files.
+| Policy | File | Description |
+| ------ | ---- | ----------- |
+| CNPG Operator | `cnpg-system/.../networkpolicy-operator.yaml.j2` | API access, cluster pod health checks |
+| Keycloak PostgreSQL | `identity/.../networkpolicy-postgres.yaml.j2` | DB access, replication, backups |
 
-### Recommended Implementation
+Both policies use the `enableDefaultDeny` pattern with audit/enforce mode support.
+
+### Implementation Details (Reference)
 
 #### 2.1 CNPG Operator Egress Policy
 
@@ -401,6 +408,10 @@ spec:
 
 #### 2.3 Default Deny Policy for cnpg-system Namespace
 
+> **SUPERSEDED:** This section describes a namespace-wide default-deny approach. However, the project uses the `enableDefaultDeny` per-policy pattern (see sections 2.1 and 2.2). This separate policy is **NOT NEEDED** when using `enableDefaultDeny`.
+
+**Alternative Approach (NOT RECOMMENDED for this project):**
+
 **File:** `templates/config/kubernetes/apps/cnpg-system/cloudnative-pg/app/networkpolicy-default-deny.yaml.j2`
 
 ```yaml
@@ -426,6 +437,10 @@ spec:
 ```
 
 #### 2.4 Egress Policy for PostgreSQL Backups
+
+> **SUPERSEDED:** This egress-only policy is now incorporated into section 2.2's combined ingress/egress policy using `enableDefaultDeny`. A separate egress policy file is **NOT NEEDED**.
+
+**Alternative Approach (NOT RECOMMENDED for this project):**
 
 **File:** `templates/config/kubernetes/apps/identity/keycloak/app/networkpolicy-postgres-egress.yaml.j2`
 
@@ -484,10 +499,14 @@ spec:
 
 ### Implementation Priority
 
-1. **High:** `networkpolicy-operator.yaml.j2` - Operator needs access to all clusters
-2. **High:** `networkpolicy-postgres.yaml.j2` - Per-cluster access control
-3. **Medium:** `networkpolicy-postgres-egress.yaml.j2` - Backup connectivity
-4. **Low:** `networkpolicy-default-deny.yaml.j2` - Only for enforce mode
+With the `enableDefaultDeny` pattern (matching project conventions), only **2 policy files** are needed:
+
+| Priority | File | Purpose |
+| -------- | ---- | ------- |
+| **High** | `networkpolicy-operator.yaml.j2` | CNPG operator: K8s API, cluster pods, Prometheus |
+| **High** | `networkpolicy-postgres.yaml.j2` | Per-cluster: Keycloak access, replication, backups |
+
+> **Note:** Sections 2.3 and 2.4 show alternative approaches using separate default-deny and egress-only policies. These are **NOT needed** when using `enableDefaultDeny` per-policy, which is the established pattern in this project's `monitoring/network-policies/` templates.
 
 ---
 
@@ -580,23 +599,18 @@ spec:
 
 ---
 
-## 4. Summary of Recommended Changes
+## 4. Summary of Changes
 
-### High Priority (Implement Now)
+### ✅ Implemented (High Priority)
 
-| Change | File(s) | Effort |
+| Change | File(s) | Status |
 | ------ | ------- | ------ |
-| Add CNPG operator egress policy | `networkpolicy-operator.yaml.j2` | Low |
-| Add Keycloak PostgreSQL policies | `networkpolicy-postgres.yaml.j2`, `networkpolicy-postgres-egress.yaml.j2` | Low |
-| Update kustomization to include policies | Multiple `kustomization.yaml.j2` | Low |
-
-### Medium Priority (Consider)
-
-| Change | File(s) | Effort |
-| ------ | ------- | ------ |
-| Add manual PodMonitor (replaces deprecated flag) | `podmonitor-instances.yaml.j2` | Low |
-| Add failover/fencing alerts | `prometheusrule.yaml.j2` | Low |
-| Custom metrics queries | `configmap-custom-metrics.yaml.j2` | Medium |
+| CNPG operator network policy | `cnpg-system/.../networkpolicy-operator.yaml.j2` | ✅ Done |
+| Keycloak PostgreSQL network policy | `identity/keycloak/app/networkpolicy-postgres.yaml.j2` | ✅ Done |
+| Kustomizations updated | Both kustomization.yaml.j2 files | ✅ Done |
+| PodMonitor for instances | `podmonitor-instances.yaml.j2` | ✅ Done |
+| Additional alert rules | `prometheusrule.yaml.j2` (now 9 rules) | ✅ Done |
+| Prometheus egress port 9187 | `prometheus.yaml.j2` | ✅ Done |
 
 ### Low Priority (Skip Unless Needed)
 
@@ -604,7 +618,7 @@ spec:
 | ------ | -------------- |
 | TLS on metrics port | Adds complexity, internal traffic only |
 | External Secrets integration | SOPS works well, no Vault infrastructure |
-| Metrics caching tuning | Default 30s TTL is appropriate |
+| Custom metrics queries | Low priority, default metrics sufficient |
 
 ---
 
@@ -612,21 +626,21 @@ spec:
 
 ### Step 1: Add Cilium Network Policies
 
+Create **2 policy files** using the `enableDefaultDeny` pattern:
+
 ```bash
-# Create operator network policy
+# Create operator network policy (content from section 2.1)
 cat > templates/config/kubernetes/apps/cnpg-system/cloudnative-pg/app/networkpolicy-operator.yaml.j2 << 'EOF'
-# [Content from section 2.1]
+# Copy full content from section 2.1
 EOF
 
-# Create Keycloak PostgreSQL policies
+# Create Keycloak PostgreSQL policy (content from section 2.2 - includes egress)
 cat > templates/config/kubernetes/apps/identity/keycloak/app/networkpolicy-postgres.yaml.j2 << 'EOF'
-# [Content from section 2.2]
-EOF
-
-cat > templates/config/kubernetes/apps/identity/keycloak/app/networkpolicy-postgres-egress.yaml.j2 << 'EOF'
-# [Content from section 2.4]
+# Copy full content from section 2.2
 EOF
 ```
+
+> **Note:** Sections 2.3 and 2.4 show alternative approaches but are NOT needed with `enableDefaultDeny`.
 
 ### Step 2: Update Kustomizations
 
@@ -693,3 +707,4 @@ kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:909
 | Date | Change |
 | ---- | ------ |
 | 2026-01-07 | Initial research and recommendations document created |
+| 2026-01-07 | Implemented: Network policies, PodMonitor, additional alerts, Prometheus port 9187 |

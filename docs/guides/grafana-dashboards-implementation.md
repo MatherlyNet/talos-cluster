@@ -66,7 +66,7 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 2. **OpenTelemetry Collector configured** to receive OTLP and export to Prometheus (NOT yet implemented)
 3. **kube-prometheus-stack deployed** with `monitoring_enabled: true`
 
-**Future Enhancement:** Configure Alloy to receive RustFS OTLP metrics and export to Prometheus.
+**Implementation Guide:** See [RustFS OTLP Metrics Integration via Alloy](../research/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
 
 ---
 
@@ -454,14 +454,15 @@ To enable RustFS metrics in Prometheus, you need:
 
 3. **Add Prometheus scrape config** or ServiceMonitor for `otel-collector:8889`
 
-### Current Status (NOT IMPLEMENTED)
+### Current Status (IMPLEMENTED - PENDING VERIFICATION)
 
-The RustFS dashboard ConfigMap is deployed but will show no data because:
-- No OTEL Collector is deployed for RustFS metrics
-- RustFS is not configured to send OTLP metrics
-- Prometheus is not scraping the collector
+The RustFS OTLP metrics integration has been implemented:
+- ✅ Alloy extended with OTLP metrics receiver and Prometheus pipeline
+- ✅ RustFS configured with `RUSTFS_OBS_METRIC_ENDPOINT` environment variable
+- ⏳ Pending: `task configure -y` to render templates
+- ⏳ Pending: Cluster deployment and verification
 
-**Future Enhancement:** Deploy dedicated OTEL Collector or configure Alloy to receive RustFS OTLP metrics.
+**Implementation Details:** See [RustFS OTLP Metrics Integration via Alloy](../research/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
 
 ### Current RustFS Metrics Available
 
@@ -757,9 +758,10 @@ After deploying:
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-07 | **IMPLEMENTED** - RustFS OTLP metrics via Alloy (Alloy HelmRelease + RustFS env var) |
 | 2026-01-07 | **UPDATED** - Removed Keycloak ServiceMonitor from kustomization (operator creates automatically) |
 | 2026-01-07 | **UPDATED** - Removed RustFS ServiceMonitor (RustFS uses OTLP push, not Prometheus pull) |
-| 2026-01-07 | **DOCUMENTED** - RustFS metrics require OTEL Collector deployment (future enhancement) |
+| 2026-01-07 | **RESEARCHED** - RustFS OTLP metrics via Alloy integration documented (see research doc) |
 | 2026-01-07 | **IMPLEMENTED** - All dashboard templates created with embedded JSON |
 | 2026-01-07 | Added `*_monitoring_enabled` derived variables to plugin.py |
 | 2026-01-07 | Updated kustomization files with conditional resource inclusion |

@@ -84,6 +84,9 @@ spec:
             #| AlertManager #|
             - port: "9093"
               protocol: TCP
+            #| CNPG PostgreSQL metrics #|
+            - port: "9187"
+              protocol: TCP
     #| Scrape kubelet metrics on nodes #|
     - toEntities:
         - host

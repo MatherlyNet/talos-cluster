@@ -60,6 +60,12 @@ spec:
       RUSTFS_ENABLE_HEAL: "true"
       #| Console UI always enabled for access key management (RustFS doesn't support mc admin) #|
       RUSTFS_CONSOLE_ENABLE: "true"
+#% if rustfs_monitoring_enabled | default(false) %#
+      #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
+      #| RustFS does NOT support Prometheus pull-based metrics like MinIO #|
+      #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
+      RUSTFS_OBS_METRIC_ENDPOINT: "http://alloy.monitoring.svc:4318/v1/metrics"
+#% endif %#
 
     #| Use existing secret for credentials - must be under 'secret' key per RustFS Helm chart #|
     #| REF: https://github.com/rustfs/rustfs/blob/main/helm/README.md #|

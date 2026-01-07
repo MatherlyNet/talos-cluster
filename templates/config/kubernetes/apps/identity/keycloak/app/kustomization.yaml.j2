@@ -21,4 +21,7 @@ resources:
   - ./dashboard-troubleshooting.yaml
   - ./dashboard-capacity-planning.yaml
 #% endif %#
+#% if network_policies_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#
+  - ./networkpolicy-postgres.yaml
+#% endif %#
 #% endif %#

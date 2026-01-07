@@ -1,0 +1,88 @@
+#% if keycloak_enabled | default(false) and network_policies_enabled | default(false) and (keycloak_db_mode | default('embedded')) == 'cnpg' %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| CiliumNetworkPolicy for Keycloak PostgreSQL cluster #|
+#| Controls ingress/egress for CNPG database pods #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: keycloak-postgres
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak-postgres
+    app.kubernetes.io/component: database
+spec:
+  description: "Keycloak PostgreSQL: Database access, replication, backups"
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: keycloak-postgres
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| CNPG operator health checks on port 8000 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: cloudnative-pg
+            io.kubernetes.pod.namespace: cnpg-system
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    #| Keycloak application access on port 5432 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: keycloak
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    #| Inter-pod replication between cluster instances #|
+    - fromEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: keycloak-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% if monitoring_enabled | default(false) %#
+    #| Prometheus metrics scraping on port 9187 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9187"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    #| Inter-pod replication #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: keycloak-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% if keycloak_backup_enabled | default(false) %#
+    #| Backup to RustFS S3 endpoint #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: rustfs
+            io.kubernetes.pod.namespace: storage
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
+#% endif %#

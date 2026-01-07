@@ -1,0 +1,27 @@
+#% if cnpg_enabled | default(false) and monitoring_enabled | default(false) %#
+---
+#| PodMonitor for all CNPG PostgreSQL cluster instances #|
+#| Scrapes metrics from port 9187 on all pods with cnpg.io/cluster label #|
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-cluster-instances
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+    app.kubernetes.io/component: postgresql
+spec:
+  #| Match ALL pods that have cnpg.io/cluster label (any value) #|
+  selector:
+    matchExpressions:
+      - key: cnpg.io/cluster
+        operator: Exists
+  #| Watch all namespaces for CNPG clusters #|
+  namespaceSelector:
+    any: true
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      path: /metrics
+#% endif %#
