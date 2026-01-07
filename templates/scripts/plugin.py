@@ -312,6 +312,20 @@ class Plugin(makejinja.plugin.Plugin):
             data["keycloak_issuer_url"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}"
             data["keycloak_jwks_uri"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}/protocol/openid-connect/certs"
 
+            # Auto-populate OIDC JWT variables from Keycloak if not explicitly set
+            # This enables JWT SecurityPolicy when Keycloak is deployed without
+            # requiring manual oidc_* configuration in cluster.yaml
+            if not data.get("oidc_issuer_url"):
+                data["oidc_issuer_url"] = data["keycloak_issuer_url"]
+            if not data.get("oidc_jwks_uri"):
+                data["oidc_jwks_uri"] = data["keycloak_jwks_uri"]
+            if not data.get("oidc_provider_name"):
+                data["oidc_provider_name"] = "keycloak"
+
+            # Recalculate oidc_enabled now that Keycloak values may have been applied
+            # This must happen here (inside keycloak block) to override the earlier check
+            data["oidc_enabled"] = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))
+
             # Default operator version
             data.setdefault("keycloak_operator_version", "26.5.0")
 

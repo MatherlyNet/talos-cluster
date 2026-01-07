@@ -1,0 +1,33 @@
+---
+# SecurityPolicy for JWT-based API authentication
+# REF: https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/
+# REF: docs/guides/envoy-gateway-observability-security.md
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: jwt-auth
+  namespace: network
+spec:
+  # Target HTTPRoutes with the security: jwt-protected label
+  # NOTE: SecurityPolicy can only target resources in the same namespace
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        security: jwt-protected
+  jwt:
+    providers:
+      - name: keycloak
+        issuer: "https://sso.matherly.net/realms/matherlynet"
+        remoteJWKS:
+          uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+          # Cache JWKS for 5 minutes (adjust for security/performance balance)
+          cacheDuration: 300s
+        # Extract claims to headers for backend services
+        claimToHeaders:
+          - claim: sub
+            header: X-User-ID
+          - claim: email
+            header: X-User-Email
+          - claim: groups
+            header: X-User-Groups
