@@ -27,6 +27,11 @@ spec:
       #| AWS SDK requires a region even for S3-compatible storage #|
       - name: AWS_REGION
         value: "#{ backup_s3_region | default('us-east-1') }#"
+#% if 'svc.cluster.local' in backup_s3_endpoint %#
+      #| USE_PATH_STYLE required for S3-compatible storage like RustFS/MinIO #|
+      - name: USE_PATH_STYLE
+        value: "true"
+#% endif %#
       - name: AGE_X25519_PUBLIC_KEY
         valueFrom:
           secretKeyRef:
