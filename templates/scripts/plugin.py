@@ -248,7 +248,9 @@ class Plugin(makejinja.plugin.Plugin):
         data["rustfs_enabled"] = rustfs_enabled
         if rustfs_enabled:
             # Set default storage class for RustFS if not specified
-            data.setdefault("rustfs_storage_class", data.get("storage_class", "local-path"))
+            data.setdefault(
+                "rustfs_storage_class", data.get("storage_class", "local-path")
+            )
 
         # Loki deployment mode is determined by RustFS availability
         # SimpleScalable mode when RustFS is available, SingleBinary otherwise
@@ -284,7 +286,9 @@ class Plugin(makejinja.plugin.Plugin):
         data["cnpg_postgres_image"] = cnpg_postgres_image
 
         # pgvector extension - enabled when cnpg and pgvector are both enabled
-        cnpg_pgvector_enabled = cnpg_enabled and data.get("cnpg_pgvector_enabled", False)
+        cnpg_pgvector_enabled = cnpg_enabled and data.get(
+            "cnpg_pgvector_enabled", False
+        )
         data["cnpg_pgvector_enabled"] = cnpg_pgvector_enabled
 
         # Default pgvector image and version
@@ -309,8 +313,12 @@ class Plugin(makejinja.plugin.Plugin):
             # Derive OIDC endpoints for SecurityPolicy integration
             keycloak_realm = data.get("keycloak_realm", "matherlynet")
             data["keycloak_realm"] = keycloak_realm
-            data["keycloak_issuer_url"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}"
-            data["keycloak_jwks_uri"] = f"https://{keycloak_hostname}/realms/{keycloak_realm}/protocol/openid-connect/certs"
+            data["keycloak_issuer_url"] = (
+                f"https://{keycloak_hostname}/realms/{keycloak_realm}"
+            )
+            data["keycloak_jwks_uri"] = (
+                f"https://{keycloak_hostname}/realms/{keycloak_realm}/protocol/openid-connect/certs"
+            )
 
             # Auto-populate OIDC JWT variables from Keycloak if not explicitly set
             # This enables JWT SecurityPolicy when Keycloak is deployed without
@@ -324,7 +332,9 @@ class Plugin(makejinja.plugin.Plugin):
 
             # Recalculate oidc_enabled now that Keycloak values may have been applied
             # This must happen here (inside keycloak block) to override the earlier check
-            data["oidc_enabled"] = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))
+            data["oidc_enabled"] = bool(
+                data.get("oidc_issuer_url") and data.get("oidc_jwks_uri")
+            )
 
             # Default operator version
             data.setdefault("keycloak_operator_version", "26.5.0")
@@ -354,18 +364,16 @@ class Plugin(makejinja.plugin.Plugin):
 
             # Keycloak OpenTelemetry tracing - requires global tracing_enabled
             # When both are true, Keycloak exports traces to Tempo via OTLP gRPC
-            keycloak_tracing_enabled = (
-                data.get("tracing_enabled", False)
-                and data.get("keycloak_tracing_enabled", False)
+            keycloak_tracing_enabled = data.get("tracing_enabled", False) and data.get(
+                "keycloak_tracing_enabled", False
             )
             data["keycloak_tracing_enabled"] = keycloak_tracing_enabled
 
             # Keycloak Grafana monitoring - requires global monitoring_enabled
             # When both are true, Keycloak deploys ServiceMonitor and dashboards
-            keycloak_monitoring_enabled = (
-                data.get("monitoring_enabled", False)
-                and data.get("keycloak_monitoring_enabled", False)
-            )
+            keycloak_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("keycloak_monitoring_enabled", False)
             data["keycloak_monitoring_enabled"] = keycloak_monitoring_enabled
         else:
             data["keycloak_backup_enabled"] = False
@@ -375,10 +383,9 @@ class Plugin(makejinja.plugin.Plugin):
         # RustFS Grafana monitoring - requires global monitoring_enabled
         # When both are true, RustFS deploys ServiceMonitor and dashboards
         if data.get("rustfs_enabled", False):
-            rustfs_monitoring_enabled = (
-                data.get("monitoring_enabled", False)
-                and data.get("rustfs_monitoring_enabled", False)
-            )
+            rustfs_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("rustfs_monitoring_enabled", False)
             data["rustfs_monitoring_enabled"] = rustfs_monitoring_enabled
         else:
             data["rustfs_monitoring_enabled"] = False
@@ -386,23 +393,22 @@ class Plugin(makejinja.plugin.Plugin):
         # Loki Grafana monitoring - requires global monitoring_enabled
         # When both are true, Loki deploys supplemental stack monitoring dashboard
         if data.get("loki_enabled", False):
-            loki_monitoring_enabled = (
-                data.get("monitoring_enabled", False)
-                and data.get("loki_monitoring_enabled", False)
-            )
+            loki_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("loki_monitoring_enabled", False)
             data["loki_monitoring_enabled"] = loki_monitoring_enabled
         else:
             data["loki_monitoring_enabled"] = False
 
         # OIDC SSO (Web browser authentication) - requires explicit enable and client credentials
         # Distinct from oidc_enabled (JWT API auth) - this enables session-based browser SSO
-        # Requires: oidc_issuer_url (shared with JWT), client_id, client_secret, redirect_url
+        # Requires: oidc_issuer_url (shared with JWT), client_id, client_secret
+        # Optional: oidc_redirect_url (omit for dynamic redirect based on request hostname)
         oidc_sso_enabled = (
             data.get("oidc_sso_enabled", False)
             and data.get("oidc_issuer_url")
             and data.get("oidc_client_id")
             and data.get("oidc_client_secret")
-            and data.get("oidc_redirect_url")
         )
         data["oidc_sso_enabled"] = oidc_sso_enabled
 
@@ -411,9 +417,7 @@ class Plugin(makejinja.plugin.Plugin):
         # the OIDC client is automatically bootstrapped with the provided secret.
         # This eliminates manual Keycloak admin console setup for the Envoy Gateway client.
         keycloak_bootstrap_oidc_client = (
-            keycloak_enabled
-            and oidc_sso_enabled
-            and data.get("oidc_client_secret")
+            keycloak_enabled and oidc_sso_enabled and data.get("oidc_client_secret")
         )
         data["keycloak_bootstrap_oidc_client"] = keycloak_bootstrap_oidc_client
 

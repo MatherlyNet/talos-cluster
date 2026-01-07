@@ -103,12 +103,14 @@ kubernetes_version: "1.35.0"
 # OIDC Web SSO Configuration (optional - uncomment to test browser SSO)
 # REF: docs/guides/native-oidc-securitypolicy-implementation.md
 # NOTE: Requires explicit enable + client credentials (not auto-derived from Keycloak)
-# MULTI-APP SSO: Set oidc_cookie_domain to top-level domain for cross-subdomain SSO.
+# MULTI-APP SSO: Omit oidc_redirect_url for dynamic redirect (RECOMMENDED)
+#                Set oidc_cookie_domain to top-level domain for cross-subdomain SSO.
 #                Configure Keycloak with wildcard redirect: https://*.example.com/oauth2/callback
+#                (Keycloak supports wildcards, Envoy Gateway does NOT - omit the field!)
 # oidc_sso_enabled: true
 # oidc_client_id: "envoy-gateway"
 # oidc_client_secret: "test-client-secret"  # Obtain from Keycloak client credentials
-# oidc_redirect_url: "https://app.example.com/oauth2/callback"  # Any protected app
+# oidc_redirect_url: ""  # OMIT for dynamic redirect (recommended) - wildcards NOT supported!
 # oidc_cookie_domain: "example.com"  # Enables SSO across *.example.com
 # oidc_logout_path: "/logout"
 # oidc_scopes:

@@ -60,10 +60,11 @@ This guide implements **Native OIDC SecurityPolicy** for web browser SSO (Single
 #    (REQUIRED when oidc_sso_enabled: true)
 # oidc_client_secret: ""
 
-# -- Redirect URL for OAuth2 callback
-#    Must match HTTPRoute host and include /oauth2/callback path
-#    Example: "https://app.example.com/oauth2/callback"
-#    (REQUIRED when oidc_sso_enabled: true)
+# -- Redirect URL for OAuth2 callback (OPTIONAL - omit for dynamic redirect)
+#    IMPORTANT: Wildcards (*.domain.com) are NOT supported - will break authentication!
+#    RECOMMENDED: Omit this field to use dynamic redirect based on request hostname
+#    When omitted, Envoy Gateway uses: %REQ(:authority)%/oauth2/callback
+#    (OPTIONAL) / Example: "https://app.example.com/oauth2/callback"
 # oidc_redirect_url: ""
 
 # -- Cookie domain for session sharing across subdomains
@@ -88,13 +89,13 @@ This guide implements **Native OIDC SecurityPolicy** for web browser SSO (Single
 Add to `templates/scripts/plugin.py`:
 
 ```python
-# OIDC SSO - enabled when all required fields are set
+# OIDC SSO - enabled when required fields are set (redirect_url is optional)
 oidc_sso_enabled = (
     data.get("oidc_sso_enabled", False) and
     data.get("oidc_issuer_url") and
     data.get("oidc_client_id") and
-    data.get("oidc_client_secret") and
-    data.get("oidc_redirect_url")
+    data.get("oidc_client_secret")
+    # oidc_redirect_url is optional - omit for dynamic redirect
 )
 variables["oidc_sso_enabled"] = oidc_sso_enabled
 ```
@@ -156,7 +157,12 @@ spec:
     clientID: "#{ oidc_client_id }#"
     clientSecret:
       name: oidc-client-secret
+    #| redirectURL is OPTIONAL - omit for dynamic redirect (recommended)       #|
+    #| If omitted, Envoy Gateway uses: %REQ(:authority)%/oauth2/callback        #|
+    #| IMPORTANT: Wildcards (*.domain.com) are NOT supported in redirectURL!    #|
+    #% if oidc_redirect_url is defined and oidc_redirect_url and '*' not in oidc_redirect_url %#
     redirectURL: "#{ oidc_redirect_url }#"
+    #% endif %#
     logoutPath: "#{ oidc_logout_path | default('/logout') }#"
     #% if oidc_cookie_domain is defined %#
     cookieDomain: "#{ oidc_cookie_domain }#"
@@ -260,8 +266,8 @@ The HTTPRoute must include the OAuth2 callback path. Either:
 2. Configure client settings:
    - **Client ID:** Match `oidc_client_id`
    - **Client Authentication:** ON (confidential)
-   - **Valid Redirect URIs:** Match `oidc_redirect_url`
-   - **Web Origins:** Your application domain
+   - **Valid Redirect URIs:** Use wildcard `https://*.matherly.net/oauth2/callback` (Keycloak supports wildcards)
+   - **Web Origins:** Your application domain (wildcard supported: `https://*.matherly.net`)
 
 3. Copy client secret to `oidc_client_secret`
 
@@ -273,8 +279,10 @@ oidc_sso_enabled: true
 oidc_issuer_url: "https://auth.matherly.net/realms/matherlynet"
 oidc_client_id: "envoy-gateway"
 oidc_client_secret: "ENC[AES256_GCM,...]"  # SOPS encrypted
-oidc_redirect_url: "https://app.matherly.net/oauth2/callback"
-oidc_cookie_domain: "matherly.net"
+# oidc_redirect_url: OMIT for dynamic redirect (RECOMMENDED)
+# IMPORTANT: Do NOT use wildcards here - they are NOT supported by Envoy Gateway!
+# When omitted, Envoy Gateway automatically uses the request hostname for redirect
+oidc_cookie_domain: "matherly.net"  # Enables SSO across all *.matherly.net apps
 oidc_logout_path: "/logout"
 oidc_scopes:
   - openid

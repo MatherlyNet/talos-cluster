@@ -412,9 +412,11 @@ oidc_sso_enabled: true
 oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
 oidc_client_id: "envoy-gateway"
 oidc_client_secret: "YOUR_SECRET"  # SOPS-encrypted
-oidc_redirect_url: "https://sso.matherly.net/oauth2/callback"
+# oidc_redirect_url: OMIT for dynamic redirect (RECOMMENDED)
+# IMPORTANT: Wildcards are NOT supported - Envoy Gateway will URL-encode them!
+# When omitted, Envoy Gateway uses: %REQ(:authority)%/oauth2/callback
 oidc_logout_path: "/logout"
-oidc_cookie_domain: ".matherly.net"
+oidc_cookie_domain: "matherly.net"  # Enables SSO across all *.matherly.net apps
 oidc_scopes:
   - openid
   - profile

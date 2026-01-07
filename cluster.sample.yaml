@@ -860,7 +860,8 @@ cloudflare_gateway_addr: ""
 #   OIDC SSO: Stateful browser SSO, manages cookie sessions (label: oidc-protected)
 
 # -- Enable OIDC Web SSO authentication
-#    Requires: oidc_issuer_url, oidc_client_id, oidc_client_secret, oidc_redirect_url
+#    Requires: oidc_issuer_url, oidc_client_id, oidc_client_secret
+#    Optional: oidc_redirect_url (omit for dynamic redirect - recommended)
 #    (OPTIONAL) / (DEFAULT: false)
 # oidc_sso_enabled: false
 
@@ -879,19 +880,26 @@ cloudflare_gateway_addr: ""
 # oidc_client_secret: ""
 
 # -- OAuth2 callback URL for OIDC redirect
-#    (REQUIRED when oidc_sso_enabled: true)
+#    (OPTIONAL - OMIT for dynamic redirect, which is the RECOMMENDED approach)
 #    This is where your IdP redirects after authentication. Envoy Gateway intercepts
 #    this callback, completes the OAuth flow, then redirects user to original destination.
 #
-#    MULTI-APP SSO PATTERN:
-#    - Use ANY protected app's callback URL (e.g., "https://grafana.example.com/oauth2/callback")
+#    IMPORTANT: Wildcards (*.domain.com) are NOT SUPPORTED in this field!
+#    Envoy Gateway will URL-encode the literal asterisk, breaking authentication.
+#
+#    MULTI-APP SSO PATTERN (RECOMMENDED - OMIT THIS FIELD):
+#    - OMIT this field entirely to use DYNAMIC redirect URL
+#    - When omitted, Envoy Gateway uses the request hostname automatically:
+#      %REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback
+#      This becomes https://grafana.example.com/oauth2/callback, etc.
 #    - Set oidc_cookie_domain to your top-level domain (e.g., "example.com")
 #    - Configure Keycloak with WILDCARD redirect URIs: "https://*.example.com/oauth2/callback"
+#      (Keycloak DOES support wildcards in its redirect URI configuration)
 #    - Result: Single sign-on works across ALL *.example.com apps automatically!
 #
 #    The cookie domain enables cross-subdomain session sharing, so users authenticate
 #    once and access any protected app without re-authenticating.
-# oidc_redirect_url: ""
+# oidc_redirect_url: ""  # OMIT for dynamic redirect (recommended)
 
 # -- Cookie domain for SSO session cookies
 #    Set to top-level domain to enable SSO across ALL subdomains
@@ -940,7 +948,7 @@ cloudflare_gateway_addr: ""
 #
 # SETUP WORKFLOW FOR EACH IdP:
 #   1. Create OAuth app in the provider's developer console
-#   2. Set redirect URI to: https://sso.<your-domain>/realms/<realm>/broker/<alias>/endpoint
+#   2. Set redirect URI to: https://auth.<your-domain>/realms/<realm>/broker/<alias>/endpoint
 #   3. Copy client ID and secret to variables below
 #   4. Set *_idp_enabled: true
 #   5. Run 'task configure' and 'task reconcile'
@@ -950,7 +958,7 @@ cloudflare_gateway_addr: ""
 
 # -- Enable Google Identity Provider (OIDC)
 #    Console: https://console.cloud.google.com/apis/credentials
-#    Callback: https://sso.<domain>/realms/<realm>/broker/google/endpoint
+#    Callback: https://auth.<domain>/realms/<realm>/broker/google/endpoint
 #    (OPTIONAL) / (DEFAULT: false)
 # google_idp_enabled: false
 
@@ -964,7 +972,7 @@ cloudflare_gateway_addr: ""
 
 # -- Enable GitHub Identity Provider (OAuth2)
 #    Console: https://github.com/settings/developers
-#    Callback: https://sso.<domain>/realms/<realm>/broker/github/endpoint
+#    Callback: https://auth.<domain>/realms/<realm>/broker/github/endpoint
 #    (OPTIONAL) / (DEFAULT: false)
 # github_idp_enabled: false
 
@@ -978,7 +986,7 @@ cloudflare_gateway_addr: ""
 
 # -- Enable Microsoft Entra ID (Azure AD) Identity Provider (OIDC)
 #    Console: https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
-#    Callback: https://sso.<domain>/realms/<realm>/broker/microsoft/endpoint
+#    Callback: https://auth.<domain>/realms/<realm>/broker/microsoft/endpoint
 #    (OPTIONAL) / (DEFAULT: false)
 # microsoft_idp_enabled: false
 
