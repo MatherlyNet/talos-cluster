@@ -656,6 +656,61 @@ talosctl logs kube-apiserver -n <control-plane-ip>
 
 ---
 
+### Talos Backup Issues
+
+**Quick Check:**
+```bash
+kubectl -n kube-system get cronjob talos-backup
+kubectl -n kube-system get jobs -l job-name
+kubectl -n kube-system logs -l app.kubernetes.io/name=talos-backup
+```
+
+**Decision Tree:**
+
+```
+Talos Backup Job Failed
+     │
+     ├── Error: InvalidAccessKeyId
+     │   └── Using wrong env var names (S3_ENDPOINT instead of CUSTOM_S3_ENDPOINT)
+     │       └── FIX: Verify template uses CUSTOM_S3_ENDPOINT, BUCKET (not S3_ENDPOINT, S3_BUCKET)
+     │
+     ├── Error: no such host (bucket.endpoint.svc.cluster.local)
+     │   └── Virtual-hosted style URLs being used
+     │       └── FIX: Set USE_PATH_STYLE="false" (inverted logic enables path-style!)
+     │
+     ├── Error: Access Denied
+     │   └── RustFS credentials/policy issue
+     │       └── Check backup-storage policy, user/group assignment
+     │
+     └── Error: Connection refused
+         └── RustFS not ready
+             └── Check kubectl -n storage get pods
+```
+
+**Common Fixes:**
+
+| Issue | Cause | Solution |
+| ------- | ------- | ---------- |
+| InvalidAccessKeyId to AWS | Wrong env var names | Use `CUSTOM_S3_ENDPOINT` and `BUCKET` |
+| DNS lookup fails with bucket prefix | Virtual-hosted style | Set `USE_PATH_STYLE="false"` |
+| Access Denied to bucket | Missing policy | Create `backup-storage` policy in RustFS |
+| Snapshot created but upload fails | Multiple issues | Check all env vars, credentials, endpoint |
+
+**Verify Correct Configuration:**
+```bash
+# Check env vars are correct
+kubectl -n kube-system get cronjob talos-backup \
+  -o jsonpath='{.spec.jobTemplate.spec.template.spec.containers[0].env}' | jq
+
+# Expected: CUSTOM_S3_ENDPOINT, BUCKET, USE_PATH_STYLE=false (for RustFS)
+```
+
+> ⚠️ **Critical Bug:** talos-backup v0.1.0-beta.2 has **inverted logic** for `USE_PATH_STYLE`:
+> - `USE_PATH_STYLE="false"` → **Enables** path-style URLs (required for RustFS/MinIO)
+> - `USE_PATH_STYLE="true"` → **Disables** path-style URLs (uses virtual-hosted style)
+
+---
+
 ## Quick Reference: Diagnostic Commands
 
 ### Cluster Health

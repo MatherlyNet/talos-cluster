@@ -254,17 +254,20 @@ spec:
     env:
       - name: CLUSTER_NAME
         value: "#{ cluster_name | default('talos-cluster') }#"
-      - name: S3_ENDPOINT
+      #| CUSTOM_S3_ENDPOINT is the correct env var name for talos-backup #|
+      - name: CUSTOM_S3_ENDPOINT
         value: "#{ backup_s3_endpoint }#"
-      - name: S3_BUCKET
+      #| BUCKET is the correct env var name for talos-backup (not S3_BUCKET) #|
+      - name: BUCKET
         value: "#{ backup_s3_bucket }#"
       - name: S3_PREFIX
         value: "#{ cluster_name | default('talos-cluster') }#/etcd-backups"
-      # For internal RustFS, disable SSL verification
+      - name: AWS_REGION
+        value: "#{ backup_s3_region | default('us-east-1') }#"
+      #| For internal RustFS/MinIO, enable path-style URLs #|
       #% if 'svc.cluster.local' in backup_s3_endpoint %#
-      - name: S3_FORCE_PATH_STYLE
-        value: "true"
-      - name: S3_USE_SSL
+      #| USE_PATH_STYLE="false" enables path-style URLs (inverted logic in talos-backup!) #|
+      - name: USE_PATH_STYLE
         value: "false"
       #% endif %#
       - name: AGE_X25519_PUBLIC_KEY
@@ -289,6 +292,22 @@ spec:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 ```
+
+> ⚠️ **CRITICAL: Environment Variable Names**
+>
+> The talos-backup binary expects **specific** environment variable names that differ from typical S3 conventions:
+>
+> | Common Name | talos-backup Expects | Notes |
+> | ------------- | --------------------- | ------- |
+> | `S3_ENDPOINT` | `CUSTOM_S3_ENDPOINT` | Custom S3 endpoint URL |
+> | `S3_BUCKET` | `BUCKET` | Target bucket name |
+> | `S3_FORCE_PATH_STYLE` | `USE_PATH_STYLE` | **Inverted logic!** |
+>
+> **Path-Style URL Bug:** The `USE_PATH_STYLE` environment variable has **inverted logic** in talos-backup v0.1.0-beta.2:
+> - `USE_PATH_STYLE="false"` → **Enables** path-style URLs (what you want for RustFS/MinIO)
+> - `USE_PATH_STYLE="true"` → **Disables** path-style URLs (uses virtual-hosted style)
+>
+> See [talos-backup source code](https://github.com/siderolabs/talos-backup/blob/v0.1.0-beta.2/pkg/config/service.go) for details.
 
 ### Secret Naming Convention
 
@@ -520,6 +539,8 @@ histogram_quantile(0.95, sum(rate(job_duration_seconds_bucket{job_name=~"talos-b
 
 | Issue | Cause | Solution |
 | ----- | ----- | -------- |
+| `InvalidAccessKeyId` error | Wrong env var names or endpoint defaulting to AWS | Verify using `CUSTOM_S3_ENDPOINT` and `BUCKET` (not `S3_ENDPOINT`/`S3_BUCKET`) |
+| `no such host` with bucket.endpoint DNS | Virtual-hosted style URLs | Set `USE_PATH_STYLE="false"` (inverted logic enables path-style) |
 | Backup job fails with S3 error | Wrong endpoint or credentials | Verify RustFS access key, check service DNS |
 | Connection refused | RustFS not ready | Check RustFS pods, wait for startup |
 | Access denied | Missing bucket or permissions | Create bucket via Console, verify access key and policy |
@@ -583,3 +604,4 @@ kubectl -n kube-system get secret talos-backup-s3-credentials -o jsonpath='{.dat
 | ---- | ------ |
 | 2026-01 | Initial implementation guide for RustFS backend |
 | 2026-01-06 | Enhanced IAM configuration with custom `backup-storage` policy, `backups` group, and step-by-step Console UI instructions (mirrors Loki IAM pattern) |
+| 2026-01-07 | **CRITICAL FIX:** Corrected environment variable names (`CUSTOM_S3_ENDPOINT`, `BUCKET`, `USE_PATH_STYLE`) and documented inverted path-style logic bug in talos-backup v0.1.0-beta.2 |

@@ -28,7 +28,7 @@ This project uses **go-task** as the primary task runner. All commands via `task
 ```bash
 task --list              # List all available tasks
 task init                # Initialize config files from samples
-task configure           # Render templates, validate, encrypt secrets
+task configure -y        # Render templates, validate, encrypt secrets
 task reconcile           # Force Flux to sync from Git
 ```
 
@@ -345,6 +345,7 @@ Deep context in `docs/ai-context/`:
 | Keycloak operator issues | `kubectl get pods -n identity -l app.kubernetes.io/name=keycloak-operator` |
 | Keycloak CR not ready | `kubectl -n identity get keycloak keycloak -o yaml`, `kubectl -n identity logs -l app.kubernetes.io/name=keycloak` |
 | Keycloak DB connection | `kubectl -n identity exec -it keycloak-postgres-0 -- psql -U keycloak -c "SELECT 1"` |
+| Talos backup failing | `kubectl -n kube-system logs -l app.kubernetes.io/name=talos-backup` (check env vars: CUSTOM_S3_ENDPOINT, BUCKET, USE_PATH_STYLE=false) |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 
