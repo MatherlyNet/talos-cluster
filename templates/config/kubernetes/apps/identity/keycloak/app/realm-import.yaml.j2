@@ -74,4 +74,147 @@ spec:
           - "phone"
           - "offline_access"
 #% endif %#
+#% if google_idp_enabled | default(false) or github_idp_enabled | default(false) or microsoft_idp_enabled | default(false) %#
+    #| =========================================================================== #|
+    #| SOCIAL IDENTITY PROVIDERS - OAuth/OIDC Federation                           #|
+    #| Conditionally include IdPs based on *_idp_enabled flags in cluster.yaml     #|
+    #| Users authenticate via social accounts on the Keycloak login page           #|
+    #| REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md #|
+    #| =========================================================================== #|
+    identityProviders:
+#% if google_idp_enabled | default(false) %#
+      - alias: "google"
+        displayName: "Google"
+        providerId: "google"
+        enabled: true
+        trustEmail: true
+        storeToken: true
+        linkOnly: false
+        firstBrokerLoginFlowAlias: "first broker login"
+        config:
+          clientId: "#{ google_client_id }#"
+          clientSecret: "#{ google_client_secret }#"
+          defaultScope: "openid profile email"
+          syncMode: "IMPORT"
+#% endif %#
+#% if github_idp_enabled | default(false) %#
+      - alias: "github"
+        displayName: "GitHub"
+        providerId: "github"
+        enabled: true
+        trustEmail: true
+        storeToken: true
+        linkOnly: false
+        firstBrokerLoginFlowAlias: "first broker login"
+        config:
+          clientId: "#{ github_client_id }#"
+          clientSecret: "#{ github_client_secret }#"
+          defaultScope: "user:email"
+          syncMode: "IMPORT"
+#% endif %#
+#% if microsoft_idp_enabled | default(false) %#
+      - alias: "microsoft"
+        displayName: "Microsoft"
+        providerId: "oidc"
+        enabled: true
+        trustEmail: true
+        storeToken: true
+        linkOnly: false
+        firstBrokerLoginFlowAlias: "first broker login"
+        config:
+          clientId: "#{ microsoft_client_id }#"
+          clientSecret: "#{ microsoft_client_secret }#"
+          authorizationUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/oauth2/v2.0/authorize"
+          tokenUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/oauth2/v2.0/token"
+          userInfoUrl: "https://graph.microsoft.com/oidc/userinfo"
+          jwksUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/discovery/v2.0/keys"
+          issuer: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/v2.0"
+          defaultScope: "openid profile email"
+          syncMode: "FORCE"
+          validateSignature: "true"
+          useJwksUrl: "true"
+#% endif %#
+#% endif %#
+#% set has_mappers = (google_default_role is defined and google_default_role) or
+                     (google_domain_role_mapping is defined and google_domain_role_mapping) or
+                     (github_default_role is defined and github_default_role) or
+                     (github_org_role_mapping is defined and github_org_role_mapping) or
+                     (microsoft_default_role is defined and microsoft_default_role) or
+                     (microsoft_group_role_mappings is defined and microsoft_group_role_mappings) %#
+#% if has_mappers %#
+    #| =========================================================================== #|
+    #| IDENTITY PROVIDER MAPPERS - Automatic Role Assignment                       #|
+    #| Maps IdP attributes/claims to Keycloak roles during user login              #|
+    #| REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md #|
+    #| =========================================================================== #|
+    identityProviderMappers:
+#% if google_idp_enabled | default(false) %#
+#% if google_default_role is defined and google_default_role %#
+      #| Google: Hardcoded role for all Google users #|
+      - name: "google-default-role"
+        identityProviderAlias: "google"
+        identityProviderMapper: "oidc-hardcoded-role-idp-mapper"
+        config:
+          syncMode: "INHERIT"
+          role: "#{ google_default_role }#"
+#% endif %#
+#% if google_domain_role_mapping is defined and google_domain_role_mapping %#
+      #| Google: Map hosted domain (hd claim) to role #|
+      - name: "google-domain-#{ google_domain_role_mapping.domain | replace('.', '-') }#"
+        identityProviderAlias: "google"
+        identityProviderMapper: "oidc-role-idp-mapper"
+        config:
+          syncMode: "INHERIT"
+          claim: "hd"
+          claim.value: "#{ google_domain_role_mapping.domain }#"
+          role: "#{ google_domain_role_mapping.role }#"
+#% endif %#
+#% endif %#
+#% if github_idp_enabled | default(false) %#
+#% if github_default_role is defined and github_default_role %#
+      #| GitHub: Hardcoded role for all GitHub users #|
+      - name: "github-default-role"
+        identityProviderAlias: "github"
+        identityProviderMapper: "oidc-hardcoded-role-idp-mapper"
+        config:
+          syncMode: "INHERIT"
+          role: "#{ github_default_role }#"
+#% endif %#
+#% if github_org_role_mapping is defined and github_org_role_mapping %#
+      #| GitHub: Map organization membership to role (requires read:org scope) #|
+      - name: "github-org-#{ github_org_role_mapping.org }#"
+        identityProviderAlias: "github"
+        identityProviderMapper: "oidc-advanced-role-idp-mapper"
+        config:
+          syncMode: "FORCE"
+          claims: "[{\"key\":\"organizations_url\",\"value\":\".*#{ github_org_role_mapping.org }#.*\"}]"
+          are.claim.values.regex: "true"
+          role: "#{ github_org_role_mapping.role }#"
+#% endif %#
+#% endif %#
+#% if microsoft_idp_enabled | default(false) %#
+#% if microsoft_default_role is defined and microsoft_default_role %#
+      #| Microsoft: Hardcoded role for all Microsoft users #|
+      - name: "microsoft-default-role"
+        identityProviderAlias: "microsoft"
+        identityProviderMapper: "oidc-hardcoded-role-idp-mapper"
+        config:
+          syncMode: "INHERIT"
+          role: "#{ microsoft_default_role }#"
+#% endif %#
+#% if microsoft_group_role_mappings is defined and microsoft_group_role_mappings %#
+#% for mapping in microsoft_group_role_mappings %#
+      #| Microsoft: Map Entra ID group to role #|
+      - name: "microsoft-group-#{ mapping.role | replace('.', '-') }#"
+        identityProviderAlias: "microsoft"
+        identityProviderMapper: "oidc-advanced-role-idp-mapper"
+        config:
+          syncMode: "FORCE"
+          claims: "[{\"key\":\"groups\",\"value\":\".*#{ mapping.group_id }#.*\"}]"
+          are.claim.values.regex: "true"
+          role: "#{ mapping.role }#"
+#% endfor %#
+#% endif %#
+#% endif %#
+#% endif %#
 #% endif %#

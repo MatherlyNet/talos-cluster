@@ -308,6 +308,40 @@ import (
 	// Loki Grafana Monitoring - Stack Monitoring Dashboard
 	// When enabled (and monitoring_enabled: true), deploys Loki stack monitoring dashboard
 	loki_monitoring_enabled?: *false | bool
+
+	// Social Identity Providers - OAuth/OIDC Federation with Keycloak
+	// REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md
+	google_idp_enabled?:    *false | bool
+	google_client_id?:      string & !=""
+	google_client_secret?:  string & !=""
+	github_idp_enabled?:    *false | bool
+	github_client_id?:      string & !=""
+	github_client_secret?:  string & !=""
+	microsoft_idp_enabled?: *false | bool
+	microsoft_client_id?:   string & !=""
+	microsoft_client_secret?: string & !=""
+	microsoft_tenant_id?:   *"common" | string & !=""
+
+	// Identity Provider Role Mappers - Automatic role assignment based on IdP attributes
+	// REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md#phase-3-rolegroup-mappers
+	// Google role mappers
+	google_default_role?:   string & !=""
+	google_domain_role_mapping?: {
+		domain: string & !=""
+		role:   string & !=""
+	}
+	// GitHub role mappers
+	github_default_role?:   string & !=""
+	github_org_role_mapping?: {
+		org:  string & !=""
+		role: string & !=""
+	}
+	// Microsoft role mappers
+	microsoft_default_role?: string & !=""
+	microsoft_group_role_mappings?: [...{
+		group_id: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+		role:     string & !=""
+	}]
 }
 
 #Config

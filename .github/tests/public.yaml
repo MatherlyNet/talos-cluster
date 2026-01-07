@@ -194,5 +194,35 @@ kubernetes_version: "1.35.0"
 # keycloak_tracing_enabled: true
 # keycloak_tracing_sample_rate: "0.1"
 
+# Social Identity Providers (optional - uncomment to test IdP federation)
+# REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md
+# google_idp_enabled: true
+# google_client_id: "test-google-client-id.apps.googleusercontent.com"
+# google_client_secret: "test-google-client-secret"
+# github_idp_enabled: true
+# github_client_id: "test-github-client-id"
+# github_client_secret: "test-github-client-secret"
+# microsoft_idp_enabled: true
+# microsoft_client_id: "00000000-0000-0000-0000-000000000000"
+# microsoft_client_secret: "test-microsoft-client-secret"
+# microsoft_tenant_id: "00000000-0000-0000-0000-000000000001"
+
+# Identity Provider Role Mappers (optional - uncomment to test role assignment)
+# REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md#phase-3-rolegroup-mappers
+# google_default_role: "google-user"
+# google_domain_role_mapping:
+#   domain: "example.com"
+#   role: "domain-user"
+# github_default_role: "github-user"
+# github_org_role_mapping:
+#   org: "test-org"
+#   role: "org-member"
+# microsoft_default_role: "microsoft-user"
+# microsoft_group_role_mappings:
+#   - group_id: "00000000-0000-0000-0000-000000000002"
+#     role: "admin"
+#   - group_id: "00000000-0000-0000-0000-000000000003"
+#     role: "user"
+
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"

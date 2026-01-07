@@ -2,6 +2,10 @@
 # SecurityPolicy for OIDC-based Web SSO authentication
 # REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/
 # REF: docs/guides/native-oidc-securitypolicy-implementation.md
+# REF: docs/research/envoy-gateway-keycloak-oidc-integration-jan-2026.md
+#
+# NOTE: This cluster uses Envoy Gateway v0.0.0-latest for Kubernetes 1.35 support.
+# API Version: gateway.envoyproxy.io/v1alpha1 (SecurityPolicy has not graduated to v1)
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:

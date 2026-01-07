@@ -249,6 +249,23 @@ Optional Keycloak OpenTelemetry Tracing (requires tracing_enabled):
 - When both `tracing_enabled` and `keycloak_tracing_enabled` are true, traces are exported to Tempo
 - See `docs/guides/keycloak-implementation.md#opentelemetry-tracing-integration` for details
 
+Optional Social Identity Providers (requires keycloak_enabled):
+- `google_idp_enabled`, `google_client_id`, `google_client_secret` - Google OAuth (OIDC)
+- `github_idp_enabled`, `github_client_id`, `github_client_secret` - GitHub OAuth
+- `microsoft_idp_enabled`, `microsoft_client_id`, `microsoft_client_secret`, `microsoft_tenant_id` - Microsoft Entra ID
+- Each IdP conditionally added to Keycloak realm when `*_idp_enabled: true`
+- See `docs/research/keycloak-social-identity-providers-integration-jan-2026.md` for setup guide
+
+Optional IdP Role Mappers (automatic role assignment based on IdP attributes):
+- `google_default_role` - Hardcoded role for all Google users
+- `google_domain_role_mapping` - Map Google Workspace domain (`hd` claim) to role
+- `github_default_role` - Hardcoded role for all GitHub users
+- `github_org_role_mapping` - Map GitHub organization membership to role (requires `read:org` scope)
+- `microsoft_default_role` - Hardcoded role for all Microsoft users
+- `microsoft_group_role_mappings` - Map Entra ID group ObjectIDs to roles (requires Azure "groups" claim)
+- Mappers are conditionally generated in `realm-import.yaml.j2` when variables are defined
+- See `docs/research/keycloak-social-identity-providers-integration-jan-2026.md#phase-3-rolegroup-mappers` for details
+
 Optional Grafana Dashboards (requires monitoring_enabled):
 - `keycloak_monitoring_enabled` - Deploy Keycloak ServiceMonitor + Grafana dashboards (default: false)
 - `rustfs_monitoring_enabled` - Deploy RustFS ServiceMonitor + Grafana dashboards (default: false)

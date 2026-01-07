@@ -3,6 +3,10 @@
 # SecurityPolicy for OIDC-based Web SSO authentication
 # REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/
 # REF: docs/guides/native-oidc-securitypolicy-implementation.md
+# REF: docs/research/envoy-gateway-keycloak-oidc-integration-jan-2026.md
+#
+# NOTE: This cluster uses Envoy Gateway v0.0.0-latest for Kubernetes 1.35 support.
+# API Version: gateway.envoyproxy.io/v1alpha1 (SecurityPolicy has not graduated to v1)
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -32,6 +36,18 @@ spec:
     logoutPath: "#{ oidc_logout_path | default('/logout') }#"
     #% if oidc_cookie_domain is defined %#
     cookieDomain: "#{ oidc_cookie_domain }#"
+    #% endif %#
+    #| =========================================================================== #|
+    #| OIDC COOKIE SETTINGS (v1.5+/v1.6+ features)                                 #|
+    #| =========================================================================== #|
+    #| refreshToken: Auto-refresh tokens when expired (v1.6+ defaults to true)     #|
+    #| cookieSameSite: SameSite attribute for cookies (v1.5+)                      #|
+    #| =========================================================================== #|
+    #% if oidc_refresh_token is defined %#
+    refreshToken: #{ oidc_refresh_token }#
+    #% endif %#
+    #% if oidc_cookie_samesite is defined %#
+    cookieSameSite: "#{ oidc_cookie_samesite }#"
     #% endif %#
     scopes:
     #% for scope in oidc_scopes | default(['openid', 'profile', 'email']) %#

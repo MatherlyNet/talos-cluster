@@ -219,6 +219,10 @@ Computed from other values:
 | `keycloak_jwks_uri` | Auto-derived: issuer_url + /protocol/openid-connect/certs |
 | `keycloak_backup_enabled` | rustfs_enabled + keycloak S3 credentials set |
 | `keycloak_tracing_enabled` | tracing_enabled + keycloak_tracing_enabled both true |
+| `keycloak_monitoring_enabled` | monitoring_enabled + keycloak_monitoring_enabled both true |
+| `rustfs_monitoring_enabled` | monitoring_enabled + rustfs_monitoring_enabled both true |
+| `loki_monitoring_enabled` | monitoring_enabled + loki_monitoring_enabled both true |
+| `keycloak_bootstrap_oidc_client` | keycloak_enabled + oidc_sso_enabled + oidc_client_secret set |
 
 ## Template Structure
 

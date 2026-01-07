@@ -873,6 +873,19 @@ cloudflare_gateway_addr: ""
 #    When set, a single authentication works for grafana.example.com, app1.example.com, etc.
 # oidc_cookie_domain: ""
 
+# -- Cookie SameSite attribute (v1.5+ feature)
+#    Controls when cookies are sent with cross-site requests
+#    Options: "Strict", "Lax", "None"
+#    (OPTIONAL) / (DEFAULT: "Lax" - browser default)
+# oidc_cookie_samesite: "Lax"
+
+# -- Enable automatic token refresh (v1.6+ feature)
+#    When true, tokens are automatically refreshed when they expire
+#    NOTE: v1.6+ defaults to true (breaking change from v1.5)
+#    Set to false to disable automatic refresh
+#    (OPTIONAL) / (DEFAULT: true in v1.6+)
+# oidc_refresh_token: true
+
 # -- Path that triggers logout flow
 #    (OPTIONAL) / (DEFAULT: "/logout")
 # oidc_logout_path: "/logout"
@@ -891,6 +904,130 @@ cloudflare_gateway_addr: ""
 # -- OIDC token endpoint (optional override)
 #    Auto-discovered from issuer_url if not set
 # oidc_token_endpoint: ""
+
+# =============================================================================
+# SOCIAL IDENTITY PROVIDERS - Keycloak Identity Federation
+# =============================================================================
+# Configure social login options (Google, GitHub, Microsoft) in Keycloak.
+# When enabled, these IdPs appear as login options on the Keycloak login page.
+# Users can authenticate via their existing social accounts.
+#
+# SETUP WORKFLOW FOR EACH IdP:
+#   1. Create OAuth app in the provider's developer console
+#   2. Set redirect URI to: https://sso.<your-domain>/realms/<realm>/broker/<alias>/endpoint
+#   3. Copy client ID and secret to variables below
+#   4. Set *_idp_enabled: true
+#   5. Run 'task configure' and 'task reconcile'
+#
+# REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md
+# REF: https://www.keycloak.org/docs/latest/server_admin/#_identity_broker
+
+# -- Enable Google Identity Provider (OIDC)
+#    Console: https://console.cloud.google.com/apis/credentials
+#    Callback: https://sso.<domain>/realms/<realm>/broker/google/endpoint
+#    (OPTIONAL) / (DEFAULT: false)
+# google_idp_enabled: false
+
+# -- Google OAuth client ID
+#    (REQUIRED when google_idp_enabled: true)
+# google_client_id: ""
+
+# -- Google OAuth client secret (SOPS-encrypted)
+#    (REQUIRED when google_idp_enabled: true)
+# google_client_secret: ""
+
+# -- Enable GitHub Identity Provider (OAuth2)
+#    Console: https://github.com/settings/developers
+#    Callback: https://sso.<domain>/realms/<realm>/broker/github/endpoint
+#    (OPTIONAL) / (DEFAULT: false)
+# github_idp_enabled: false
+
+# -- GitHub OAuth client ID
+#    (REQUIRED when github_idp_enabled: true)
+# github_client_id: ""
+
+# -- GitHub OAuth client secret (SOPS-encrypted)
+#    (REQUIRED when github_idp_enabled: true)
+# github_client_secret: ""
+
+# -- Enable Microsoft Entra ID (Azure AD) Identity Provider (OIDC)
+#    Console: https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
+#    Callback: https://sso.<domain>/realms/<realm>/broker/microsoft/endpoint
+#    (OPTIONAL) / (DEFAULT: false)
+# microsoft_idp_enabled: false
+
+# -- Microsoft Entra ID application (client) ID
+#    (REQUIRED when microsoft_idp_enabled: true)
+# microsoft_client_id: ""
+
+# -- Microsoft Entra ID client secret (SOPS-encrypted)
+#    (REQUIRED when microsoft_idp_enabled: true)
+# microsoft_client_secret: ""
+
+# -- Microsoft Entra ID tenant ID
+#    Use "common" for multi-tenant apps, or specific tenant ID for single-tenant
+#    (OPTIONAL) / (DEFAULT: "common")
+# microsoft_tenant_id: "common"
+
+# =============================================================================
+# IDENTITY PROVIDER ROLE MAPPERS - Automatic Role Assignment
+# =============================================================================
+# Configure automatic role assignment based on IdP attributes/claims.
+# These mappers run during user login and assign Keycloak roles automatically.
+#
+# MAPPER TYPES:
+#   - Hardcoded Role: Assigns a fixed role to ALL users from an IdP
+#   - Claim to Role: Maps specific claim values to roles
+#   - Advanced Claim to Role: Regex-based claim matching (Microsoft groups)
+#
+# ROLE FORMAT: "realm-role-name" or "client-id.client-role-name"
+#
+# REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md
+# REF: https://www.keycloak.org/docs/latest/server_admin/#_mappers
+
+# -- Google: Assign default role to all Google users
+#    Uses "Hardcoded Role" mapper (oidc-hardcoded-role-idp-mapper)
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# google_default_role: ""
+
+# -- Google: Map hosted domain (hd claim) to role
+#    Example: Users from "matherly.net" get "domain-user" role
+#    Uses "Claim to Role" mapper (oidc-role-idp-mapper)
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# google_domain_role_mapping:
+#   domain: "matherly.net"
+#   role: "domain-user"
+
+# -- GitHub: Assign default role to all GitHub users
+#    Uses "Hardcoded Role" mapper (oidc-hardcoded-role-idp-mapper)
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# github_default_role: ""
+
+# -- GitHub: Map organization membership to role
+#    NOTE: Requires adding "read:org" scope to GitHub IdP config
+#    GitHub includes org membership in the access token when scope is granted
+#    Uses "Claim to Role" mapper with regex matching
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# github_org_role_mapping:
+#   org: "my-org"
+#   role: "org-member"
+
+# -- Microsoft: Assign default role to all Microsoft users
+#    Uses "Hardcoded Role" mapper (oidc-hardcoded-role-idp-mapper)
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# microsoft_default_role: ""
+
+# -- Microsoft: Map Entra ID group ObjectID to role
+#    NOTE: Requires enabling "groups" claim in Azure App Registration:
+#          Token Configuration → Add optional claim → groups
+#    Uses "Advanced Claim to Role" mapper (oidc-advanced-role-idp-mapper)
+#    The group_id is the Object ID from Entra ID (UUID format)
+#    (OPTIONAL) / (DEFAULT: disabled when empty)
+# microsoft_group_role_mappings:
+#   - group_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+#     role: "admin"
+#   - group_id: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+#     role: "user"
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3

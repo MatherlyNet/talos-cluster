@@ -902,6 +902,99 @@
       "default": false,
       "type": "boolean",
       "description": "Loki Grafana Monitoring - Stack Monitoring Dashboard When enabled (and monitoring_enabled: true), deploys Loki stack monitoring dashboard"
+    },
+    "google_idp_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Social Identity Providers - OAuth/OIDC Federation with Keycloak REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md"
+    },
+    "google_client_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "google_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "github_idp_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "github_client_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "github_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "microsoft_idp_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "microsoft_client_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "microsoft_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "microsoft_tenant_id": {
+      "default": "common",
+      "type": "string",
+      "minLength": 1
+    },
+    "google_default_role": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identity Provider Role Mappers - Automatic role assignment based on IdP attributes REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md#phase-3-rolegroup-mappers Google role mappers"
+    },
+    "google_domain_role_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "github_default_role": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub role mappers"
+    },
+    "github_org_role_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "org": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "microsoft_default_role": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Microsoft role mappers"
+    },
+    "microsoft_group_role_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      }
     }
   },
   "required": [
