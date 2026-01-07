@@ -1,0 +1,42 @@
+#% if oidc_sso_enabled %#
+---
+# SecurityPolicy for OIDC-based Web SSO authentication
+# REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/
+# REF: docs/guides/native-oidc-securitypolicy-implementation.md
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: oidc-sso
+  namespace: network
+spec:
+  # Target HTTPRoutes with the security: oidc-protected label
+  # NOTE: SecurityPolicy can only target resources in the same namespace
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        security: oidc-protected
+  oidc:
+    provider:
+      issuer: "#{ oidc_issuer_url }#"
+      #% if oidc_authorization_endpoint is defined %#
+      authorizationEndpoint: "#{ oidc_authorization_endpoint }#"
+      #% endif %#
+      #% if oidc_token_endpoint is defined %#
+      tokenEndpoint: "#{ oidc_token_endpoint }#"
+      #% endif %#
+    clientID: "#{ oidc_client_id }#"
+    clientSecret:
+      name: oidc-client-secret
+    redirectURL: "#{ oidc_redirect_url }#"
+    logoutPath: "#{ oidc_logout_path | default('/logout') }#"
+    #% if oidc_cookie_domain is defined %#
+    cookieDomain: "#{ oidc_cookie_domain }#"
+    #% endif %#
+    scopes:
+    #% for scope in oidc_scopes | default(['openid', 'profile', 'email']) %#
+      - "#{ scope }#"
+    #% endfor %#
+    # Forward access token to backend services
+    forwardAccessToken: true
+#% endif %#

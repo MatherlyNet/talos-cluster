@@ -394,6 +394,18 @@ class Plugin(makejinja.plugin.Plugin):
         else:
             data["loki_monitoring_enabled"] = False
 
+        # OIDC SSO (Web browser authentication) - requires explicit enable and client credentials
+        # Distinct from oidc_enabled (JWT API auth) - this enables session-based browser SSO
+        # Requires: oidc_issuer_url (shared with JWT), client_id, client_secret, redirect_url
+        oidc_sso_enabled = (
+            data.get("oidc_sso_enabled", False)
+            and data.get("oidc_issuer_url")
+            and data.get("oidc_client_id")
+            and data.get("oidc_client_secret")
+            and data.get("oidc_redirect_url")
+        )
+        data["oidc_sso_enabled"] = oidc_sso_enabled
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)

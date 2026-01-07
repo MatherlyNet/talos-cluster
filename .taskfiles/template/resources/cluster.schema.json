@@ -589,8 +589,50 @@
       "pattern": "^https?://"
     },
     "oidc_additional_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "header": {
+            "type": "string",
+            "pattern": "^X-"
+          }
+        }
+      }
+    },
+    "oidc_sso_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "OIDC Web SSO Configuration - Session-based authentication for web apps Distinct from JWT SecurityPolicy - this enables browser-based SSO with cookie sessions REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/ REF: docs/guides/native-oidc-securitypolicy-implementation.md"
+    },
+    "oidc_client_id": {
+      "type": "string"
+    },
+    "oidc_client_secret": {
+      "type": "string"
+    },
+    "oidc_redirect_url": {
       "type": "string",
-      "pattern": "^X-"
+      "pattern": "^https?://"
+    },
+    "oidc_cookie_domain": {
+      "type": "string"
+    },
+    "oidc_logout_path": {
+      "default": "/logout",
+      "type": "string",
+      "pattern": "^/"
+    },
+    "oidc_scopes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "volsync_enabled": {
       "default": false,

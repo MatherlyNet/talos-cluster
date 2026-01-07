@@ -1,7 +1,7 @@
 # Native OIDC SecurityPolicy Implementation Guide
 
 > **Created:** January 2026
-> **Status:** Implementation Ready
+> **Status:** Implemented
 > **Dependencies:** OIDC Provider (Keycloak), Envoy Gateway v1.6.1+
 > **Effort:** ~2-3 hours (excluding OIDC provider setup)
 
@@ -452,4 +452,5 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-07 | Schema validation and JSON schema generator fixes |
 | 2026-01 | Initial implementation guide created |

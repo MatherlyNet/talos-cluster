@@ -41,7 +41,7 @@ The project has JWT SecurityPolicy fully implemented with auto-derivation from K
 When `keycloak_enabled: true` in cluster.yaml, the following variables are **automatically derived** in `plugin.py`:
 
 | Variable | Auto-Derived Value | Manual Override |
-|----------|-------------------|-----------------|
+| ---------- | ------------------- | ----------------- |
 | `oidc_provider_name` | `"keycloak"` | Optional |
 | `oidc_issuer_url` | `https://{keycloak_subdomain}.{cloudflare_domain}/realms/{keycloak_realm}` | Optional |
 | `oidc_jwks_uri` | `{oidc_issuer_url}/protocol/openid-connect/certs` | Optional |

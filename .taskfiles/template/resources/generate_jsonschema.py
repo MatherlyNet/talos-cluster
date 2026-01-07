@@ -164,10 +164,10 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
     if type_def.startswith("{"):
         return parse_nested_object(type_def)
 
-    # Handle array types [...Type]
-    array_match = re.match(r"\[\.\.\.(.*?)\]", type_def)
+    # Handle array types [...Type] (use DOTALL for multi-line nested objects)
+    array_match = re.match(r"\[\.\.\.(.*?)\]", type_def, re.DOTALL)
     if array_match:
-        inner_type = array_match.group(1)
+        inner_type = array_match.group(1).strip()
         prop["type"] = "array"
         prop["items"] = get_simple_type(inner_type)
         return prop

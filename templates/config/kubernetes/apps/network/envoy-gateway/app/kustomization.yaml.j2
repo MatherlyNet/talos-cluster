@@ -11,3 +11,7 @@ resources:
 #% if oidc_enabled %#
   - ./securitypolicy-jwt.yaml
 #% endif %#
+#% if oidc_sso_enabled %#
+  - ./secret-oidc.sops.yaml
+  - ./securitypolicy-oidc.yaml
+#% endif %#

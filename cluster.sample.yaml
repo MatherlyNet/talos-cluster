@@ -787,8 +787,16 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (e.g. "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs")
 # oidc_jwks_uri: ""
 
-# -- Additional claims to extract from JWT and pass as headers
+# -- Additional claims to extract from JWT and pass as headers to backend services
 #    (OPTIONAL) / Headers must start with "X-"
+#    Format: YAML list with 'name' (JWT claim path) and 'header' (HTTP header name)
+#    Common Keycloak claims:
+#      - preferred_username: User's display name
+#      - email: User's email address
+#      - realm_access.roles: Array of realm-level roles
+#      - resource_access.<client>.roles: Client-specific roles
+#      - groups: User's group memberships (if mapper configured)
+#    NOTE: Nested claims use dot notation (e.g., "realm_access.roles")
 #    Example:
 #    oidc_additional_claims:
 #      - name: "preferred_username"
@@ -796,6 +804,85 @@ cloudflare_gateway_addr: ""
 #      - name: "realm_access.roles"
 #        header: "X-User-Roles"
 # oidc_additional_claims: []
+
+# =============================================================================
+# OIDC WEB SSO CONFIGURATION - Session-based browser authentication
+# =============================================================================
+# OIDC-based web SSO for browser applications, using cookie sessions.
+# Creates a SecurityPolicy targeting HTTPRoutes with label "security: oidc-protected".
+# REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/
+# REF: docs/guides/native-oidc-securitypolicy-implementation.md
+#
+# SETUP WORKFLOW:
+#   1. Enable keycloak_enabled (provides OIDC issuer) OR set oidc_issuer_url manually
+#   2. Create OIDC client in Keycloak for Envoy Gateway:
+#      - Client type: confidential
+#      - Valid redirect URIs: https://*.${cloudflare_domain}/oauth2/callback
+#      - Copy client ID and secret
+#   3. Set the values below
+#   4. Run 'task configure' and 'task reconcile'
+#   5. Label HTTPRoutes with 'security: oidc-protected' to enable SSO
+#
+# KEY DIFFERENCES FROM JWT SecurityPolicy:
+#   JWT: Stateless API auth, validates Bearer tokens against JWKS (label: jwt-protected)
+#   OIDC SSO: Stateful browser SSO, manages cookie sessions (label: oidc-protected)
+
+# -- Enable OIDC Web SSO authentication
+#    Requires: oidc_issuer_url, oidc_client_id, oidc_client_secret, oidc_redirect_url
+#    (OPTIONAL) / (DEFAULT: false)
+# oidc_sso_enabled: false
+
+# -- OIDC client ID registered in your identity provider
+#    (REQUIRED when oidc_sso_enabled: true) / (e.g. "envoy-gateway")
+#    Create in Keycloak: Clients → Create client → Client ID: "envoy-gateway"
+# oidc_client_id: ""
+
+# -- OIDC client secret (SOPS-encrypted)
+#    (REQUIRED when oidc_sso_enabled: true)
+#    Obtain from Keycloak: Clients → envoy-gateway → Credentials → Client secret
+#    Copy the secret value and paste here (will be SOPS-encrypted after task configure)
+#    NOTE: This is NOT generated locally - it's copied from your IdP client configuration
+# oidc_client_secret: ""
+
+# -- OAuth2 callback URL for OIDC redirect
+#    (REQUIRED when oidc_sso_enabled: true)
+#    This is where your IdP redirects after authentication. Envoy Gateway intercepts
+#    this callback, completes the OAuth flow, then redirects user to original destination.
+#
+#    MULTI-APP SSO PATTERN:
+#    - Use ANY protected app's callback URL (e.g., "https://grafana.example.com/oauth2/callback")
+#    - Set oidc_cookie_domain to your top-level domain (e.g., "example.com")
+#    - Configure Keycloak with WILDCARD redirect URIs: "https://*.example.com/oauth2/callback"
+#    - Result: Single sign-on works across ALL *.example.com apps automatically!
+#
+#    The cookie domain enables cross-subdomain session sharing, so users authenticate
+#    once and access any protected app without re-authenticating.
+# oidc_redirect_url: ""
+
+# -- Cookie domain for SSO session cookies
+#    Set to top-level domain to enable SSO across ALL subdomains
+#    (REQUIRED for multi-app SSO) / (e.g. "example.com" for *.example.com)
+#    When set, a single authentication works for grafana.example.com, app1.example.com, etc.
+# oidc_cookie_domain: ""
+
+# -- Path that triggers logout flow
+#    (OPTIONAL) / (DEFAULT: "/logout")
+# oidc_logout_path: "/logout"
+
+# -- OAuth2 scopes to request
+#    (OPTIONAL) / (DEFAULT: ["openid", "profile", "email"])
+# oidc_scopes:
+#   - openid
+#   - profile
+#   - email
+
+# -- OIDC authorization endpoint (optional override)
+#    Auto-discovered from issuer_url if not set
+# oidc_authorization_endpoint: ""
+
+# -- OIDC token endpoint (optional override)
+#    Auto-discovered from issuer_url if not set
+# oidc_token_endpoint: ""
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3

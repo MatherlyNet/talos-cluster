@@ -31,3 +31,7 @@ spec:
             header: X-User-Email
           - claim: groups
             header: X-User-Groups
+          - claim: preferred_username
+            header: X-Username
+          - claim: realm_access.roles
+            header: X-User-Roles
