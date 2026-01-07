@@ -1,7 +1,10 @@
 #% if keycloak_enabled | default(false) %#
 ---
 #| HTTPRoute for Keycloak via Envoy Gateway #|
-#| Uses internal gateway for cluster-internal OIDC provider #|
+#| Attached to BOTH gateways for split-horizon DNS (prevents asymmetric routing) #|
+#| - External users: Cloudflare DNS → envoy-external (192.168.22.90) → Keycloak #|
+#| - Internal users: UniFi DNS → envoy-internal (192.168.22.80) → Keycloak #|
+#| Both paths are symmetric; DNS determines the complete request/response path #|
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -9,6 +12,10 @@ metadata:
   namespace: identity
 spec:
   parentRefs:
+    #| External gateway: cloudflare-dns creates Cloudflare record (public access via tunnel) #|
+    - name: envoy-external
+      namespace: network
+    #| Internal gateway: unifi-dns creates UniFi record (direct LAN access) #|
     - name: envoy-internal
       namespace: network
   hostnames:
