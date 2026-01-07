@@ -221,26 +221,30 @@ prometheus.remote_write "default" {
 
 **File:** `templates/config/kubernetes/apps/storage/rustfs/app/helmrelease.yaml.j2`
 
-Add OTLP config in `config.rustfs` section (chart converts these to `RUSTFS_*` env vars via ConfigMap):
+Use Flux HelmRelease `postRenderers` to patch the Deployment with the OTLP env var (chart ConfigMap only supports predefined keys):
 
 ```yaml
-    #| RustFS configuration - converted to RUSTFS_* env vars via ConfigMap #|
-    #| REF: https://charts.rustfs.com/ #|
-    config:
-      rustfs:
-        buffer_profile: "#{ rustfs_buffer_profile | default('DataAnalytics') }#"
-        enable_scanner: "true"
-        enable_heal: "true"
-        console_enable: "true"
 #% if rustfs_monitoring_enabled | default(false) %#
-        #| OTLP metrics export to Alloy - RustFS uses push-mode OpenTelemetry #|
-        #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
-        obs_metric_endpoint: "http://alloy.monitoring.svc:4318/v1/metrics"
+  #| Post-render patch to add OTLP metrics endpoint env var #|
+  #| RustFS Helm chart ConfigMap only supports predefined keys, so we patch the Deployment #|
+  #| REF: https://github.com/rustfs/rustfs/issues/1228 #|
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: rustfs
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/env
+                value:
+                  - name: RUSTFS_OBS_METRIC_ENDPOINT
+                    value: "http://alloy.monitoring.svc:4318/v1/metrics"
 #% endif %#
 ```
 
-**Note:** The RustFS Helm chart uses `config.rustfs.*` values which are converted to uppercase
-`RUSTFS_*` environment variables via a ConfigMap. Direct `environment:` blocks are NOT supported.
+**Note:** The RustFS Helm chart's ConfigMap template only supports predefined keys - custom values like
+`obs_metric_endpoint` are ignored. We use Flux postRenderers to patch the Deployment directly.
 
 ### Phase 3: Update Documentation
 
