@@ -123,6 +123,10 @@ spec:
     gateway:
       enabled: false
 
+    lokiCanary:
+      enabled: true
+      lokiurl: http://loki-read.monitoring.svc.cluster.local:3100
+
     # COHESION: Disable components deployed by kube-prometheus-stack
     # Grafana is deployed by kube-prometheus-stack - DO NOT enable here
     grafana:

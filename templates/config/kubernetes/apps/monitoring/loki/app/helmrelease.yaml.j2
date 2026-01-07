@@ -189,6 +189,17 @@ spec:
     gateway:
       enabled: false
 
+    #| Loki Canary: verify Loki health by writing and reading test logs #|
+    lokiCanary:
+      enabled: true
+#% if rustfs_enabled | default(false) %#
+      #| In SimpleScalable mode without gateway, connect directly to loki-read #|
+      lokiurl: http://loki-read.monitoring.svc.cluster.local:3100
+#% else %#
+      #| In SingleBinary mode, connect directly to loki service #|
+      lokiurl: http://loki.monitoring.svc.cluster.local:3100
+#% endif %#
+
     # COHESION: Disable components deployed by kube-prometheus-stack
     # Grafana is deployed by kube-prometheus-stack - DO NOT enable here
     grafana:
