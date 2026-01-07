@@ -249,6 +249,13 @@ Optional Keycloak OpenTelemetry Tracing (requires tracing_enabled):
 - When both `tracing_enabled` and `keycloak_tracing_enabled` are true, traces are exported to Tempo
 - See `docs/guides/keycloak-implementation.md#opentelemetry-tracing-integration` for details
 
+Optional Grafana Dashboards (requires monitoring_enabled):
+- `keycloak_monitoring_enabled` - Deploy Keycloak ServiceMonitor + Grafana dashboards (default: false)
+- `rustfs_monitoring_enabled` - Deploy RustFS ServiceMonitor + Grafana dashboards (default: false)
+- `loki_monitoring_enabled` - Deploy supplemental Loki stack monitoring dashboard (default: false)
+- When component + monitoring_enabled are both true, deploys ServiceMonitor and dashboards
+- See `docs/guides/grafana-dashboards-implementation.md` for details
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)

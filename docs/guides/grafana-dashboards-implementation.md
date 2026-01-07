@@ -1,7 +1,7 @@
 # Grafana Dashboards Implementation Guide
 
 > **Created:** January 2026
-> **Status:** Research Complete - Ready for Implementation
+> **Status:** IMPLEMENTED
 > **Dependencies:** kube-prometheus-stack, Keycloak (optional), RustFS (optional)
 > **Effort:** Low-Medium complexity
 
@@ -684,23 +684,62 @@ The Keycloak troubleshooting dashboard JSON is ~204KB, which:
 
 ---
 
-## Implementation Checklist
+## Configuration
 
-Before implementing, verify:
+### cluster.yaml Variables
 
-- [ ] `monitoring_enabled: true` in cluster.yaml
-- [ ] kube-prometheus-stack deployed and healthy
-- [ ] Grafana sidecar configured with `label: grafana_dashboard`
-- [ ] For Keycloak: `keycloak_enabled: true` and `metrics-enabled: "true"` in CR
-- [ ] For RustFS: `rustfs_enabled: true` and ServiceMonitor exists
+Enable dashboards by setting the following in `cluster.yaml`:
 
-After implementing:
+```yaml
+# Global monitoring (required for all dashboards)
+monitoring_enabled: true
+
+# Component-specific monitoring flags
+keycloak_monitoring_enabled: true   # Keycloak ServiceMonitor + dashboards
+rustfs_monitoring_enabled: true     # RustFS ServiceMonitor + dashboard
+loki_monitoring_enabled: true       # Loki stack monitoring dashboard
+```
+
+### Derived Variables (plugin.py)
+
+The following are computed automatically:
+- `keycloak_monitoring_enabled` - true when `monitoring_enabled` AND `keycloak_monitoring_enabled` both true
+- `rustfs_monitoring_enabled` - true when `monitoring_enabled` AND `rustfs_monitoring_enabled` both true
+- `loki_monitoring_enabled` - true when `monitoring_enabled` AND `loki_monitoring_enabled` both true
+
+---
+
+## Deployment Checklist
+
+Before deploying:
+
+- [x] `monitoring_enabled: true` in cluster.yaml
+- [x] kube-prometheus-stack deployed and healthy
+- [x] Grafana sidecar configured with `label: grafana_dashboard`
+- [x] For Keycloak: `keycloak_enabled: true` and `keycloak_monitoring_enabled: true`
+- [x] For RustFS: `rustfs_enabled: true` and `rustfs_monitoring_enabled: true`
+- [x] For Loki: `loki_enabled: true` and `loki_monitoring_enabled: true`
+
+After deploying:
 
 - [ ] Run `task configure -y` to generate templates
+- [ ] Run `task reconcile` or wait for Flux reconciliation
 - [ ] Verify ConfigMaps created: `kubectl get cm -A -l grafana_dashboard=1`
 - [ ] Check ServiceMonitors: `kubectl get servicemonitor -A`
 - [ ] Verify Prometheus targets: port-forward to Prometheus UI
-- [ ] Confirm dashboards in Grafana: Check "Identity" and "Storage" folders
+- [ ] Confirm dashboards in Grafana: Check "Identity", "Storage", and "Logging" folders
+
+---
+
+## Files Created
+
+| File | Description |
+| ---- | ----------- |
+| `templates/config/kubernetes/apps/identity/keycloak/app/servicemonitor.yaml.j2` | Keycloak metrics scraping |
+| `templates/config/kubernetes/apps/identity/keycloak/app/dashboard-troubleshooting.yaml.j2` | Keycloak SLO/JVM/HTTP dashboard (~6.6K lines) |
+| `templates/config/kubernetes/apps/identity/keycloak/app/dashboard-capacity-planning.yaml.j2` | Keycloak events dashboard (~887 lines) |
+| `templates/config/kubernetes/apps/storage/rustfs/app/dashboard-storage.yaml.j2` | RustFS/MinIO storage dashboard (~3.6K lines) |
+| `templates/config/kubernetes/apps/monitoring/loki/app/dashboard-stack-monitoring.yaml.j2` | Loki stack monitoring (~2.4K lines) |
 
 ---
 
@@ -708,6 +747,9 @@ After implementing:
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-07 | **IMPLEMENTED** - All dashboard templates created with embedded JSON |
+| 2026-01-07 | Added `*_monitoring_enabled` derived variables to plugin.py |
+| 2026-01-07 | Updated kustomization files with conditional resource inclusion |
 | 2026-01-07 | Added Loki Stack Monitoring dashboard (14055) - supplemental operational monitoring |
 | 2026-01-07 | Assessed CoreDNS dashboard (14981) - NO CHANGE recommended, keep built-in |
 | 2026-01-07 | Added Keycloak 26.5.0 observability updates |
