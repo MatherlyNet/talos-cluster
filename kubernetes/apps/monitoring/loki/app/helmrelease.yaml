@@ -121,11 +121,14 @@ spec:
       enabled: false
 
     gateway:
-      enabled: false
-
-    lokiCanary:
       enabled: true
-      lokiurl: loki-read.monitoring.svc.cluster.local:3100
+      replicas: 1
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
 
     # COHESION: Disable components deployed by kube-prometheus-stack
     # Grafana is deployed by kube-prometheus-stack - DO NOT enable here

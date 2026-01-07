@@ -186,18 +186,23 @@ spec:
     minio:
       enabled: false
 
+#% if rustfs_enabled | default(false) %#
+    #| Gateway required for SimpleScalable - routes push to write, queries to read #|
+    gateway:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
+#% else %#
     gateway:
       enabled: false
-
-    #| Loki Canary: verify Loki health by writing and reading test logs #|
+    #| SingleBinary mode: connect directly to loki service #|
     lokiCanary:
       enabled: true
-#% if rustfs_enabled | default(false) %#
-      #| In SimpleScalable mode without gateway, connect directly to loki-read #|
-      #| Note: chart prepends 'http://' so only specify host:port #|
-      lokiurl: loki-read.monitoring.svc.cluster.local:3100
-#% else %#
-      #| In SingleBinary mode, connect directly to loki service #|
       lokiurl: loki.monitoring.svc.cluster.local:3100
 #% endif %#
 
