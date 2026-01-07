@@ -8,7 +8,8 @@ resources:
   - ./secret.sops.yaml
   #| job-setup.yaml moved to ../setup/ with separate Kustomization dependency #|
   - ./httproute-console.yaml
-#% if monitoring_enabled | default(false) %#
+#% if rustfs_monitoring_enabled | default(false) %#
   - ./servicemonitor.yaml
+  - ./dashboard-storage.yaml
 #% endif %#
 #% endif %#

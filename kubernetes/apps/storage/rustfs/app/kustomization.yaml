@@ -6,4 +6,3 @@ resources:
   - ./helmrelease.yaml
   - ./secret.sops.yaml
   - ./httproute-console.yaml
-  - ./servicemonitor.yaml

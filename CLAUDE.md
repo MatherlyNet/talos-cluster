@@ -288,6 +288,9 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `keycloak_jwks_uri` - auto-derived JWKS endpoint for JWT validation
 - `keycloak_backup_enabled` - true when rustfs_enabled + keycloak S3 credentials set
 - `keycloak_tracing_enabled` - true when tracing_enabled + keycloak_tracing_enabled both true
+- `keycloak_monitoring_enabled` - true when monitoring_enabled + keycloak_monitoring_enabled both true
+- `rustfs_monitoring_enabled` - true when monitoring_enabled + rustfs_monitoring_enabled both true
+- `loki_monitoring_enabled` - true when monitoring_enabled + loki_monitoring_enabled both true
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 

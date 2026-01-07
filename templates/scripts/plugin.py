@@ -345,9 +345,40 @@ class Plugin(makejinja.plugin.Plugin):
                 and data.get("keycloak_tracing_enabled", False)
             )
             data["keycloak_tracing_enabled"] = keycloak_tracing_enabled
+
+            # Keycloak Grafana monitoring - requires global monitoring_enabled
+            # When both are true, Keycloak deploys ServiceMonitor and dashboards
+            keycloak_monitoring_enabled = (
+                data.get("monitoring_enabled", False)
+                and data.get("keycloak_monitoring_enabled", False)
+            )
+            data["keycloak_monitoring_enabled"] = keycloak_monitoring_enabled
         else:
             data["keycloak_backup_enabled"] = False
             data["keycloak_tracing_enabled"] = False
+            data["keycloak_monitoring_enabled"] = False
+
+        # RustFS Grafana monitoring - requires global monitoring_enabled
+        # When both are true, RustFS deploys ServiceMonitor and dashboards
+        if data.get("rustfs_enabled", False):
+            rustfs_monitoring_enabled = (
+                data.get("monitoring_enabled", False)
+                and data.get("rustfs_monitoring_enabled", False)
+            )
+            data["rustfs_monitoring_enabled"] = rustfs_monitoring_enabled
+        else:
+            data["rustfs_monitoring_enabled"] = False
+
+        # Loki Grafana monitoring - requires global monitoring_enabled
+        # When both are true, Loki deploys supplemental stack monitoring dashboard
+        if data.get("loki_enabled", False):
+            loki_monitoring_enabled = (
+                data.get("monitoring_enabled", False)
+                and data.get("loki_monitoring_enabled", False)
+            )
+            data["loki_monitoring_enabled"] = loki_monitoring_enabled
+        else:
+            data["loki_monitoring_enabled"] = False
 
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled

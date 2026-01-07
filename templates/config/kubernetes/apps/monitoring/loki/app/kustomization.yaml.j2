@@ -8,4 +8,7 @@ resources:
 #% if rustfs_enabled | default(false) %#
   - ./secret-s3.sops.yaml
 #% endif %#
+#% if loki_monitoring_enabled | default(false) %#
+  - ./dashboard-stack-monitoring.yaml
+#% endif %#
 #% endif %#

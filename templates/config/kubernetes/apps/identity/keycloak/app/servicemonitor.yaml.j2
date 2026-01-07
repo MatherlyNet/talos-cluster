@@ -1,0 +1,33 @@
+#% if keycloak_enabled | default(false) and keycloak_monitoring_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| KEYCLOAK SERVICEMONITOR - Prometheus metrics scraping                         #|
+#| ============================================================================= #|
+#| REF: https://www.keycloak.org/observability/configuration-metrics             #|
+#| REF: https://www.keycloak.org/server/management-interface                     #|
+#| IMPORTANT: Metrics are on port 9000 (management), NOT port 8080 (http)        #|
+#| ============================================================================= #|
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: keycloak
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+      #| Keycloak operator creates service with this label #|
+      app.kubernetes.io/managed-by: keycloak-operator
+  endpoints:
+    #| Keycloak exposes metrics on management interface (port 9000) #|
+    #| The operator creates a service port named "management" for this #|
+    - port: management
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - identity
+#% endif %#

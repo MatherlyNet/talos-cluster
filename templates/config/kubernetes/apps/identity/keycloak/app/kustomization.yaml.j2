@@ -15,4 +15,9 @@ resources:
   - ./keycloak-cr.yaml
   - ./httproute.yaml
   - ./realm-import.yaml
+#% if keycloak_monitoring_enabled | default(false) %#
+  - ./servicemonitor.yaml
+  - ./dashboard-troubleshooting.yaml
+  - ./dashboard-capacity-planning.yaml
+#% endif %#
 #% endif %#
