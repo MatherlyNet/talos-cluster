@@ -5,6 +5,6 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./httproute.yaml
   - ./secret.sops.yaml
+#| NOTE: Grafana HTTPRoute moved to network/envoy-gateway for OIDC protection #|
 #% endif %#

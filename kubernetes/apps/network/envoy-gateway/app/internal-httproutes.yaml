@@ -1,0 +1,75 @@
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hubble-ui
+  namespace: network
+  labels:
+    security: oidc-protected
+spec:
+  hostnames:
+    - "hubble.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: hubble-ui
+          namespace: kube-system
+          port: 80
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: network
+  labels:
+    security: oidc-protected
+spec:
+  hostnames:
+    - "grafana.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: kube-prometheus-stack-grafana
+          namespace: monitoring
+          port: 80
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rustfs-console
+  namespace: network
+  labels:
+    security: oidc-protected
+spec:
+  hostnames:
+    - "rustfs.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: rustfs-svc
+          namespace: storage
+          port: 9001
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

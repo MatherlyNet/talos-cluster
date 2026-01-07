@@ -8,6 +8,9 @@ resources:
   - ./ocirepository.yaml
   - ./pdb.yaml
   - ./podmonitor.yaml
+  #| Centralized internal HTTPRoutes for OIDC protection support #|
+  - ./internal-httproutes.yaml
+  - ./referencegrants.yaml
 #% if oidc_enabled %#
   - ./securitypolicy-jwt.yaml
 #% endif %#
