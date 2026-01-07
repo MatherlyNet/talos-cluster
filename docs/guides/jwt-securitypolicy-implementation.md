@@ -1,9 +1,9 @@
 # JWT SecurityPolicy Implementation Guide
 
 > **Created:** January 2026
-> **Status:** Templates Complete, Configuration Pending
+> **Status:** ✅ Fully Implemented (Auto-derived from Keycloak)
 > **Dependencies:** OIDC Provider (Keycloak), Envoy Gateway v1.6.1+
-> **Effort:** ~1 hour (excluding OIDC provider setup)
+> **Effort:** Zero configuration when using Keycloak
 
 ---
 
@@ -30,62 +30,85 @@ This guide implements **JWT SecurityPolicy** for API/service-to-service authenti
 
 ## Current Implementation Status
 
-The project already has JWT SecurityPolicy templates:
+The project has JWT SecurityPolicy fully implemented with auto-derivation from Keycloak:
 
 - **Template:** `templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy-jwt.yaml.j2`
-- **Status:** Complete, pending OIDC provider configuration
-- **Activation:** Set `oidc_enabled: true` in cluster.yaml when OIDC provider is deployed
+- **Status:** ✅ Fully operational
+- **Activation:** Automatic when `keycloak_enabled: true` (no additional configuration required)
+
+### Auto-Derivation Logic
+
+When `keycloak_enabled: true` in cluster.yaml, the following variables are **automatically derived** in `plugin.py`:
+
+| Variable | Auto-Derived Value | Manual Override |
+|----------|-------------------|-----------------|
+| `oidc_provider_name` | `"keycloak"` | Optional |
+| `oidc_issuer_url` | `https://{keycloak_subdomain}.{cloudflare_domain}/realms/{keycloak_realm}` | Optional |
+| `oidc_jwks_uri` | `{oidc_issuer_url}/protocol/openid-connect/certs` | Optional |
+| `oidc_enabled` | `true` (when issuer + JWKS are set) | N/A (derived) |
+
+This means **zero OIDC configuration is required** when using the built-in Keycloak deployment. The SecurityPolicy is automatically generated and deployed via GitOps.
 
 ---
 
 ## Configuration Variables
 
-### Required Variables (cluster.yaml)
+### Automatic Configuration (Recommended)
+
+When using the built-in Keycloak deployment (`keycloak_enabled: true`), **no additional OIDC configuration is required**. All JWT SecurityPolicy variables are auto-derived from your Keycloak settings.
+
+### Optional Override Variables (cluster.yaml)
+
+These variables are only needed if you want to:
+- Use a non-Keycloak OIDC provider
+- Override the auto-derived values
 
 ```yaml
 # =============================================================================
-# OIDC/JWT CONFIGURATION - API authentication via SecurityPolicy
+# OIDC/JWT CONFIGURATION - Optional overrides for API authentication
 # =============================================================================
-# JWT-based authentication for API endpoints, validating tokens against JWKS.
-# When configured, creates a SecurityPolicy targeting HTTPRoutes with
-# label "security: jwt-protected".
+# These are AUTO-DERIVED from Keycloak when keycloak_enabled: true
+# Only set these if using a different OIDC provider or need to override.
 # REF: https://gateway.envoyproxy.io/docs/tasks/security/jwt-authentication/
 
 # -- OIDC provider name (used in SecurityPolicy)
-#    (OPTIONAL) / (DEFAULT: "keycloak")
-oidc_provider_name: "keycloak"
+#    (OPTIONAL) / (DEFAULT: "keycloak" when keycloak_enabled)
+# oidc_provider_name: "keycloak"
 
 # -- OIDC issuer URL (JWT token issuer - must match "iss" claim in tokens)
-#    (REQUIRED for JWT auth)
-#    Example: "https://auth.example.com/realms/myrealm"
-oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
+#    (AUTO-DERIVED from Keycloak: https://{subdomain}.{domain}/realms/{realm})
+# oidc_issuer_url: "https://auth.example.com/realms/myrealm"
 
 # -- OIDC JWKS URI for JWT validation (public keys endpoint)
-#    (REQUIRED for JWT auth)
-#    Example: "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs"
-oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
+#    (AUTO-DERIVED from Keycloak: {issuer}/protocol/openid-connect/certs)
+# oidc_jwks_uri: "https://auth.example.com/realms/myrealm/protocol/openid-connect/certs"
 
 # -- Additional claims to extract from JWT and pass as headers
 #    Headers must start with "X-"
-#    (OPTIONAL)
-oidc_additional_claims:
-  - name: "preferred_username"
-    header: "X-Username"
-  - name: "realm_access.roles"
-    header: "X-User-Roles"
+#    (OPTIONAL - not auto-derived)
+# oidc_additional_claims:
+#   - name: "preferred_username"
+#     header: "X-Username"
+#   - name: "realm_access.roles"
+#     header: "X-User-Roles"
 ```
 
-### Derived Variables (plugin.py)
+### Auto-Derivation Logic (plugin.py)
 
-The existing `plugin.py` handles enabling:
+The `plugin.py` auto-populates OIDC variables from Keycloak:
 
 ```python
-# OIDC - enabled when issuer and JWKS are both set
-oidc_enabled = (
-    data.get("oidc_issuer_url") and
-    data.get("oidc_jwks_uri")
-)
-variables["oidc_enabled"] = oidc_enabled
+# Inside keycloak_enabled block:
+# Auto-populate OIDC JWT variables from Keycloak if not explicitly set
+if not data.get("oidc_issuer_url"):
+    data["oidc_issuer_url"] = data["keycloak_issuer_url"]
+if not data.get("oidc_jwks_uri"):
+    data["oidc_jwks_uri"] = data["keycloak_jwks_uri"]
+if not data.get("oidc_provider_name"):
+    data["oidc_provider_name"] = "keycloak"
+
+# Recalculate oidc_enabled now that Keycloak values may have been applied
+data["oidc_enabled"] = bool(data.get("oidc_issuer_url") and data.get("oidc_jwks_uri"))
 ```
 
 ---
@@ -467,3 +490,4 @@ echo "$TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 | ---- | ------ |
 | 2026-01 | Initial implementation guide created |
 | 2026-01-03 | Template implemented in project |
+| 2026-01-07 | Auto-derivation from Keycloak implemented in plugin.py |
