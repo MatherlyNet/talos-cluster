@@ -3,6 +3,12 @@ creation_rules:
   - path_regex: talos/.*\.sops\.ya?ml
     mac_only_encrypted: true
     age: "#{ age_key('public') }#"
+  #| KeycloakRealmImport CRD - encrypt OAuth credentials in IdP configs #|
+  #| clientId is also encrypted as GitHub Push Protection detects it as sensitive #|
+  - path_regex: kubernetes/apps/identity/keycloak/.*realm-import\.sops\.ya?ml
+    encrypted_regex: "^(clientId|clientSecret|secret)$"
+    mac_only_encrypted: true
+    age: "#{ age_key('public') }#"
   - path_regex: (bootstrap|kubernetes)/.*\.sops\.ya?ml
     encrypted_regex: "^(data|stringData)$"
     mac_only_encrypted: true

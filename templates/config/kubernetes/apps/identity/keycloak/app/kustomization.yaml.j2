@@ -14,7 +14,7 @@ resources:
 #% endif %#
   - ./keycloak-cr.yaml
   - ./httproute.yaml
-  - ./realm-import.yaml
+  - ./realm-import.sops.yaml
 #% if keycloak_monitoring_enabled | default(false) %#
   #| NOTE: ServiceMonitor is automatically created by Keycloak Operator when #|
   #|       metrics-enabled: true is set in the Keycloak CR additionalOptions #|

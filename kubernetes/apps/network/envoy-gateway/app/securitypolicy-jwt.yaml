@@ -33,5 +33,11 @@ spec:
             header: X-User-Groups
           - claim: preferred_username
             header: X-Username
+          - claim: email
+            header: X-Email
           - claim: realm_access.roles
             header: X-User-Roles
+          - claim: resource_access.envoy-gateway.roles
+            header: X-Client-Roles
+          - claim: groups
+            header: X-Groups

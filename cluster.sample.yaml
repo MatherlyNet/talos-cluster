@@ -797,12 +797,19 @@ cloudflare_gateway_addr: ""
 #      - resource_access.<client>.roles: Client-specific roles
 #      - groups: User's group memberships (if mapper configured)
 #    NOTE: Nested claims use dot notation (e.g., "realm_access.roles")
-#    Example:
+#    Example (comprehensive claim extraction for IdP role mapping):
 #    oidc_additional_claims:
 #      - name: "preferred_username"
 #        header: "X-Username"
+#      - name: "email"
+#        header: "X-Email"
 #      - name: "realm_access.roles"
 #        header: "X-User-Roles"
+#      - name: "resource_access.envoy-gateway.roles"
+#        header: "X-Client-Roles"
+#      - name: "groups"
+#        header: "X-Groups"
+#    NOTE: "groups" claim requires Keycloak "Group Membership" mapper on the client
 # oidc_additional_claims: []
 
 # =============================================================================

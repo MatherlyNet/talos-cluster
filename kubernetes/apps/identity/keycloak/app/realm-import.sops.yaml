@@ -1,0 +1,93 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: matherlynet-realm
+  namespace: identity
+spec:
+  keycloakCRName: keycloak
+  realm:
+    realm: matherlynet
+    enabled: true
+    displayName: Matherlynet Realm
+    ssoSessionIdleTimeout: 1800
+    ssoSessionMaxLifespan: 36000
+    accessTokenLifespan: 300
+    accessTokenLifespanForImplicitFlow: 900
+    registrationAllowed: false
+    resetPasswordAllowed: true
+    rememberMe: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+    bruteForceProtected: true
+    permanentLockout: false
+    maxFailureWaitSeconds: 900
+    minimumQuickLoginWaitSeconds: 60
+    waitIncrementSeconds: 60
+    quickLoginCheckMilliSeconds: 1000
+    maxDeltaTimeSeconds: 43200
+    failureFactor: 5
+    clients:
+      - clientId: ENC[AES256_GCM,data:bxJH0HpJzxfEIILc6w==,iv:C3fmuaPuDY/1ejkFrbnUjAm8hymrfYV63bNQu9j62G4=,tag:xL/sYMsAKhN5cPqKa8GmRg==,type:str]
+        name: Envoy Gateway SSO
+        description: OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: client-secret
+        secret: ENC[AES256_GCM,data:1YcOszbUmA2qBk86H1UJmvvqel9AO7XHlKqysMIokczkIQqdxEguJ+nqftQ=,iv:X6QUnVRHIJwdmHkVVqtwe9LMTvuKVOqbri4XvRjikNo=,tag:FvV7UdzLH5S7u+RXUfUPEQ==,type:str]
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: openid-connect
+        redirectUris:
+          - https://*.matherly.net/oauth2/callback
+        webOrigins:
+          - https://*.matherly.net
+        attributes:
+          pkce.code.challenge.method: S256
+          post.logout.redirect.uris: https://*.matherly.net/*
+        defaultClientScopes:
+          - openid
+          - profile
+          - email
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+    identityProviders:
+      - alias: google
+        displayName: Google
+        providerId: google
+        enabled: true
+        trustEmail: true
+        storeToken: true
+        linkOnly: false
+        firstBrokerLoginFlowAlias: first broker login
+        config:
+          clientId: ENC[AES256_GCM,data:gJckrk+IIK7pFWrtbZQRk0A0Kaaf8UVNyFHD0xFRd7ehon0sCiacQpmKjH5PTesbstfkIQx42weDff7vGfpV0oXlDb+n9IbR,iv:VgUK8J85N43bTF3ue9e6+3BV+P01r8ibMvpOdAoV9As=,tag:YlsglXxodF6FU3EQeTVxhQ==,type:str]
+          clientSecret: ENC[AES256_GCM,data:Smy/JKLiK/O4mc0hEbcY7Bd+OTO8Q0GMzA91L1Ze/c1gIpw=,iv:XkGN7WPBwNCht27f6eT2zo4HEKEDA/ftMYh+++RtywQ=,tag:D22yO7B7XaL4UdfjwotmbA==,type:str]
+          defaultScope: openid profile email
+          syncMode: IMPORT
+    identityProviderMappers:
+      - name: google-default-role
+        identityProviderAlias: google
+        identityProviderMapper: oidc-hardcoded-role-idp-mapper
+        config:
+          syncMode: INHERIT
+          role: admin
+sops:
+  age:
+    - recipient: age1rqvr6f3l6hxc5dn9q2n7edzvrklj2sz3q9djlp9rtqc8hfa6447saqpaqn
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBubVZDUW5pN0pHN2VualMv
+        U3NxMnR1WHpTMmhQdWN6Mm9zMDRsYUQreDB3CmEzb3dBS09MWDNsQU9DVTRsYTMw
+        VWtUOTBQZjkvRWMrUlFmR2JFRnIrRFEKLS0tIHBUU3pGa1dib1JJRWdvM0ZyeUhx
+        WUMwQWhMVVptQ1NxczVwTGg3RmRDUDgKMHEA8uxqzrkyx2gKsNphA44Rh02U6+x3
+        6vLQgifEd86FFfUB7EboPXhFqaCSrKVYtgojH2GTdHLV5T55URTu2w==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-01-07T21:01:45Z"
+  mac: ENC[AES256_GCM,data:5ntoqzxgdqQ90ChM33P/NyxFn1+p0VSs1E3LgOGxR3pjzcqhx22BABzxfuqMNw6fbXR6m/hCC7xPUkSKkqnTPEZfxDeCAOlQSW3Ff+hyIxZMmN3IVx92XSqaz8XKsG0A4g2RoErP/ZB5rDVRZIVTrmn8NPpsm8gb/Cu4azBhkD8=,iv:904oD6DecZ/YOHeKxBfQ/3EiJXLKrHQmnWRk/TYKyTE=,tag:rRXGFM020iGL3l0O+/9TTg==,type:str]
+  encrypted_regex: ^(clientId|clientSecret|secret)$
+  mac_only_encrypted: true
+  version: 3.11.0
