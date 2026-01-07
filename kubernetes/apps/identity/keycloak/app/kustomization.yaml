@@ -7,6 +7,5 @@ resources:
   - ./keycloak-cr.yaml
   - ./httproute.yaml
   - ./realm-import.yaml
-  - ./servicemonitor.yaml
   - ./dashboard-troubleshooting.yaml
   - ./dashboard-capacity-planning.yaml
