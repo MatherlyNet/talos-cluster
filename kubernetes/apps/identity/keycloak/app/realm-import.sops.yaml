@@ -26,14 +26,26 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
+    roles:
+      realm:
+        - name: admin
+          description: Full administrative access to all applications and settings
+        - name: operator
+          description: Operational access - manage services, view logs, restart pods
+        - name: developer
+          description: Development access - CI/CD, debugging tools, dev environments
+        - name: viewer
+          description: Read-only access to dashboards and status pages
+        - name: user
+          description: Basic authenticated user access to standard applications
     clients:
-      - clientId: ENC[AES256_GCM,data:bxJH0HpJzxfEIILc6w==,iv:C3fmuaPuDY/1ejkFrbnUjAm8hymrfYV63bNQu9j62G4=,tag:xL/sYMsAKhN5cPqKa8GmRg==,type:str]
+      - clientId: ENC[AES256_GCM,data:hlBrEcsqAe2z2iLrBQ==,iv:fVkMoU4feqYAG8CEaf7hWIHd+ttCa8Y06FB243AhkMU=,tag:nmaU2b8CUFFHj1TbcuOF8Q==,type:str]
         name: Envoy Gateway SSO
         description: OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications
         enabled: true
         publicClient: false
         clientAuthenticatorType: client-secret
-        secret: ENC[AES256_GCM,data:1YcOszbUmA2qBk86H1UJmvvqel9AO7XHlKqysMIokczkIQqdxEguJ+nqftQ=,iv:X6QUnVRHIJwdmHkVVqtwe9LMTvuKVOqbri4XvRjikNo=,tag:FvV7UdzLH5S7u+RXUfUPEQ==,type:str]
+        secret: ENC[AES256_GCM,data:qAPhJJpPeEiTNr8mEWeIR+qrjJnZnP6j2rSXaIF+JQpvZIaVYI77SYP1HL4=,iv:tta0RkNeah101ukdCL9RFHE8k74019STyOHwgPFnQA0=,tag:lEqJlcr6HUzWu1Kp1ie5bg==,type:str]
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
@@ -64,8 +76,8 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: first broker login
         config:
-          clientId: ENC[AES256_GCM,data:gJckrk+IIK7pFWrtbZQRk0A0Kaaf8UVNyFHD0xFRd7ehon0sCiacQpmKjH5PTesbstfkIQx42weDff7vGfpV0oXlDb+n9IbR,iv:VgUK8J85N43bTF3ue9e6+3BV+P01r8ibMvpOdAoV9As=,tag:YlsglXxodF6FU3EQeTVxhQ==,type:str]
-          clientSecret: ENC[AES256_GCM,data:Smy/JKLiK/O4mc0hEbcY7Bd+OTO8Q0GMzA91L1Ze/c1gIpw=,iv:XkGN7WPBwNCht27f6eT2zo4HEKEDA/ftMYh+++RtywQ=,tag:D22yO7B7XaL4UdfjwotmbA==,type:str]
+          clientId: ENC[AES256_GCM,data:tpvIrY4MCx8XgVmLWdPvtyT9/twOkErYuKyZPuTWPKAyfuQvajZhhuERu0ZGZtEjGqR+CFERWZjQPU5VW1bhWph3Tsv5RnGR,iv:zdLksPKj4YH8OWtlE0j+AQIkiQ14XXET5qp+/Nv6/t0=,tag:lBMgy8tSrhN1zCqAzuwQXQ==,type:str]
+          clientSecret: ENC[AES256_GCM,data:/Sl1XzJNKF5UL/c1WzZmHJtbfV1kvJM/Vn8O0uoOOX4d8Wk=,iv:7HABRgHzDp1ufXjjMG4c3wlkVQeD1bsazS762e9EegQ=,tag:bkrqL/9CSTYnx7LY4ef0XA==,type:str]
           defaultScope: openid profile email
           syncMode: IMPORT
     identityProviderMappers:
@@ -80,14 +92,14 @@ sops:
     - recipient: age1rqvr6f3l6hxc5dn9q2n7edzvrklj2sz3q9djlp9rtqc8hfa6447saqpaqn
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBubVZDUW5pN0pHN2VualMv
-        U3NxMnR1WHpTMmhQdWN6Mm9zMDRsYUQreDB3CmEzb3dBS09MWDNsQU9DVTRsYTMw
-        VWtUOTBQZjkvRWMrUlFmR2JFRnIrRFEKLS0tIHBUU3pGa1dib1JJRWdvM0ZyeUhx
-        WUMwQWhMVVptQ1NxczVwTGg3RmRDUDgKMHEA8uxqzrkyx2gKsNphA44Rh02U6+x3
-        6vLQgifEd86FFfUB7EboPXhFqaCSrKVYtgojH2GTdHLV5T55URTu2w==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3QktOS21KbHcya2xMRHNF
+        cFBoZGlXYjhkSngwTkNrREtMY1FKSldiZlFZCjVxaXJwZy9WUjFTdnpwY0JuN3hj
+        R0pOR0FSUkR5SmxPOTRWREFQYlVlbHMKLS0tIHRKRFVhN2tuNFpnVEVYb1gyeXNi
+        Umx6R1Zscno2a1BvY0ZibzhRSnJUQ0EKOnpVmiqHiAR5rjlLYSjLAV2mQuTeUujv
+        bo52xmkzh7VvrS3Bmpmeu2BlVM0D2xVQZXCBVIu611dLql+Og5pT3g==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2026-01-07T21:01:45Z"
-  mac: ENC[AES256_GCM,data:5ntoqzxgdqQ90ChM33P/NyxFn1+p0VSs1E3LgOGxR3pjzcqhx22BABzxfuqMNw6fbXR6m/hCC7xPUkSKkqnTPEZfxDeCAOlQSW3Ff+hyIxZMmN3IVx92XSqaz8XKsG0A4g2RoErP/ZB5rDVRZIVTrmn8NPpsm8gb/Cu4azBhkD8=,iv:904oD6DecZ/YOHeKxBfQ/3EiJXLKrHQmnWRk/TYKyTE=,tag:rRXGFM020iGL3l0O+/9TTg==,type:str]
+  lastmodified: "2026-01-07T21:33:07Z"
+  mac: ENC[AES256_GCM,data:un+JipHGN09rtjdzw/Wa91RhuJOBz+Cv4D4K/2sKgdV56vficz1UHXAwvXbfCNaYfI/XP5VuyDlfJIzcj/gHo7GyDK8H8rZy3PYng5lG8rShv83O8FSgQCpK5TmWmE/XeXYbNZ/e3r/PaqYvbLwq1U/ZBNHKnMIdGhKe+yEURNo=,iv:RWEma5BGsfC45t3xOFt+/v6PQ+q0gE0vQQM7N+L8FqE=,tag:harH8ks3ylL4tE20KxtJnA==,type:str]
   encrypted_regex: ^(clientId|clientSecret|secret)$
   mac_only_encrypted: true
   version: 3.11.0

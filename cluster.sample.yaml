@@ -766,6 +766,25 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "0.1")
 # keycloak_tracing_sample_rate: "0.1"
 
+# -- Keycloak realm roles (RBAC role hierarchy)
+#    Define custom roles for your realm following Kubernetes RBAC patterns.
+#    These roles are used by IdP mappers and can be included in JWT tokens.
+#    Roles are automatically created during realm import.
+#    Best practice: Follow principle of least privilege with hierarchical roles.
+#    (OPTIONAL) / (DEFAULT: admin, operator, developer, viewer, user)
+#    REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/
+# keycloak_realm_roles:
+#   - name: "admin"
+#     description: "Full administrative access to all applications and settings"
+#   - name: "operator"
+#     description: "Operational access - manage services, view logs, restart pods"
+#   - name: "developer"
+#     description: "Development access - CI/CD, debugging tools, dev environments"
+#   - name: "viewer"
+#     description: "Read-only access to dashboards and status pages"
+#   - name: "user"
+#     description: "Basic authenticated user access to standard applications"
+
 # =============================================================================
 # OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
 # =============================================================================

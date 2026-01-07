@@ -32,6 +32,67 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
+#| =========================================================================== #|
+#| REALM ROLES - RBAC role hierarchy following Kubernetes patterns             #|
+#| Roles defined in keycloak_realm_roles + any IdP mapper-referenced roles     #|
+#| Best Practice: Use principle of least privilege with hierarchical roles     #|
+#| Kubernetes alignment: admin=cluster-admin, operator=admin, dev=edit, viewer #|
+#| REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/      #|
+#| =========================================================================== #|
+#% set configured_role_names = [] %#
+#% if keycloak_realm_roles is defined and keycloak_realm_roles %#
+#%   for role in keycloak_realm_roles %#
+#%     set _ = configured_role_names.append(role.name) %#
+#%   endfor %#
+#% endif %#
+#% set idp_mapper_roles = [] %#
+#% if google_default_role is defined and google_default_role %#
+#%   if google_default_role not in configured_role_names and google_default_role not in idp_mapper_roles %#
+#%     set _ = idp_mapper_roles.append(google_default_role) %#
+#%   endif %#
+#% endif %#
+#% if google_domain_role_mapping is defined and google_domain_role_mapping.role is defined %#
+#%   if google_domain_role_mapping.role not in configured_role_names and google_domain_role_mapping.role not in idp_mapper_roles %#
+#%     set _ = idp_mapper_roles.append(google_domain_role_mapping.role) %#
+#%   endif %#
+#% endif %#
+#% if github_default_role is defined and github_default_role %#
+#%   if github_default_role not in configured_role_names and github_default_role not in idp_mapper_roles %#
+#%     set _ = idp_mapper_roles.append(github_default_role) %#
+#%   endif %#
+#% endif %#
+#% if github_org_role_mapping is defined and github_org_role_mapping.role is defined %#
+#%   if github_org_role_mapping.role not in configured_role_names and github_org_role_mapping.role not in idp_mapper_roles %#
+#%     set _ = idp_mapper_roles.append(github_org_role_mapping.role) %#
+#%   endif %#
+#% endif %#
+#% if microsoft_default_role is defined and microsoft_default_role %#
+#%   if microsoft_default_role not in configured_role_names and microsoft_default_role not in idp_mapper_roles %#
+#%     set _ = idp_mapper_roles.append(microsoft_default_role) %#
+#%   endif %#
+#% endif %#
+#% if microsoft_group_role_mappings is defined and microsoft_group_role_mappings %#
+#%   for mapping in microsoft_group_role_mappings %#
+#%     if mapping.role not in configured_role_names and mapping.role not in idp_mapper_roles %#
+#%       set _ = idp_mapper_roles.append(mapping.role) %#
+#%     endif %#
+#%   endfor %#
+#% endif %#
+#% set has_roles = (keycloak_realm_roles is defined and keycloak_realm_roles | length > 0) or (idp_mapper_roles | length > 0) %#
+#% if has_roles %#
+    roles:
+      realm:
+#%   if keycloak_realm_roles is defined and keycloak_realm_roles %#
+#%     for role in keycloak_realm_roles %#
+        - name: "#{ role.name }#"
+          description: "#{ role.description | default('Custom realm role') }#"
+#%     endfor %#
+#%   endif %#
+#%   for role in idp_mapper_roles %#
+        - name: "#{ role }#"
+          description: "IdP mapper role (auto-added from *_default_role/*_role_mapping)"
+#%   endfor %#
+#% endif %#
 #% if keycloak_bootstrap_oidc_client | default(false) %#
     #| =========================================================================== #|
     #| OIDC CLIENT BOOTSTRAP - Envoy Gateway SSO Client                            #|

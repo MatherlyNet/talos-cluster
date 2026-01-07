@@ -293,6 +293,14 @@ import (
 	keycloak_tracing_enabled?:     *false | bool
 	keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
 
+	// Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns
+	// Roles are created during realm import and used by IdP mappers/JWT claims
+	// REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/
+	keycloak_realm_roles?: [...{
+		name:        string & !="" & =~"^[a-z][a-z0-9-]*$"  // lowercase, alphanumeric, hyphens
+		description: string & !=""
+	}]
+
 	// Grafana Dashboard Monitoring - Component-specific dashboard toggles
 	// Each requires monitoring_enabled: true as a prerequisite
 	// REF: docs/guides/grafana-dashboards-implementation.md

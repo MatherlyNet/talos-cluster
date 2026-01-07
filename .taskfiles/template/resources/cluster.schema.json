@@ -888,6 +888,15 @@
       "type": "string",
       "pattern": "^[01](\\.\\d+)?$"
     },
+    "keycloak_realm_roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "description": "Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns Roles are created during realm import and used by IdP mappers/JWT claims REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/"
+    },
     "keycloak_monitoring_enabled": {
       "default": false,
       "type": "boolean",
