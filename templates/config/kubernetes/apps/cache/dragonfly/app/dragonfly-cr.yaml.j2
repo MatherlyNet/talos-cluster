@@ -43,7 +43,6 @@ spec:
     - --slowlog_max_len=#{ dragonfly_slowlog_max_len | default(128) }#
 #% if dragonfly_backup_enabled | default(false) %#
     #| S3 snapshot configuration for RustFS #|
-    - --dir=s3://dragonfly-backups
     - --s3_endpoint=#{ dragonfly_s3_endpoint | default('rustfs-svc.storage.svc.cluster.local:9000') }#
     - --s3_use_https=false
     - --dbfilename=snapshot
@@ -60,6 +59,7 @@ spec:
   #| Snapshot configuration #|
   snapshot:
     cron: "#{ dragonfly_snapshot_cron | default('0 */6 * * *') }#"
+    dir: "s3://dragonfly-backups"
 
   #| S3 credentials via environment variables #|
   env:

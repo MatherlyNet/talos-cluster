@@ -28,7 +28,6 @@ spec:
     - --cache_mode=true
     - --slowlog_log_slower_than=10000
     - --slowlog_max_len=128
-    - --dir=s3://dragonfly-backups
     - --s3_endpoint=rustfs-svc.storage.svc.cluster.local:9000
     - --s3_use_https=false
     - --dbfilename=snapshot
@@ -39,6 +38,7 @@ spec:
 
   snapshot:
     cron: "0 */6 * * *"
+    dir: "s3://dragonfly-backups"
 
   env:
     - name: AWS_ACCESS_KEY_ID
