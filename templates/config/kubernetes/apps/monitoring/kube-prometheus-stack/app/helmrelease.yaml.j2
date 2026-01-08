@@ -106,6 +106,8 @@ spec:
           groups_attribute_path: "groups"
           #| Token handling - use refresh tokens for session longevity #|
           use_refresh_token: true
+          #| PKCE (Proof Key for Code Exchange) - required by Keycloak client config #|
+          use_pkce: true
 #% endif %#
       #| Admin credentials from SOPS-encrypted secret #|
       admin:
