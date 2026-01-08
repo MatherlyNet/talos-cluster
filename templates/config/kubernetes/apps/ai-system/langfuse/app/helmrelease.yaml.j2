@@ -120,6 +120,12 @@ spec:
       auth:
         existingSecret: "langfuse-clickhouse-credentials"
         existingSecretKey: "password"
+      #| ZooKeeper persistence for ClickHouse cluster coordination #|
+      zookeeper:
+        persistence:
+          enabled: true
+          size: "#{ langfuse_zookeeper_storage | default('8Gi') }#"
+          storageClass: "#{ cnpg_storage_class | default(storage_class) | default('local-path') }#"
 
     #| ========================================================================= #|
     #| S3 Storage - Use External RustFS                                         #|

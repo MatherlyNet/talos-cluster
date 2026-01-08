@@ -90,6 +90,11 @@ spec:
       auth:
         existingSecret: "langfuse-clickhouse-credentials"
         existingSecretKey: "password"
+      zookeeper:
+        persistence:
+          enabled: true
+          size: "8Gi"
+          storageClass: "proxmox-zfs"
 
     s3:
       deploy: false

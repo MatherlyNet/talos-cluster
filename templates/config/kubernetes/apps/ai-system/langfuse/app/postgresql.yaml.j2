@@ -22,12 +22,14 @@ spec:
   #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ langfuse_postgres_instances | default(1) }#
 
-  #| PostgreSQL image - use barman-cloud image when backups enabled for S3 archiving #|
+  #| PostgreSQL image - use system image when backups enabled (includes barman-cloud binaries) #|
   #| Must match major version of cnpg_postgres_image (default: 18) to avoid CNPG downgrade errors #|
+  #| Image tag format: <version>-system-trixie (barman support) or <version>-standard-trixie (no barman) #|
+  #| REF: https://github.com/cloudnative-pg/postgres-containers #|
 #% if langfuse_backup_enabled | default(false) %#
-  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18-barman-cloud-trixie') }#
+  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie') }#
 #% else %#
-  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18-standard-trixie') }#
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
 #% endif %#
 
   #| Bootstrap from initdb (fresh database) #|
