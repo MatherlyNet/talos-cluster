@@ -809,13 +809,13 @@ cloudflare_gateway_addr: ""
 # keycloak_tracing_sample_rate: "0.1"
 
 # -- keycloak-config-cli version for realm configuration management
-#    Format: <cli-version>-<keycloak-version> (e.g., "6.4.0-26.1.4")
+#    Format: <cli-version>-<keycloak-version> (e.g., "6.4.0-26.1.0")
 #    Used by keycloak-config-cli Job to apply realm configuration via Admin API
 #    Supports incremental updates (unlike KeycloakRealmImport which is one-time only)
 #    REF: https://github.com/adorsys/keycloak-config-cli
 #    REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md
-#    (OPTIONAL) / (DEFAULT: "6.4.0-26.1.4")
-# keycloak_config_cli_version: "6.4.0-26.1.4"
+#    (OPTIONAL) / (DEFAULT: "6.4.0-26.1.0")
+# keycloak_config_cli_version: "6.4.0-26.1.0"
 
 # -- Keycloak realm roles (RBAC role hierarchy)
 #    Define custom roles for your realm following Kubernetes RBAC patterns.

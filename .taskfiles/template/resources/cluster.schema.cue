@@ -297,7 +297,7 @@ import (
 	// Replaces KeycloakRealmImport CRD which only supports one-time imports
 	// REF: https://github.com/adorsys/keycloak-config-cli
 	// REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md
-	keycloak_config_cli_version?:  *"6.4.0-26.1.4" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
+	keycloak_config_cli_version?:  *"6.4.0-26.1.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
 
 	// Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns
 	// Roles are created during realm import and used by IdP mappers/JWT claims

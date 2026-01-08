@@ -40,7 +40,7 @@ spec:
       containers:
         - name: keycloak-config-cli
           #| Image tag format: <cli-version>-<keycloak-version> #|
-          image: adorsys/keycloak-config-cli:#{ keycloak_config_cli_version | default('6.4.0-26.1.4') }#
+          image: adorsys/keycloak-config-cli:#{ keycloak_config_cli_version | default('6.4.0-26.1.0') }#
           #| Container security context for defense-in-depth #|
           securityContext:
             allowPrivilegeEscalation: false

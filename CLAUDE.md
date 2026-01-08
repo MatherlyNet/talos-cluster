@@ -251,7 +251,7 @@ Optional Keycloak OpenTelemetry Tracing (requires tracing_enabled):
 - See `docs/guides/keycloak-implementation.md#opentelemetry-tracing-integration` for details
 
 Optional Keycloak Config-CLI (GitOps realm management):
-- `keycloak_config_cli_version` - Image tag format: `<cli-version>-<keycloak-version>` (default: "6.4.0-26.1.4")
+- `keycloak_config_cli_version` - Image tag format: `<cli-version>-<keycloak-version>` (default: "6.4.0-26.1.0")
 - Replaces KeycloakRealmImport CRD which only supports one-time imports
 - Supports incremental updates to existing realms without destroying user data
 - Runs as Kubernetes Job after Keycloak is healthy via third Flux Kustomization

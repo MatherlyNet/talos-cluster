@@ -398,7 +398,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: keycloak-config-cli
-          image: adorsys/keycloak-config-cli:#{ keycloak_config_cli_version | default('6.4.0-26.1.4') }#
+          image: adorsys/keycloak-config-cli:#{ keycloak_config_cli_version | default('6.4.0-26.1.0') }#
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -912,7 +912,7 @@ Add to `cluster.yaml`:
 
 ```yaml
 # keycloak-config-cli version (image tag)
-keycloak_config_cli_version: "6.4.0-26.1.4"
+keycloak_config_cli_version: "6.4.0-26.1.0"
 
 # Enable/disable config-cli (default: true when keycloak_enabled)
 keycloak_config_cli_enabled: true
