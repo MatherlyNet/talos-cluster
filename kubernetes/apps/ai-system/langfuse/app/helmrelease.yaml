@@ -26,106 +26,103 @@ spec:
       nextauth:
         url: "https://langfuse.matherly.net"
         secret:
-          existingSecret: langfuse-credentials
-          existingSecretKey: NEXTAUTH_SECRET
+          secretKeyRef:
+            name: langfuse-credentials
+            key: NEXTAUTH_SECRET
       salt:
-        existingSecret: langfuse-credentials
-        existingSecretKey: SALT
+        secretKeyRef:
+          name: langfuse-credentials
+          key: SALT
       encryptionKey:
-        existingSecret: langfuse-credentials
-        existingSecretKey: ENCRYPTION_KEY
-
-      logLevel: "info"
-      logFormat: "json"
-
-
-      session:
-        maxAge: 2592000
+        secretKeyRef:
+          name: langfuse-credentials
+          key: ENCRYPTION_KEY
 
       auth:
         disableUsernamePassword: false
-        keycloak:
-          enabled: true
-          clientId: "langfuse"
-          issuer: "https://sso.matherly.net/realms/matherlynet"
-          existingSecret: langfuse-keycloak-credentials
-          existingSecretClientSecretKey: client-secret
-          allowAccountLinking: true
+        additionalProviders:
+          - id: keycloak
+            name: "Keycloak"
+            clientId: "langfuse"
+            clientSecret:
+              secretKeyRef:
+                name: langfuse-keycloak-credentials
+                key: client-secret
+            issuer: "https://sso.matherly.net/realms/matherlynet"
+            allowDangerousEmailAccountLinking: true
 
     postgresql:
-      enabled: false  
-    externalPostgresql:
+      deploy: false
       host: "langfuse-postgresql-rw.ai-system.svc.cluster.local"
       port: 5432
-      database: "langfuse"
-      user: "langfuse"
-      existingSecret: "langfuse-postgresql-credentials"
-      existingSecretPasswordKey: "password"
+      auth:
+        username: "langfuse"
+        existingSecret: "langfuse-postgresql-credentials"
+        secretKeys:
+          userPasswordKey: "password"
+        database: "langfuse"
 
     redis:
-      enabled: false  
-    externalRedis:
-      connectionString: "redis://dragonfly.cache.svc.cluster.local:6379"
-      existingSecret: "langfuse-redis-credentials"
-      existingSecretPasswordKey: "password"
+      deploy: false
+      host: "dragonfly.cache.svc.cluster.local"
+      port: 6379
+      auth:
+        username: "langfuse"
+        existingSecret: "langfuse-redis-credentials"
+        existingSecretPasswordKey: "password"
 
     clickhouse:
-      enabled: true
+      deploy: true
       replicaCount: 1
       persistence:
         enabled: true
-        size: 20Gi
-        storageClass: proxmox-zfs
-
+        size: "20Gi"
+        storageClass: "proxmox-zfs"
       resources:
         requests:
-          cpu: 500m
-          memory: 2Gi
+          cpu: "500m"
+          memory: "2Gi"
         limits:
-          memory: 4Gi
-
+          memory: "4Gi"
       auth:
         existingSecret: "langfuse-clickhouse-credentials"
-        existingSecretPasswordKey: "password"
+        existingSecretKey: "password"
 
     s3:
-      enabled: true
-      provider: "s3"
-      eventUploadBucket: "langfuse-events"
-      eventUploadRegion: "us-east-1"
-      eventUploadEndpoint: "http://rustfs.storage.svc.cluster.local:9000"
-      eventUploadForcePathStyle: true
-      existingSecret: "langfuse-s3-credentials"
-      existingSecretAccessKeyIdKey: "AWS_ACCESS_KEY_ID"
-      existingSecretSecretAccessKeyKey: "AWS_SECRET_ACCESS_KEY"
+      deploy: false
+      bucket: "langfuse-events"
+      region: "us-east-1"
+      endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
 
-      mediaUploadEnabled: true
-      mediaUploadBucket: "langfuse-media"
-
-      batchExportEnabled: true
-      batchExportBucket: "langfuse-exports"
-
-    minio:
-      enabled: false  
     ingress:
-      enabled: false  
+      enabled: false
+
     web:
       replicaCount: 1
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
+          cpu: "200m"
+          memory: "512Mi"
         limits:
-          memory: 2Gi
+          memory: "2Gi"
 
     worker:
       replicaCount: 1
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
+          cpu: "200m"
+          memory: "512Mi"
         limits:
-          memory: 2Gi
+          memory: "2Gi"
 
     otel:
       enabled: true
