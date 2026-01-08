@@ -72,7 +72,8 @@ spec:
       #| Keycloak SSO Configuration                                             #|
       #| ======================================================================= #|
       auth:
-        disableUsernamePassword: false  #| Keep as fallback #|
+        #| Keep username/password as fallback for admin access #|
+        disableUsernamePassword: false
         keycloak:
           enabled: true
           clientId: "langfuse"

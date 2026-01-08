@@ -21,6 +21,13 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
             io.kubernetes.pod.namespace: default
       toPorts:
         - ports:

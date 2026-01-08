@@ -125,6 +125,33 @@ data:
               id.token.claim: "true"
               access.token.claim: "true"
               userinfo.token.claim: "true"
+      - clientId: "$(env:LANGFUSE_CLIENT_ID)"
+        name: "Langfuse"
+        description: "OIDC client for Langfuse LLM Observability - enables SSO for tracing, prompts, and evaluation"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:LANGFUSE_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://langfuse.matherly.net/api/auth/callback/keycloak"
+        webOrigins:
+          - "https://langfuse.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://langfuse.matherly.net/*"
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
 
     identityProviders:
       - alias: "google"

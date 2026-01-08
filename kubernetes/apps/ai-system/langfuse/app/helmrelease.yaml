@@ -1,0 +1,134 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: langfuse
+  namespace: ai-system
+spec:
+  chart:
+    spec:
+      chart: langfuse
+      version: "*"
+      sourceRef:
+        kind: HelmRepository
+        name: langfuse
+        namespace: ai-system
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    langfuse:
+      nextauth:
+        url: "https://langfuse.matherly.net"
+        secret:
+          existingSecret: langfuse-credentials
+          existingSecretKey: NEXTAUTH_SECRET
+      salt:
+        existingSecret: langfuse-credentials
+        existingSecretKey: SALT
+      encryptionKey:
+        existingSecret: langfuse-credentials
+        existingSecretKey: ENCRYPTION_KEY
+
+      logLevel: "info"
+      logFormat: "json"
+
+
+      session:
+        maxAge: 2592000
+
+      auth:
+        disableUsernamePassword: false
+        keycloak:
+          enabled: true
+          clientId: "langfuse"
+          issuer: "https://sso.matherly.net/realms/matherlynet"
+          existingSecret: langfuse-keycloak-credentials
+          existingSecretClientSecretKey: client-secret
+          allowAccountLinking: true
+
+    postgresql:
+      enabled: false  
+    externalPostgresql:
+      host: "langfuse-postgresql-rw.ai-system.svc.cluster.local"
+      port: 5432
+      database: "langfuse"
+      user: "langfuse"
+      existingSecret: "langfuse-postgresql-credentials"
+      existingSecretPasswordKey: "password"
+
+    redis:
+      enabled: false  
+    externalRedis:
+      connectionString: "redis://dragonfly.cache.svc.cluster.local:6379"
+      existingSecret: "langfuse-redis-credentials"
+      existingSecretPasswordKey: "password"
+
+    clickhouse:
+      enabled: true
+      replicaCount: 1
+      persistence:
+        enabled: true
+        size: 20Gi
+        storageClass: proxmox-zfs
+
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          memory: 4Gi
+
+      auth:
+        existingSecret: "langfuse-clickhouse-credentials"
+        existingSecretPasswordKey: "password"
+
+    s3:
+      enabled: true
+      provider: "s3"
+      eventUploadBucket: "langfuse-events"
+      eventUploadRegion: "us-east-1"
+      eventUploadEndpoint: "http://rustfs.storage.svc.cluster.local:9000"
+      eventUploadForcePathStyle: true
+      existingSecret: "langfuse-s3-credentials"
+      existingSecretAccessKeyIdKey: "AWS_ACCESS_KEY_ID"
+      existingSecretSecretAccessKeyKey: "AWS_SECRET_ACCESS_KEY"
+
+      mediaUploadEnabled: true
+      mediaUploadBucket: "langfuse-media"
+
+      batchExportEnabled: true
+      batchExportBucket: "langfuse-exports"
+
+    minio:
+      enabled: false  
+    ingress:
+      enabled: false  
+    web:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+
+    worker:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+
+    otel:
+      enabled: true
+      endpoint: "http://tempo.monitoring.svc.cluster.local:4318"
+      serviceName: "langfuse"
+      samplingRatio: "0.1"

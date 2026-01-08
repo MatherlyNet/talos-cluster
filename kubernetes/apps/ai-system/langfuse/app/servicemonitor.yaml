@@ -1,0 +1,21 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: langfuse
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: langfuse
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: langfuse
+      app.kubernetes.io/component: web
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /api/public/metrics
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - ai-system

@@ -1,0 +1,81 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: langfuse-postgresql
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: langfuse-postgresql
+    app.kubernetes.io/part-of: langfuse
+    network.cilium.io/api-access: "true"
+spec:
+  instances: 1
+
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+
+  bootstrap:
+    initdb:
+      database: langfuse
+      owner: langfuse
+      secret:
+        name: langfuse-postgresql-credentials
+
+  storage:
+    size: 10Gi
+    storageClass: proxmox-zfs
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  monitoring:
+    enablePodMonitor: true
+
+  postgresql:
+    parameters:
+      timezone: "UTC"
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+
+
+  priorityClassName: system-cluster-critical
+
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://langfuse-postgres-backups"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: langfuse-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: langfuse-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: langfuse-db-langfuse
+  namespace: ai-system
+spec:
+  name: langfuse
+  owner: langfuse
+  cluster:
+    name: langfuse-postgresql

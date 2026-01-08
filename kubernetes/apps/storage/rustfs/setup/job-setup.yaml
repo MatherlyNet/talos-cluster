@@ -79,7 +79,15 @@ spec:
               echo "NOTE: Create Dragonfly backup access keys in RustFS Console and update cluster.yaml"
 
 
+              mc mb --ignore-existing rustfs/langfuse-events
+              mc mb --ignore-existing rustfs/langfuse-media
+              mc mb --ignore-existing rustfs/langfuse-exports
+              echo "Langfuse S3 buckets created (events, media, exports)."
+              echo "NOTE: Create Langfuse S3 access keys in RustFS Console and update cluster.yaml"
 
+              mc mb --ignore-existing rustfs/langfuse-postgres-backups
+              echo "langfuse-postgres-backups bucket created."
+              echo "NOTE: Create Langfuse backup access keys in RustFS Console and update cluster.yaml"
 
               echo ""
               echo "============================================="
@@ -126,6 +134,19 @@ spec:
               echo "  - Create 'dragonfly-backup' user in cache group"
               echo "  - Update dragonfly_s3_access_key/dragonfly_s3_secret_key in cluster.yaml"
               echo "  - See: docs/research/dragonfly-redis-alternative-integration-jan-2026.md"
+              echo ""
+              echo "LANGFUSE S3 (ai-system group):"
+              echo "  - Create 'langfuse-storage' policy scoped to langfuse-* buckets"
+              echo "  - Create 'ai-system' group with policy attached (if not exists)"
+              echo "  - Create 'langfuse-s3' user in ai-system group"
+              echo "  - Update langfuse_s3_access_key/langfuse_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
+              echo ""
+              echo "LANGFUSE BACKUP (ai-system group):"
+              echo "  - Create 'langfuse-backup-storage' policy scoped to langfuse-postgres-backups bucket"
+              echo "  - Create 'langfuse-backup' user in ai-system group"
+              echo "  - Update langfuse_backup_s3_access_key/langfuse_backup_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
               echo ""
               echo "Then run: task configure && task reconcile"
               echo "============================================="
