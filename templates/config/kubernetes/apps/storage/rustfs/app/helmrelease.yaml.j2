@@ -36,8 +36,8 @@ spec:
     #| Container image #|
     image:
       repository: rustfs/rustfs
-      tag: "latest"
-      pullPolicy: IfNotPresent
+      tag: "#{ rustfs_image_tag | default('latest') }#"
+      pullPolicy: Always
 
     #| Resource limits #|
     resources:

@@ -32,7 +32,7 @@ spec:
     image:
       repository: rustfs/rustfs
       tag: "latest"
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
 
     resources:
       requests:
