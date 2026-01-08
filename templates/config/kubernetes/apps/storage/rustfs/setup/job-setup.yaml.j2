@@ -92,6 +92,40 @@ spec:
               echo "NOTE: Create Keycloak backup access keys in RustFS Console and update cluster.yaml"
 #% endif %#
 
+#% if dragonfly_backup_enabled | default(false) %#
+              #| Dragonfly snapshot bucket - access keys created manually in RustFS UI #|
+              #| See: docs/research/dragonfly-redis-alternative-integration-jan-2026.md #|
+              mc mb --ignore-existing rustfs/dragonfly-backups
+              echo "dragonfly-backups bucket created."
+              echo "NOTE: Create Dragonfly backup access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
+#% if litellm_backup_enabled | default(false) %#
+              #| LiteLLM PostgreSQL backup bucket - access keys created manually in RustFS UI #|
+              #| See: docs/research/litellm-proxy-gateway-integration-jan-2026.md #|
+              mc mb --ignore-existing rustfs/litellm-backups
+              echo "litellm-backups bucket created."
+              echo "NOTE: Create LiteLLM backup access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
+#% if langfuse_enabled | default(false) %#
+              #| Langfuse S3 buckets for events, media, and exports #|
+              #| See: docs/research/langfuse-llm-observability-integration-jan-2026.md #|
+              mc mb --ignore-existing rustfs/langfuse-events
+              mc mb --ignore-existing rustfs/langfuse-media
+              mc mb --ignore-existing rustfs/langfuse-exports
+              echo "Langfuse S3 buckets created (events, media, exports)."
+              echo "NOTE: Create Langfuse S3 access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
+#% if langfuse_backup_enabled | default(false) %#
+              #| Langfuse PostgreSQL backup bucket - access keys created manually in RustFS UI #|
+              #| See: docs/research/langfuse-llm-observability-integration-jan-2026.md #|
+              mc mb --ignore-existing rustfs/langfuse-postgres-backups
+              echo "langfuse-postgres-backups bucket created."
+              echo "NOTE: Create Langfuse backup access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
               echo ""
               echo "============================================="
               echo "Bucket setup complete!"
@@ -135,6 +169,41 @@ spec:
               echo "  - Create 'keycloak-backup' user in identity group"
               echo "  - Update keycloak_s3_access_key/keycloak_s3_secret_key in cluster.yaml"
               echo "  - See: docs/guides/keycloak-implementation.md"
+              echo ""
+#% endif %#
+#% if dragonfly_backup_enabled | default(false) %#
+              echo "DRAGONFLY BACKUP (cache group):"
+              echo "  - Create 'dragonfly-storage' policy scoped to dragonfly-backups bucket"
+              echo "  - Create 'cache' group with policy attached"
+              echo "  - Create 'dragonfly-backup' user in cache group"
+              echo "  - Update dragonfly_s3_access_key/dragonfly_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/dragonfly-redis-alternative-integration-jan-2026.md"
+              echo ""
+#% endif %#
+#% if litellm_backup_enabled | default(false) %#
+              echo "LITELLM BACKUP (ai-system group):"
+              echo "  - Create 'litellm-storage' policy scoped to litellm-backups bucket"
+              echo "  - Create 'ai-system' group with policy attached"
+              echo "  - Create 'litellm-backup' user in ai-system group"
+              echo "  - Update litellm_s3_access_key/litellm_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/litellm-proxy-gateway-integration-jan-2026.md"
+              echo ""
+#% endif %#
+#% if langfuse_enabled | default(false) %#
+              echo "LANGFUSE S3 (ai-system group):"
+              echo "  - Create 'langfuse-storage' policy scoped to langfuse-* buckets"
+              echo "  - Create 'ai-system' group with policy attached (if not exists)"
+              echo "  - Create 'langfuse-s3' user in ai-system group"
+              echo "  - Update langfuse_s3_access_key/langfuse_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
+              echo ""
+#% endif %#
+#% if langfuse_backup_enabled | default(false) %#
+              echo "LANGFUSE BACKUP (ai-system group):"
+              echo "  - Create 'langfuse-backup-storage' policy scoped to langfuse-postgres-backups bucket"
+              echo "  - Create 'langfuse-backup' user in ai-system group"
+              echo "  - Update langfuse_backup_s3_access_key/langfuse_backup_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
               echo ""
 #% endif %#
               echo "Then run: task configure && task reconcile"

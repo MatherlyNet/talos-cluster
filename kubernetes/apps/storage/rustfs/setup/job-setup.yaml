@@ -74,6 +74,13 @@ spec:
               echo "keycloak-backups bucket created."
               echo "NOTE: Create Keycloak backup access keys in RustFS Console and update cluster.yaml"
 
+              mc mb --ignore-existing rustfs/dragonfly-backups
+              echo "dragonfly-backups bucket created."
+              echo "NOTE: Create Dragonfly backup access keys in RustFS Console and update cluster.yaml"
+
+
+
+
               echo ""
               echo "============================================="
               echo "Bucket setup complete!"
@@ -112,6 +119,13 @@ spec:
               echo "  - Create 'keycloak-backup' user in identity group"
               echo "  - Update keycloak_s3_access_key/keycloak_s3_secret_key in cluster.yaml"
               echo "  - See: docs/guides/keycloak-implementation.md"
+              echo ""
+              echo "DRAGONFLY BACKUP (cache group):"
+              echo "  - Create 'dragonfly-storage' policy scoped to dragonfly-backups bucket"
+              echo "  - Create 'cache' group with policy attached"
+              echo "  - Create 'dragonfly-backup' user in cache group"
+              echo "  - Update dragonfly_s3_access_key/dragonfly_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/dragonfly-redis-alternative-integration-jan-2026.md"
               echo ""
               echo "Then run: task configure && task reconcile"
               echo "============================================="
