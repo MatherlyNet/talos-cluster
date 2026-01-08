@@ -33,6 +33,7 @@ infrastructure/tofu/*_override.tf.json
 .venv/
 .DS_Store
 Thumbs.db
+*.tgz
 # AI
 .claude/
 .serena/

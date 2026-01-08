@@ -7,8 +7,8 @@ metadata:
 spec:
   chart:
     spec:
-      chart: helm
-      version: "#{ dragonfly_operator_version | default('1.3.1') }#"
+      chart: dragonfly-operator
+      version: "v#{ dragonfly_operator_version | default('1.3.1') }#"
       sourceRef:
         kind: HelmRepository
         name: dragonfly-operator
@@ -24,43 +24,60 @@ spec:
     remediation:
       retries: 3
   values:
-    #| Operator runs in its own namespace #|
-    priorityClassName: system-cluster-critical
+    #| CRD management #|
+    crds:
+      install: true
+      keep: true
 
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
-    #| Security context #|
-    podSecurityContext:
-      runAsNonRoot: true
-      seccompProfile:
-        type: RuntimeDefault
-
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
+    #| Manager configuration #|
+    manager:
+      priorityClassName: system-cluster-critical
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
 
 #% if dragonfly_control_plane_only | default(false) %#
-    #| Schedule operator on control-plane nodes #|
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-    tolerations:
-      - key: node-role.kubernetes.io/control-plane
-        effect: NoSchedule
+      #| Schedule operator on control-plane nodes #|
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
 #% endif %#
+
+    #| Pod security context #|
+    podSecurityContext:
+      runAsNonRoot: true
+
+    #| RBAC proxy resources #|
+    rbacProxy:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
 
 #% if dragonfly_monitoring_enabled | default(false) %#
     #| Enable ServiceMonitor for operator metrics #|
     serviceMonitor:
       enabled: true
       interval: 30s
+
+    #| Enable Grafana dashboard #|
+    grafanaDashboard:
+      enabled: true
+      folder: database
+      labels:
+        grafana_dashboard: "1"
 #% endif %#
 #% endif %#
