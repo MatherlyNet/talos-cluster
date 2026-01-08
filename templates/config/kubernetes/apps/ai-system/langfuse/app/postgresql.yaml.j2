@@ -23,10 +23,11 @@ spec:
   instances: #{ langfuse_postgres_instances | default(1) }#
 
   #| PostgreSQL image - use barman-cloud image when backups enabled for S3 archiving #|
+  #| Must match major version of cnpg_postgres_image (default: 18) to avoid CNPG downgrade errors #|
 #% if langfuse_backup_enabled | default(false) %#
-  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:17-barman-cloud-trixie') }#
+  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18-barman-cloud-trixie') }#
 #% else %#
-  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:17-standard-trixie') }#
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18-standard-trixie') }#
 #% endif %#
 
   #| Bootstrap from initdb (fresh database) #|
