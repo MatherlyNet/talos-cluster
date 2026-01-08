@@ -14,7 +14,9 @@ resources:
 #% endif %#
   - ./keycloak-cr.yaml
   - ./httproute.yaml
-  - ./realm-import.sops.yaml
+  #| NOTE: realm-import.sops.yaml replaced by keycloak-config-cli Job in config/ #|
+  #| keycloak-config-cli supports incremental updates; KeycloakRealmImport is one-time only #|
+  #| REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md #|
 #% if keycloak_monitoring_enabled | default(false) %#
   #| NOTE: ServiceMonitor is automatically created by Keycloak Operator when #|
   #|       metrics-enabled: true is set in the Keycloak CR additionalOptions #|

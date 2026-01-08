@@ -1,29 +1,42 @@
 #% if keycloak_enabled | default(false) %#
+#| ============================================================================= #|
+#| KEYCLOAK REALM CONFIGURATION - ConfigMap for keycloak-config-cli             #|
+#| Contains full realm configuration in Keycloak export format                  #|
+#| Sensitive values use $(env:VAR) substitution - actual secrets in secrets.sops.yaml #|
+#| REF: https://github.com/adorsys/keycloak-config-cli#variable-substitution    #|
+#| ============================================================================= #|
 ---
-apiVersion: k8s.keycloak.org/v2alpha1
-kind: KeycloakRealmImport
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: #{ keycloak_realm | default('matherlynet') }#-realm
+  name: keycloak-realm-config
   namespace: identity
-spec:
-  keycloakCRName: keycloak
-  realm:
+data:
+  realm.yaml: |
     realm: #{ keycloak_realm | default('matherlynet') }#
     enabled: true
-    #| SSO Session Settings #|
-    displayName: #{ keycloak_realm | default('matherlynet') | title }# Realm
+    displayName: "#{ keycloak_realm | default('matherlynet') | title }# Realm"
+
+    #| =========================================================================== #|
+    #| SESSION SETTINGS                                                            #|
+    #| =========================================================================== #|
     ssoSessionIdleTimeout: 1800
     ssoSessionMaxLifespan: 36000
-    #| Access Token Settings #|
     accessTokenLifespan: 300
     accessTokenLifespanForImplicitFlow: 900
-    #| Login Settings #|
+
+    #| =========================================================================== #|
+    #| LOGIN SETTINGS                                                              #|
+    #| =========================================================================== #|
     registrationAllowed: false
     resetPasswordAllowed: true
     rememberMe: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
-    #| Brute Force Protection #|
+
+    #| =========================================================================== #|
+    #| BRUTE FORCE PROTECTION                                                      #|
+    #| =========================================================================== #|
     bruteForceProtected: true
     permanentLockout: false
     maxFailureWaitSeconds: 900
@@ -32,13 +45,10 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
-#| =========================================================================== #|
-#| REALM ROLES - RBAC role hierarchy following Kubernetes patterns             #|
-#| Roles defined in keycloak_realm_roles + any IdP mapper-referenced roles     #|
-#| Best Practice: Use principle of least privilege with hierarchical roles     #|
-#| Kubernetes alignment: admin=cluster-admin, operator=admin, dev=edit, viewer #|
-#| REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/      #|
-#| =========================================================================== #|
+
+    #| =========================================================================== #|
+    #| REALM ROLES - Including auto-added IdP mapper roles                         #|
+    #| =========================================================================== #|
 #% set configured_role_names = [] %#
 #% if keycloak_realm_roles is defined and keycloak_realm_roles %#
 #%   for role in keycloak_realm_roles %#
@@ -93,23 +103,22 @@ spec:
           description: "IdP mapper role (auto-added from *_default_role/*_role_mapping)"
 #%   endfor %#
 #% endif %#
-#% if keycloak_bootstrap_oidc_client | default(false) %#
+
     #| =========================================================================== #|
-    #| OIDC CLIENT BOOTSTRAP - Envoy Gateway SSO Client                            #|
-    #| Auto-created when keycloak_enabled + oidc_sso_enabled + oidc_client_secret  #|
-    #| The client secret is shared with Envoy Gateway SecurityPolicy               #|
+    #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) %#
     clients:
-      - clientId: "#{ oidc_client_id | default('envoy-gateway') }#"
+#% if keycloak_bootstrap_oidc_client | default(false) %#
+      #| Envoy Gateway SSO Client #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      - clientId: "$(env:OIDC_CLIENT_ID)"
         name: "Envoy Gateway SSO"
         description: "OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications"
         enabled: true
-        #| Client type: confidential (requires secret) #|
         publicClient: false
         clientAuthenticatorType: "client-secret"
-        #| The secret is provided from cluster.yaml (SOPS-encrypted) #|
-        secret: "#{ oidc_client_secret }#"
-        #| OAuth2 flows #|
+        secret: "$(env:OIDC_CLIENT_SECRET)"
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
@@ -118,8 +127,6 @@ spec:
         #| =========================================================================== #|
         #| Redirect URIs - Explicit per-service (Keycloak does NOT support subdomain   #|
         #| wildcards like https://*.domain.com - only path wildcards are supported)    #|
-        #| Each OIDC-protected service must be listed explicitly.                      #|
-        #| REF: https://github.com/keycloak/keycloak/issues/8929                       #|
         #| =========================================================================== #|
         redirectUris:
 #% if hubble_enabled | default(false) and oidc_sso_enabled | default(false) %#
@@ -177,40 +184,34 @@ spec:
           - "address"
           - "phone"
           - "offline_access"
+#% endif %#
 #% if grafana_oidc_enabled | default(false) %#
-    #| =========================================================================== #|
-    #| GRAFANA OIDC CLIENT - Native OAuth for Grafana RBAC                         #|
-    #| Auto-created when grafana_oidc_enabled + grafana_oidc_client_secret set     #|
-    #| Provides role-based access control via JMESPath role mapping                #|
-    #| REF: docs/research/grafana-sso-authentication-integration-jan-2026.md       #|
-    #| =========================================================================== #|
-      - clientId: "grafana"
+      #| =========================================================================== #|
+      #| GRAFANA OIDC CLIENT - Native OAuth for Grafana RBAC                         #|
+      #| Auto-created when grafana_oidc_enabled + grafana_oidc_client_secret set     #|
+      #| Provides role-based access control via JMESPath role mapping                #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/grafana-sso-authentication-integration-jan-2026.md       #|
+      #| =========================================================================== #|
+      - clientId: "$(env:GRAFANA_CLIENT_ID)"
         name: "Grafana"
         description: "OIDC client for Grafana native OAuth - provides RBAC and role-based access control"
         enabled: true
-        #| Client type: confidential (requires secret) #|
         publicClient: false
         clientAuthenticatorType: "client-secret"
-        #| The secret is provided from cluster.yaml (SOPS-encrypted) #|
-        secret: "#{ grafana_oidc_client_secret }#"
-        #| OAuth2 flows #|
+        secret: "$(env:GRAFANA_CLIENT_SECRET)"
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
         implicitFlowEnabled: false
         protocol: "openid-connect"
-        #| Redirect URI for Grafana OAuth callback #|
         redirectUris:
           - "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#/login/generic_oauth"
-        #| Web origins for CORS #|
         webOrigins:
           - "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#"
-        #| Security: Require PKCE for authorization code flow #|
         attributes:
           pkce.code.challenge.method: "S256"
-          #| Post-logout redirect URI for Grafana #|
           post.logout.redirect.uris: "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#/*"
-        #| Default scopes - include roles for RBAC #|
         defaultClientScopes:
           - "openid"
           - "profile"
@@ -246,11 +247,13 @@ spec:
               userinfo.token.claim: "true"
 #% endif %#
 #% endif %#
+
 #% if google_idp_enabled | default(false) or github_idp_enabled | default(false) or microsoft_idp_enabled | default(false) %#
     #| =========================================================================== #|
     #| SOCIAL IDENTITY PROVIDERS - OAuth/OIDC Federation                           #|
     #| Conditionally include IdPs based on *_idp_enabled flags in cluster.yaml     #|
     #| Users authenticate via social accounts on the Keycloak login page           #|
+    #| clientId and clientSecret use $(env:VAR) substitution from keycloak-realm-secrets #|
     #| REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md #|
     #| =========================================================================== #|
     identityProviders:
@@ -264,8 +267,8 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: "first broker login"
         config:
-          clientId: "#{ google_client_id }#"
-          clientSecret: "#{ google_client_secret }#"
+          clientId: "$(env:GOOGLE_CLIENT_ID)"
+          clientSecret: "$(env:GOOGLE_CLIENT_SECRET)"
           defaultScope: "openid profile email"
           syncMode: "IMPORT"
 #% endif %#
@@ -279,8 +282,8 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: "first broker login"
         config:
-          clientId: "#{ github_client_id }#"
-          clientSecret: "#{ github_client_secret }#"
+          clientId: "$(env:GITHUB_CLIENT_ID)"
+          clientSecret: "$(env:GITHUB_CLIENT_SECRET)"
           defaultScope: "user:email"
           syncMode: "IMPORT"
 #% endif %#
@@ -294,19 +297,20 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: "first broker login"
         config:
-          clientId: "#{ microsoft_client_id }#"
-          clientSecret: "#{ microsoft_client_secret }#"
-          authorizationUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/oauth2/v2.0/authorize"
-          tokenUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/oauth2/v2.0/token"
+          clientId: "$(env:MICROSOFT_CLIENT_ID)"
+          clientSecret: "$(env:MICROSOFT_CLIENT_SECRET)"
+          authorizationUrl: "https://login.microsoftonline.com/$(env:MICROSOFT_TENANT_ID)/oauth2/v2.0/authorize"
+          tokenUrl: "https://login.microsoftonline.com/$(env:MICROSOFT_TENANT_ID)/oauth2/v2.0/token"
           userInfoUrl: "https://graph.microsoft.com/oidc/userinfo"
-          jwksUrl: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/discovery/v2.0/keys"
-          issuer: "https://login.microsoftonline.com/#{ microsoft_tenant_id | default('common') }#/v2.0"
+          jwksUrl: "https://login.microsoftonline.com/$(env:MICROSOFT_TENANT_ID)/discovery/v2.0/keys"
+          issuer: "https://login.microsoftonline.com/$(env:MICROSOFT_TENANT_ID)/v2.0"
           defaultScope: "openid profile email"
           syncMode: "FORCE"
           validateSignature: "true"
           useJwksUrl: "true"
 #% endif %#
 #% endif %#
+
 #% set has_mappers = (google_default_role is defined and google_default_role) or
                      (google_domain_role_mapping is defined and google_domain_role_mapping) or
                      (github_default_role is defined and github_default_role) or

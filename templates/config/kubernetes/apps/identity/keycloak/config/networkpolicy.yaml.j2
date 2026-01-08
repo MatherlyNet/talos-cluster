@@ -1,0 +1,38 @@
+#% if keycloak_enabled | default(false) and network_policies_enabled | default(false) %#
+#| ============================================================================= #|
+#| NETWORK POLICY - keycloak-config-cli Job                                      #|
+#| Allows egress from config-cli Job to Keycloak service                         #|
+#| Required when network_policies_enabled is true                                #|
+#| ============================================================================= #|
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: keycloak-config-cli
+  namespace: identity
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak-config-cli
+  #| Allow DNS resolution for service discovery #|
+  egress:
+    #| DNS resolution via CoreDNS #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Keycloak Admin API access #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: keycloak
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+#% endif %#

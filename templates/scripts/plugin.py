@@ -400,6 +400,17 @@ class Plugin(makejinja.plugin.Plugin):
         else:
             data["loki_monitoring_enabled"] = False
 
+        # Grafana OIDC - native OAuth for Grafana RBAC
+        # Requires monitoring_enabled, keycloak_enabled, and explicit enable with client secret
+        # When enabled, creates dedicated Keycloak client and configures Grafana auth.generic_oauth
+        grafana_oidc_enabled = (
+            data.get("monitoring_enabled", False)
+            and data.get("keycloak_enabled", False)
+            and data.get("grafana_oidc_enabled", False)
+            and data.get("grafana_oidc_client_secret")
+        )
+        data["grafana_oidc_enabled"] = grafana_oidc_enabled
+
         # OIDC SSO (Web browser authentication) - requires explicit enable and client credentials
         # Distinct from oidc_enabled (JWT API auth) - this enables session-based browser SSO
         # Requires: oidc_issuer_url (shared with JWT), client_id, client_secret

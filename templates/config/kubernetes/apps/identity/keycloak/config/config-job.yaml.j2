@@ -1,0 +1,119 @@
+#% if keycloak_enabled | default(false) %#
+#| ============================================================================= #|
+#| KEYCLOAK CONFIG CLI JOB - Configuration as Code for Keycloak Realms          #|
+#| Applies realm configuration via Keycloak Admin API after Keycloak is ready   #|
+#| Supports incremental updates without destroying existing realm data          #|
+#| REF: https://github.com/adorsys/keycloak-config-cli                          #|
+#| ============================================================================= #|
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-config-apply
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak-config-cli
+    app.kubernetes.io/component: realm-configuration
+  annotations:
+    #| Force annotation ensures Job is recreated when configuration changes #|
+    #| Without this, Kubernetes would reject updates to immutable Job spec  #|
+    kustomize.toolkit.fluxcd.io/force: "enabled"
+spec:
+  #| Retry up to 3 times on failure before marking as failed #|
+  backoffLimit: 3
+  #| Clean up completed/failed Jobs after 24 hours #|
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak-config-cli
+        app.kubernetes.io/component: realm-configuration
+    spec:
+      restartPolicy: OnFailure
+      #| Pod security context for least-privilege execution #|
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: keycloak-config-cli
+          #| Image tag format: <cli-version>-<keycloak-version> #|
+          image: adorsys/keycloak-config-cli:#{ keycloak_config_cli_version | default('6.4.0-26.1.4') }#
+          #| Container security context for defense-in-depth #|
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            #| ================================================================= #|
+            #| Keycloak Connection Settings                                      #|
+            #| NOTE: Keycloak Operator creates service named "keycloak-service"  #|
+            #| Verified in httproute.yaml.j2 - backendRefs target keycloak-service:8080 #|
+            #| ================================================================= #|
+            - name: KEYCLOAK_URL
+              value: "http://keycloak-service.identity.svc.cluster.local:8080"
+            - name: KEYCLOAK_USER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: username
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: password
+            #| ================================================================= #|
+            #| Availability Check - Wait for Keycloak to be ready                #|
+            #| ================================================================= #|
+            - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+              value: "true"
+            - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+              value: "120s"
+            #| ================================================================= #|
+            #| Import Settings                                                   #|
+            #| ================================================================= #|
+            - name: IMPORT_FILES_LOCATIONS
+              value: "/config/*"
+            #| Enable variable substitution in realm config ($(env:VAR) syntax) #|
+            #| NOTE: Env var name uses no underscore between VAR and SUBSTITUTION #|
+            #| REF: https://github.com/adorsys/keycloak-config-cli#variable-substitution #|
+            - name: IMPORT_VARSUBSTITUTION_ENABLED
+              value: "true"
+            #| ================================================================= #|
+            #| Logging Settings - JSON format for Kubernetes log aggregation    #|
+            #| ================================================================= #|
+            - name: SPRING_PROFILES_ACTIVE
+              value: "json-log"
+          #| ================================================================= #|
+          #| Realm Secrets - Injected as env vars for $(env:VAR) substitution  #|
+          #| keycloak-realm-secrets contains: OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, #|
+          #| GRAFANA_CLIENT_ID, GRAFANA_CLIENT_SECRET, GOOGLE_*, GITHUB_*, MICROSOFT_* #|
+          #| ================================================================= #|
+          envFrom:
+            - secretRef:
+                name: keycloak-realm-secrets
+          volumeMounts:
+            #| Realm configuration from ConfigMap (plain YAML with $(env:VAR) placeholders) #|
+            - name: realm-config
+              mountPath: /config
+              readOnly: true
+            #| Writable tmp for Java operations #|
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: realm-config
+          configMap:
+            name: keycloak-realm-config
+        - name: tmp
+          emptyDir: {}
+#% endif %#

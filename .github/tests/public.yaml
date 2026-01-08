@@ -90,6 +90,12 @@ kubernetes_version: "1.35.0"
 # rustfs_monitoring_enabled: true    # RustFS S3 storage dashboard
 # loki_monitoring_enabled: true      # Loki stack monitoring dashboard
 
+# Grafana OIDC Authentication (optional - uncomment to test)
+# REF: docs/research/grafana-sso-authentication-integration-jan-2026.md
+# NOTE: Requires monitoring_enabled: true and keycloak_enabled: true
+# grafana_oidc_enabled: true
+# grafana_oidc_client_secret: "test-grafana-oidc-secret"
+
 # OIDC/JWT Configuration (optional - uncomment to test SecurityPolicy)
 # REF: docs/guides/jwt-securitypolicy-implementation.md
 # NOTE: Auto-derived from Keycloak when keycloak_enabled: true

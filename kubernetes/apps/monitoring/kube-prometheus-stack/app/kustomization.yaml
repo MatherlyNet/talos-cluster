@@ -5,4 +5,5 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./secret.sops.yaml
+  - ./secret-grafana-oidc.sops.yaml
   - ./referencegrant.yaml

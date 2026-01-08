@@ -437,6 +437,44 @@ cloudflare_gateway_addr: ""
 # loki_monitoring_enabled: false
 
 # =============================================================================
+# GRAFANA OIDC AUTHENTICATION - Native OAuth for Grafana RBAC
+# =============================================================================
+# Enable Grafana's native OAuth to provide RBAC and role-based access control.
+# This creates a dedicated Keycloak client for Grafana with proper role mappings.
+# When combined with gateway-level OIDC, provides near-seamless SSO via auto_login.
+#
+# FLOW: User -> Envoy Gateway (OIDC) -> Grafana -> auto_login -> Keycloak -> Grafana
+# Users with existing Keycloak sessions experience ~200-500ms redirect (no login page).
+#
+# ROLE MAPPING: Keycloak roles are mapped to Grafana roles via JMESPath:
+#   - grafana-admin -> GrafanaAdmin (server administrator)
+#   - grafana-editor -> Editor (can create/modify dashboards)
+#   - default -> Viewer (read-only access)
+#
+# SETUP WORKFLOW:
+#   1. Enable grafana_oidc_enabled below
+#   2. Generate client secret: openssl rand -hex 32
+#   3. Set grafana_oidc_client_secret (SOPS-encrypted after task configure)
+#   4. Add Grafana roles to keycloak_realm_roles (see Keycloak section)
+#   5. Run 'task configure' and 'task reconcile'
+#   6. IMPORTANT: Keycloak realm changes require full cleanup/redeploy
+#      See: docs/research/grafana-sso-authentication-integration-jan-2026.md
+#
+# REF: docs/research/grafana-sso-authentication-integration-jan-2026.md
+
+# -- Enable Grafana native OAuth with Keycloak
+#    Creates dedicated Keycloak client for Grafana RBAC
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true, keycloak_enabled: true)
+# grafana_oidc_enabled: false
+
+# -- Grafana OIDC client secret (SOPS-encrypted)
+#    GENERATE: openssl rand -hex 32
+#    IMPORTANT: Must use hex encoding (not base64) for URL safety
+#    This secret is shared between Keycloak client and Grafana configuration
+#    (REQUIRED when grafana_oidc_enabled: true)
+# grafana_oidc_client_secret: ""
+
+# =============================================================================
 # RUSTFS SHARED OBJECT STORAGE - S3-compatible storage for cluster services
 # =============================================================================
 # RustFS is a high-performance, Rust-based S3-compatible object storage system.
@@ -769,6 +807,15 @@ cloudflare_gateway_addr: ""
 #    Production recommended: 0.1 (10%); Development: 1.0 (100%)
 #    (OPTIONAL) / (DEFAULT: "0.1")
 # keycloak_tracing_sample_rate: "0.1"
+
+# -- keycloak-config-cli version for realm configuration management
+#    Format: <cli-version>-<keycloak-version> (e.g., "6.4.0-26.1.4")
+#    Used by keycloak-config-cli Job to apply realm configuration via Admin API
+#    Supports incremental updates (unlike KeycloakRealmImport which is one-time only)
+#    REF: https://github.com/adorsys/keycloak-config-cli
+#    REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md
+#    (OPTIONAL) / (DEFAULT: "6.4.0-26.1.4")
+# keycloak_config_cli_version: "6.4.0-26.1.4"
 
 # -- Keycloak realm roles (RBAC role hierarchy)
 #    Define custom roles for your realm following Kubernetes RBAC patterns.

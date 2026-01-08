@@ -223,6 +223,7 @@ Computed from other values:
 | `rustfs_monitoring_enabled` | monitoring_enabled + rustfs_monitoring_enabled both true |
 | `loki_monitoring_enabled` | monitoring_enabled + loki_monitoring_enabled both true |
 | `keycloak_bootstrap_oidc_client` | keycloak_enabled + oidc_sso_enabled + oidc_client_secret set |
+| `grafana_oidc_enabled` | monitoring_enabled + keycloak_enabled + grafana_oidc_enabled + grafana_oidc_client_secret set |
 
 ## Template Structure
 

@@ -6,6 +6,10 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./secret.sops.yaml
+#% if grafana_oidc_enabled | default(false) %#
+  #| Grafana OIDC client secret for native OAuth authentication #|
+  - ./secret-grafana-oidc.sops.yaml
+#% endif %#
 #| NOTE: Grafana HTTPRoute moved to network/envoy-gateway for OIDC protection #|
   #| ReferenceGrant must be in monitoring (target namespace) for cross-ns routing #|
   - ./referencegrant.yaml

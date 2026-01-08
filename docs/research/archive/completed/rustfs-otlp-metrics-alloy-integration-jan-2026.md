@@ -1,9 +1,20 @@
 # RustFS OTLP Metrics Integration via Alloy
 
 > **Research Date:** January 2026
-> **Status:** IMPLEMENTED - PENDING VERIFICATION
+> **Status:** ✅ Fully Implemented
 > **Dependencies:** Alloy (deployed), kube-prometheus-stack (deployed), RustFS (deployed)
 > **Effort:** Low complexity (extend existing Alloy configuration)
+>
+> [!NOTE]
+> **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+> - Alloy OTLP receiver with metrics pipeline (`otelcol.receiver.otlp` → `otelcol.processor.batch` → `otelcol.exporter.prometheus` → `prometheus.remote_write`)
+> - Alloy Service extraPorts for OTLP (4317 gRPC, 4318 HTTP)
+> - RustFS HelmRelease postRenderer patch for `RUSTFS_OBS_METRIC_ENDPOINT` env var
+> - Custom RustFS OTLP Metrics dashboard (`dashboard-storage.yaml.j2`)
+> - `rustfs_monitoring_enabled` derived variable in plugin.py
+> - ServiceMonitor correctly NOT included in kustomization (RustFS uses OTLP push, not Prometheus scrape)
+>
+> **Verification**: Enable `rustfs_monitoring_enabled: true` in cluster.yaml, run `task configure && task reconcile`, then check Grafana Storage folder.
 
 ---
 

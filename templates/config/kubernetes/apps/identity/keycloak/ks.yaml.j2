@@ -68,4 +68,38 @@ spec:
   targetNamespace: identity
   timeout: 15m
   wait: true
+---
+#| ============================================================================= #|
+#| Third Kustomization: Realm Configuration via keycloak-config-cli             #|
+#| Runs AFTER Keycloak is healthy; applies realm configuration via Admin API    #|
+#| Uses keycloak-config-cli for incremental updates (unlike KeycloakRealmImport #|
+#| which only supports one-time imports)                                         #|
+#| REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md          #|
+#| ============================================================================= #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak-config
+spec:
+  dependsOn:
+    - name: keycloak
+  #| No healthChecks - Job is fire-and-forget #|
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/identity/keycloak/config
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: identity
+  timeout: 10m
+  #| wait: false - don't block on Job completion #|
+  #| Job runs once and exits; blocking would delay entire Flux reconciliation #|
+  #| Job failures are handled via backoffLimit and alerting (if configured) #|
+  wait: false
 #% endif %#

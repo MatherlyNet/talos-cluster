@@ -63,11 +63,61 @@ spec:
         log:
           mode: console
           level: warn
+#% if grafana_oidc_enabled | default(false) %#
+        #| =========================================================================== #|
+        #| OIDC/OAuth Configuration - Keycloak Native OAuth for Grafana RBAC          #|
+        #| REF: docs/research/grafana-sso-authentication-integration-jan-2026.md      #|
+        #| =========================================================================== #|
+        server:
+          #| Root URL for OAuth callback - must match Keycloak redirect URI #|
+          root_url: "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#"
+        auth:
+          #| Disable login form - OAuth only (users must authenticate via Keycloak) #|
+          disable_login_form: true
+          #| Keep signout menu enabled for logout functionality #|
+          disable_signout_menu: false
+        auth.generic_oauth:
+          enabled: true
+          name: "Keycloak"
+          allow_sign_up: true
+          #| Auto-login: Automatically redirect to Keycloak for authentication #|
+          #| Users with existing Keycloak session experience seamless SSO (~200-500ms redirect) #|
+          auto_login: true
+          #| OIDC Client Configuration #|
+          client_id: "grafana"
+          #| Client secret from environment variable (via envFromSecret) #|
+          #| GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET is set from grafana-oidc-secret #|
+          #| Keycloak OIDC endpoints #|
+          auth_url: "https://#{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }#/realms/#{ keycloak_realm | default('matherlynet') }#/protocol/openid-connect/auth"
+          token_url: "https://#{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }#/realms/#{ keycloak_realm | default('matherlynet') }#/protocol/openid-connect/token"
+          api_url: "https://#{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }#/realms/#{ keycloak_realm | default('matherlynet') }#/protocol/openid-connect/userinfo"
+          #| Scopes - request roles claim for RBAC #|
+          scopes: "openid profile email"
+          #| Claim mappings #|
+          email_attribute_path: "email"
+          login_attribute_path: "preferred_username"
+          name_attribute_path: "name"
+          #| Role mapping using JMESPath - maps Keycloak roles to Grafana roles #|
+          #| grafana-admin -> GrafanaAdmin, grafana-editor -> Editor, default -> Viewer #|
+          role_attribute_path: "contains(roles[*], 'grafana-admin') && 'GrafanaAdmin' || contains(roles[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+          role_attribute_strict: false
+          allow_assign_grafana_admin: true
+          #| Groups for organization mapping (OSS feature) #|
+          groups_attribute_path: "groups"
+          #| Token handling - use refresh tokens for session longevity #|
+          use_refresh_token: true
+#% endif %#
       #| Admin credentials from SOPS-encrypted secret #|
       admin:
         existingSecret: grafana-admin-secret
         userKey: admin-user
         passwordKey: admin-password
+#% if grafana_oidc_enabled | default(false) %#
+      #| Load OIDC client secret from environment variable #|
+      envFromSecrets:
+        - name: grafana-oidc-secret
+          optional: false
+#% endif %#
       #| Ingress disabled - using Gateway API HTTPRoute for envoy-internal instead #|
       ingress:
         enabled: false

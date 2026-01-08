@@ -1,0 +1,150 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm-config
+  namespace: identity
+data:
+  realm.yaml: |
+    realm: matherlynet
+    enabled: true
+    displayName: "Matherlynet Realm"
+
+    ssoSessionIdleTimeout: 1800
+    ssoSessionMaxLifespan: 36000
+    accessTokenLifespan: 300
+    accessTokenLifespanForImplicitFlow: 900
+
+    registrationAllowed: false
+    resetPasswordAllowed: true
+    rememberMe: true
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
+
+    bruteForceProtected: true
+    permanentLockout: false
+    maxFailureWaitSeconds: 900
+    minimumQuickLoginWaitSeconds: 60
+    waitIncrementSeconds: 60
+    quickLoginCheckMilliSeconds: 1000
+    maxDeltaTimeSeconds: 43200
+    failureFactor: 5
+
+    roles:
+      realm:
+        - name: "admin"
+          description: "Full administrative access to all applications and settings"
+        - name: "operator"
+          description: "Operational access - manage services, view logs, restart pods"
+        - name: "developer"
+          description: "Development access - CI/CD, debugging tools, dev environments"
+        - name: "viewer"
+          description: "Read-only access to dashboards and status pages"
+        - name: "user"
+          description: "Basic authenticated user access to standard applications"
+
+    clients:
+      - clientId: "$(env:OIDC_CLIENT_ID)"
+        name: "Envoy Gateway SSO"
+        description: "OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:OIDC_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://hubble.matherly.net/oauth2/callback"
+          - "https://grafana.matherly.net/oauth2/callback"
+          - "https://rustfs.matherly.net/oauth2/callback"
+        webOrigins:
+          - "https://hubble.matherly.net"
+          - "https://grafana.matherly.net"
+          - "https://rustfs.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: >-
+            https://hubble.matherly.net/*##https://grafana.matherly.net/*##https://rustfs.matherly.net/*
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
+      - clientId: "$(env:GRAFANA_CLIENT_ID)"
+        name: "Grafana"
+        description: "OIDC client for Grafana native OAuth - provides RBAC and role-based access control"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:GRAFANA_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://grafana.matherly.net/login/generic_oauth"
+        webOrigins:
+          - "https://grafana.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://grafana.matherly.net/*"
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
+        protocolMappers:
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+
+    identityProviders:
+      - alias: "google"
+        displayName: "Google"
+        providerId: "google"
+        enabled: true
+        trustEmail: true
+        storeToken: true
+        linkOnly: false
+        firstBrokerLoginFlowAlias: "first broker login"
+        config:
+          clientId: "$(env:GOOGLE_CLIENT_ID)"
+          clientSecret: "$(env:GOOGLE_CLIENT_SECRET)"
+          defaultScope: "openid profile email"
+          syncMode: "IMPORT"
+
+    identityProviderMappers:
+      - name: "google-default-role"
+        identityProviderAlias: "google"
+        identityProviderMapper: "oidc-hardcoded-role-idp-mapper"
+        config:
+          syncMode: "INHERIT"
+          role: "admin"

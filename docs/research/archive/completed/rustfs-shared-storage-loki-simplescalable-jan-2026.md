@@ -1,8 +1,22 @@
 # RustFS Shared Object Storage & Loki SimpleScalable Implementation
 
 **Date:** January 2026
-**Status:** Implementation Ready (with caveats)
+**Status:** ✅ Fully Implemented
 **Purpose:** Deploy RustFS as shared S3-compatible storage for cluster services (Loki SimpleScalable backend)
+
+> [!NOTE]
+> **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+> - RustFS StatefulSet deployment via Helm (`storage/rustfs/app/helmrelease.yaml.j2`)
+> - Bucket provisioning job (`storage/rustfs/setup/job-setup.yaml.j2`) - buckets only, no `mc admin`
+> - Loki SimpleScalable mode with per-component `extraEnvFrom` for S3 credentials
+> - Grafana datasource and Alloy push URLs correctly configured for `loki-read`/`loki-write` services
+> - RustFS Console exposed via HTTPRoute with optional OIDC protection
+> - ReferenceGrant for cross-namespace Gateway API routing
+> - CLAUDE.md and cluster.sample.yaml documentation updated
+> - Talos backup integration documented in `docs/guides/talos-backup-rustfs-implementation.md`
+>
+> **Key Discovery**: RustFS does NOT support `mc admin` commands - all IAM operations require Console UI.
+> **Tempo**: Correctly uses local filesystem storage, NOT RustFS/S3.
 
 ---
 

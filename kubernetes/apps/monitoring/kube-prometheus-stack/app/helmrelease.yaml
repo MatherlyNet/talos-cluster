@@ -55,10 +55,36 @@ spec:
         log:
           mode: console
           level: warn
+        server:
+          root_url: "https://grafana.matherly.net"
+        auth:
+          disable_login_form: true
+          disable_signout_menu: false
+        auth.generic_oauth:
+          enabled: true
+          name: "Keycloak"
+          allow_sign_up: true
+          auto_login: true
+          client_id: "grafana"
+          auth_url: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/auth"
+          token_url: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/token"
+          api_url: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/userinfo"
+          scopes: "openid profile email"
+          email_attribute_path: "email"
+          login_attribute_path: "preferred_username"
+          name_attribute_path: "name"
+          role_attribute_path: "contains(roles[*], 'grafana-admin') && 'GrafanaAdmin' || contains(roles[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+          role_attribute_strict: false
+          allow_assign_grafana_admin: true
+          groups_attribute_path: "groups"
+          use_refresh_token: true
       admin:
         existingSecret: grafana-admin-secret
         userKey: admin-user
         passwordKey: admin-password
+      envFromSecrets:
+        - name: grafana-oidc-secret
+          optional: false
       ingress:
         enabled: false
       persistence:

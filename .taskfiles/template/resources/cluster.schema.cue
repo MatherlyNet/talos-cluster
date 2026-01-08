@@ -293,6 +293,11 @@ import (
 	// REF: https://www.keycloak.org/observability/tracing
 	keycloak_tracing_enabled?:     *false | bool
 	keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
+	// Keycloak Config-CLI - GitOps realm management via keycloak-config-cli
+	// Replaces KeycloakRealmImport CRD which only supports one-time imports
+	// REF: https://github.com/adorsys/keycloak-config-cli
+	// REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md
+	keycloak_config_cli_version?:  *"6.4.0-26.1.4" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
 
 	// Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns
 	// Roles are created during realm import and used by IdP mappers/JWT claims
@@ -317,6 +322,13 @@ import (
 	// Loki Grafana Monitoring - Stack Monitoring Dashboard
 	// When enabled (and monitoring_enabled: true), deploys Loki stack monitoring dashboard
 	loki_monitoring_enabled?: *false | bool
+
+	// Grafana OIDC Authentication - Native OAuth for Grafana RBAC
+	// REF: docs/research/grafana-sso-authentication-integration-jan-2026.md
+	// Enables Grafana's native OAuth with Keycloak for role-based access control
+	// Requires: monitoring_enabled, keycloak_enabled
+	grafana_oidc_enabled?:        *false | bool
+	grafana_oidc_client_secret?:  string & !=""
 
 	// Social Identity Providers - OAuth/OIDC Federation with Keycloak
 	// REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md

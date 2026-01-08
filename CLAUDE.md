@@ -250,6 +250,13 @@ Optional Keycloak OpenTelemetry Tracing (requires tracing_enabled):
 - When both `tracing_enabled` and `keycloak_tracing_enabled` are true, traces are exported to Tempo
 - See `docs/guides/keycloak-implementation.md#opentelemetry-tracing-integration` for details
 
+Optional Keycloak Config-CLI (GitOps realm management):
+- `keycloak_config_cli_version` - Image tag format: `<cli-version>-<keycloak-version>` (default: "6.4.0-26.1.4")
+- Replaces KeycloakRealmImport CRD which only supports one-time imports
+- Supports incremental updates to existing realms without destroying user data
+- Runs as Kubernetes Job after Keycloak is healthy via third Flux Kustomization
+- See `docs/research/keycloak-configuration-as-code-gitops-jan-2026.md` for implementation details
+
 Optional Social Identity Providers (requires keycloak_enabled):
 - `google_idp_enabled`, `google_client_id`, `google_client_secret` - Google OAuth (OIDC)
 - `github_idp_enabled`, `github_client_id`, `github_client_secret` - GitHub OAuth
@@ -316,6 +323,7 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `keycloak_monitoring_enabled` - true when monitoring_enabled + keycloak_monitoring_enabled both true
 - `rustfs_monitoring_enabled` - true when monitoring_enabled + rustfs_monitoring_enabled both true
 - `loki_monitoring_enabled` - true when monitoring_enabled + loki_monitoring_enabled both true
+- `grafana_oidc_enabled` - true when monitoring_enabled + keycloak_enabled + grafana_oidc_enabled + grafana_oidc_client_secret all set
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 

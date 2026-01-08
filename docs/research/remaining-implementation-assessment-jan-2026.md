@@ -1,7 +1,8 @@
 # Remaining Implementation Assessment
 
-> **Document Version:** 2.6.0
+> **Document Version:** 2.7.0
 > **Assessment Date:** January 2026
+> **Last Updated:** January 7, 2026
 > **Status:** Living Document
 > **Sources:**
 > - [k8s-at-home-remaining-implementation.md](../guides/k8s-at-home-remaining-implementation.md)
@@ -33,11 +34,11 @@ This document tracks **remaining work only**. Completed components are documente
 
 ### Quick Status
 
-| Category | Remaining Items |
-| -------- | --------------- |
-| **Templates Complete** | Keycloak (ready for deployment) |
-| **Templates Needed** | VolSync (~2 hours) |
+| Category | Items |
+| -------- | ----- |
+| **Deployed ✅** | Keycloak (January 7, 2026), JWT SecurityPolicy (January 7, 2026), OIDC SSO (January 7, 2026) |
 | **Verified ✅** | CloudNativePG (operational, January 6, 2026), Talos Backup (operational, January 6, 2026), tuppr (operational, January 6, 2026) |
+| **Templates Needed** | VolSync (~2 hours) |
 | **Adopt When Needed** | gRPC Routing (~1-2 hours per service) |
 
 ---
@@ -105,33 +106,34 @@ This document tracks **remaining work only**. Completed components are documente
 
 ---
 
-### 3. JWT SecurityPolicy (API Auth) - CONFIG INCOMPLETE
+### 3. JWT SecurityPolicy (API Auth) - ✅ DEPLOYED AND OPERATIONAL
 
 > Source: [envoy-gateway-observability-security.md](../guides/envoy-gateway-observability-security.md#phase-2-jwt-securitypolicy)
 > **Implementation Guide:** [jwt-securitypolicy-implementation.md](../guides/jwt-securitypolicy-implementation.md)
 
-**Status:** Templates complete (`securitypolicy-jwt.yaml.j2`). OIDC provider not configured.
+**Status:** Fully deployed and operational (January 7, 2026). Using Keycloak as OIDC provider.
 
 **Use Case:** API/service-to-service authentication via Bearer tokens (stateless JWT validation).
 
-**cluster.yaml variables COMMENTED OUT:**
+**Verification Results:**
+
+| Check | Status | Details |
+| ----- | ------ | ------- |
+| SecurityPolicy | ✅ | `jwt-auth` deployed in network namespace |
+| OIDC Issuer | ✅ | `https://sso.matherly.net/realms/matherlynet` |
+| JWKS URI | ✅ | `https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs` |
+| Claims Forwarding | ✅ | sub, email, groups, preferred_username, realm_access.roles |
+| Cache Duration | ✅ | 300s JWKS cache |
+
+**Configuration in cluster.yaml:**
 ```yaml
-# oidc_provider_name: "keycloak"
-# oidc_issuer_url: ""
-# oidc_jwks_uri: ""
-# oidc_additional_claims: []
+oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
+oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
 ```
 
-**Required Work:**
-1. Deploy Keycloak OIDC provider - see [Keycloak Implementation Guide](../guides/keycloak-implementation.md)
-2. Create realm and configure token claims
-3. Note JWKS URI endpoint
-4. Configure `oidc_*` variables in `cluster.yaml`
-5. Run `task configure`
-6. Label HTTPRoutes with `security: jwt-protected`
-7. Test with `curl -H "Authorization: Bearer $TOKEN"`
+**Usage:** Label HTTPRoutes with `security: jwt-protected` to enable JWT validation.
 
-**Effort:** ~3-4 hours (with Keycloak guide)
+**Effort:** Completed
 
 ---
 
@@ -178,7 +180,7 @@ This document tracks **remaining work only**. Completed components are documente
 | HelmRelease | ✅ | cloudnative-pg@0.27.0, Helm install succeeded |
 | Operator Pod | ✅ | Running (1/1) in cnpg-system namespace |
 | CRDs Installed | ✅ | 10 CRDs (clusters, backups, poolers, etc.) |
-| PostgreSQL Clusters | ⏳ | None deployed yet (ready for Keycloak) |
+| PostgreSQL Clusters | ✅ | `keycloak-postgres` running in identity namespace (1/1 Ready) |
 
 **Implementation Completed:**
 - ✅ All cnpg-system templates created with `cnpg_enabled` conditional
@@ -213,61 +215,41 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 
 ---
 
-### 6. Keycloak OIDC Provider - ✅ TEMPLATES COMPLETE
+### 6. Keycloak OIDC Provider - ✅ DEPLOYED AND OPERATIONAL
 
 > **Implementation Guide:** [keycloak-implementation.md](../guides/keycloak-implementation.md)
 
-**Status:** Templates complete (January 6, 2026). Ready for deployment with `keycloak_enabled: true`.
+**Status:** Fully deployed and operational (January 7, 2026). Using CNPG PostgreSQL backend with Google IdP enabled.
 
 **Use Case:** Self-hosted OIDC/OAuth2 provider enabling JWT SecurityPolicy (API auth) and OIDC SecurityPolicy (web SSO).
 
-**Key Features:**
-- Keycloak 26.5.0 with official Keycloak Operator (NOT Codecentric Helm)
-- Two database modes: `embedded` (dev) or `cnpg` (production)
-- CRD split pattern: operator Kustomization → instance Kustomization
-- HTTPRoute for Gateway API integration
-- Automatic JWKS/issuer URL derivation for SecurityPolicy
+**Verification Results:**
 
-**Implementation Completed:**
-- ✅ Identity namespace templates: `kustomization.yaml.j2`, `namespace.yaml.j2`
-- ✅ Keycloak operator: `ks.yaml.j2`, `operator/kustomization.yaml.j2`, `operator/keycloak-operator.yaml.j2`
-- ✅ Keycloak app: `app/kustomization.yaml.j2`, `keycloak-cr.yaml.j2`, `secret.sops.yaml.j2`, `httproute.yaml.j2`
-- ✅ Embedded PostgreSQL: `postgres-embedded.yaml.j2` (dev/testing mode)
-- ✅ CloudNativePG cluster: `postgres-cnpg.yaml.j2` (production mode with backups)
-- ✅ Derived variables in `plugin.py`: `keycloak_enabled`, `keycloak_hostname`, `keycloak_issuer_url`, `keycloak_jwks_uri`
-- ✅ Root kustomization updated to include identity namespace conditionally
-- ✅ `cluster.sample.yaml` updated with complete Keycloak configuration section
-- ✅ CUE schema validation rules added
+| Check | Status | Details |
+| ----- | ------ | ------- |
+| Keycloak Pod | ✅ | `keycloak-0` running in identity namespace |
+| Keycloak Operator | ✅ | Running (1/1) in identity namespace |
+| PostgreSQL (CNPG) | ✅ | `keycloak-postgres-1` healthy (1/1 Ready) |
+| Realm Import | ✅ | `matherlynet-realm` job completed |
+| HTTPRoute | ✅ | `sso.matherly.net` accessible |
+| Google IdP | ✅ | Social login enabled |
+| OIDC SSO | ✅ | `oidc-sso` SecurityPolicy protecting Grafana, Hubble, RustFS |
 
-**Enhancements Beyond Guide:**
-- Pod Security Admission labels (baseline level) on identity namespace
-- Security contexts on operator deployment
-- Conditional CNPG dependency in ks.yaml.j2 for production database mode
-- Conditional headless service for JGroups clustering when `keycloak_replicas > 1`
-- Conditional affinity rules for HA PostgreSQL deployments
-- pgvector extension support via ImageCatalog when `cnpg_pgvector_enabled`
-
-**cluster.yaml variables:**
+**Configuration in cluster.yaml:**
 ```yaml
-keycloak_enabled: false
-keycloak_subdomain: "auth"             # Creates auth.${cloudflare_domain}
+keycloak_enabled: true
+keycloak_subdomain: "sso"              # Creates sso.matherly.net
 keycloak_realm: "matherlynet"
-keycloak_admin_password: ""            # SOPS-encrypted
-keycloak_db_mode: "embedded"           # "embedded" or "cnpg"
-keycloak_db_user: "keycloak"
-keycloak_db_password: ""               # SOPS-encrypted
-keycloak_db_name: "keycloak"
-keycloak_db_instances: 1               # PostgreSQL instances (CNPG mode)
-keycloak_replicas: 1
-keycloak_storage_size: "5Gi"
-keycloak_operator_version: "26.5.0"
+keycloak_db_mode: "cnpg"               # Using CloudNativePG
+keycloak_monitoring_enabled: true
+google_idp_enabled: true               # Social login
+oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
 ```
 
-**Remaining Work:** Deploy and verify
-1. Configure `keycloak_enabled: true` and credentials in `cluster.yaml`
-2. Run `task configure` to generate manifests
-3. Commit and push, then `task reconcile`
-4. Create realm, client, and test user via Admin Console
+**Protected Applications:**
+- Grafana (`grafana.matherly.net`)
+- Hubble UI (`hubble.matherly.net`)
+- RustFS Console (`rustfs.matherly.net`)
 
 **Optional Enhancement: OpenTelemetry Tracing**
 - Keycloak 26.5.0 has full OpenTelemetry support (graduated from preview)
@@ -275,9 +257,9 @@ keycloak_operator_version: "26.5.0"
 - New variables: `keycloak_tracing_enabled`, `keycloak_tracing_sample_rate`
 - See: [Keycloak Implementation Guide - Tracing Section](../guides/keycloak-implementation.md#opentelemetry-tracing-integration)
 
-**Effort:** Completed (templates). ~1-2 hours remaining for deployment and realm setup. +30 min for tracing integration.
+**Effort:** Completed
 
-**Dependency Chain:** (CloudNativePG if cnpg mode) → Keycloak → JWT/OIDC SecurityPolicy
+**Dependency Chain:** CloudNativePG ✅ → Keycloak ✅ → JWT/OIDC SecurityPolicy ✅
 
 ---
 
@@ -346,24 +328,27 @@ spec:
 
 ## Priority Order
 
-### Medium Priority (Shared Infrastructure)
+### Medium Priority (Templates Needed)
 
 1. **VolSync Implementation** (~2 hours) - Only if PVC backups needed
 
 ### Low Priority (Adopt When Needed)
 
-1. **JWT SecurityPolicy Configuration** - After Keycloak deployed
-2. **gRPC Routing** - When first gRPC service deployed
+1. **gRPC Routing** - When first gRPC service deployed
 
-### Templates Complete (Ready for Deployment)
+### In Progress (Research Phase)
 
-1. **Keycloak OIDC Provider** - Templates created January 6, 2026 (~1-2 hours for deployment + realm setup)
+1. **Grafana Native SSO** - Research complete, implementation not started
+   - See: [grafana-sso-authentication-integration-jan-2026.md](./grafana-sso-authentication-integration-jan-2026.md)
 
 ### Completed ✅
 
 1. **CloudNativePG Operator** - Deployed January 6, 2026 (shared PostgreSQL infrastructure)
 2. **Talos Backup Deployment** - Deployed January 6, 2026 (etcd disaster recovery)
 3. **tuppr Deployment Verification** - Verified January 6, 2026
+4. **Keycloak OIDC Provider** - Deployed January 7, 2026 (identity/SSO infrastructure)
+5. **JWT SecurityPolicy** - Deployed January 7, 2026 (API authentication)
+6. **OIDC SSO SecurityPolicy** - Deployed January 7, 2026 (web application SSO)
 
 ---
 
@@ -424,3 +409,4 @@ The project supports three OIDC authentication approaches:
 | 2026-01-06 | 2.4.0 | CNPG backup infrastructure: added `secret-backup.sops.yaml.j2` template, updated RustFS bucket setup job to create `cnpg-backups` bucket, updated kustomization to include backup secret when `cnpg_backup_enabled` is true |
 | 2026-01-06 | 2.5.0 | CNPG observability: added ServiceMonitor, PrometheusRule (7 alerts), and Grafana dashboard ConfigMap templates (conditional on `monitoring_enabled`) |
 | 2026-01-06 | 2.6.0 | Keycloak OIDC Provider templates complete: 11 template files created, plugin.py updated with derived variables, CUE schema validation added, cluster.sample.yaml updated; ready for deployment |
+| 2026-01-07 | 2.7.0 | **Major audit update:** Keycloak deployed and operational (CNPG mode, Google IdP enabled); JWT SecurityPolicy deployed; OIDC SSO SecurityPolicy deployed (protecting Grafana, Hubble, RustFS); Updated sections #3, #5, #6 with verification results; Updated Quick Status and Priority Order; Added Grafana Native SSO to In Progress |

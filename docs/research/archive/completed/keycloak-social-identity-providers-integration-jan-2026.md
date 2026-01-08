@@ -5,7 +5,7 @@
 **Scope:** Google, GitHub, Microsoft Entra ID integration with seamless SSO
 
 > **Related Documentation:** See [Envoy Gateway + Keycloak OIDC Integration](./envoy-gateway-keycloak-oidc-integration-jan-2026.md) for details on how Envoy Gateway SecurityPolicy integrates with Keycloak for browser-based SSO.
-
+>
 > [!NOTE]
 > **Implementation Complete (January 2026)** - Phase 1 (Identity Provider Configuration) and Phase 3 (Role/Group Mappers) are fully implemented in `realm-import.sops.yaml.j2`:
 > - Google IdP with `google_idp_enabled`, `google_client_id/secret`, `google_default_role`, `google_domain_role_mapping`
