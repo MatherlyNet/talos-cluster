@@ -188,7 +188,7 @@ import (
 	// REF: docs/guides/native-oidc-securitypolicy-implementation.md
 	oidc_sso_enabled?:   *false | bool
 	oidc_client_id?:     string
-	oidc_client_secret?: string  // Allow empty - user fills in from Keycloak client credentials
+	oidc_client_secret?: string  // Generate: openssl rand -hex 32 (MUST use hex, NOT base64)
 	oidc_redirect_url?:  string & =~"^https?://"
 	oidc_cookie_domain?: string
 	oidc_logout_path?:   *"/logout" | string & =~"^/"

@@ -109,7 +109,7 @@ kubernetes_version: "1.35.0"
 #                (Keycloak supports wildcards, Envoy Gateway does NOT - omit the field!)
 # oidc_sso_enabled: true
 # oidc_client_id: "envoy-gateway"
-# oidc_client_secret: "test-client-secret"  # Obtain from Keycloak client credentials
+# oidc_client_secret: "test-client-secret"  # Generate: openssl rand -hex 32 (MUST use hex, NOT base64)
 # oidc_redirect_url: ""  # OMIT for dynamic redirect (recommended) - wildcards NOT supported!
 # oidc_cookie_domain: "example.com"  # Enables SSO across *.example.com
 # oidc_logout_path: "/logout"

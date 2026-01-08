@@ -4,6 +4,18 @@
 > **Status:** Implemented
 > **Dependencies:** OIDC Provider (Keycloak), Envoy Gateway v1.6.1+
 > **Effort:** ~2-3 hours (excluding OIDC provider setup)
+>
+> [!NOTE]
+> **Implementation Complete (January 2026)** - All components from this guide have been fully implemented and verified:
+> - `plugin.py` derived variables (`oidc_sso_enabled`, `keycloak_bootstrap_oidc_client`)
+> - OIDC SecurityPolicy template with dynamic redirect URL support
+> - JWT SecurityPolicy template with claim-to-header extraction
+> - Keycloak realm-import with auto-bootstrapped OIDC client
+> - HTTPRoute labeling (`security: oidc-protected`) for Hubble, Grafana, RustFS
+> - ReferenceGrants for cross-namespace routing
+> - JSON schema validation and cluster.sample.yaml documentation
+>
+> Protected services: Hubble UI, Grafana, RustFS Console. Add `security: oidc-protected` label to HTTPRoutes to protect additional services.
 
 ---
 
@@ -58,6 +70,9 @@ This guide implements **Native OIDC SecurityPolicy** for web browser SSO (Single
 
 # -- OIDC client secret (SOPS-encrypted)
 #    (REQUIRED when oidc_sso_enabled: true)
+#    GENERATE: openssl rand -hex 32
+#    IMPORTANT: MUST use hex encoding - base64 contains + and = characters that
+#    break OAuth2 token exchange (x-www-form-urlencoded interprets + as space).
 # oidc_client_secret: ""
 
 # -- Redirect URL for OAuth2 callback (OPTIONAL - omit for dynamic redirect)
@@ -422,6 +437,49 @@ curl https://auth.matherly.net/realms/matherlynet/.well-known/openid-configurati
 | Callback not found | HTTPRoute missing callback path | Ensure route matches `/oauth2/callback` |
 | Session not persisting | Cookie cleared | Clear browser cookies, check `cookieDomain` |
 | JWKS fetch failed | Network/TLS issue | Check Backend and BackendTLSPolicy for self-signed certs |
+| `invalid_client_credentials` after Google/IdP login | Client secret contains URL-unsafe characters | See [Client Secret URL Encoding](#client-secret-url-encoding-critical) below |
+
+### Client Secret URL Encoding (CRITICAL)
+
+**Symptom:** User authenticates successfully with IdP (Google, GitHub, etc.), but the callback fails with "OAuth flow failed" and the callback URL has empty query parameters (`/oauth2/callback?`).
+
+**Root Cause:** OAuth2 token exchange uses `application/x-www-form-urlencoded` POST body. In this encoding:
+- `+` is interpreted as a **space** character
+- `=` is a special delimiter
+
+Base64 encoding (`openssl rand -base64 32`) can produce both `+` and `=` characters, causing the secret sent by Envoy Gateway to differ from what Keycloak expects.
+
+**Error Logs:**
+```
+# Envoy Gateway proxy logs
+Failed to get access token, response code: 401, response body: {"error":"unauthorized_client","error_description":"Invalid client or Invalid client credentials"}
+
+# Keycloak logs
+type="CODE_TO_TOKEN_ERROR", clientId="envoy-gateway", error="invalid_client_credentials", grant_type="authorization_code"
+```
+
+**Solution:** Generate secrets using **hex encoding** (URL-safe, alphanumeric only):
+
+```bash
+# CORRECT - URL-safe hex encoding
+openssl rand -hex 32
+
+# WRONG - Base64 contains + and = characters
+openssl rand -base64 32  # DO NOT USE
+```
+
+**After changing the secret:**
+1. Update `oidc_client_secret` in `cluster.yaml`
+2. Run `task configure -y`
+3. Delete the Keycloak realm import job to force re-import:
+   ```bash
+   kubectl delete job -n identity -l app.kubernetes.io/name=keycloak-realm-import
+   ```
+4. Restart Envoy Gateway to clear OIDC cache:
+   ```bash
+   kubectl rollout restart deployment envoy-gateway -n network
+   ```
+5. Commit, push, and reconcile
 
 ---
 
@@ -460,5 +518,6 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-08 | Added critical troubleshooting: client secret must use hex encoding (not base64) to avoid URL-unsafe characters |
 | 2026-01-07 | Schema validation and JSON schema generator fixes |
 | 2026-01 | Initial implementation guide created |

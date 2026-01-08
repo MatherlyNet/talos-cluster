@@ -845,7 +845,9 @@ cloudflare_gateway_addr: ""
 #
 # SETUP WORKFLOW:
 #   1. Enable keycloak_enabled (provides OIDC issuer) OR set oidc_issuer_url manually
-#   2. Generate a secure client secret (e.g., openssl rand -base64 32)
+#   2. Generate a URL-safe client secret (MUST use hex, NOT base64):
+#      openssl rand -hex 32
+#      IMPORTANT: Do NOT use base64 - it contains + and = which break OAuth2 token exchange!
 #   3. Set oidc_client_secret below (SOPS-encrypted after task configure)
 #   4. Run 'task configure' and 'task reconcile'
 #   5. Label HTTPRoutes with 'security: oidc-protected' to enable SSO
@@ -877,7 +879,9 @@ cloudflare_gateway_addr: ""
 
 # -- OIDC client secret (SOPS-encrypted)
 #    (REQUIRED when oidc_sso_enabled: true)
-#    GENERATE: openssl rand -base64 32
+#    GENERATE: openssl rand -hex 32
+#    IMPORTANT: MUST use hex encoding (not base64) - base64 contains + and = characters
+#    that are URL-unsafe and will cause OAuth2 token exchange to fail with "invalid_client_credentials".
 #    When keycloak_enabled: true, this secret is automatically configured in Keycloak
 #    via realm import - no manual Keycloak admin console setup required!
 #    For external IdPs: Copy the client secret from your IdP's client configuration.

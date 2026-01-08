@@ -7,6 +7,16 @@
 **Keycloak Version:** 26.5.0
 **Scope:** Social IdP integration (Google, GitHub, Microsoft Entra ID) via Keycloak with Envoy Gateway SecurityPolicy
 
+> [!NOTE]
+> **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+> - OIDC SecurityPolicy template (`securitypolicy-oidc.yaml.j2`) with dynamic redirect URL support
+> - JWT SecurityPolicy template (`securitypolicy-jwt.yaml.j2`) with claim-to-header extraction
+> - Keycloak realm-import with auto-bootstrapped OIDC client and social IdP support
+> - HTTPRoute labeling (`security: oidc-protected`) for Hubble, Grafana, RustFS
+> - Cookie domain configuration for cross-subdomain SSO
+>
+> See `docs/guides/native-oidc-securitypolicy-implementation.md` for implementation details.
+
 ## Executive Summary
 
 This research document provides a comprehensive guide for integrating Envoy Gateway's SecurityPolicy with Keycloak as the OIDC provider, enabling social identity provider authentication (Google, GitHub, Microsoft Entra ID) for all protected applications.

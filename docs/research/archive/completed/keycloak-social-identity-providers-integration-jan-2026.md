@@ -6,6 +6,15 @@
 
 > **Related Documentation:** See [Envoy Gateway + Keycloak OIDC Integration](./envoy-gateway-keycloak-oidc-integration-jan-2026.md) for details on how Envoy Gateway SecurityPolicy integrates with Keycloak for browser-based SSO.
 
+> [!NOTE]
+> **Implementation Complete (January 2026)** - Phase 1 (Identity Provider Configuration) and Phase 3 (Role/Group Mappers) are fully implemented in `realm-import.sops.yaml.j2`:
+> - Google IdP with `google_idp_enabled`, `google_client_id/secret`, `google_default_role`, `google_domain_role_mapping`
+> - GitHub IdP with `github_idp_enabled`, `github_client_id/secret`, `github_default_role`, `github_org_role_mapping`
+> - Microsoft Entra ID with `microsoft_idp_enabled`, `microsoft_client_id/secret/tenant_id`, `microsoft_default_role`, `microsoft_group_role_mappings`
+> - All three mapper types: `oidc-hardcoded-role-idp-mapper`, `oidc-role-idp-mapper`, `oidc-advanced-role-idp-mapper`
+>
+> Phase 2 (First Login Flow Customization) and Phase 4 (Grafana Native OAuth) remain optional enhancements.
+
 ## Executive Summary
 
 This research document provides a comprehensive guide for integrating external identity providers (Google, GitHub, Microsoft Entra ID) with the existing Keycloak deployment. The goal is to enable users to authenticate using their existing social/enterprise credentials instead of creating local Keycloak accounts, while maintaining seamless single sign-on (SSO) across all protected applications (Grafana, Hubble UI, RustFS Console, etc.).
