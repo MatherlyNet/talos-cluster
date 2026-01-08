@@ -1,0 +1,56 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dragonfly-alerts
+  labels:
+    app.kubernetes.io/name: dragonfly
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: dragonfly.rules
+      rules:
+        - alert: DragonflyDown
+          expr: up{job="dragonfly"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Dragonfly instance {{ $labels.pod }} is down"
+            description: "Dragonfly pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been down for more than 5 minutes."
+
+        - alert: DragonflyMemoryHigh
+          expr: dragonfly_memory_used_bytes / dragonfly_memory_max_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Dragonfly memory usage high on {{ $labels.pod }}"
+            description: "Dragonfly instance {{ $labels.pod }} is using {{ $value | humanizePercentage }} of its allocated memory."
+
+        - alert: DragonflyConnectionsHigh
+          expr: dragonfly_connected_clients / dragonfly_maxclients > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Dragonfly connections high on {{ $labels.pod }}"
+            description: "Dragonfly instance {{ $labels.pod }} is using {{ $value | humanizePercentage }} of available connections."
+
+        - alert: DragonflyReplicationLag
+          expr: dragonfly_replication_lag_seconds > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Dragonfly replication lag on {{ $labels.pod }}"
+            description: "Dragonfly replica {{ $labels.pod }} has a replication lag of {{ $value }}s."
+
+        - alert: DragonflyEvictionsHigh
+          expr: rate(dragonfly_evicted_keys_total[5m]) > 100
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High eviction rate on Dragonfly {{ $labels.pod }}"
+            description: "Dragonfly instance {{ $labels.pod }} is evicting {{ $value | humanize }} keys/second due to memory pressure."

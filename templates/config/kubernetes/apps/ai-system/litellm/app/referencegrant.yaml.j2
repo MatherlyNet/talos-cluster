@@ -1,0 +1,25 @@
+#% if litellm_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| ReferenceGrant: Allow network namespace to access LiteLLM                    #|
+#| Required for HTTPRoutes in network namespace to reference                    #|
+#| the litellm service in ai-system namespace                                   #|
+#| REF: https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1beta1.ReferenceGrant #|
+#| ============================================================================= #|
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: network-litellm-access
+  namespace: ai-system
+spec:
+  from:
+    #| Allow HTTPRoute from network namespace #|
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    #| Grant access to LiteLLM service #|
+    - group: ""
+      kind: Service
+      name: litellm
+#% endif %#

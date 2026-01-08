@@ -1,0 +1,58 @@
+#% if langfuse_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| LANGFUSE FLUX KUSTOMIZATION                                                   #|
+#| LLM observability platform - tracing, prompts, evaluation, analytics          #|
+#| REF: docs/research/langfuse-llm-observability-integration-jan-2026.md        #|
+#| ============================================================================= #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app langfuse
+  namespace: flux-system
+spec:
+  targetNamespace: ai-system
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    #| Core infrastructure dependencies #|
+    - name: coredns
+      namespace: kube-system
+    - name: cloudnative-pg
+      namespace: cnpg-system
+#% if dragonfly_enabled | default(false) %#
+    #| Dragonfly for Redis-compatible caching #|
+    - name: dragonfly
+      namespace: cache
+#% endif %#
+#% if rustfs_enabled | default(false) %#
+    #| RustFS for S3 blob storage #|
+    - name: rustfs
+      namespace: storage
+#% endif %#
+#% if langfuse_sso_enabled | default(false) %#
+    #| Keycloak for SSO authentication #|
+    - name: keycloak
+      namespace: identity
+#% endif %#
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: langfuse-web
+      namespace: ai-system
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/ai-system/langfuse/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 15m
+  wait: true
+#% endif %#

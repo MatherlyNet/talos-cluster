@@ -1,0 +1,16 @@
+#% if langfuse_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| LANGFUSE HELM REPOSITORY                                                      #|
+#| Official Langfuse Kubernetes Helm charts                                      #|
+#| REF: https://github.com/langfuse/langfuse-k8s                                #|
+#| ============================================================================= #|
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: langfuse
+  namespace: ai-system
+spec:
+  interval: 1h
+  url: https://langfuse.github.io/langfuse-k8s
+#% endif %#

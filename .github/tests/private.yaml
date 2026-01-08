@@ -49,5 +49,51 @@ cloudflare_gateway_addr: "10.10.10.251"
 # keycloak_tracing_enabled: false
 # keycloak_tracing_sample_rate: "0.1"
 
+# Dragonfly Cache (optional - uncomment to test)
+# REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md
+# NOTE: Redis-compatible in-memory data store with 25x better performance
+# dragonfly_enabled: true
+# dragonfly_version: "v1.36.0"
+# dragonfly_operator_version: "1.3.1"
+# dragonfly_replicas: 1
+# dragonfly_maxmemory: "512mb"
+# dragonfly_threads: 2
+# dragonfly_password: "test-dragonfly-password"
+# dragonfly_control_plane_only: false
+# dragonfly_cache_mode: false
+# dragonfly_slowlog_threshold: 10000
+# dragonfly_slowlog_max_len: 128
+# Dragonfly S3 Backups (requires rustfs_enabled: true)
+# dragonfly_backup_enabled: false
+# dragonfly_s3_endpoint: "rustfs-svc.storage.svc.cluster.local:9000"
+# dragonfly_s3_access_key: "test-dragonfly-s3-access"
+# dragonfly_s3_secret_key: "test-dragonfly-s3-secret"
+# dragonfly_snapshot_cron: "0 */6 * * *"
+# Dragonfly Monitoring (requires monitoring_enabled: true)
+# dragonfly_monitoring_enabled: false
+# Dragonfly ACL for multi-tenant access
+# dragonfly_acl_enabled: false
+# dragonfly_keycloak_password: "test-keycloak-cache-password"
+# dragonfly_appcache_password: "test-appcache-password"
+# dragonfly_litellm_password: "test-litellm-cache-password"
+# dragonfly_langfuse_password: "test-langfuse-cache-password"
+
+# Langfuse LLM Observability (optional - uncomment to test)
+# REF: docs/research/langfuse-llm-observability-integration-jan-2026.md
+# langfuse_enabled: false
+# langfuse_s3_access_key: "test-langfuse-s3-access"
+# langfuse_s3_secret_key: "test-langfuse-s3-secret"
+# Langfuse PostgreSQL Backups (requires rustfs_enabled: true)
+# langfuse_backup_enabled: false
+# langfuse_backup_s3_access_key: "test-langfuse-backup-access"
+# langfuse_backup_s3_secret_key: "test-langfuse-backup-secret"
+# langfuse_sso_enabled: false
+# langfuse_keycloak_client_secret: "test-langfuse-oidc-secret"
+# langfuse_monitoring_enabled: false
+# langfuse_tracing_enabled: false
+# langfuse_smtp_url: "smtp://user:pass@mail.example.com:587"
+# langfuse_email_from: "noreply@example.com"
+# langfuse_session_max_age: 2592000
+
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"

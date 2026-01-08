@@ -1,0 +1,85 @@
+#% if dragonfly_enabled | default(false) and network_policies_enabled | default(false) %#
+---
+#| CiliumNetworkPolicy for Dragonfly cache access control #|
+#| Allows ingress from authorized namespaces and monitoring #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: dragonfly
+  namespace: cache
+spec:
+  endpointSelector:
+    matchLabels:
+      app: dragonfly
+#% if network_policies_mode | default('audit') == 'enforce' %#
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+#% else %#
+  #| Audit mode - observe traffic patterns via Hubble without blocking #|
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+#% endif %#
+  ingress:
+    #| Allow traffic from identity namespace (Keycloak session storage) #|
+#% if keycloak_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: identity
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+#% endif %#
+    #| Allow traffic from ai-system namespace (LiteLLM/Langfuse cache) #|
+#% if litellm_enabled | default(false) or langfuse_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+#% endif %#
+    #| Allow traffic from default namespace (application cache) #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    #| Allow Prometheus scraping from monitoring namespace #|
+#% if monitoring_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9999"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| Allow DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Allow S3 backups to RustFS #|
+#% if dragonfly_backup_enabled | default(false) %#
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: storage
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
+#% endif %#

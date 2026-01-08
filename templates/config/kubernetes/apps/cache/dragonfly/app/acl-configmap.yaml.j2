@@ -1,0 +1,31 @@
+#% if dragonfly_enabled | default(false) and dragonfly_acl_enabled | default(false) %#
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dragonfly-acl
+data:
+  acl.conf: |
+    #| Default admin user with full access #|
+    user default on >#{ dragonfly_password }# ~* +@all
+
+#% if dragonfly_keycloak_password | default('') %#
+    #| Keycloak session store - limited to keycloak:* keys #|
+    user keycloak on >#{ dragonfly_keycloak_password }# ~keycloak:* +@read +@write -@dangerous
+#% endif %#
+
+#% if dragonfly_appcache_password | default('') %#
+    #| Application cache - read-heavy workload #|
+    user appcache on >#{ dragonfly_appcache_password }# ~cache:* +@read +GET +SET +DEL +EXPIRE -@dangerous
+#% endif %#
+
+#% if dragonfly_litellm_password | default('') %#
+    #| LiteLLM cache - limited to litellm:* keys #|
+    user litellm on >#{ dragonfly_litellm_password }# ~litellm:* +@read +@write -@dangerous
+#% endif %#
+
+#% if dragonfly_langfuse_password | default('') %#
+    #| Langfuse cache - limited to langfuse:* keys #|
+    user langfuse on >#{ dragonfly_langfuse_password }# ~langfuse:* +@read +@write -@dangerous
+#% endif %#
+#% endif %#

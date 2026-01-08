@@ -711,6 +711,142 @@ cloudflare_gateway_addr: ""
 # cnpg_pgvector_version: "0.8.1"
 
 # =============================================================================
+# DRAGONFLY CACHE - Redis-compatible in-memory data store
+# =============================================================================
+# Dragonfly provides a high-performance, multi-threaded drop-in replacement
+# for Redis with 25x+ better throughput and 25% less memory usage.
+# Deployed as a shared cluster resource in the 'cache' namespace.
+# Uses the Dragonfly Operator for Kubernetes-native lifecycle management.
+# REF: https://www.dragonflydb.io/docs/getting-started/kubernetes-operator
+# REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md
+#
+# USE CASES:
+#   - Session storage for distributed applications (Keycloak, LiteLLM)
+#   - Caching layer (L2 cache behind PostgreSQL)
+#   - Rate limiting for API endpoints
+#   - Pub/Sub messaging for lightweight event distribution
+#
+# ARCHITECTURE:
+#   cache/                    # Namespace for caching services
+#   └── dragonfly/            # Dragonfly operator + instance
+#       ├── operator/         # Operator deployment in dragonfly-operator-system
+#       └── app/              # Dragonfly CR + supporting resources
+#
+# SERVICE DISCOVERY:
+#   Applications connect via: dragonfly.cache.svc.cluster.local:6379
+
+# -- Enable Dragonfly cache deployment
+#    (OPTIONAL) / (DEFAULT: false)
+# dragonfly_enabled: false
+
+# -- Dragonfly server version
+#    (OPTIONAL) / (DEFAULT: "v1.36.0")
+# dragonfly_version: "v1.36.0"
+
+# -- Dragonfly Operator version
+#    (OPTIONAL) / (DEFAULT: "1.3.1")
+# dragonfly_operator_version: "1.3.1"
+
+# -- Number of Dragonfly replicas (1 = standalone, 2+ = HA with replication)
+#    (OPTIONAL) / (DEFAULT: 1)
+# dragonfly_replicas: 1
+
+# -- Maximum memory for Dragonfly (with unit: mb, gb)
+#    (OPTIONAL) / (DEFAULT: "512mb")
+# dragonfly_maxmemory: "512mb"
+
+# -- Number of proactor threads (set based on available CPU)
+#    (OPTIONAL) / (DEFAULT: 2)
+# dragonfly_threads: 2
+
+# -- Dragonfly authentication password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    (REQUIRED when dragonfly_enabled: true)
+# dragonfly_password: ""
+
+# -- Deploy Dragonfly on control-plane nodes only
+#    (OPTIONAL) / (DEFAULT: false)
+# dragonfly_control_plane_only: false
+
+# -- CPU resource request
+#    (OPTIONAL) / (DEFAULT: "100m")
+# dragonfly_cpu_request: "100m"
+
+# -- Memory resource request
+#    (OPTIONAL) / (DEFAULT: "256Mi")
+# dragonfly_memory_request: "256Mi"
+
+# -- Memory resource limit
+#    (OPTIONAL) / (DEFAULT: "1Gi")
+# dragonfly_memory_limit: "1Gi"
+
+# -- Enable cache mode (LRU-like eviction when approaching maxmemory)
+#    Recommended for session storage and caching use cases
+#    (OPTIONAL) / (DEFAULT: false)
+# dragonfly_cache_mode: false
+
+# -- Slow query log threshold in microseconds
+#    Queries slower than this are logged for debugging
+#    (OPTIONAL) / (DEFAULT: 10000 = 10ms)
+# dragonfly_slowlog_threshold: 10000
+
+# -- Maximum number of slow queries to retain in log
+#    (OPTIONAL) / (DEFAULT: 128)
+# dragonfly_slowlog_max_len: 128
+
+# -- Enable Dragonfly S3 snapshots to RustFS
+#    Requires rustfs_enabled: true
+#    (OPTIONAL) / (DEFAULT: false)
+# dragonfly_backup_enabled: false
+
+# -- S3 endpoint for Dragonfly backups
+#    For RustFS internal: "rustfs-svc.storage.svc.cluster.local:9000"
+#    (OPTIONAL when dragonfly_backup_enabled: true)
+# dragonfly_s3_endpoint: "rustfs-svc.storage.svc.cluster.local:9000"
+
+# -- S3 access key for Dragonfly backups (created via RustFS Console)
+#    (REQUIRED when dragonfly_backup_enabled: true)
+# dragonfly_s3_access_key: ""
+
+# -- S3 secret key for Dragonfly backups (SOPS-encrypted)
+#    (REQUIRED when dragonfly_backup_enabled: true)
+# dragonfly_s3_secret_key: ""
+
+# -- Snapshot cron schedule
+#    (OPTIONAL) / (DEFAULT: "0 */6 * * *" - every 6 hours)
+# dragonfly_snapshot_cron: "0 */6 * * *"
+
+# -- Enable Dragonfly Grafana monitoring (PodMonitor + Dashboard)
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true)
+# dragonfly_monitoring_enabled: false
+
+# -- Enable ACL (Access Control Lists) for multi-tenant access
+#    Creates per-service users with key pattern restrictions
+#    (OPTIONAL) / (DEFAULT: false)
+# dragonfly_acl_enabled: false
+
+# -- Keycloak-specific password for ACL (SOPS-encrypted)
+#    When not set, uses dragonfly_password
+#    (OPTIONAL when dragonfly_acl_enabled: true)
+# dragonfly_keycloak_password: ""
+
+# -- Application cache password for ACL (SOPS-encrypted)
+#    When not set, uses dragonfly_password
+#    (OPTIONAL when dragonfly_acl_enabled: true)
+# dragonfly_appcache_password: ""
+
+# -- LiteLLM cache password for ACL (SOPS-encrypted)
+#    When not set, uses dragonfly_password
+#    (OPTIONAL when dragonfly_acl_enabled: true)
+# dragonfly_litellm_password: ""
+
+# -- Langfuse cache password for ACL (SOPS-encrypted)
+#    Required when Langfuse uses shared Dragonfly with ACL enabled.
+#    Langfuse keys are prefixed with langfuse:* for namespace isolation.
+#    (OPTIONAL when dragonfly_acl_enabled: true and langfuse_enabled: true)
+# dragonfly_langfuse_password: ""
+
+# =============================================================================
 # KEYCLOAK OIDC PROVIDER - Identity and Access Management
 # =============================================================================
 # Keycloak provides OIDC/OAuth2 authentication for JWT SecurityPolicy (API auth)
@@ -881,6 +1017,17 @@ cloudflare_gateway_addr: ""
 #        header: "X-Groups"
 #    NOTE: "groups" claim requires Keycloak "Group Membership" mapper on the client
 # oidc_additional_claims: []
+#oidc_additional_claims:
+#  - name: "preferred_username"
+#    header: "X-Username"
+#  - name: "email"
+#    header: "X-Email"
+#  - name: "realm_access.roles"
+#    header: "X-User-Roles"
+#  - name: "resource_access.envoy-gateway.roles"
+#    header: "X-Client-Roles"
+#  - name: "groups"
+#    header: "X-Groups"
 
 # =============================================================================
 # OIDC WEB SSO CONFIGURATION - Session-based browser authentication
@@ -952,8 +1099,13 @@ cloudflare_gateway_addr: ""
 #      (Keycloak DOES support wildcards in its redirect URI configuration)
 #    - Result: Single sign-on works across ALL *.example.com apps automatically!
 #
+#    STATIC REDIRECT URL (alternative - only if you need a single callback URL):
+#    - Set to a specific URL like "https://sso.matherly.net/oauth2/callback"
+#    - All OIDC callbacks route through this single URL
+#
 #    The cookie domain enables cross-subdomain session sharing, so users authenticate
 #    once and access any protected app without re-authenticating.
+#
 # oidc_redirect_url: ""  # OMIT for dynamic redirect (recommended)
 
 # -- Cookie domain for SSO session cookies
@@ -1053,8 +1205,9 @@ cloudflare_gateway_addr: ""
 #    (REQUIRED when microsoft_idp_enabled: true)
 # microsoft_client_secret: ""
 
-# -- Microsoft Entra ID tenant ID
-#    Use "common" for multi-tenant apps, or specific tenant ID for single-tenant
+# -- Microsoft tenant ID (Directory ID, "common" for multi-tenant)
+#    "common": Allow any Microsoft account (personal or work/school)
+#    "<tenant-id>": Restrict to specific Azure AD tenant
 #    (OPTIONAL) / (DEFAULT: "common")
 # microsoft_tenant_id: "common"
 
@@ -1117,6 +1270,424 @@ cloudflare_gateway_addr: ""
 #     role: "admin"
 #   - group_id: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
 #     role: "user"
+
+# =============================================================================
+# LITELLM PROXY GATEWAY - Unified AI Model Gateway
+# =============================================================================
+# LiteLLM provides a unified OpenAI-compatible API for multiple LLM providers.
+# Supports Azure OpenAI, Anthropic (via Azure AI), Cohere, and more.
+# Features: Cost tracking, rate limiting, caching, observability.
+# REF: https://docs.litellm.ai/docs/proxy/quick_start
+# REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md
+#
+# PREREQUISITES:
+#   - cnpg_enabled: true (CloudNativePG for PostgreSQL backend)
+#   - At least one AI provider API key configured
+#
+# OPTIONAL INTEGRATIONS:
+#   - keycloak_enabled: true → OIDC SSO for admin UI
+#   - rustfs_enabled: true → PostgreSQL backups to S3
+#   - monitoring_enabled: true → Prometheus metrics
+#   - tracing_enabled: true → OpenTelemetry traces to Tempo
+#   - Langfuse → External LLM observability platform
+#
+# SETUP WORKFLOW:
+#   1. Enable cnpg_enabled: true (CloudNativePG operator)
+#   2. Set litellm_enabled: true and required credentials below
+#   3. Configure at least one AI provider (Azure OpenAI, etc.)
+#   4. Run 'task configure' and 'task reconcile'
+#   5. Access LiteLLM at https://litellm.<your-domain>
+#
+# SECURITY NOTES:
+#   - Master key should start with "sk-" and be at least 32 chars
+#   - Salt key used for encrypting sensitive data in database
+#   - All secrets are SOPS-encrypted after 'task configure'
+
+# -- Enable LiteLLM Proxy Gateway
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_enabled: false
+
+# -- LiteLLM subdomain (creates litellm.<cloudflare_domain>)
+#    (OPTIONAL) / (DEFAULT: "litellm")
+# litellm_subdomain: "litellm"
+
+# -- Number of LiteLLM replicas
+#    (OPTIONAL) / (DEFAULT: 1) / (Range: 1-10)
+# litellm_replicas: 1
+
+# -- LiteLLM master API key (SOPS-encrypted)
+#    Generate with: echo "sk-$(openssl rand -base64 24 | tr -d '/+=' | head -c 32)"
+#    MUST start with "sk-" and be at least 32 characters
+#    Used for API authentication and admin access
+#    (REQUIRED when litellm_enabled: true)
+# litellm_master_key: "sk-"
+
+# -- LiteLLM salt key for database encryption (SOPS-encrypted)
+#    Generate with: openssl rand -hex 32
+#    Used to encrypt sensitive data stored in PostgreSQL
+#    (REQUIRED when litellm_enabled: true)
+# litellm_salt_key: ""
+
+# =============================================================================
+# LITELLM POSTGRESQL DATABASE (CloudNativePG)
+# =============================================================================
+# PostgreSQL backend for LiteLLM usage tracking, rate limiting, and team management.
+# Deployed via CloudNativePG for automated HA, backups, and monitoring.
+# Requires cnpg_enabled: true
+
+# -- PostgreSQL username for LiteLLM
+#    (OPTIONAL) / (DEFAULT: "litellm")
+# litellm_db_user: "litellm"
+
+# -- PostgreSQL password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    (REQUIRED when litellm_enabled: true)
+# litellm_db_password: ""
+
+# -- PostgreSQL database name
+#    (OPTIONAL) / (DEFAULT: "litellm")
+# litellm_db_name: "litellm"
+
+# -- Number of PostgreSQL instances (1 for dev, 3 for HA)
+#    (OPTIONAL) / (DEFAULT: 1) / (Range: 1-5)
+# litellm_db_instances: 1
+
+# -- PostgreSQL storage size
+#    (OPTIONAL) / (DEFAULT: "10Gi")
+# litellm_storage_size: "10Gi"
+
+# =============================================================================
+# LITELLM CACHE - SHARED DRAGONFLY
+# =============================================================================
+# LiteLLM uses the shared Dragonfly deployment in the cache namespace.
+# Requires: dragonfly_enabled: true, dragonfly_acl_enabled: true
+# Set dragonfly_litellm_password in the Dragonfly ACL section for authentication.
+# LiteLLM keys are prefixed with litellm:* for namespace isolation.
+# REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md
+
+# =============================================================================
+# LITELLM OIDC AUTHENTICATION (Keycloak SSO)
+# =============================================================================
+# Enable SSO for LiteLLM admin UI via Keycloak.
+# Requires keycloak_enabled: true
+
+# -- Enable OIDC authentication for LiteLLM
+#    When enabled, LiteLLM uses Keycloak for admin UI authentication
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: keycloak_enabled: true)
+# litellm_oidc_enabled: false
+
+# -- LiteLLM OIDC client secret (SOPS-encrypted)
+#    Generate with: openssl rand -hex 32
+#    This secret is automatically configured in Keycloak via realm import
+#    (REQUIRED when litellm_oidc_enabled: true)
+# litellm_oidc_client_secret: ""
+
+# =============================================================================
+# LITELLM POSTGRESQL BACKUPS (RustFS S3)
+# =============================================================================
+# Enable PostgreSQL backups to RustFS S3 storage.
+# Uses CloudNativePG barmanObjectStore for continuous WAL archiving.
+# Requires rustfs_enabled: true
+
+# -- Enable PostgreSQL backups to RustFS
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
+# litellm_backup_enabled: false
+
+# -- S3 access key for backups (created via RustFS Console)
+#    Create policy 'litellm-storage' scoped to litellm-backups bucket
+#    Create user 'litellm-backup' with litellm-storage policy
+#    (REQUIRED when litellm_backup_enabled: true)
+# litellm_s3_access_key: ""
+
+# -- S3 secret key for backups (SOPS-encrypted)
+#    (REQUIRED when litellm_backup_enabled: true)
+# litellm_s3_secret_key: ""
+
+# =============================================================================
+# LITELLM OBSERVABILITY
+# =============================================================================
+# Enable metrics and tracing for LiteLLM.
+
+# -- Enable Prometheus metrics via ServiceMonitor
+#    Scrapes /metrics endpoint for cost, latency, and usage metrics
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true)
+# litellm_monitoring_enabled: false
+
+# -- Enable OpenTelemetry tracing to Tempo
+#    Exports traces via OTLP gRPC to Tempo
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: tracing_enabled: true)
+# litellm_tracing_enabled: false
+
+# =============================================================================
+# LITELLM LANGFUSE OBSERVABILITY (External)
+# =============================================================================
+# Langfuse provides LLM-specific observability: prompt analytics, cost tracking,
+# trace visualization, and evaluation capabilities.
+# REF: https://docs.litellm.ai/docs/observability/langfuse_integration
+# REF: docs/research/langfuse-llm-observability-integration-jan-2026.md
+
+# -- Enable Langfuse integration
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_langfuse_enabled: false
+
+# -- Langfuse host URL
+#    For self-hosted Langfuse (langfuse_enabled: true), use internal cluster address:
+#    http://langfuse-web.ai-system.svc.cluster.local:3000
+#    For Langfuse Cloud, use: https://cloud.langfuse.com
+#    (OPTIONAL) / (DEFAULT: internal cluster URL when langfuse_enabled, cloud otherwise)
+# litellm_langfuse_host: "http://langfuse-web.ai-system.svc.cluster.local:3000"
+
+# -- Langfuse public key
+#    Get from Langfuse project settings
+#    (REQUIRED when litellm_langfuse_enabled: true)
+# litellm_langfuse_public_key: ""
+
+# -- Langfuse secret key (SOPS-encrypted)
+#    Get from Langfuse project settings
+#    (REQUIRED when litellm_langfuse_enabled: true)
+# litellm_langfuse_secret_key: ""
+
+# =============================================================================
+# LITELLM ALERTING - Slack/Discord Webhook Notifications
+# =============================================================================
+# Configure alerting for LiteLLM events: slow requests, errors, budget exceeded.
+# Uses native LiteLLM alerting callbacks via webhook integrations.
+# REF: https://docs.litellm.ai/docs/proxy/alerting
+
+# -- Enable LiteLLM alerting
+#    When enabled, LiteLLM sends notifications for configured events
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_alerting_enabled: false
+
+# -- Slack webhook URL for alerts (SOPS-encrypted)
+#    Create via: Slack App → Incoming Webhooks → Add New Webhook
+#    Format: https://hooks.slack.com/services/T.../B.../xxx
+#    (OPTIONAL) / (One of slack or discord required when alerting enabled)
+# litellm_slack_webhook_url: ""
+
+# -- Discord webhook URL for alerts (SOPS-encrypted)
+#    Create via: Server Settings → Integrations → Webhooks → New Webhook
+#    Format: https://discord.com/api/webhooks/.../...
+#    (OPTIONAL) / (One of slack or discord required when alerting enabled)
+# litellm_discord_webhook_url: ""
+
+# -- Slow request threshold in seconds
+#    Requests exceeding this duration trigger slow request alerts
+#    (OPTIONAL) / (DEFAULT: 300) / (Range: 60-3600)
+# litellm_alerting_threshold: 300
+
+# =============================================================================
+# LITELLM GUARDRAILS - Content Safety and Security
+# =============================================================================
+# Enable content filtering, PII masking, and prompt injection detection.
+# Guardrails intercept requests/responses to enforce safety policies.
+# REF: https://docs.litellm.ai/docs/proxy/guardrails/
+
+# -- Enable LiteLLM built-in guardrails
+#    Activates content filtering and moderation checks
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_guardrails_enabled: false
+
+# -- Enable Presidio PII masking
+#    Uses Microsoft Presidio for detecting and masking PII in prompts
+#    Adds Presidio analyzer/anonymizer sidecars to LiteLLM pods
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_presidio_enabled: false
+
+# -- Enable prompt injection detection
+#    Scans prompts for common injection patterns
+#    (OPTIONAL) / (DEFAULT: false)
+# litellm_prompt_injection_check: false
+
+# =============================================================================
+# AZURE OPENAI API KEYS
+# =============================================================================
+# Azure OpenAI provides enterprise-grade GPT models with SLA guarantees.
+# Configure one or both regions for redundancy.
+#
+# CONFIGURATION PATTERN:
+#   - api_key: SOPS-encrypted secret (from Azure Portal → Keys and Endpoint)
+#   - resource_name: Azure resource name (e.g., "my-openai-eastus")
+#   - api_version: API version string (defaults provided, override if needed)
+
+# -- Azure OpenAI US East Configuration
+#    Get from Azure Portal → Azure OpenAI resource → Keys and Endpoint
+#    (OPTIONAL) / (At least one Azure region required when litellm_enabled)
+# azure_openai_us_east_api_key: ""
+# azure_openai_us_east_resource_name: ""
+# azure_openai_us_east_api_version: "2025-01-01-preview"
+
+# -- Azure OpenAI US East 2 Configuration (GPT-5 series, secondary region)
+#    (OPTIONAL)
+# azure_openai_us_east2_api_key: ""
+# azure_openai_us_east2_resource_name: ""
+# azure_openai_us_east2_api_version: "2025-04-01-preview"
+
+# =============================================================================
+# AZURE AI SERVICES API KEYS AND ENDPOINTS
+# =============================================================================
+# Azure AI Services provides access to Anthropic Claude and Cohere models.
+# These are separate from Azure OpenAI and require Azure AI Services resources.
+# Full API base URL is required (not just resource name).
+#
+# CONFIGURATION PATTERN:
+#   - api_key: SOPS-encrypted secret (from Azure Portal → Azure AI Services → Keys)
+#   - api_base: Full endpoint URL (e.g., "https://my-ai-services.cognitiveservices.azure.com")
+
+# -- Azure Anthropic API (Claude models via Azure AI Services)
+#    (OPTIONAL)
+# azure_anthropic_api_key: ""
+# azure_anthropic_api_base: ""
+
+# -- Azure Cohere Embed API (embedding models via Azure AI Services)
+#    (OPTIONAL)
+# azure_cohere_embed_api_key: ""
+# azure_cohere_embed_api_base: ""
+
+# -- Azure Cohere Rerank API (reranking models via Azure AI Services)
+#    (OPTIONAL)
+# azure_cohere_rerank_api_key: ""
+# azure_cohere_rerank_api_base: ""
+
+# =============================================================================
+# LANGFUSE LLM OBSERVABILITY PLATFORM (Self-Hosted)
+# =============================================================================
+# Self-hosted Langfuse provides LLM tracing, prompt management, evaluation,
+# and cost analytics. Deploys in ai-system namespace alongside LiteLLM.
+# REF: https://langfuse.com/self-hosting
+# REF: docs/research/langfuse-llm-observability-integration-jan-2026.md
+#
+# INFRASTRUCTURE DEPENDENCIES:
+#   - CloudNativePG (cnpg_enabled: true) - PostgreSQL for transactional data
+#   - RustFS (rustfs_enabled: true) - S3 storage for events/media/exports
+#   - Dragonfly (dragonfly_enabled: true) - Redis-compatible caching
+#   - ClickHouse (bundled) - Analytics database
+#
+# OPTIONAL INTEGRATIONS:
+#   - Keycloak SSO (langfuse_sso_enabled: true)
+#   - Prometheus monitoring (langfuse_monitoring_enabled: true)
+#   - Tempo tracing (langfuse_tracing_enabled: true)
+#
+# RUSTFS BUCKETS (create via Console UI port 9001):
+#   - langfuse-events: Raw trace event storage
+#   - langfuse-media: Multi-modal file uploads
+#   - langfuse-exports: Batch data exports
+#   - langfuse-postgres-backups: PostgreSQL WAL backups (if backup enabled)
+
+# -- Enable self-hosted Langfuse deployment
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_enabled: false
+
+# -- Langfuse subdomain (creates langfuse.${cloudflare_domain})
+#    (OPTIONAL) / (DEFAULT: "langfuse")
+# langfuse_subdomain: "langfuse"
+
+# -- NextAuth session secret (256+ entropy)
+#    Generate with: openssl rand -base64 32
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_nextauth_secret: ""
+
+# -- API key hashing salt (256+ entropy)
+#    Generate with: openssl rand -base64 32
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_salt: ""
+
+# -- Data encryption key (256-bit hex)
+#    Generate with: openssl rand -hex 32
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_encryption_key: ""
+
+# -- PostgreSQL password for Langfuse database (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_postgres_password: ""
+
+# -- PostgreSQL HA instances (1 for dev, 3+ for production)
+#    (OPTIONAL) / (DEFAULT: 1)
+# langfuse_postgres_instances: 1
+
+# -- PostgreSQL storage size
+#    (OPTIONAL) / (DEFAULT: "10Gi")
+# langfuse_postgres_storage: "10Gi"
+
+# -- ClickHouse password for analytics database (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_clickhouse_password: ""
+
+# -- ClickHouse storage size
+#    (OPTIONAL) / (DEFAULT: "20Gi")
+# langfuse_clickhouse_storage: "20Gi"
+
+# -- S3 access key for RustFS (created via RustFS Console)
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_s3_access_key: ""
+
+# -- S3 secret key for RustFS (SOPS-encrypted)
+#    (REQUIRED when langfuse_enabled: true)
+# langfuse_s3_secret_key: ""
+
+# -- Enable PostgreSQL backups to RustFS S3
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
+# langfuse_backup_enabled: false
+
+# -- Backup S3 credentials (can reuse langfuse_s3 or use separate)
+#    (REQUIRED when langfuse_backup_enabled: true)
+# langfuse_backup_s3_access_key: ""
+# langfuse_backup_s3_secret_key: ""
+
+# -- Enable Keycloak SSO authentication
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: keycloak_enabled: true)
+# langfuse_sso_enabled: false
+
+# -- Keycloak OIDC client secret (SOPS-encrypted)
+#    Generate with: openssl rand -hex 32
+#    (REQUIRED when langfuse_sso_enabled: true)
+# langfuse_keycloak_client_secret: ""
+
+# -- Enable Prometheus metrics via ServiceMonitor
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true)
+# langfuse_monitoring_enabled: false
+
+# -- Enable OpenTelemetry trace export to Tempo
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: tracing_enabled: true)
+# langfuse_tracing_enabled: false
+
+# -- Log level (trace, debug, info, warn, error, fatal)
+#    (OPTIONAL) / (DEFAULT: "info")
+# langfuse_log_level: "info"
+
+# -- Trace sampling ratio (0.0 to 1.0)
+#    (OPTIONAL) / (DEFAULT: "0.1" = 10%)
+# langfuse_trace_sampling_ratio: "0.1"
+
+# -- Session max age in seconds
+#    Controls how long user sessions remain valid before requiring re-login.
+#    (OPTIONAL) / (DEFAULT: 2592000 = 30 days)
+# langfuse_session_max_age: 2592000
+
+# -- SMTP connection URL for email notifications (SOPS-encrypted)
+#    Format: smtp://user:pass@host:port or smtps://user:pass@host:port
+#    Used for password resets, team invitations, and notifications.
+#    (OPTIONAL)
+# langfuse_smtp_url: ""
+
+# -- Email sender address
+#    The "from" address for outgoing emails.
+#    (OPTIONAL) / (DEFAULT: noreply@${cloudflare_domain})
+# langfuse_email_from: ""
+
+# -- Web service replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# langfuse_web_replicas: 1
+
+# -- Worker service replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# langfuse_worker_replicas: 1
+
+# -- Langfuse Helm chart version
+#    (OPTIONAL) / (DEFAULT: "*" for latest)
+# langfuse_chart_version: "*"
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3

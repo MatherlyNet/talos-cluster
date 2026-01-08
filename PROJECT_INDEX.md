@@ -271,5 +271,7 @@ The `docs/ai-context/` directory provides domain-specific deep-dive documentatio
 | `cilium-networking.md` | Cilium CNI | Network debugging, LoadBalancer issues, BGP config, NetworkPolicies |
 | `template-system.md` | makejinja | Template syntax, adding variables, creating new templates |
 | `infrastructure-opentofu.md` | OpenTofu | IaC operations, R2 backend, Proxmox automation |
+| `litellm.md` | LiteLLM | LLM proxy configuration, model routing, caching |
+| `langfuse.md` | Langfuse | LLM observability, tracing, prompt management, evaluation |
 
 **Token Efficiency:** Each document focuses on one domain (~8-12KB each), more efficient than loading full documentation (~64KB).

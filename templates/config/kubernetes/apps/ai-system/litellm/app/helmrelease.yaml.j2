@@ -1,0 +1,350 @@
+#% if litellm_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| LITELLM PROXY GATEWAY - Unified LLM API Gateway                              #|
+#| REF: https://docs.litellm.ai/                                                 #|
+#| REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md             #|
+#| ============================================================================= #|
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm
+  namespace: ai-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: litellm
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    #| ========================================================================= #|
+    #| Default Pod Options                                                       #|
+    #| Standard LiteLLM image runs as root for proper UI and Prisma support     #|
+    #| ========================================================================= #|
+    defaultPodOptions:
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/metrics"
+      terminationGracePeriodSeconds: 60
+#% if network_policies_enabled | default(false) %#
+      #| Network policy labels for CiliumNetworkPolicy tiered policies #|
+      labels:
+        network.cilium.io/api-access: "true"
+#% endif %#
+
+    #| ========================================================================= #|
+    #| Controllers                                                               #|
+    #| ========================================================================= #|
+    controllers:
+      litellm:
+        type: deployment
+        replicas: #{ litellm_replicas | default(1) }#
+        strategy: RollingUpdate
+        rollingUpdate:
+          unavailable: 0
+          surge: 1
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/berriai/litellm
+              tag: #{ litellm_image_tag | default('main-v1.80.8-stable.1') }#
+              pullPolicy: IfNotPresent
+
+            args:
+              - --host
+              - "0.0.0.0"
+              - --port
+              - "4000"
+              - --config
+              - /app/config.yaml
+
+            env:
+              #| Core LiteLLM settings #|
+              TZ: "#{ timezone | default('America/New_York') }#"
+              STORE_MODEL_IN_DB: "True"
+              USE_PRISMA_MIGRATE: "True"
+              LITELLM_MODE: "PRODUCTION"
+              LITELLM_DONT_SHOW_FEEDBACK_BOX: "True"
+              LITELLM_CALLBACKS: prometheus
+              #| Writable directory for database migrations #|
+              LITELLM_MIGRATION_DIR: "/tmp/prisma"
+
+              #| Redis/Dragonfly settings (shared cache namespace Dragonfly) #|
+              REDIS_HOST: dragonfly.cache.svc.cluster.local
+              REDIS_PORT: "6379"
+              REDIS_NAMESPACE: litellm
+              REDIS_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: REDIS_URL
+
+              #| Database URL (constructed from secret) #|
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: DATABASE_URL
+
+              #| LiteLLM Master/Salt Keys #|
+              LITELLM_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_MASTER_KEY
+              LITELLM_SALT_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_SALT_KEY
+
+              #| UI Authentication #|
+              UI_USERNAME: admin
+              UI_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_MASTER_KEY
+
+              #| Redis Password #|
+              REDIS_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: REDIS_PASSWORD
+
+#% if azure_openai_us_east_api_key %#
+              #| Azure OpenAI US East #|
+              AZURE_API_BASE: "https://#{ azure_openai_us_east_resource_name }#.openai.azure.com/"
+              AZURE_API_VERSION: "#{ azure_openai_us_east_api_version | default('2025-01-01-preview') }#"
+              AZURE_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_API_KEY
+#% endif %#
+
+#% if azure_openai_us_east2_api_key %#
+              #| Azure OpenAI US East2 #|
+              AZURE_API_BASE_EAST2: "https://#{ azure_openai_us_east2_resource_name }#.openai.azure.com/"
+              AZURE_API_VERSION_EAST2: "#{ azure_openai_us_east2_api_version | default('2025-04-01-preview') }#"
+              AZURE_API_KEY_EAST2:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_API_KEY_EAST2
+#% endif %#
+
+#% if azure_anthropic_api_key %#
+              #| Azure Anthropic API #|
+              AZURE_ANTHROPIC_API_BASE: "#{ azure_anthropic_api_base }#"
+              AZURE_ANTHROPIC_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_ANTHROPIC_API_KEY
+#% endif %#
+
+#% if azure_cohere_rerank_api_key %#
+              #| Azure Cohere Rerank API #|
+              AZURE_COHERE_RERANK_API_BASE: "#{ azure_cohere_rerank_api_base }#"
+              AZURE_COHERE_RERANK_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_COHERE_RERANK_API_KEY
+#% endif %#
+
+#% if azure_cohere_embed_api_key %#
+              #| Azure Cohere Embed API #|
+              AZURE_COHERE_EMBED_API_BASE: "#{ azure_cohere_embed_api_base }#"
+              AZURE_COHERE_EMBED_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_COHERE_EMBED_API_KEY
+#% endif %#
+
+#% if litellm_tracing_enabled | default(false) %#
+              #| OpenTelemetry Tracing (Tempo) #|
+              OTEL_EXPORTER: "otlp_grpc"
+              OTEL_ENDPOINT: "http://tempo.monitoring.svc:4317"
+              OTEL_HEADERS: ""
+#% endif %#
+
+#% if litellm_langfuse_enabled | default(false) %#
+              #| Langfuse Observability #|
+              LANGFUSE_HOST: "#{ litellm_langfuse_host }#"
+              LANGFUSE_PUBLIC_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LANGFUSE_PUBLIC_KEY
+              LANGFUSE_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LANGFUSE_SECRET_KEY
+#% endif %#
+
+#% if litellm_oidc_enabled | default(false) %#
+              #| Keycloak OIDC SSO #|
+              GENERIC_CLIENT_ID: "litellm"
+              GENERIC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: OIDC_CLIENT_SECRET
+              GENERIC_AUTHORIZATION_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/auth"
+              GENERIC_TOKEN_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/token"
+              GENERIC_USERINFO_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/userinfo"
+#% endif %#
+
+#% if litellm_alerting_enabled | default(false) %#
+              #| Alerting Webhooks (Slack/Discord) #|
+#% if litellm_slack_webhook_url %#
+              SLACK_WEBHOOK_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: SLACK_WEBHOOK_URL
+#% endif %#
+#% if litellm_discord_webhook_url %#
+              DISCORD_WEBHOOK_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: DISCORD_WEBHOOK_URL
+#% endif %#
+#% endif %#
+
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: &port 4000
+                  #| Extended startup time for Prisma initialization #|
+                  initialDelaySeconds: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 10
+                  failureThreshold: 30
+                  successThreshold: 1
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: *port
+                  initialDelaySeconds: 60
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/readiness
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              #| Standard LiteLLM image runs as root (UID 0) for UI serving #|
+              runAsNonRoot: false
+              privileged: false
+              capabilities: { drop: ["ALL"] }
+              seccompProfile: { type: RuntimeDefault }
+
+            resources:
+              requests:
+                cpu: #{ litellm_cpu_request | default('200m') }#
+                memory: #{ litellm_memory_request | default('512Mi') }#
+              limits:
+                cpu: #{ litellm_cpu_limit | default('1000m') }#
+                memory: #{ litellm_memory_limit | default('1Gi') }#
+
+    #| ========================================================================= #|
+    #| Service                                                                   #|
+    #| ========================================================================= #|
+    service:
+      litellm:
+        controller: litellm
+        ports:
+          http:
+            port: 4000
+            targetPort: *port
+
+    #| ========================================================================= #|
+    #| Persistence                                                               #|
+    #| EmptyDir mounts for writable directories required by Prisma + npm        #|
+    #| ========================================================================= #|
+    persistence:
+      #| LiteLLM config file from ConfigMap #|
+      config-file:
+        type: configMap
+        name: litellm-config
+        globalMounts:
+          - path: /app/config.yaml
+            subPath: config.yaml
+            readOnly: true
+
+      #| Temp directory for ephemeral data #|
+      tmp:
+        type: emptyDir
+        sizeLimit: 100Mi
+        globalMounts:
+          - path: /tmp
+
+      #| Prisma/Python cache directory #|
+      cache:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /.cache
+
+      #| npm cache directory for Prisma CLI #|
+      npm-cache:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /.npm
+
+      #| Prisma cache for nobody user (home dir is /nonexistent) #|
+      nonexistent:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /nonexistent
+
+      #| Migrations directory for LITELLM_MIGRATION_DIR #|
+      data:
+        type: emptyDir
+        sizeLimit: 100Mi
+        globalMounts:
+          - path: /data
+#% endif %#

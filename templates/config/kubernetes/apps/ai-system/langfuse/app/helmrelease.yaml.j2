@@ -1,0 +1,204 @@
+#% if langfuse_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| LANGFUSE HELM RELEASE                                                         #|
+#| LLM observability platform - tracing, prompts, evaluation, analytics          #|
+#| REF: https://langfuse.com/self-hosting/deployment/kubernetes-helm            #|
+#| REF: docs/research/langfuse-llm-observability-integration-jan-2026.md        #|
+#| ============================================================================= #|
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: langfuse
+  namespace: ai-system
+spec:
+  chart:
+    spec:
+      chart: langfuse
+      version: "#{ langfuse_chart_version | default('*') }#"
+      sourceRef:
+        kind: HelmRepository
+        name: langfuse
+        namespace: ai-system
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    #| ========================================================================= #|
+    #| Core Application Configuration                                           #|
+    #| ========================================================================= #|
+    langfuse:
+      nextauth:
+        url: "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#"
+        secret:
+          existingSecret: langfuse-credentials
+          existingSecretKey: NEXTAUTH_SECRET
+      salt:
+        existingSecret: langfuse-credentials
+        existingSecretKey: SALT
+      encryptionKey:
+        existingSecret: langfuse-credentials
+        existingSecretKey: ENCRYPTION_KEY
+
+      #| Logging configuration #|
+      logLevel: "#{ langfuse_log_level | default('info') }#"
+      logFormat: "json"
+
+#% if langfuse_smtp_url | default('') %#
+      #| ======================================================================= #|
+      #| SMTP Email Configuration                                               #|
+      #| ======================================================================= #|
+      email:
+        smtpConnectionUrl:
+          existingSecret: langfuse-smtp-credentials
+          existingSecretKey: SMTP_URL
+        fromAddress: "#{ langfuse_email_from | default('noreply@' ~ cloudflare_domain) }#"
+#% endif %#
+
+      #| ======================================================================= #|
+      #| Session Configuration                                                  #|
+      #| ======================================================================= #|
+      session:
+        #| Session max age in seconds (default: 30 days) #|
+        maxAge: #{ langfuse_session_max_age | default(2592000) }#
+
+#% if langfuse_sso_enabled | default(false) %#
+      #| ======================================================================= #|
+      #| Keycloak SSO Configuration                                             #|
+      #| ======================================================================= #|
+      auth:
+        disableUsernamePassword: false  #| Keep as fallback #|
+        keycloak:
+          enabled: true
+          clientId: "langfuse"
+          issuer: "#{ keycloak_issuer_url }#"
+          existingSecret: langfuse-keycloak-credentials
+          existingSecretClientSecretKey: client-secret
+          allowAccountLinking: true
+#% endif %#
+
+    #| ========================================================================= #|
+    #| PostgreSQL - Use External CNPG Cluster                                   #|
+    #| ========================================================================= #|
+    postgresql:
+      enabled: false  #| Disable bundled PostgreSQL #|
+
+    externalPostgresql:
+      host: "langfuse-postgresql-rw.ai-system.svc.cluster.local"
+      port: 5432
+      database: "langfuse"
+      user: "langfuse"
+      existingSecret: "langfuse-postgresql-credentials"
+      existingSecretPasswordKey: "password"
+
+    #| ========================================================================= #|
+    #| Redis - Use External Dragonfly                                           #|
+    #| ========================================================================= #|
+    redis:
+      enabled: false  #| Disable bundled Redis #|
+
+#% if dragonfly_enabled | default(false) %#
+    externalRedis:
+      connectionString: "redis://dragonfly.cache.svc.cluster.local:6379"
+#% if dragonfly_acl_enabled | default(false) %#
+      #| Use ACL if Dragonfly multi-tenant mode #|
+      existingSecret: "langfuse-redis-credentials"
+      existingSecretPasswordKey: "password"
+#% endif %#
+#% endif %#
+
+    #| ========================================================================= #|
+    #| ClickHouse - Bundled for Analytics                                       #|
+    #| ========================================================================= #|
+    clickhouse:
+      enabled: true
+      replicaCount: #{ langfuse_clickhouse_replicas | default(1) }#
+      persistence:
+        enabled: true
+        size: #{ langfuse_clickhouse_storage | default('20Gi') }#
+        storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          memory: 4Gi
+
+      auth:
+        existingSecret: "langfuse-clickhouse-credentials"
+        existingSecretPasswordKey: "password"
+
+    #| ========================================================================= #|
+    #| S3 Storage - Use External RustFS                                         #|
+    #| ========================================================================= #|
+#% if rustfs_enabled | default(false) %#
+    s3:
+      enabled: true
+      provider: "s3"
+      eventUploadBucket: "langfuse-events"
+      eventUploadRegion: "us-east-1"
+      eventUploadEndpoint: "http://rustfs.storage.svc.cluster.local:9000"
+      eventUploadForcePathStyle: true
+      existingSecret: "langfuse-s3-credentials"
+      existingSecretAccessKeyIdKey: "AWS_ACCESS_KEY_ID"
+      existingSecretSecretAccessKeyKey: "AWS_SECRET_ACCESS_KEY"
+
+      #| Media uploads #|
+      mediaUploadEnabled: true
+      mediaUploadBucket: "langfuse-media"
+
+      #| Batch exports #|
+      batchExportEnabled: true
+      batchExportBucket: "langfuse-exports"
+
+    minio:
+      enabled: false  #| Disable bundled MinIO #|
+#% else %#
+    s3:
+      enabled: false
+#% endif %#
+
+    #| ========================================================================= #|
+    #| Ingress / Gateway API                                                    #|
+    #| ========================================================================= #|
+    ingress:
+      enabled: false  #| Use HTTPRoute instead #|
+
+    #| ========================================================================= #|
+    #| Resource Allocation                                                      #|
+    #| ========================================================================= #|
+    web:
+      replicaCount: #{ langfuse_web_replicas | default(1) }#
+      resources:
+        requests:
+          cpu: #{ langfuse_web_cpu_request | default('200m') }#
+          memory: #{ langfuse_web_memory_request | default('512Mi') }#
+        limits:
+          memory: #{ langfuse_web_memory_limit | default('2Gi') }#
+
+    worker:
+      replicaCount: #{ langfuse_worker_replicas | default(1) }#
+      resources:
+        requests:
+          cpu: #{ langfuse_worker_cpu_request | default('200m') }#
+          memory: #{ langfuse_worker_memory_request | default('512Mi') }#
+        limits:
+          memory: #{ langfuse_worker_memory_limit | default('2Gi') }#
+
+    #| ========================================================================= #|
+    #| OpenTelemetry Observability                                              #|
+    #| ========================================================================= #|
+#% if langfuse_tracing_enabled | default(false) %#
+    otel:
+      enabled: true
+      endpoint: "http://tempo.monitoring.svc.cluster.local:4318"
+      serviceName: "langfuse"
+      samplingRatio: "#{ langfuse_trace_sampling_ratio | default('0.1') }#"
+#% endif %#
+#% endif %#

@@ -623,6 +623,14 @@
     "oidc_cookie_domain": {
       "type": "string"
     },
+    "oidc_cookie_samesite": {
+      "default": "Lax",
+      "type": "string"
+    },
+    "oidc_refresh_token": {
+      "default": true,
+      "type": "boolean"
+    },
     "oidc_logout_path": {
       "default": "/logout",
       "type": "string",
@@ -1042,6 +1050,447 @@
           }
         }
       }
+    },
+    "litellm_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM Proxy Gateway - Unified AI Model Gateway REF: https://docs.litellm.ai/docs/proxy/quick_start REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md Provides unified API for Azure OpenAI, Anthropic, Cohere models with caching and observability"
+    },
+    "litellm_subdomain": {
+      "default": "litellm",
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "litellm_master_key": {
+      "type": "string",
+      "pattern": "^sk-"
+    },
+    "litellm_salt_key": {
+      "type": "string",
+      "pattern": ".{32,}"
+    },
+    "litellm_db_user": {
+      "default": "litellm",
+      "type": "string",
+      "minLength": 1,
+      "description": "LiteLLM PostgreSQL Database (CloudNativePG) Requires cnpg_enabled: true"
+    },
+    "litellm_db_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_db_name": {
+      "default": "litellm",
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_db_instances": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "litellm_storage_size": {
+      "default": "10Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "litellm_oidc_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM OIDC Authentication (requires keycloak_enabled: true) Integrates with Keycloak for SSO admin UI access"
+    },
+    "litellm_oidc_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_backup_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM PostgreSQL Backups (requires rustfs_enabled: true) Credentials must be created via RustFS Console UI"
+    },
+    "litellm_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM Observability (requires monitoring_enabled and/or tracing_enabled)"
+    },
+    "litellm_tracing_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "litellm_langfuse_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM Langfuse Observability (external LLM analytics) REF: https://docs.litellm.ai/docs/observability/langfuse_integration"
+    },
+    "litellm_langfuse_host": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Langfuse host URL - auto-derived in plugin.py: - Self-hosted (langfuse_enabled: true): http://langfuse-web.ai-system.svc.cluster.local:3000 - Langfuse Cloud: https://cloud.langfuse.com"
+    },
+    "litellm_langfuse_public_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_langfuse_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "litellm_alerting_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM Alerting (Slack/Discord webhook notifications) REF: https://docs.litellm.ai/docs/proxy/alerting"
+    },
+    "litellm_slack_webhook_url": {
+      "type": "string",
+      "pattern": "^https://hooks\\.slack\\.com/"
+    },
+    "litellm_discord_webhook_url": {
+      "type": "string",
+      "pattern": "^https://discord\\.com/api/webhooks/"
+    },
+    "litellm_alerting_threshold": {
+      "default": 300,
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 3600
+    },
+    "litellm_guardrails_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "LiteLLM Guardrails (content filtering, PII masking, prompt injection detection) REF: https://docs.litellm.ai/docs/proxy/guardrails/"
+    },
+    "litellm_presidio_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "litellm_prompt_injection_check": {
+      "default": false,
+      "type": "boolean"
+    },
+    "azure_openai_us_east_api_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Azure OpenAI US East Configuration Resource name is the Azure OpenAI resource name (e.g., \"my-openai-eastus\") API version defaults to latest stable preview"
+    },
+    "azure_openai_us_east_resource_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "azure_openai_us_east_api_version": {
+      "default": "2025-01-01-preview",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$"
+    },
+    "azure_openai_us_east2_api_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Azure OpenAI US East2 Configuration (GPT-5 series, secondary region)"
+    },
+    "azure_openai_us_east2_resource_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "azure_openai_us_east2_api_version": {
+      "default": "2025-04-01-preview",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$"
+    },
+    "azure_anthropic_api_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Azure AI Services API Keys and Endpoints (Anthropic, Cohere) These use Azure AI Services, not Azure OpenAI - full base URL required"
+    },
+    "azure_anthropic_api_base": {
+      "type": "string",
+      "pattern": "^https://"
+    },
+    "azure_cohere_embed_api_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "azure_cohere_embed_api_base": {
+      "type": "string",
+      "pattern": "^https://"
+    },
+    "azure_cohere_rerank_api_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "azure_cohere_rerank_api_base": {
+      "type": "string",
+      "pattern": "^https://"
+    },
+    "dragonfly_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Dragonfly Cache - Redis-compatible in-memory data store REF: https://www.dragonflydb.io/ REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md Provides Redis API compatibility with 25x performance improvement"
+    },
+    "dragonfly_version": {
+      "default": "v1.36.0",
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "dragonfly_operator_version": {
+      "default": "1.3.1",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "dragonfly_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "dragonfly_maxmemory": {
+      "default": "512mb",
+      "type": "string",
+      "pattern": "^[0-9]+[kmgt]b$"
+    },
+    "dragonfly_threads": {
+      "default": 2,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "dragonfly_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_control_plane_only": {
+      "default": false,
+      "type": "boolean"
+    },
+    "dragonfly_cpu_request": {
+      "default": "100m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "dragonfly_memory_request": {
+      "default": "256Mi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "dragonfly_memory_limit": {
+      "default": "1Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "dragonfly_cache_mode": {
+      "default": false,
+      "type": "boolean"
+    },
+    "dragonfly_slowlog_threshold": {
+      "default": 10000,
+      "type": "integer",
+      "minimum": 0
+    },
+    "dragonfly_slowlog_max_len": {
+      "default": 128,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "dragonfly_backup_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Dragonfly S3 Backups (requires rustfs_enabled: true) Credentials must be created via RustFS Console UI"
+    },
+    "dragonfly_s3_endpoint": {
+      "default": "rustfs-svc.storage.svc.cluster.local:9000",
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_snapshot_cron": {
+      "default": "0 */6 * * *",
+      "type": "string",
+      "pattern": "^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+    },
+    "dragonfly_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Dragonfly Monitoring (requires monitoring_enabled: true)"
+    },
+    "dragonfly_acl_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Dragonfly ACL - Multi-tenant access control Per-application passwords for secure namespace isolation"
+    },
+    "dragonfly_keycloak_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_appcache_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_litellm_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_langfuse_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Langfuse LLM Observability Platform REF: https://langfuse.com/self-hosting REF: docs/research/langfuse-llm-observability-integration-jan-2026.md Provides LLM tracing, prompt management, evaluation, and cost analytics"
+    },
+    "langfuse_subdomain": {
+      "default": "langfuse",
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_nextauth_secret": {
+      "type": "string",
+      "pattern": ".{32,}",
+      "description": "Langfuse Core Credentials (SOPS-encrypted) Generate with: openssl rand -base64 32 (nextauth_secret, salt) Generate with: openssl rand -hex 32 (encryption_key)"
+    },
+    "langfuse_salt": {
+      "type": "string",
+      "pattern": ".{32,}"
+    },
+    "langfuse_encryption_key": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "langfuse_postgres_password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Langfuse PostgreSQL Database (CloudNativePG) Requires cnpg_enabled: true"
+    },
+    "langfuse_postgres_instances": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "langfuse_postgres_storage": {
+      "default": "10Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "langfuse_clickhouse_password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Langfuse ClickHouse (bundled analytics database)"
+    },
+    "langfuse_clickhouse_storage": {
+      "default": "20Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "langfuse_clickhouse_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "langfuse_s3_access_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Langfuse S3 Storage (requires rustfs_enabled: true) Credentials must be created via RustFS Console UI Buckets needed: langfuse-events, langfuse-media, langfuse-exports"
+    },
+    "langfuse_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_backup_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Langfuse PostgreSQL Backups (requires rustfs_enabled: true) Bucket needed: langfuse-postgres-backups"
+    },
+    "langfuse_backup_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_backup_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_sso_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Langfuse SSO (requires keycloak_enabled: true) Integrates with Keycloak for OIDC authentication"
+    },
+    "langfuse_keycloak_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Langfuse Observability (requires monitoring_enabled and/or tracing_enabled)"
+    },
+    "langfuse_tracing_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "langfuse_log_level": {
+      "default": "info",
+      "type": "string",
+      "description": "Langfuse Resource Configuration"
+    },
+    "langfuse_trace_sampling_ratio": {
+      "default": "0.1",
+      "type": "string",
+      "pattern": "^[01]?\\.[0-9]+$"
+    },
+    "langfuse_web_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "langfuse_worker_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "langfuse_chart_version": {
+      "default": "*",
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_smtp_url": {
+      "type": "string",
+      "pattern": "^smtp(s)?://",
+      "description": "Langfuse SMTP/Email Configuration (optional)"
+    },
+    "langfuse_email_from": {
+      "type": "string",
+      "pattern": "^[^@]+@[^@]+$"
+    },
+    "langfuse_session_max_age": {
+      "default": 2592000,
+      "type": "integer",
+      "minimum": 3600,
+      "maximum": 31536000,
+      "description": "Langfuse Session Configuration (optional)"
     }
   },
   "required": [

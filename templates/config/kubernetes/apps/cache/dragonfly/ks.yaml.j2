@@ -1,0 +1,61 @@
+#% if dragonfly_enabled | default(false) %#
+---
+#| First Kustomization: Operator + CRDs #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dragonfly-operator
+spec:
+  dependsOn:
+    - name: coredns
+      namespace: kube-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: dragonfly-operator
+      namespace: dragonfly-operator-system
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/cache/dragonfly/operator
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: dragonfly-operator-system
+  timeout: 10m
+  wait: true
+---
+#| Second Kustomization: Dragonfly CR (depends on operator) #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dragonfly
+spec:
+  dependsOn:
+    - name: dragonfly-operator
+#% if dragonfly_backup_enabled | default(false) %#
+    - name: rustfs
+      namespace: storage
+#% endif %#
+  healthChecks:
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      name: dragonfly
+      namespace: cache
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/cache/dragonfly/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: cache
+  timeout: 10m
+  wait: true
+#% endif %#

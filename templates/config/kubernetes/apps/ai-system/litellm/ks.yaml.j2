@@ -1,0 +1,56 @@
+#% if litellm_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| LITELLM FLUX KUSTOMIZATION                                                    #|
+#| Single Kustomization pattern - bjw-s app-template has no CRDs                #|
+#| REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md             #|
+#| ============================================================================= #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app litellm
+  namespace: flux-system
+spec:
+  targetNamespace: ai-system
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    #| Core infrastructure dependencies #|
+    - name: coredns
+      namespace: kube-system
+    - name: cloudnative-pg
+      namespace: cnpg-system
+    #| Shared Dragonfly (Redis-compatible) cache in cache namespace #|
+    - name: dragonfly
+      namespace: cache
+#% if litellm_oidc_enabled | default(false) %#
+    #| Keycloak for SSO authentication #|
+    - name: keycloak
+      namespace: identity
+#% endif %#
+#% if litellm_backup_enabled | default(false) %#
+    #| RustFS for PostgreSQL backups #|
+    - name: rustfs
+      namespace: storage
+#% endif %#
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: litellm
+      namespace: ai-system
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/ai-system/litellm/app
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 15m
+  wait: true
+#% endif %#

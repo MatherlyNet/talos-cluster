@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dragonfly-acl
+data:
+  acl.conf: |
+    user default on >WxGUaRo9pAi5IreSZbfT0jGyPxEbHhE ~* +@all
+
+    user keycloak on >hDIwAwCGbszBIoLQsSAqSxPEFtPsvr ~keycloak:* +@read +@write -@dangerous
+
+    user appcache on >EvXX9CY0jAJIfrzBEBZ3Ar5rL5h ~cache:* +@read +GET +SET +DEL +EXPIRE -@dangerous
+
+    user litellm on >b7XZxcsxjYotA7GpZzLlzMqPq9MfOqD ~litellm:* +@read +@write -@dangerous
+

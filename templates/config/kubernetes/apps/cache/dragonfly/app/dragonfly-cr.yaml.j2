@@ -1,0 +1,112 @@
+#% if dragonfly_enabled | default(false) %#
+---
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: dragonfly
+spec:
+  #| Number of replicas (1 master + N-1 replicas) #|
+  replicas: #{ dragonfly_replicas | default(1) }#
+
+  #| Container image #|
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:#{ dragonfly_version | default('v1.36.0') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      cpu: #{ dragonfly_cpu_request | default('100m') }#
+      memory: #{ dragonfly_memory_request | default('256Mi') }#
+    limits:
+      memory: #{ dragonfly_memory_limit | default('1Gi') }#
+
+  #| Authentication #|
+  authentication:
+    passwordFromSecret:
+      name: dragonfly-auth
+      key: password
+
+  #| Command-line arguments #|
+  args:
+    #| Core performance settings #|
+    - --maxmemory=#{ dragonfly_maxmemory | default('512mb') }#
+    - --proactor_threads=#{ dragonfly_threads | default(2) }#
+    #| Admin port for metrics (separate from data port 6379) #|
+    - --admin_port=9999
+    #| Security: disable HTTP on main data port #|
+    - --primary_port_http_enabled=false
+#% if dragonfly_cache_mode | default(false) %#
+    #| Cache mode enables LRU-like eviction when near maxmemory #|
+    - --cache_mode=true
+#% endif %#
+    #| Slow query logging for debugging #|
+    - --slowlog_log_slower_than=#{ dragonfly_slowlog_threshold | default(10000) }#
+    - --slowlog_max_len=#{ dragonfly_slowlog_max_len | default(128) }#
+#% if dragonfly_acl_enabled | default(false) %#
+    #| ACL file for multi-tenant access control #|
+    - --aclfile=/etc/dragonfly/acl.conf
+#% endif %#
+#% if dragonfly_backup_enabled | default(false) %#
+    #| S3 snapshot configuration for RustFS #|
+    - --dir=s3://dragonfly-backups
+    - --s3_endpoint=#{ dragonfly_s3_endpoint | default('rustfs-svc.storage.svc.cluster.local:9000') }#
+    - --s3_use_https=false
+    - --dbfilename=snapshot
+#% endif %#
+
+#% if dragonfly_acl_enabled | default(false) %#
+  #| Mount ACL configuration #|
+  volumes:
+    - name: acl-config
+      configMap:
+        name: dragonfly-acl
+  volumeMounts:
+    - name: acl-config
+      mountPath: /etc/dragonfly
+      readOnly: true
+#% endif %#
+
+#% if dragonfly_backup_enabled | default(false) %#
+  #| Snapshot configuration #|
+  snapshot:
+    cron: "#{ dragonfly_snapshot_cron | default('0 */6 * * *') }#"
+
+  #| S3 credentials via environment variables #|
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-auth
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-auth
+          key: AWS_SECRET_ACCESS_KEY
+#% endif %#
+
+  #| Service configuration #|
+  serviceSpec:
+    type: ClusterIP
+
+  #| Pod anti-affinity for HA #|
+#% if (dragonfly_replicas | default(1) | int) > 1 %#
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: dragonfly
+            topologyKey: kubernetes.io/hostname
+#% endif %#
+
+  #| Tolerations for control-plane scheduling (optional) #|
+#% if dragonfly_control_plane_only | default(false) %#
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+#% endif %#
+#% endif %#

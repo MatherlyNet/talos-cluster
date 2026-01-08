@@ -39,13 +39,13 @@ spec:
         - name: user
           description: Basic authenticated user access to standard applications
     clients:
-      - clientId: ENC[AES256_GCM,data:poMJFxZoPehruDMVVw==,iv:f80YYaVBnpg422P8sJrd6Oizf7YtNKDn3RysabyJVyU=,tag:Wz0Xn4lD6RwUqxLo/tGEig==,type:str]
+      - clientId: ENC[AES256_GCM,data:t55Nfns0BkzHTNtzDw==,iv:nCQOBPAStntcaKcPHsb5rcSCEA7EwEaN5utD7+N1It8=,tag:fLXt/PO5TtPzeRCwUaMxwg==,type:str]
         name: Envoy Gateway SSO
         description: OIDC client for Envoy Gateway SecurityPolicy - enables browser SSO across all protected applications
         enabled: true
         publicClient: false
         clientAuthenticatorType: client-secret
-        secret: ENC[AES256_GCM,data:nsN32fQphyqvqYPw/hn3uNZ8xDsFrqd0zN25IWIagy7+T10Bs0ElpKIIm3MRREWFihn2R7AcWWdidY5PWcpt5Q==,iv:zkipcmBPK7gcDmSPbcjDzUmHVxTDAgEwBSljPSjCEj8=,tag:FJDS/zrtnUzUnuiMo9gBlA==,type:str]
+        secret: ENC[AES256_GCM,data:cxSi9bo0NcjQp92riH7IUHh2XVvFIRPAQrO6k+V0Q9DK4Fv34V295xBUHgMSwxTpWvc9vk8tMiMm5EUO5HmYPw==,iv:1ZWPyZsJD2b0vNeS20Ci9fBJF7Ns7MkVdXnAkPmcGAA=,tag:BHHn2wvTktdiPvi9C6tVGQ==,type:str]
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
@@ -70,13 +70,13 @@ spec:
           - address
           - phone
           - offline_access
-      - clientId: ENC[AES256_GCM,data:CQNUyHn1bg==,iv:mgDu8n9vftIIul00/TcNoBBWS0gzGbkENrxvREZfQUk=,tag:8lK6nrhotXQ8oTfR+dXW1g==,type:str]
+      - clientId: ENC[AES256_GCM,data:UVxdcLVM5A==,iv:a+v8jBlgVFxnptstYq4JdtprIEw1Tsrx5wLVTiH/IfY=,tag:Z1QqfktqxuS0M1FlePkuvQ==,type:str]
         name: Grafana
         description: OIDC client for Grafana native OAuth - provides RBAC and role-based access control
         enabled: true
         publicClient: false
         clientAuthenticatorType: client-secret
-        secret: ENC[AES256_GCM,data:Nj61kBmSyPsMWMqqii/6bGT0L3HZBPz57kcqqQPEngK9LMr8+wQWPg+ibSy8SvfLt7EVwDywVUQRpIEayfTWhA==,iv:bL2YkpNtKC+uOi7FV+VSX3hjYyjFHVZc7T+cYWgc/qw=,tag:yA2wTJLwCaF+ETwhtbIwvg==,type:str]
+        secret: ENC[AES256_GCM,data:0RvOD/lcnxnn01YUWVnYijrSnQTulO2oMKjEzB7ansTusFOQ+233SSGiINONhfQ9PgqeoSmgo25je2UqGuZP4A==,iv:2ZfIwPRZLFFVKnn+u4ROMAljMt8rAAUOgNkp3iM/TLc=,tag:3sJSj0WaBx1G+7+UAE5X1w==,type:str]
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
@@ -129,8 +129,8 @@ spec:
         linkOnly: false
         firstBrokerLoginFlowAlias: first broker login
         config:
-          clientId: ENC[AES256_GCM,data:DUvWoIBMMNCn7Ko3IZ5mjer+8OW/UDkvquiyMsWWV7IWp5I0CamNvE+FLdRgnQktik41aPGEagS4hmeCoCk8KVQyOE4+P+yO,iv:d0fogZD7cn2nI9/pOpfJwzMU7ADpz75oVxgOOFNAtQ8=,tag:Ymgep0Sm1TOzaojvDVPrPg==,type:str]
-          clientSecret: ENC[AES256_GCM,data:Qk/umFTMkUhm7RqEY1pRmSXOQBbv1tVrx0chKfIN/2EEEsU=,iv:BcsNgP5AKoJB6V731nEhJ2f5c6iikhNuhoE+Bufk01g=,tag:tRyWVSif4aq7fhuemWrqdg==,type:str]
+          clientId: ENC[AES256_GCM,data:25JJaWjlZfzTyrnp6OJKJ6EQ9gZQ3iM+91Y9Ys4ntb42LH4LfKM82uChBKreC8sKGPrAyPUOYqP9yBw/OUeWMZ6NJAhJd6if,iv:zTUGu2T/StBVFMBMqvrEbz/F1r6OCds2EAtnS5i4YO8=,tag:rUCnk8Uv1NMZVuJQCxoIJw==,type:str]
+          clientSecret: ENC[AES256_GCM,data:+1SFhWKoURIexOK470wepdadaQWkT3eEg5gmztNUKXt87y4=,iv:NAS2iaXmcHa0RqY9o93WwsWSIH8vO9JxqvrpzSSSiiA=,tag:KBvYYB1WMadtTcBI+OH+Qg==,type:str]
           defaultScope: openid profile email
           syncMode: IMPORT
     identityProviderMappers:
@@ -145,14 +145,14 @@ sops:
     - recipient: age1rqvr6f3l6hxc5dn9q2n7edzvrklj2sz3q9djlp9rtqc8hfa6447saqpaqn
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvZm5veW9KZlRwRFFucGhB
-        NjBEMCtUeWdxWm41WmdMb2FZdDFzMUJveERrCityU2l3b04rYkNqNUdSWDdpNFlj
-        Smo5aFIrTVI2c2d1cTJYd01lU2dQeDQKLS0tIHVObGtFZFhmSUxXa2RuY1c0dWRk
-        TmYzeHp2TTBCU28vUHpCdHk5SWp2Q1EKy/Sd2BRg4feOmpCzBiMbaU8JoG5oT2WY
-        HNc+zPHRHC68GlVvE2NzwYrVh2hRlV6aW1/zC3dDB9AOnOqZiOCIow==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHV24wTXdGdTF6U0plemw2
+        UDZqZXVjZFlNdDFLVUNYemQ1L2YxNmxZQmpBCmJiTk9xejZFMWErQkxpZlg4azNh
+        YjlmblFoSFpSTlcyWGdOd2VGelQ0NXcKLS0tIG4rTzM1NTB0TWVmVTdSMStXMlJI
+        UGVVK09BWExNV1VKc1UvUVhXejRRNHcKm4/9WP3J629Boxx7A9L266pw9aiwbxD/
+        yuR1C9biTL0AWr0oX3sLcur3VNWq7ehbBCh3KDmd+5PARPSqxxXX8g==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2026-01-08T14:27:34Z"
-  mac: ENC[AES256_GCM,data:KgR7HdzM/o8cJnygK/Yib7726HeENnlKmL0RK3Lt+q0rS6IyINacG2sBGGU70re7FQj1EPxd3RNtQpy094XTJEbuF7UF1c9gubrHRANGIfrKw/4lAqjC8JkdZiUmzpBJk+4S6CXvI8XOq/swTdtzDy+Bcf7WBE3ce0vtqmGKd+k=,iv:K0SEPzluK0fgeTONuuepvxfJgBcLqyGG8DbDv7Hdhp0=,tag:yVc9q8KVUiL2j6LkOo114w==,type:str]
+  lastmodified: "2026-01-08T20:01:32Z"
+  mac: ENC[AES256_GCM,data:AeHIOdNQzhfLtaBADSo06DqfJ7SX8L/HACxnQUbYpL0wQovnwwkxjp4cLGAmMakyK9g3l0Qbg3lKsHMxlUPjurG1TOyDfdnhGgH2mWyKRXoocvsrgLLzA8aaoqFeqn0n8OmdISgKvZtZi7iSm6ZV2r0rLe/gnMdTyokyWwDnjeo=,iv:r0iu6yM0Apbfub54r5pECXZ8wZQJ8/Y4FGfzbQ5bnfQ=,tag:rYkfmS1riwS8TQWr79Kt9A==,type:str]
   encrypted_regex: ^(clientId|clientSecret|secret)$
   mac_only_encrypted: true
   version: 3.11.0

@@ -190,8 +190,10 @@ import (
 	oidc_client_id?:     string
 	oidc_client_secret?: string  // Generate: openssl rand -hex 32 (MUST use hex, NOT base64)
 	oidc_redirect_url?:  string & =~"^https?://"
-	oidc_cookie_domain?: string
-	oidc_logout_path?:   *"/logout" | string & =~"^/"
+	oidc_cookie_domain?:   string
+	oidc_cookie_samesite?: *"Lax" | "Strict" | "None"  // Cookie SameSite attribute (v1.5+)
+	oidc_refresh_token?:   *true | bool                // Enable automatic token refresh (v1.6+)
+	oidc_logout_path?:     *"/logout" | string & =~"^/"
 	oidc_scopes?: [...string & !=""]
 
 	// VolSync - PVC Backup with restic to S3-compatible storage
@@ -363,6 +365,185 @@ import (
 		group_id: string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 		role:     string & !=""
 	}]
+
+	// LiteLLM Proxy Gateway - Unified AI Model Gateway
+	// REF: https://docs.litellm.ai/docs/proxy/quick_start
+	// REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md
+	// Provides unified API for Azure OpenAI, Anthropic, Cohere models with caching and observability
+	litellm_enabled?:    *false | bool
+	litellm_subdomain?:  *"litellm" | string & !=""
+	litellm_replicas?:   *1 | int & >=1 & <=10
+	litellm_master_key?: string & =~"^sk-" & =~".{32,}"  // Must start with sk- and be at least 32 chars
+	litellm_salt_key?:   string & =~".{32,}"  // At least 32 characters for encryption
+
+	// LiteLLM PostgreSQL Database (CloudNativePG)
+	// Requires cnpg_enabled: true
+	litellm_db_user?:       *"litellm" | string & !=""
+	litellm_db_password?:   string & !=""
+	litellm_db_name?:       *"litellm" | string & !=""
+	litellm_db_instances?:  *1 | int & >=1 & <=5
+	litellm_storage_size?:  *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// LiteLLM Cache - Uses shared Dragonfly in cache namespace
+	// Requires dragonfly_enabled: true and dragonfly_acl_enabled: true
+	// Set dragonfly_litellm_password for ACL authentication with litellm:* key prefix
+
+	// LiteLLM OIDC Authentication (requires keycloak_enabled: true)
+	// Integrates with Keycloak for SSO admin UI access
+	litellm_oidc_enabled?:       *false | bool
+	litellm_oidc_client_secret?: string & !=""
+
+	// LiteLLM PostgreSQL Backups (requires rustfs_enabled: true)
+	// Credentials must be created via RustFS Console UI
+	litellm_backup_enabled?:  *false | bool
+	litellm_s3_access_key?:   string & !=""
+	litellm_s3_secret_key?:   string & !=""
+
+	// LiteLLM Observability (requires monitoring_enabled and/or tracing_enabled)
+	litellm_monitoring_enabled?: *false | bool  // ServiceMonitor for Prometheus metrics
+	litellm_tracing_enabled?:    *false | bool  // OpenTelemetry traces to Tempo
+
+	// LiteLLM Langfuse Observability (external LLM analytics)
+	// REF: https://docs.litellm.ai/docs/observability/langfuse_integration
+	litellm_langfuse_enabled?:    *false | bool
+	// Langfuse host URL - auto-derived in plugin.py:
+	// - Self-hosted (langfuse_enabled: true): http://langfuse-web.ai-system.svc.cluster.local:3000
+	// - Langfuse Cloud: https://cloud.langfuse.com
+	litellm_langfuse_host?: string & =~"^https?://"
+	litellm_langfuse_public_key?: string & !=""
+	litellm_langfuse_secret_key?: string & !=""
+
+	// LiteLLM Alerting (Slack/Discord webhook notifications)
+	// REF: https://docs.litellm.ai/docs/proxy/alerting
+	litellm_alerting_enabled?:      *false | bool
+	litellm_slack_webhook_url?:     string & =~"^https://hooks\\.slack\\.com/"
+	litellm_discord_webhook_url?:   string & =~"^https://discord\\.com/api/webhooks/"
+	litellm_alerting_threshold?:    *300 | int & >=60 & <=3600  // Slow request threshold in seconds
+
+	// LiteLLM Guardrails (content filtering, PII masking, prompt injection detection)
+	// REF: https://docs.litellm.ai/docs/proxy/guardrails/
+	litellm_guardrails_enabled?:      *false | bool  // Enable built-in content filter
+	litellm_presidio_enabled?:        *false | bool  // Enable Presidio PII masking (adds sidecars)
+	litellm_prompt_injection_check?:  *false | bool  // Enable prompt injection detection
+
+	// Azure OpenAI US East Configuration
+	// Resource name is the Azure OpenAI resource name (e.g., "my-openai-eastus")
+	// API version defaults to latest stable preview
+	azure_openai_us_east_api_key?:       string & !=""
+	azure_openai_us_east_resource_name?: string & !=""
+	azure_openai_us_east_api_version?:   *"2025-01-01-preview" | string & =~"^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$"
+
+	// Azure OpenAI US East2 Configuration (GPT-5 series, secondary region)
+	azure_openai_us_east2_api_key?:       string & !=""
+	azure_openai_us_east2_resource_name?: string & !=""
+	azure_openai_us_east2_api_version?:   *"2025-04-01-preview" | string & =~"^[0-9]{4}-[0-9]{2}-[0-9]{2}(-preview)?$"
+
+	// Azure AI Services API Keys and Endpoints (Anthropic, Cohere)
+	// These use Azure AI Services, not Azure OpenAI - full base URL required
+	azure_anthropic_api_key?:      string & !=""
+	azure_anthropic_api_base?:     string & =~"^https://"
+	azure_cohere_embed_api_key?:   string & !=""
+	azure_cohere_embed_api_base?:  string & =~"^https://"
+	azure_cohere_rerank_api_key?:  string & !=""
+	azure_cohere_rerank_api_base?: string & =~"^https://"
+
+	// Dragonfly Cache - Redis-compatible in-memory data store
+	// REF: https://www.dragonflydb.io/
+	// REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md
+	// Provides Redis API compatibility with 25x performance improvement
+	dragonfly_enabled?:           *false | bool
+	dragonfly_version?:           *"v1.36.0" | string & =~"^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+	dragonfly_operator_version?:  *"1.3.1" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	dragonfly_replicas?:          *1 | int & >=1 & <=10
+	dragonfly_maxmemory?:         *"512mb" | string & =~"^[0-9]+[kmgt]b$"
+	dragonfly_threads?:           *2 | int & >=1 & <=16
+	dragonfly_password?:          string & !=""
+	dragonfly_control_plane_only?: *false | bool
+	dragonfly_cpu_request?:       *"100m" | string & =~"^[0-9]+m?$"      // CPU resource request
+	dragonfly_memory_request?:    *"256Mi" | string & =~"^[0-9]+[KMGT]i$" // Memory resource request
+	dragonfly_memory_limit?:      *"1Gi" | string & =~"^[0-9]+[KMGT]i$"   // Memory resource limit
+	dragonfly_cache_mode?:        *false | bool  // Enable LRU eviction for pure cache use
+	dragonfly_slowlog_threshold?: *10000 | int & >=0  // microseconds
+	dragonfly_slowlog_max_len?:   *128 | int & >=0 & <=1000
+
+	// Dragonfly S3 Backups (requires rustfs_enabled: true)
+	// Credentials must be created via RustFS Console UI
+	dragonfly_backup_enabled?:    *false | bool
+	dragonfly_s3_endpoint?:       *"rustfs-svc.storage.svc.cluster.local:9000" | string & !=""
+	dragonfly_s3_access_key?:     string & !=""
+	dragonfly_s3_secret_key?:     string & !=""
+	dragonfly_snapshot_cron?:     *"0 */6 * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+
+	// Dragonfly Monitoring (requires monitoring_enabled: true)
+	dragonfly_monitoring_enabled?: *false | bool
+
+	// Dragonfly ACL - Multi-tenant access control
+	// Per-application passwords for secure namespace isolation
+	dragonfly_acl_enabled?:         *false | bool
+	dragonfly_keycloak_password?:   string & !=""  // Keycloak session cache user
+	dragonfly_appcache_password?:   string & !=""  // General application cache user
+	dragonfly_litellm_password?:    string & !=""  // LiteLLM cache user
+	dragonfly_langfuse_password?:   string & !=""  // Langfuse cache user (if ACL enabled)
+
+	// Langfuse LLM Observability Platform
+	// REF: https://langfuse.com/self-hosting
+	// REF: docs/research/langfuse-llm-observability-integration-jan-2026.md
+	// Provides LLM tracing, prompt management, evaluation, and cost analytics
+	langfuse_enabled?:   *false | bool
+	langfuse_subdomain?: *"langfuse" | string & !=""
+
+	// Langfuse Core Credentials (SOPS-encrypted)
+	// Generate with: openssl rand -base64 32 (nextauth_secret, salt)
+	// Generate with: openssl rand -hex 32 (encryption_key)
+	langfuse_nextauth_secret?:   string & =~".{32,}"  // Session management secret
+	langfuse_salt?:              string & =~".{32,}"  // API key hashing salt
+	langfuse_encryption_key?:    string & =~"^[a-f0-9]{64}$"  // 256-bit hex encryption key
+
+	// Langfuse PostgreSQL Database (CloudNativePG)
+	// Requires cnpg_enabled: true
+	langfuse_postgres_password?:  string & !=""
+	langfuse_postgres_instances?: *1 | int & >=1 & <=5
+	langfuse_postgres_storage?:   *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// Langfuse ClickHouse (bundled analytics database)
+	langfuse_clickhouse_password?: string & !=""
+	langfuse_clickhouse_storage?:  *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+	langfuse_clickhouse_replicas?: *1 | int & >=1 & <=5
+
+	// Langfuse S3 Storage (requires rustfs_enabled: true)
+	// Credentials must be created via RustFS Console UI
+	// Buckets needed: langfuse-events, langfuse-media, langfuse-exports
+	langfuse_s3_access_key?: string & !=""
+	langfuse_s3_secret_key?: string & !=""
+
+	// Langfuse PostgreSQL Backups (requires rustfs_enabled: true)
+	// Bucket needed: langfuse-postgres-backups
+	langfuse_backup_enabled?:         *false | bool
+	langfuse_backup_s3_access_key?:   string & !=""  // Separate credentials for backup bucket
+	langfuse_backup_s3_secret_key?:   string & !=""
+
+	// Langfuse SSO (requires keycloak_enabled: true)
+	// Integrates with Keycloak for OIDC authentication
+	langfuse_sso_enabled?:              *false | bool
+	langfuse_keycloak_client_secret?:   string & !=""
+
+	// Langfuse Observability (requires monitoring_enabled and/or tracing_enabled)
+	langfuse_monitoring_enabled?: *false | bool  // ServiceMonitor for Prometheus metrics
+	langfuse_tracing_enabled?:    *false | bool  // OpenTelemetry traces to Tempo
+
+	// Langfuse Resource Configuration
+	langfuse_log_level?:             *"info" | "trace" | "debug" | "info" | "warn" | "error" | "fatal"
+	langfuse_trace_sampling_ratio?:  *"0.1" | string & =~"^[01]?\\.[0-9]+$"  // 0.0 to 1.0
+	langfuse_web_replicas?:          *1 | int & >=1 & <=10
+	langfuse_worker_replicas?:       *1 | int & >=1 & <=10
+	langfuse_chart_version?:         *"*" | string & !=""
+
+	// Langfuse SMTP/Email Configuration (optional)
+	langfuse_smtp_url?:       string & =~"^smtp(s)?://"  // SMTP connection URL
+	langfuse_email_from?:     string & =~"^[^@]+@[^@]+$" // Sender email address
+
+	// Langfuse Session Configuration (optional)
+	langfuse_session_max_age?: *2592000 | int & >=3600 & <=31536000  // Session duration in seconds (1h to 1y)
 }
 
 #Config

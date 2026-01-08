@@ -1,0 +1,139 @@
+#% if langfuse_enabled | default(false) and network_policies_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| CILIUMNETWORKPOLICY - Zero-trust networking for Langfuse                      #|
+#| Controls ingress/egress traffic for Langfuse web and worker components        #|
+#| REF: docs/research/langfuse-llm-observability-integration-jan-2026.md        #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: langfuse
+  namespace: ai-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: langfuse
+  ingress:
+    #| ======================================================================= #|
+    #| Allow Gateway API ingress (Envoy Gateway)                              #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Allow LiteLLM callbacks (trace ingestion)                              #|
+    #| ======================================================================= #|
+#% if litellm_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: litellm
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+#% endif %#
+    #| ======================================================================= #|
+    #| Allow Prometheus scraping                                              #|
+    #| ======================================================================= #|
+#% if langfuse_monitoring_enabled | default(false) %#
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| ======================================================================= #|
+    #| DNS resolution                                                         #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| PostgreSQL (CNPG) - Langfuse database                                  #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: langfuse-postgresql
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| ClickHouse - Analytics database (internal to Langfuse)                 #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: clickhouse
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+            - port: "9000"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Redis (Dragonfly) - Queue and caching                                  #|
+    #| ======================================================================= #|
+#% if dragonfly_enabled | default(false) %#
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cache
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+#% endif %#
+    #| ======================================================================= #|
+    #| S3 (RustFS) - Blob storage                                             #|
+    #| ======================================================================= #|
+#% if rustfs_enabled | default(false) %#
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: storage
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
+    #| ======================================================================= #|
+    #| Keycloak (if SSO enabled)                                              #|
+    #| ======================================================================= #|
+#% if langfuse_sso_enabled | default(false) %#
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: identity
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+#% endif %#
+    #| ======================================================================= #|
+    #| OpenTelemetry (Tempo) - Trace export                                   #|
+    #| ======================================================================= #|
+#% if langfuse_tracing_enabled | default(false) %#
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "4318"
+              protocol: TCP
+#% endif %#
+#% endif %#

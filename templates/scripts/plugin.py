@@ -432,6 +432,209 @@ class Plugin(makejinja.plugin.Plugin):
         )
         data["keycloak_bootstrap_oidc_client"] = keycloak_bootstrap_oidc_client
 
+        # Dragonfly cache - Redis-compatible in-memory data store
+        # Enabled when dragonfly_enabled is true
+        dragonfly_enabled = data.get("dragonfly_enabled", False)
+        data["dragonfly_enabled"] = dragonfly_enabled
+
+        if dragonfly_enabled:
+            # Default versions
+            data.setdefault("dragonfly_version", "v1.36.0")
+            data.setdefault("dragonfly_operator_version", "1.3.1")
+            data.setdefault("dragonfly_replicas", 1)
+            data.setdefault("dragonfly_maxmemory", "512mb")
+            data.setdefault("dragonfly_threads", 2)
+
+            # Performance and debugging defaults
+            data.setdefault("dragonfly_cache_mode", False)
+            data.setdefault("dragonfly_slowlog_threshold", 10000)
+            data.setdefault("dragonfly_slowlog_max_len", 128)
+
+            # Backup configuration - requires RustFS and credentials
+            dragonfly_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("dragonfly_backup_enabled", False)
+                and data.get("dragonfly_s3_access_key")
+                and data.get("dragonfly_s3_secret_key")
+            )
+            data["dragonfly_backup_enabled"] = dragonfly_backup_enabled
+
+            # Monitoring configuration - requires global monitoring_enabled
+            dragonfly_monitoring_enabled = (
+                data.get("monitoring_enabled", False)
+                and data.get("dragonfly_monitoring_enabled", False)
+            )
+            data["dragonfly_monitoring_enabled"] = dragonfly_monitoring_enabled
+
+            # ACL configuration - enabled when explicitly set
+            dragonfly_acl_enabled = data.get("dragonfly_acl_enabled", False)
+            data["dragonfly_acl_enabled"] = dragonfly_acl_enabled
+        else:
+            data["dragonfly_backup_enabled"] = False
+            data["dragonfly_monitoring_enabled"] = False
+            data["dragonfly_acl_enabled"] = False
+
+        # LiteLLM Proxy Gateway - AI model gateway with multi-provider support
+        # Enabled when litellm_enabled is true
+        litellm_enabled = data.get("litellm_enabled", False)
+        data["litellm_enabled"] = litellm_enabled
+
+        if litellm_enabled:
+            # Derive full hostname from subdomain + cloudflare_domain
+            litellm_subdomain = data.get("litellm_subdomain", "litellm")
+            cloudflare_domain = data.get("cloudflare_domain", "")
+            litellm_hostname = f"{litellm_subdomain}.{cloudflare_domain}"
+            data["litellm_hostname"] = litellm_hostname
+
+            # Default settings
+            data.setdefault("litellm_replicas", 1)
+            data.setdefault("litellm_db_name", "litellm")
+            data.setdefault("litellm_db_user", "litellm")
+            data.setdefault("litellm_db_instances", 1)
+
+            # Azure OpenAI API version defaults
+            # These are used in credential_list for centralized credential management
+            data.setdefault("azure_openai_us_east_api_version", "2025-01-01-preview")
+            data.setdefault("azure_openai_us_east2_api_version", "2025-04-01-preview")
+
+            # LiteLLM OIDC - native SSO for LiteLLM UI
+            # Requires keycloak_enabled and explicit enable with client secret
+            litellm_oidc_enabled = (
+                data.get("keycloak_enabled", False)
+                and data.get("litellm_oidc_enabled", False)
+                and data.get("litellm_oidc_client_secret")
+            )
+            data["litellm_oidc_enabled"] = litellm_oidc_enabled
+
+            # LiteLLM backup - enabled when RustFS and credentials are provided
+            litellm_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("litellm_s3_access_key")
+                and data.get("litellm_s3_secret_key")
+            )
+            data["litellm_backup_enabled"] = litellm_backup_enabled
+
+            # LiteLLM Grafana monitoring - requires global monitoring_enabled
+            litellm_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("litellm_monitoring_enabled", False)
+            data["litellm_monitoring_enabled"] = litellm_monitoring_enabled
+
+            # LiteLLM OpenTelemetry tracing - requires global tracing_enabled
+            litellm_tracing_enabled = data.get("tracing_enabled", False) and data.get(
+                "litellm_tracing_enabled", False
+            )
+            data["litellm_tracing_enabled"] = litellm_tracing_enabled
+
+            # Langfuse observability - optional LLM observability
+            # Can connect to self-hosted Langfuse (langfuse_enabled) or Langfuse Cloud
+            litellm_langfuse_enabled = (
+                data.get("litellm_langfuse_enabled", False)
+                and data.get("litellm_langfuse_public_key")
+                and data.get("litellm_langfuse_secret_key")
+            )
+            data["litellm_langfuse_enabled"] = litellm_langfuse_enabled
+
+            # Auto-derive Langfuse host URL for self-hosted Langfuse
+            # If langfuse_enabled (self-hosted), use internal cluster URL
+            # Otherwise, use the configured host (defaults to cloud.langfuse.com)
+            if data.get("langfuse_enabled", False):
+                data.setdefault(
+                    "litellm_langfuse_host",
+                    "http://langfuse-web.ai-system.svc.cluster.local:3000"
+                )
+            else:
+                data.setdefault("litellm_langfuse_host", "https://cloud.langfuse.com")
+
+            # LiteLLM Alerting - Slack/Discord webhook notifications
+            # Enabled when alerting flag is set and at least one webhook is configured
+            litellm_alerting_enabled = (
+                data.get("litellm_alerting_enabled", False)
+                and (data.get("litellm_slack_webhook_url") or data.get("litellm_discord_webhook_url"))
+            )
+            data["litellm_alerting_enabled"] = litellm_alerting_enabled
+            data.setdefault("litellm_alerting_threshold", 300)
+
+            # LiteLLM Guardrails - content safety and security
+            # Each guardrail feature can be independently enabled
+            litellm_guardrails_enabled = data.get("litellm_guardrails_enabled", False)
+            data["litellm_guardrails_enabled"] = litellm_guardrails_enabled
+
+            litellm_presidio_enabled = data.get("litellm_presidio_enabled", False)
+            data["litellm_presidio_enabled"] = litellm_presidio_enabled
+
+            litellm_prompt_injection_check = data.get("litellm_prompt_injection_check", False)
+            data["litellm_prompt_injection_check"] = litellm_prompt_injection_check
+        else:
+            data["litellm_oidc_enabled"] = False
+            data["litellm_backup_enabled"] = False
+            data["litellm_monitoring_enabled"] = False
+            data["litellm_tracing_enabled"] = False
+            data["litellm_langfuse_enabled"] = False
+            data["litellm_alerting_enabled"] = False
+            data["litellm_guardrails_enabled"] = False
+            data["litellm_presidio_enabled"] = False
+            data["litellm_prompt_injection_check"] = False
+
+        # Langfuse LLM Observability - tracing, prompts, evaluation, analytics
+        # Enabled when langfuse_enabled is true
+        langfuse_enabled = data.get("langfuse_enabled", False)
+        data["langfuse_enabled"] = langfuse_enabled
+
+        if langfuse_enabled:
+            # Derive full hostname from subdomain + cloudflare_domain
+            langfuse_subdomain = data.get("langfuse_subdomain", "langfuse")
+            cloudflare_domain = data.get("cloudflare_domain", "")
+            langfuse_hostname = f"{langfuse_subdomain}.{cloudflare_domain}"
+            data["langfuse_hostname"] = langfuse_hostname
+            data["langfuse_url"] = f"https://{langfuse_hostname}"
+
+            # Default settings
+            data.setdefault("langfuse_subdomain", "langfuse")
+            data.setdefault("langfuse_postgres_instances", 1)
+            data.setdefault("langfuse_postgres_storage", "10Gi")
+            data.setdefault("langfuse_clickhouse_storage", "20Gi")
+            data.setdefault("langfuse_clickhouse_replicas", 1)
+            data.setdefault("langfuse_log_level", "info")
+            data.setdefault("langfuse_trace_sampling_ratio", "0.1")
+            data.setdefault("langfuse_web_replicas", 1)
+            data.setdefault("langfuse_worker_replicas", 1)
+
+            # Langfuse SSO - Keycloak OIDC integration
+            # Requires keycloak_enabled and explicit enable with client secret
+            langfuse_sso_enabled = (
+                data.get("keycloak_enabled", False)
+                and data.get("langfuse_sso_enabled", False)
+                and data.get("langfuse_keycloak_client_secret")
+            )
+            data["langfuse_sso_enabled"] = langfuse_sso_enabled
+
+            # Langfuse backup - enabled when RustFS and credentials are provided
+            langfuse_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("langfuse_backup_enabled", False)
+                and data.get("langfuse_s3_access_key")
+                and data.get("langfuse_s3_secret_key")
+            )
+            data["langfuse_backup_enabled"] = langfuse_backup_enabled
+
+            # Langfuse Grafana monitoring - requires global monitoring_enabled
+            langfuse_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("langfuse_monitoring_enabled", False)
+            data["langfuse_monitoring_enabled"] = langfuse_monitoring_enabled
+
+            # Langfuse OpenTelemetry tracing - requires global tracing_enabled
+            langfuse_tracing_enabled = data.get("tracing_enabled", False) and data.get(
+                "langfuse_tracing_enabled", False
+            )
+            data["langfuse_tracing_enabled"] = langfuse_tracing_enabled
+        else:
+            data["langfuse_sso_enabled"] = False
+            data["langfuse_backup_enabled"] = False
+            data["langfuse_monitoring_enabled"] = False
+            data["langfuse_tracing_enabled"] = False
+
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled
         data["infrastructure_enabled"] = infrastructure_enabled(data)

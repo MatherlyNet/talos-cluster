@@ -1,0 +1,18 @@
+#% if litellm_enabled | default(false) or langfuse_enabled | default(false) %#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-system
+  labels:
+    kubernetes.io/metadata.name: ai-system
+    #| Network policies require namespace labels for cross-namespace access #|
+    app.kubernetes.io/component: ai-infrastructure
+#% if network_policies_enabled | default(false) %#
+    #| PodSecurity - restricted mode for AI workloads #|
+    #| Note: LiteLLM runs as root for Prisma/UI support, requires securityContext overrides #|
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+#% endif %#
+#% endif %#

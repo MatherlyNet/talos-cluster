@@ -1,0 +1,29 @@
+#% if litellm_enabled | default(false) and litellm_monitoring_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| ServiceMonitor for LiteLLM Prometheus metrics                                #|
+#| Scrapes /metrics endpoint for cost, latency, and usage metrics               #|
+#| REF: https://docs.litellm.ai/docs/proxy/prometheus                           #|
+#| ============================================================================= #|
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: litellm
+    #| Required for kube-prometheus-stack to discover ServiceMonitor #|
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: litellm
+  namespaceSelector:
+    matchNames:
+      - ai-system
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+#% endif %#

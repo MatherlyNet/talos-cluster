@@ -1,0 +1,115 @@
+#% if langfuse_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| CLOUDNATIVEPG POSTGRESQL CLUSTER - Database for Langfuse                     #|
+#| Stores transactional data: users, projects, API keys, prompts                #|
+#| REF: https://cloudnative-pg.io/documentation/                                 #|
+#| REF: docs/research/langfuse-llm-observability-integration-jan-2026.md        #|
+#| ============================================================================= #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: langfuse-postgresql
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: langfuse-postgresql
+    app.kubernetes.io/part-of: langfuse
+#% if network_policies_enabled | default(false) %#
+    #| Network policy labels for CiliumNetworkPolicy tiered policies #|
+    network.cilium.io/api-access: "true"
+#% endif %#
+spec:
+  #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
+  instances: #{ langfuse_postgres_instances | default(1) }#
+
+  #| PostgreSQL image - use standard image for Langfuse compatibility #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:17-standard-trixie') }#
+
+  #| Bootstrap from initdb (fresh database) #|
+  bootstrap:
+    initdb:
+      database: langfuse
+      owner: langfuse
+      secret:
+        name: langfuse-postgresql-credentials
+
+  #| Storage configuration #|
+  storage:
+    size: #{ langfuse_postgres_storage | default('10Gi') }#
+    storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  #| Monitoring (if prometheus-stack enabled) #|
+  monitoring:
+    enablePodMonitor: #{ 'true' if monitoring_enabled | default(false) else 'false' }#
+
+  #| PostgreSQL configuration - CRITICAL: Langfuse requires UTC timezone #|
+  postgresql:
+    parameters:
+      timezone: "UTC"
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+
+  #| Affinity rules for HA deployments #|
+#% if (langfuse_postgres_instances | default(1)) > 1 %#
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+#% endif %#
+
+  #| Priority class for critical database workload #|
+  priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
+
+#% if langfuse_backup_enabled | default(false) %#
+  #| =========================================================================== #|
+  #| CNPG Backup via barmanObjectStore to Langfuse-specific RustFS bucket       #|
+  #| Uses langfuse-backup-credentials with access to langfuse-postgres-backups  #|
+  #| =========================================================================== #|
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://langfuse-postgres-backups"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: langfuse-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: langfuse-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+#% endif %#
+---
+#| =========================================================================== #|
+#| Database resource to declaratively manage langfuse database                 #|
+#| =========================================================================== #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: langfuse-db-langfuse
+  namespace: ai-system
+spec:
+  name: langfuse
+  owner: langfuse
+  cluster:
+    name: langfuse-postgresql
+#% endif %#

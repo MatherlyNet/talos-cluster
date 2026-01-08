@@ -1,0 +1,127 @@
+#% if litellm_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| CLOUDNATIVEPG POSTGRESQL CLUSTER - Database for LiteLLM                      #|
+#| Stores virtual keys, user/team data, spend tracking, request logs            #|
+#| REF: https://cloudnative-pg.io/documentation/                                 #|
+#| REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md             #|
+#| ============================================================================= #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: litellm-postgresql
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: litellm-postgresql
+    app.kubernetes.io/part-of: litellm
+#% if network_policies_enabled | default(false) %#
+    #| Network policy labels for CiliumNetworkPolicy tiered policies #|
+    network.cilium.io/api-access: "true"
+#% endif %#
+spec:
+  #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
+  instances: #{ litellm_db_instances | default(1) }#
+
+  #| PostgreSQL image - use minimal image for extensions support #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie') }#
+
+  #| Bootstrap from initdb (fresh database) #|
+  bootstrap:
+    initdb:
+      database: #{ litellm_db_name | default('litellm') }#
+      owner: #{ litellm_db_user | default('litellm') }#
+      secret:
+        name: litellm-db-secret
+
+  #| Storage configuration #|
+  storage:
+    size: #{ litellm_db_storage_size | default('20Gi') }#
+    storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  #| Monitoring (if prometheus-stack enabled) #|
+  monitoring:
+    enablePodMonitor: #{ 'true' if monitoring_enabled | default(false) else 'false' }#
+
+  #| PostgreSQL configuration optimized for LiteLLM #|
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+#% if cnpg_pgvector_enabled | default(false) %#
+    #| pgvector extension via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
+    #| REF: https://cloudnative-pg.io/documentation/current/imagevolume_extensions/ #|
+    extensions:
+      - name: pgvector
+        image:
+          reference: #{ cnpg_pgvector_image | default('ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie') }#
+#% endif %#
+
+  #| Affinity rules for HA deployments #|
+#% if (litellm_db_instances | default(1)) > 1 %#
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+#% endif %#
+
+  #| Priority class for critical database workload #|
+  priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
+
+#% if litellm_backup_enabled | default(false) %#
+  #| =========================================================================== #|
+  #| CNPG Backup via barmanObjectStore to LiteLLM-specific RustFS bucket        #|
+  #| Uses litellm-backup-credentials with access to litellm-backups bucket      #|
+  #| =========================================================================== #|
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://litellm-backups"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: litellm-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: litellm-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+#% endif %#
+---
+#| =========================================================================== #|
+#| Database resource to declaratively manage litellm database                  #|
+#| Enables pgvector extension for semantic search/embeddings if enabled        #|
+#| =========================================================================== #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: litellm-db-litellm
+  namespace: ai-system
+spec:
+  name: litellm
+  owner: litellm
+  cluster:
+    name: litellm-postgresql
+#% if cnpg_pgvector_enabled | default(false) %#
+  extensions:
+    - name: vector
+#% endif %#
+#% endif %#

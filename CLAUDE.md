@@ -278,8 +278,121 @@ Optional Grafana Dashboards (requires monitoring_enabled):
 - `keycloak_monitoring_enabled` - Deploy Keycloak ServiceMonitor + Grafana dashboards (default: false)
 - `rustfs_monitoring_enabled` - Deploy RustFS ServiceMonitor + Grafana dashboards (default: false)
 - `loki_monitoring_enabled` - Deploy supplemental Loki stack monitoring dashboard (default: false)
+- `litellm_monitoring_enabled` - Deploy LiteLLM ServiceMonitor + Grafana dashboards (default: false)
 - When component + monitoring_enabled are both true, deploys ServiceMonitor and dashboards
 - See `docs/guides/grafana-dashboards-implementation.md` for details
+
+Optional LiteLLM Proxy Gateway (AI model gateway):
+- `litellm_enabled` - Enable LiteLLM deployment (bjw-s app-template Helm chart)
+- `litellm_subdomain` - Subdomain (default: "litellm", creates litellm.${cloudflare_domain})
+- `litellm_master_key` - SOPS-encrypted master key for API authentication
+- `litellm_salt_key` - SOPS-encrypted salt key for credential encryption
+- `litellm_db_password` - SOPS-encrypted PostgreSQL password
+- When litellm_enabled, derives: `litellm_hostname`
+- Requires `cnpg_enabled: true` for PostgreSQL database
+- Requires `dragonfly_enabled: true` and `dragonfly_acl_enabled: true` for caching
+- Uses shared Dragonfly cache via `dragonfly_litellm_password` (ACL: `litellm:*` keys)
+- See `docs/research/litellm-proxy-gateway-integration-jan-2026.md` for setup guide
+
+Optional LiteLLM AI Provider API Keys (SOPS-encrypted):
+- `azure_openai_us_east_api_key` - Azure OpenAI US East region
+- `azure_openai_us_east2_api_key` - Azure OpenAI US East2 region
+- `azure_anthropic_api_key` - Azure AI Services (Claude models)
+- `azure_cohere_embed_api_key` - Azure Cohere Embed API
+- `azure_cohere_rerank_api_key` - Azure Cohere Rerank API
+- Provider keys are conditionally included in secrets and network policies
+
+Optional LiteLLM OIDC SSO (requires keycloak_enabled):
+- `litellm_oidc_enabled` - Enable Keycloak SSO for LiteLLM UI (default: false)
+- `litellm_oidc_client_secret` - SOPS-encrypted OIDC client secret
+- When enabled, creates `litellm` client in Keycloak realm-config
+- See `docs/research/litellm-proxy-gateway-integration-jan-2026.md` for details
+
+Optional LiteLLM Langfuse Observability:
+- `litellm_langfuse_enabled` - Enable Langfuse LLM observability (default: false)
+- `litellm_langfuse_public_key`, `litellm_langfuse_secret_key` - SOPS-encrypted API keys
+- `litellm_langfuse_host` - Langfuse host URL (auto-derived: internal for self-hosted, cloud.langfuse.com otherwise)
+- When enabled, `litellm_langfuse_enabled=true` (derived in plugin.py)
+- See `docs/research/langfuse-llm-observability-integration-jan-2026.md` for setup guide
+
+Optional LiteLLM PostgreSQL Backup (requires RustFS):
+- `litellm_s3_access_key`, `litellm_s3_secret_key` - SOPS-encrypted S3 credentials
+- When configured with rustfs_enabled, `litellm_backup_enabled=true` (derived in plugin.py)
+- Uses CNPG barmanObjectStore with continuous WAL archiving
+
+Optional LiteLLM OpenTelemetry Tracing (requires tracing_enabled):
+- `litellm_tracing_enabled` - Enable trace export to Tempo via OTLP gRPC (default: false)
+- When both `tracing_enabled` and `litellm_tracing_enabled` are true, traces are exported to Tempo
+
+Optional Dragonfly Cache (Redis-compatible in-memory data store):
+- `dragonfly_enabled` - Enable Dragonfly Operator for shared Redis-compatible cache
+- `dragonfly_version` - Dragonfly image tag (default: "v1.36.0")
+- `dragonfly_operator_version` - Operator Helm chart version (default: "1.3.1")
+- `dragonfly_replicas` - Number of Dragonfly instances (default: 1)
+- `dragonfly_maxmemory` - Maximum memory allocation (default: "512mb")
+- `dragonfly_password` - SOPS-encrypted password for default user
+- Provides 25x better performance than Redis with full API compatibility
+- When configured, `dragonfly_enabled=true` (derived in plugin.py)
+- See `docs/research/dragonfly-redis-alternative-integration-jan-2026.md` for setup guide
+
+Optional Dragonfly Backups (requires RustFS):
+- `dragonfly_backup_enabled` - Enable S3 snapshots to RustFS
+- `dragonfly_s3_access_key`, `dragonfly_s3_secret_key` - SOPS-encrypted credentials
+- `dragonfly_snapshot_cron` - Snapshot schedule (default: "0 */6* **")
+- When configured with rustfs_enabled, `dragonfly_backup_enabled=true` (derived in plugin.py)
+
+Optional Dragonfly Monitoring (requires monitoring_enabled):
+- `dragonfly_monitoring_enabled` - Deploy PodMonitor + PrometheusRule + Grafana dashboard
+- When both monitoring_enabled and dragonfly_monitoring_enabled are true, deploys observability
+
+Optional Dragonfly ACL (multi-tenant access control):
+- `dragonfly_acl_enabled` - Enable per-application ACL users
+- `dragonfly_keycloak_password` - SOPS-encrypted password for Keycloak session cache
+- `dragonfly_appcache_password` - SOPS-encrypted password for general app cache
+- `dragonfly_litellm_password` - SOPS-encrypted password for LiteLLM cache
+- `dragonfly_langfuse_password` - SOPS-encrypted password for Langfuse cache
+- Uses ACL ConfigMap pattern for secure namespace isolation
+
+Optional Langfuse LLM Observability Platform:
+- `langfuse_enabled` - Enable Langfuse deployment for LLM tracing and analytics
+- `langfuse_subdomain` - Subdomain (default: "langfuse", creates langfuse.${cloudflare_domain})
+- `langfuse_nextauth_secret` - SOPS-encrypted session secret (generate with: openssl rand -base64 32)
+- `langfuse_salt` - SOPS-encrypted API key salt (generate with: openssl rand -base64 32)
+- `langfuse_encryption_key` - SOPS-encrypted 256-bit hex key (generate with: openssl rand -hex 32)
+- `langfuse_postgres_password` - SOPS-encrypted PostgreSQL password
+- `langfuse_clickhouse_password` - SOPS-encrypted ClickHouse password
+- When langfuse_enabled, derives: `langfuse_hostname`, `langfuse_url`
+- Requires `cnpg_enabled: true` for PostgreSQL database
+- Integrates with LiteLLM via callbacks for automatic trace ingestion
+- See `docs/research/langfuse-llm-observability-integration-jan-2026.md` for setup guide
+
+Optional Langfuse S3 Storage (requires RustFS):
+- `langfuse_s3_access_key`, `langfuse_s3_secret_key` - SOPS-encrypted credentials
+- Required buckets: `langfuse-events`, `langfuse-media`, `langfuse-exports`
+- Create buckets and credentials via RustFS Console UI (port 9001)
+
+Optional Langfuse PostgreSQL Backup (requires RustFS):
+- `langfuse_backup_enabled` - Enable PostgreSQL backups to RustFS S3
+- `langfuse_backup_s3_access_key`, `langfuse_backup_s3_secret_key` - SOPS-encrypted credentials
+- Required bucket: `langfuse-postgres-backups`
+- Uses CNPG barmanObjectStore with continuous WAL archiving
+
+Optional Langfuse SSO (requires Keycloak):
+- `langfuse_sso_enabled` - Enable Keycloak OIDC authentication (default: false)
+- `langfuse_keycloak_client_secret` - SOPS-encrypted OIDC client secret
+- When enabled, creates `langfuse` client in Keycloak realm-config
+- Supports account linking with existing email-based accounts
+
+Optional Langfuse Observability (requires monitoring/tracing):
+- `langfuse_monitoring_enabled` - Deploy ServiceMonitor for Prometheus metrics + Grafana dashboard
+- `langfuse_tracing_enabled` - Export Langfuse's own traces to Tempo via OTLP
+
+Optional Langfuse Email (for notifications, invitations, password resets):
+- `langfuse_smtp_url` - SOPS-encrypted SMTP URL (format: smtp://user:pass@host:port)
+- `langfuse_email_from` - Sender address (default: noreply@${cloudflare_domain})
+
+Optional Langfuse Session Configuration:
+- `langfuse_session_max_age` - Session duration in seconds (default: 2592000 = 30 days)
 
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
@@ -324,6 +437,25 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `rustfs_monitoring_enabled` - true when monitoring_enabled + rustfs_monitoring_enabled both true
 - `loki_monitoring_enabled` - true when monitoring_enabled + loki_monitoring_enabled both true
 - `grafana_oidc_enabled` - true when monitoring_enabled + keycloak_enabled + grafana_oidc_enabled + grafana_oidc_client_secret all set
+- `litellm_enabled` - true when litellm_enabled is explicitly set to true
+- `litellm_hostname` - auto-derived from litellm_subdomain + cloudflare_domain
+- `litellm_oidc_enabled` - true when keycloak_enabled + litellm_oidc_enabled + litellm_oidc_client_secret all set
+- `litellm_backup_enabled` - true when rustfs_enabled + litellm S3 credentials set
+- `litellm_monitoring_enabled` - true when monitoring_enabled + litellm_monitoring_enabled both true
+- `litellm_tracing_enabled` - true when tracing_enabled + litellm_tracing_enabled both true
+- `litellm_langfuse_enabled` - true when litellm_langfuse_enabled + public_key + secret_key all set
+- `litellm_langfuse_host` - auto-derived: internal cluster URL when langfuse_enabled, cloud.langfuse.com otherwise
+- `dragonfly_enabled` - true when dragonfly_enabled is explicitly set to true
+- `dragonfly_backup_enabled` - true when rustfs_enabled + dragonfly_backup_enabled + dragonfly S3 credentials all set
+- `dragonfly_monitoring_enabled` - true when monitoring_enabled + dragonfly_monitoring_enabled both true
+- `dragonfly_acl_enabled` - true when dragonfly_acl_enabled is explicitly set to true
+- `langfuse_enabled` - true when langfuse_enabled is explicitly set to true
+- `langfuse_hostname` - auto-derived from langfuse_subdomain + cloudflare_domain
+- `langfuse_url` - auto-derived HTTPS URL for Langfuse web UI
+- `langfuse_sso_enabled` - true when keycloak_enabled + langfuse_sso_enabled + langfuse_keycloak_client_secret all set
+- `langfuse_backup_enabled` - true when rustfs_enabled + langfuse_backup_enabled + langfuse S3 credentials all set
+- `langfuse_monitoring_enabled` - true when monitoring_enabled + langfuse_monitoring_enabled both true
+- `langfuse_tracing_enabled` - true when tracing_enabled + langfuse_tracing_enabled both true
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -382,6 +514,13 @@ Deep context in `docs/ai-context/`:
 | Keycloak CR not ready | `kubectl -n identity get keycloak keycloak -o yaml`, `kubectl -n identity logs -l app.kubernetes.io/name=keycloak` |
 | Keycloak DB connection | `kubectl -n identity exec -it keycloak-postgres-0 -- psql -U keycloak -c "SELECT 1"` |
 | Talos backup failing | `kubectl -n kube-system logs -l app.kubernetes.io/name=talos-backup` (check env vars: CUSTOM_S3_ENDPOINT, BUCKET, USE_PATH_STYLE=false) |
+| Dragonfly operator issues | `kubectl get pods -n dragonfly-operator-system`, `kubectl logs -n dragonfly-operator-system -l app.kubernetes.io/name=dragonfly-operator` |
+| Dragonfly instance issues | `kubectl get dragonfly -n cache`, `kubectl -n cache logs -l app=dragonfly` |
+| Dragonfly connectivity | `kubectl -n cache exec -it dragonfly-0 -- redis-cli -a $PASSWORD ping` |
+| Langfuse web not ready | `kubectl get pods -n ai-system -l app.kubernetes.io/name=langfuse`, `kubectl -n ai-system logs -l app.kubernetes.io/component=web` |
+| Langfuse worker issues | `kubectl -n ai-system logs -l app.kubernetes.io/component=worker` |
+| Langfuse DB connection | `kubectl -n ai-system exec -it langfuse-postgresql-1 -- psql -U langfuse -c "SELECT 1"` |
+| Langfuse ClickHouse | `kubectl -n ai-system logs -l app.kubernetes.io/name=clickhouse` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

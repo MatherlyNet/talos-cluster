@@ -107,7 +107,7 @@ data:
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
-#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) %#
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) %#
     clients:
 #% if keycloak_bootstrap_oidc_client | default(false) %#
       #| Envoy Gateway SSO Client #|
@@ -245,6 +245,104 @@ data:
               id.token.claim: "true"
               access.token.claim: "true"
               userinfo.token.claim: "true"
+#% endif %#
+#% if litellm_oidc_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| LITELLM OIDC CLIENT - Native SSO for LiteLLM Proxy UI                       #|
+      #| Auto-created when litellm_oidc_enabled + litellm_oidc_client_secret set     #|
+      #| Provides role-based access control via OIDC claims                          #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md            #|
+      #| =========================================================================== #|
+      - clientId: "$(env:LITELLM_CLIENT_ID)"
+        name: "LiteLLM"
+        description: "OIDC client for LiteLLM Proxy - enables SSO for Admin UI and API authentication"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:LITELLM_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#/*"
+          - "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#/sso/callback"
+        webOrigins:
+          - "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#/*"
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
+        #| Protocol mappers for role and group claims #|
+        protocolMappers:
+          #| Map realm roles to 'roles' claim for LiteLLM team/role mapping #|
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          #| Map groups to 'groups' claim for team assignment #|
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+#% endif %#
+#% if langfuse_sso_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| LANGFUSE OIDC CLIENT - SSO for LLM Observability Platform                  #|
+      #| Auto-created when langfuse_sso_enabled + langfuse_keycloak_client_secret   #|
+      #| Provides authentication for Langfuse web UI and API                        #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/langfuse-llm-observability-integration-jan-2026.md      #|
+      #| =========================================================================== #|
+      - clientId: "$(env:LANGFUSE_CLIENT_ID)"
+        name: "Langfuse"
+        description: "OIDC client for Langfuse LLM Observability - enables SSO for tracing, prompts, and evaluation"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:LANGFUSE_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#/api/auth/callback/keycloak"
+        webOrigins:
+          - "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#/*"
+        defaultClientScopes:
+          - "openid"
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
 #% endif %#
 #% endif %#
 

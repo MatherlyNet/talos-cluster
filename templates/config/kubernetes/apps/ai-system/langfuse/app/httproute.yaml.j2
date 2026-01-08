@@ -1,0 +1,38 @@
+#% if langfuse_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| HTTPROUTE - Langfuse via Envoy Gateway                                        #|
+#| Attached to BOTH gateways for split-horizon DNS (prevents asymmetric routing) #|
+#| - External users: Cloudflare DNS → envoy-external → Langfuse                  #|
+#| - Internal users: UniFi DNS → envoy-internal → Langfuse                       #|
+#| ============================================================================= #|
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: langfuse
+  namespace: ai-system
+#% if langfuse_sso_enabled | default(false) %#
+  labels:
+    #| OIDC protection via Keycloak when SSO is enabled #|
+    security: oidc-protected
+#% endif %#
+spec:
+  parentRefs:
+    #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
+    - name: envoy-external
+      namespace: network
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
+    - name: envoy-internal
+      namespace: network
+  hostnames:
+    - "#{ langfuse_hostname }#"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        #| Langfuse web service from Helm chart #|
+        - name: langfuse-web
+          port: 3000
+#% endif %#

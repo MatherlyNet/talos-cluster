@@ -1,0 +1,64 @@
+---
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: dragonfly
+spec:
+  replicas: 1
+
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.36.0
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+  authentication:
+    passwordFromSecret:
+      name: dragonfly-auth
+      key: password
+
+  args:
+    - --maxmemory=512mb
+    - --proactor_threads=2
+    - --admin_port=9999
+    - --primary_port_http_enabled=false
+    - --cache_mode=true
+    - --slowlog_log_slower_than=10000
+    - --slowlog_max_len=128
+    - --aclfile=/etc/dragonfly/acl.conf
+    - --dir=s3://dragonfly-backups
+    - --s3_endpoint=rustfs-svc.storage.svc.cluster.local:9000
+    - --s3_use_https=false
+    - --dbfilename=snapshot
+
+  volumes:
+    - name: acl-config
+      configMap:
+        name: dragonfly-acl
+  volumeMounts:
+    - name: acl-config
+      mountPath: /etc/dragonfly
+      readOnly: true
+
+  snapshot:
+    cron: "0 */6 * * *"
+
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-auth
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-auth
+          key: AWS_SECRET_ACCESS_KEY
+
+  serviceSpec:
+    type: ClusterIP
+
+

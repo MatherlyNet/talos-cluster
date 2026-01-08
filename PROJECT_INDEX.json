@@ -253,6 +253,36 @@
       "name": "rustfs",
       "purpose": "S3-compatible object storage for Loki SimpleScalable (alpha)",
       "conditional": "rustfs_enabled"
+    },
+    {
+      "namespace": "cnpg-system",
+      "name": "cloudnative-pg",
+      "purpose": "PostgreSQL operator for managed database clusters",
+      "conditional": "cnpg_enabled"
+    },
+    {
+      "namespace": "identity",
+      "name": "keycloak",
+      "purpose": "OIDC identity provider for SSO",
+      "conditional": "keycloak_enabled"
+    },
+    {
+      "namespace": "cache",
+      "name": "dragonfly",
+      "purpose": "Redis-compatible in-memory data store (25x faster)",
+      "conditional": "dragonfly_enabled"
+    },
+    {
+      "namespace": "ai-system",
+      "name": "litellm",
+      "purpose": "LLM proxy gateway with unified OpenAI-compatible API",
+      "conditional": "litellm_enabled"
+    },
+    {
+      "namespace": "ai-system",
+      "name": "langfuse",
+      "purpose": "LLM observability platform (tracing, prompts, evaluation)",
+      "conditional": "langfuse_enabled"
     }
   ],
   "tools": {
@@ -323,7 +353,9 @@
         "talos-operations.md",
         "cilium-networking.md",
         "template-system.md",
-        "infrastructure-opentofu.md"
+        "infrastructure-opentofu.md",
+        "litellm.md",
+        "langfuse.md"
       ]
     },
     "main_docs": {
