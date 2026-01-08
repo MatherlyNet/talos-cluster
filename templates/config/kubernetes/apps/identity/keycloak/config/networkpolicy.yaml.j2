@@ -28,9 +28,10 @@ spec:
             - port: "53"
               protocol: TCP
     #| Keycloak Admin API access #|
+    #| Note: Keycloak Operator uses app.kubernetes.io/instance label, not app.kubernetes.io/name #|
     - toEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
       toPorts:
         - ports:
             - port: "8080"

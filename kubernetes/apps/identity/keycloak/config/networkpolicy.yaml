@@ -21,7 +21,7 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
       toPorts:
         - ports:
             - port: "8080"
