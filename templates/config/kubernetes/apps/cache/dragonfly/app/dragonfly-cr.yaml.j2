@@ -41,10 +41,6 @@ spec:
     #| Slow query logging for debugging #|
     - --slowlog_log_slower_than=#{ dragonfly_slowlog_threshold | default(10000) }#
     - --slowlog_max_len=#{ dragonfly_slowlog_max_len | default(128) }#
-#% if dragonfly_acl_enabled | default(false) %#
-    #| ACL file for multi-tenant access control #|
-    - --aclfile=/etc/dragonfly/acl.conf
-#% endif %#
 #% if dragonfly_backup_enabled | default(false) %#
     #| S3 snapshot configuration for RustFS #|
     - --dir=s3://dragonfly-backups
@@ -54,15 +50,10 @@ spec:
 #% endif %#
 
 #% if dragonfly_acl_enabled | default(false) %#
-  #| Mount ACL configuration #|
-  volumes:
-    - name: acl-config
-      configMap:
-        name: dragonfly-acl
-  volumeMounts:
-    - name: acl-config
-      mountPath: /etc/dragonfly
-      readOnly: true
+  #| ACL configuration from secret #|
+  aclFromSecret:
+    name: dragonfly-auth
+    key: acl.conf
 #% endif %#
 
 #% if dragonfly_backup_enabled | default(false) %#

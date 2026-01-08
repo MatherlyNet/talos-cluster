@@ -28,20 +28,14 @@ spec:
     - --cache_mode=true
     - --slowlog_log_slower_than=10000
     - --slowlog_max_len=128
-    - --aclfile=/etc/dragonfly/acl.conf
     - --dir=s3://dragonfly-backups
     - --s3_endpoint=rustfs-svc.storage.svc.cluster.local:9000
     - --s3_use_https=false
     - --dbfilename=snapshot
 
-  volumes:
-    - name: acl-config
-      configMap:
-        name: dragonfly-acl
-  volumeMounts:
-    - name: acl-config
-      mountPath: /etc/dragonfly
-      readOnly: true
+  aclFromSecret:
+    name: dragonfly-auth
+    key: acl.conf
 
   snapshot:
     cron: "0 */6 * * *"

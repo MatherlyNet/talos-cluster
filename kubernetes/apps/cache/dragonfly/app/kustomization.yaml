@@ -8,7 +8,6 @@ components:
 resources:
   - ./dragonfly-cr.yaml
   - ./secret.sops.yaml
-  - ./acl-configmap.yaml
   - ./podmonitor.yaml
   - ./prometheusrule.yaml
   - ./dashboard-configmap.yaml

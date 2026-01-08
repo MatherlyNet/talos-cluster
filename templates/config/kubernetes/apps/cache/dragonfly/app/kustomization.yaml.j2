@@ -9,9 +9,6 @@ components:
 resources:
   - ./dragonfly-cr.yaml
   - ./secret.sops.yaml
-#% if dragonfly_acl_enabled | default(false) %#
-  - ./acl-configmap.yaml
-#% endif %#
 #% if dragonfly_monitoring_enabled | default(false) %#
   - ./podmonitor.yaml
   - ./prometheusrule.yaml
