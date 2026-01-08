@@ -76,6 +76,9 @@ spec:
 
 #| =========================================================================== #|
 #| RUSTFS CONSOLE - S3-compatible object storage management UI                 #|
+#| NOTE: RustFS does not support OIDC SSO (as of 1.0.0-alpha.79)               #|
+#|       Uses native authentication - separate credentials from Keycloak       #|
+#|       REF: https://github.com/rustfs/rustfs/issues/726 (OIDC feature request) #|
 #| =========================================================================== #|
 #% if rustfs_enabled | default(false) %#
 ---
@@ -84,10 +87,7 @@ kind: HTTPRoute
 metadata:
   name: rustfs-console
   namespace: network
-  labels:
-#% if oidc_sso_enabled | default(false) %#
-    security: oidc-protected
-#% endif %#
+  #| No OIDC protection - RustFS uses built-in authentication #|
 spec:
   hostnames:
     - "#{ rustfs_subdomain | default('rustfs') }#.${SECRET_DOMAIN}"
