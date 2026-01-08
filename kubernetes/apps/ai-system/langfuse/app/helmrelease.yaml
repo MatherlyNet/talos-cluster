@@ -26,14 +26,17 @@ spec:
       nextauth:
         url: "https://langfuse.matherly.net"
         secret:
+          value: ""
           secretKeyRef:
             name: langfuse-credentials
             key: NEXTAUTH_SECRET
       salt:
+        value: ""
         secretKeyRef:
           name: langfuse-credentials
           key: SALT
       encryptionKey:
+        value: ""
         secretKeyRef:
           name: langfuse-credentials
           key: ENCRYPTION_KEY

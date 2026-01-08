@@ -37,14 +37,17 @@ spec:
       nextauth:
         url: "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#"
         secret:
+          value: ""
           secretKeyRef:
             name: langfuse-credentials
             key: NEXTAUTH_SECRET
       salt:
+        value: ""
         secretKeyRef:
           name: langfuse-credentials
           key: SALT
       encryptionKey:
+        value: ""
         secretKeyRef:
           name: langfuse-credentials
           key: ENCRYPTION_KEY
