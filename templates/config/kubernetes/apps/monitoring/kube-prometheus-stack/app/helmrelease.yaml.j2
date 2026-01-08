@@ -97,9 +97,9 @@ spec:
           email_attribute_path: "email"
           login_attribute_path: "preferred_username"
           name_attribute_path: "name"
-          #| Role mapping using JMESPath - maps Keycloak roles to Grafana roles #|
-          #| grafana-admin -> GrafanaAdmin, grafana-editor -> Editor, default -> Viewer #|
-          role_attribute_path: "contains(roles[*], 'grafana-admin') && 'GrafanaAdmin' || contains(roles[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+          #| Role mapping using JMESPath - maps Keycloak realm roles to Grafana roles #|
+          #| admin -> GrafanaAdmin, operator/developer -> Editor, viewer/user -> Viewer #|
+          role_attribute_path: "contains(roles[*], 'admin') && 'GrafanaAdmin' || contains(roles[*], 'operator') && 'Editor' || contains(roles[*], 'developer') && 'Editor' || 'Viewer'"
           role_attribute_strict: false
           allow_assign_grafana_admin: true
           #| Groups for organization mapping (OSS feature) #|

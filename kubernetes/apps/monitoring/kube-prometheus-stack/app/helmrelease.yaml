@@ -73,7 +73,7 @@ spec:
           email_attribute_path: "email"
           login_attribute_path: "preferred_username"
           name_attribute_path: "name"
-          role_attribute_path: "contains(roles[*], 'grafana-admin') && 'GrafanaAdmin' || contains(roles[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+          role_attribute_path: "contains(roles[*], 'admin') && 'GrafanaAdmin' || contains(roles[*], 'operator') && 'Editor' || contains(roles[*], 'developer') && 'Editor' || 'Viewer'"
           role_attribute_strict: false
           allow_assign_grafana_admin: true
           groups_attribute_path: "groups"
