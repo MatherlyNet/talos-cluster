@@ -8,7 +8,7 @@ resources:
   - ./ocirepository.yaml
   - ./pdb.yaml
   - ./podmonitor.yaml
-  - ./internal-httproutes.yaml
+  - ./httproutes.yaml
   - ./securitypolicy-jwt.yaml
   - ./secret-oidc.sops.yaml
   - ./securitypolicy-oidc.yaml

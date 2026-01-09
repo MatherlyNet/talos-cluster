@@ -7,8 +7,8 @@ resources:
   - ./helmrelease.yaml
   - ./postgresql.yaml
   - ./secret.sops.yaml
-  - ./httproute.yaml
   #| ReferenceGrant allows network namespace HTTPRoutes to access Langfuse service #|
+  #| HTTPRoute is centralized in network/envoy-gateway/app/httproutes.yaml.j2      #|
   - ./referencegrant.yaml
 #% if langfuse_monitoring_enabled | default(false) %#
   - ./servicemonitor.yaml

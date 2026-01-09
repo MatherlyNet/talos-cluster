@@ -72,3 +72,27 @@ spec:
             type: PathPrefix
             value: /
 
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: langfuse
+  namespace: network
+spec:
+  hostnames:
+    - "langfuse.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - backendRefs:
+        - name: langfuse-web
+          namespace: ai-system
+          port: 3000
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

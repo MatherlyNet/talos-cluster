@@ -45,8 +45,10 @@ spec:
         - name: LANGFUSE_LOG_LEVEL
           value: "info"
         - name: LANGFUSE_LOG_FORMAT
-          value: "text"
+          value: "json"
         - name: AUTH_DISABLE_SIGNUP
+          value: "true"
+        - name: AUTH_DISABLE_USERNAME_PASSWORD
           value: "true"
         - name: LANGFUSE_INIT_ORG_ID
           valueFrom:
@@ -102,19 +104,19 @@ spec:
           value: "matherly-net"
         - name: LANGFUSE_DEFAULT_ORG_ROLE
           value: "VIEWER"
-
-      auth:
-        disableUsernamePassword: false
-        additionalProviders:
-          - id: keycloak
-            name: "Keycloak"
-            clientId: "langfuse"
-            clientSecret:
-              secretKeyRef:
-                name: langfuse-keycloak-credentials
-                key: client-secret
-            issuer: "https://sso.matherly.net/realms/matherlynet"
-            allowDangerousEmailAccountLinking: true
+        - name: AUTH_KEYCLOAK_CLIENT_ID
+          value: "langfuse"
+        - name: AUTH_KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-keycloak-credentials
+              key: client-secret
+        - name: AUTH_KEYCLOAK_ISSUER
+          value: "https://sso.matherly.net/realms/matherlynet"
+        - name: AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING
+          value: "true"
+        - name: AUTH_KEYCLOAK_CHECKS
+          value: "pkce,state"
 
     postgresql:
       deploy: false
@@ -173,6 +175,8 @@ spec:
         secretKeyRef:
           name: langfuse-s3-credentials
           key: AWS_SECRET_ACCESS_KEY
+      concurrentWrites: 50
+      concurrentReads: 50
 
     mediaUpload:
       enabled: true
@@ -188,6 +192,8 @@ spec:
         secretKeyRef:
           name: langfuse-s3-credentials
           key: AWS_SECRET_ACCESS_KEY
+      maxContentLength: 1000000000
+      downloadUrlExpirySeconds: 3600
 
     batchExport:
       enabled: true

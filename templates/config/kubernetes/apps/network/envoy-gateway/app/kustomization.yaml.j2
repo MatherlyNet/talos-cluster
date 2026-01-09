@@ -8,8 +8,8 @@ resources:
   - ./ocirepository.yaml
   - ./pdb.yaml
   - ./podmonitor.yaml
-  #| Centralized internal HTTPRoutes for OIDC protection support #|
-  - ./internal-httproutes.yaml
+  #| Centralized HTTPRoutes for all exposed web UIs #|
+  - ./httproutes.yaml
   #| NOTE: ReferenceGrants must be deployed in TARGET namespaces, not here #|
   #|       See cilium, kube-prometheus-stack, rustfs kustomizations         #|
 #% if oidc_enabled %#

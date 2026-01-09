@@ -7,3 +7,4 @@ resources:
   - ./secret.sops.yaml
   - ./referencegrant.yaml
   - ./dashboard-storage.yaml
+  - ./networkpolicy.yaml

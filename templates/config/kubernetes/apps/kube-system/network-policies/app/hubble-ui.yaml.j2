@@ -1,0 +1,124 @@
+#% if network_policies_enabled | default(false) and hubble_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy for Hubble UI                                             #|
+#| Cilium network observability dashboard - serves web UI, queries Hubble Relay  #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-ui
+  namespace: kube-system
+spec:
+  description: "Hubble UI: Serve web interface, query Hubble Relay for flow data"
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-ui
+#% if enforce %#
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+#% else %#
+  #| Audit mode - observe traffic patterns via Hubble without blocking #|
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+#% endif %#
+  ingress:
+    #| User access via Envoy Gateway (internal) #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: internal
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Query Hubble Relay for flow data #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: hubble-relay
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy for Hubble Relay                                          #|
+#| gRPC relay service - aggregates flow data from Cilium agents on all nodes     #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-relay
+  namespace: kube-system
+spec:
+  description: "Hubble Relay: Aggregate flow data from Cilium agents, serve to UI"
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-relay
+#% if enforce %#
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+#% else %#
+  #| Audit mode - observe traffic patterns via Hubble without blocking #|
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+#% endif %#
+  ingress:
+    #| Hubble UI queries flow data #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: hubble-ui
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP
+#% if monitoring_enabled | default(false) %#
+    #| Prometheus scraping #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9966"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Hubble Relay communicates with Cilium agents via host networking #|
+    - toEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "4244"
+              protocol: TCP
+#% endif %#

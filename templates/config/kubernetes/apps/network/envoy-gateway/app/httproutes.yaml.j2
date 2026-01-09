@@ -1,17 +1,23 @@
 #| =========================================================================== #|
-#| CENTRALIZED HTTPROUTES - All internal web UIs routed through envoy-internal #|
+#| CENTRALIZED HTTPROUTES - All web UIs routed through Envoy Gateway          #|
 #| =========================================================================== #|
 #| HTTPRoutes are centralized in the 'network' namespace to enable:            #|
 #|   - Consistent SecurityPolicy application (OIDC/JWT protection)             #|
 #|   - Simplified route management                                             #|
 #|   - Cross-namespace backend references via ReferenceGrant                   #|
 #|                                                                             #|
-#| Routes that should NOT be OIDC-protected (Keycloak, webhooks) remain in     #|
-#| their original namespaces.                                                  #|
+#| Routes may attach to:                                                       #|
+#|   - envoy-internal: LAN-only access (UniFi DNS)                             #|
+#|   - envoy-external: Public access (Cloudflare DNS + Tunnel)                 #|
+#|   - Both: Split-horizon DNS (prevents asymmetric routing)                   #|
+#|                                                                             #|
+#| Routes that should NOT be centralized (Keycloak, webhooks) remain in        #|
+#| their original namespaces for independent lifecycle management.             #|
 #| =========================================================================== #|
 
 #| =========================================================================== #|
 #| HUBBLE UI - Cilium network observability dashboard                          #|
+#| Internal only: No external access needed for network debugging              #|
 #| =========================================================================== #|
 #% if hubble_enabled | default(false) %#
 ---
@@ -44,6 +50,7 @@ spec:
 
 #| =========================================================================== #|
 #| GRAFANA - Metrics visualization dashboard                                   #|
+#| Internal only: Sensitive operational data, LAN access sufficient            #|
 #| =========================================================================== #|
 #% if monitoring_enabled | default(false) and monitoring_stack == 'prometheus' %#
 ---
@@ -76,6 +83,7 @@ spec:
 
 #| =========================================================================== #|
 #| RUSTFS CONSOLE - S3-compatible object storage management UI                 #|
+#| Internal only: Infrastructure admin tool, LAN access only                   #|
 #| NOTE: RustFS does not support OIDC SSO (as of 1.0.0-alpha.79)               #|
 #|       Uses native authentication - separate credentials from Keycloak       #|
 #|       REF: https://github.com/rustfs/rustfs/issues/726 (OIDC feature request) #|
@@ -108,6 +116,9 @@ spec:
 
 #| =========================================================================== #|
 #| LITELLM - Unified LLM API Gateway                                           #|
+#| Both gateways: Split-horizon DNS (prevents asymmetric routing)              #|
+#|   - External users: Cloudflare DNS → envoy-external → LiteLLM               #|
+#|   - Internal users: UniFi DNS → envoy-internal → LiteLLM                    #|
 #| LiteLLM uses native SSO - no gateway-level OIDC protection needed           #|
 #| REF: docs/research/litellm-proxy-gateway-integration-jan-2026.md            #|
 #| =========================================================================== #|
@@ -123,14 +134,56 @@ spec:
   hostnames:
     - "#{ litellm_subdomain | default('litellm') }#.${SECRET_DOMAIN}"
   parentRefs:
+    #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
+    - name: envoy-external
+      namespace: network
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
     - name: envoy-internal
       namespace: network
-      sectionName: https
   rules:
     - backendRefs:
         - name: litellm
           namespace: ai-system
           port: 4000
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+#% endif %#
+
+#| =========================================================================== #|
+#| LANGFUSE - LLM observability platform                                       #|
+#| Both gateways: Split-horizon DNS (prevents asymmetric routing)              #|
+#|   - External users: Cloudflare DNS → envoy-external → Langfuse              #|
+#|   - Internal users: UniFi DNS → envoy-internal → Langfuse                   #|
+#| NOTE: NO security label - Langfuse handles its own authentication via native #|
+#|       SSO (AUTH_KEYCLOAK_*). Gateway OIDC would cause dual authentication.   #|
+#| REF: docs/research/langfuse-seamless-sso-integration-jan-2026.md            #|
+#| =========================================================================== #|
+#% if langfuse_enabled | default(false) %#
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: langfuse
+  namespace: network
+  #| No OIDC protection - Langfuse uses native SSO via AUTH_KEYCLOAK_* env vars #|
+spec:
+  hostnames:
+    - "#{ langfuse_subdomain | default('langfuse') }#.${SECRET_DOMAIN}"
+  parentRefs:
+    #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
+    - name: envoy-external
+      namespace: network
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - backendRefs:
+        #| Langfuse web service from Helm chart #|
+        - name: langfuse-web
+          namespace: ai-system
+          port: 3000
       matches:
         - path:
             type: PathPrefix

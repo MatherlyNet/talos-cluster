@@ -6,7 +6,6 @@ resources:
   - ./helmrelease.yaml
   - ./postgresql.yaml
   - ./secret.sops.yaml
-  - ./httproute.yaml
   - ./referencegrant.yaml
   - ./servicemonitor.yaml
   - ./dashboard-configmap.yaml

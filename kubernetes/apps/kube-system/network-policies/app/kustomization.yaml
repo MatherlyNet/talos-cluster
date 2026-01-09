@@ -6,3 +6,4 @@ resources:
   - ./metrics-server.yaml
   - ./spegel.yaml
   - ./reloader.yaml
+  - ./hubble-ui.yaml

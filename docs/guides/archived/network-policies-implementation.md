@@ -1,7 +1,8 @@
 # Network Policies Implementation Guide
 
 **Status:** Production Reference
-**Last Updated:** 2026-01-08
+**Last Updated:** 2026-01-09
+**Last Validated:** 2026-01-09 (comprehensive codebase audit)
 **Cluster Version:** Kubernetes v1.35.0, Cilium CNI
 
 ## Table of Contents
@@ -56,33 +57,45 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 
 | Component | Namespace | CiliumNetworkPolicy | Standard NetworkPolicy | Database NetworkPolicy | Location |
 | ----------- | ----------- | --------------------- | ------------------------ | ------------------------ | ---------- |
-| **Infrastructure Components** | | | | | |
+| **kube-system Infrastructure** | | | | | |
 | CoreDNS | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/coredns.yaml.j2` |
 | Spegel | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/spegel.yaml.j2` |
+| Metrics Server | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/metrics-server.yaml.j2` |
+| Reloader | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/reloader.yaml.j2` |
+| **cert-manager** | | | | | |
+| Controller | cert-manager | ✅ | ❌ | N/A | `cert-manager/network-policies/app/controller.yaml.j2` |
+| Webhook | cert-manager | ✅ | ❌ | N/A | `cert-manager/network-policies/app/webhook.yaml.j2` |
+| CA Injector | cert-manager | ✅ | ❌ | N/A | `cert-manager/network-policies/app/cainjector.yaml.j2` |
+| **Network Components** | | | | | |
+| Envoy Gateway | network | ✅ | ❌ | N/A | `network/network-policies/app/envoy-gateway.yaml.j2` |
+| Cloudflare DNS (external-dns) | network | ✅ | ❌ | N/A | `network/network-policies/app/cloudflare-dns.yaml.j2` |
+| UniFi DNS (external-dns) | network | ✅ | ❌ | N/A | `network/network-policies/app/unifi-dns.yaml.j2` |
+| k8s-gateway | network | ✅ | ❌ | N/A | `network/network-policies/app/k8s-gateway.yaml.j2` |
+| Cloudflare Tunnel | network | ✅ | ❌ | N/A | `network/network-policies/app/cloudflare-tunnel.yaml.j2` |
+| **Monitoring Stack** | | | | | |
 | Grafana | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/grafana.yaml.j2` |
 | Prometheus | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/prometheus.yaml.j2` |
 | Loki | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/loki.yaml.j2` |
 | Alloy | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/alloy.yaml.j2` |
 | Tempo | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/tempo.yaml.j2` |
+| **Cache Services** | | | | | |
 | Dragonfly | cache | ✅ | ❌ | N/A | `cache/dragonfly/app/networkpolicy.yaml.j2` |
-| **Application Components** | | | | | |
-| Keycloak | identity | ✅ | ✅ | ✅ | `identity/keycloak/*/networkpolicy*.yaml.j2` |
-| LiteLLM | ai-system | ✅ (2x) | ✅ | ✅ | `ai-system/litellm/app/networkpolicy.yaml.j2` |
-| Langfuse | ai-system | ✅ (2x) | ✅ | ✅ | `ai-system/langfuse/app/networkpolicy.yaml.j2` |
+| **Application Components (Triple Policy Pattern)** | | | | | |
+| Keycloak | identity | ✅ | ✅ | ✅ (CNPG) | `identity/keycloak/*/networkpolicy*.yaml.j2` |
+| Keycloak config-cli | identity | ✅ | ❌ | N/A | `identity/keycloak/config/networkpolicy.yaml.j2` |
+| LiteLLM | ai-system | ✅ (2x) | ✅ | ✅ (CNPG) | `ai-system/litellm/app/networkpolicy.yaml.j2` |
+| Langfuse | ai-system | ✅ (2x) | ✅ | ✅ (CNPG) | `ai-system/langfuse/app/networkpolicy.yaml.j2` |
 
-**Total:** 11 components with network policies
+**Total:** 22 components with network policies across 6 namespaces
 
-### Components MISSING Network Policies
+### Components MISSING Network Policies (Gaps)
 
 | Component | Namespace | Exposed Externally | HTTPRoute | Priority | Risk Level |
 | ----------- | ----------- | ------------------- | ----------- | ---------- | ---------- |
 | **Hubble UI** | kube-system | ✅ Yes | ✅ Yes | **HIGH** | **HIGH** |
 | **RustFS** | storage | ✅ Yes | ✅ Yes | **HIGH** | **HIGH** |
-| Metrics Server | kube-system | ❌ No | ❌ No | Medium | Medium |
-| Reloader | kube-system | ❌ No | ❌ No | Low | Low |
-| cert-manager | cert-manager | ❌ No | ❌ No | Medium | Medium |
-| external-dns | network | ❌ No | ❌ No | Medium | Medium |
-| Cloudflare Tunnel | network | ❌ No | ❌ No | Medium | Medium |
+
+> **Note:** All other infrastructure components now have network policies implemented. Only Hubble UI and RustFS remain as gaps requiring remediation.
 
 ### HTTPRoute Status
 
@@ -90,12 +103,12 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 
 | Component | HTTPRoute | OIDC Protection | Native Auth |
 | ----------- | ----------- | ----------------- | ------------- |
-| Hubble UI | ✅ (lines 16-43) | Optional (if `oidc_sso_enabled`) | No |
-| Grafana | ✅ (lines 48-75) | Optional (if `oidc_sso_enabled`) | Yes (optional) |
-| RustFS Console | ✅ (lines 83-107) | ❌ No (not supported) | ✅ Yes (required) |
-| LiteLLM | ✅ (lines 114-138) | ❌ No (uses native SSO) | ✅ Yes |
-| Langfuse | ✅ Separate file | ❌ No (uses native SSO) | ✅ Yes |
-| Keycloak | ✅ In app namespace | ❌ No (is the IdP) | N/A |
+| Hubble UI | ✅ (conditional on `hubble_enabled`) | Optional (if `oidc_sso_enabled`) | No |
+| Grafana | ✅ (conditional on `monitoring_enabled`) | Optional (if `oidc_sso_enabled`) | Yes (optional) |
+| RustFS Console | ✅ (conditional on `rustfs_enabled`) | ❌ No (not supported) | ✅ Yes (required) |
+| LiteLLM | ✅ (conditional on `litellm_enabled`) | ❌ No (uses native SSO) | ✅ Yes |
+| Langfuse | ✅ Separate file in ai-system | ❌ No (uses native SSO) | ✅ Yes |
+| Keycloak | ✅ In identity namespace | ❌ No (is the IdP) | N/A |
 
 **Important Notes:**
 - Prometheus, Loki, Alloy, Tempo are NOT exposed externally (internal services only)
@@ -137,49 +150,23 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 - Egress: DNS, RustFS backend service (port 9000)
 - Optional: Prometheus metrics scraping
 
-### Medium Priority Gaps
+### ~~Medium Priority Gaps~~ (RESOLVED)
 
-#### 3. Metrics Server (kube-system namespace)
+> **✅ IMPLEMENTED:** The following components now have network policies implemented. See "Components WITH Network Policies" table above for locations.
 
-**Risk:** Internal service, but lacks isolation
+| Component | Status | Implementation |
+| --------- | ------ | -------------- |
+| Metrics Server | ✅ Implemented | `kube-system/network-policies/app/metrics-server.yaml.j2` |
+| cert-manager | ✅ Implemented | `cert-manager/network-policies/app/` (controller, webhook, cainjector) |
+| external-dns (Cloudflare) | ✅ Implemented | `network/network-policies/app/cloudflare-dns.yaml.j2` |
+| external-dns (UniFi) | ✅ Implemented | `network/network-policies/app/unifi-dns.yaml.j2` |
 
-**Required Policy:**
-- Ingress: kube-apiserver, Prometheus scraping
-- Egress: kube-apiserver, kubelet (port 10250), DNS
+### ~~Low Priority Gaps~~ (RESOLVED)
 
-#### 4. cert-manager (cert-manager namespace)
-
-**Risk:** Manages TLS certificates, requires external ACME access
-
-**Required Policy:**
-- Ingress: kube-apiserver webhooks, Prometheus scraping
-- Egress: kube-apiserver, DNS, ACME servers (Let's Encrypt)
-
-#### 5. external-dns (network namespace)
-
-**Risk:** Manages DNS records via Cloudflare/UniFi APIs
-
-**Required Policy:**
-- Ingress: Prometheus scraping
-- Egress: kube-apiserver, DNS, Cloudflare API (443), UniFi API (optional)
-
-### Low Priority Gaps
-
-#### 6. Reloader (kube-system namespace)
-
-**Risk:** Low - only watches ConfigMaps/Secrets
-
-**Required Policy:**
-- Ingress: Prometheus scraping
-- Egress: kube-apiserver, DNS
-
-#### 7. Cloudflare Tunnel (network namespace)
-
-**Risk:** Low - outbound only tunnel
-
-**Required Policy:**
-- Ingress: None (outbound tunnel only)
-- Egress: Cloudflare tunnel endpoints (443), internal services (443, 80)
+| Component | Status | Implementation |
+| --------- | ------ | -------------- |
+| Reloader | ✅ Implemented | `kube-system/network-policies/app/reloader.yaml.j2` |
+| Cloudflare Tunnel | ✅ Implemented | `network/network-policies/app/cloudflare-tunnel.yaml.j2` |
 
 ## Best Practices and Industry Standards
 
@@ -1080,9 +1067,11 @@ resources:
   - ./networkpolicy.yaml  # ADD THIS LINE
 ```
 
-### Phase 2: Medium Priority (Week 2)
+### ~~Phase 2: Medium Priority~~ ✅ COMPLETED
 
-#### 2.1 Metrics Server Network Policy
+> **All Phase 2 items have been implemented.** The following sections are preserved for reference as the canonical implementation patterns.
+
+#### 2.1 Metrics Server Network Policy ✅
 
 **File:** `templates/config/kubernetes/apps/kube-system/network-policies/app/metrics-server.yaml.j2`
 
@@ -1152,9 +1141,9 @@ spec:
 #% endif %#
 ```
 
-#### 2.2 cert-manager Network Policy
+#### 2.2 cert-manager Network Policy ✅
 
-**Directory:** Create `templates/config/kubernetes/apps/cert-manager/network-policies/`
+**Directory:** `templates/config/kubernetes/apps/cert-manager/network-policies/` (EXISTS)
 
 **File:** `templates/config/kubernetes/apps/cert-manager/network-policies/ks.yaml.j2`
 ```yaml
@@ -1235,9 +1224,11 @@ spec:
 #% endif %#
 ```
 
-#### 2.3 external-dns Network Policy
+#### 2.3 external-dns Network Policy ✅
 
-**Directory:** Create `templates/config/kubernetes/apps/network/external-dns/app/networkpolicy.yaml.j2`
+**File:** `templates/config/kubernetes/apps/network/network-policies/app/cloudflare-dns.yaml.j2` (EXISTS)
+
+> **Note:** Implementation uses centralized network-policies directory pattern, not per-app directory.
 
 **Implementation:**
 ```yaml
@@ -1306,17 +1297,21 @@ spec:
 #% endif %#
 ```
 
-### Phase 3: Low Priority (Week 3)
+### ~~Phase 3: Low Priority~~ ✅ COMPLETED
 
-#### 3.1 Reloader Network Policy
+> **All Phase 3 items have been implemented.** The following sections are preserved for reference.
 
-Already exists: `templates/config/kubernetes/apps/kube-system/network-policies/app/reloader.yaml.j2`
+#### 3.1 Reloader Network Policy ✅
 
-Verify it follows pattern and includes proper conditionals.
+**File:** `templates/config/kubernetes/apps/kube-system/network-policies/app/reloader.yaml.j2` (EXISTS)
 
-#### 3.2 Cloudflare Tunnel Network Policy
+Implementation follows Pattern A (single CiliumNetworkPolicy) with proper conditionals.
 
-**File:** `templates/config/kubernetes/apps/network/cloudflared/app/networkpolicy.yaml.j2`
+#### 3.2 Cloudflare Tunnel Network Policy ✅
+
+**File:** `templates/config/kubernetes/apps/network/network-policies/app/cloudflare-tunnel.yaml.j2` (EXISTS)
+
+> **Note:** Implementation uses centralized network-policies directory pattern.
 
 **Implementation:**
 ```yaml
@@ -1967,4 +1962,5 @@ hubble observe --namespace ai-system --output json > ai-system-flows.json
 ---
 
 **Document History:**
+- 2026-01-09: Comprehensive audit and validation - Updated current state analysis to reflect 22 implemented policies; marked Phase 2 and Phase 3 as COMPLETED; corrected gap analysis to show only Hubble UI and RustFS as remaining gaps
 - 2026-01-08: Initial version documenting current state and remediation plan

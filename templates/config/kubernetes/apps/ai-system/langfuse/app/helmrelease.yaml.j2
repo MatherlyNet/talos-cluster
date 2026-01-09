@@ -188,24 +188,32 @@ spec:
         - name: LANGFUSE_DEFAULT_PROJECT_ROLE
           value: "#{ langfuse_default_project_role }#"
 #% endif %#
-
 #% if langfuse_sso_enabled | default(false) %#
-      #| ======================================================================= #|
-      #| Keycloak SSO Configuration                                             #|
-      #| ======================================================================= #|
-      auth:
-        #| Keep username/password as fallback for admin access #|
-        disableUsernamePassword: false
-        additionalProviders:
-          - id: keycloak
-            name: "Keycloak"
-            clientId: "langfuse"
-            clientSecret:
-              secretKeyRef:
-                name: langfuse-keycloak-credentials
-                key: client-secret
-            issuer: "#{ keycloak_issuer_url }#"
-            allowDangerousEmailAccountLinking: true
+        #| ===================================================================== #|
+        #| Keycloak SSO Configuration                                           #|
+        #| Configures native Langfuse authentication via Keycloak OIDC          #|
+        #| REF: https://langfuse.com/self-hosting/authentication-and-sso        #|
+        #| REF: docs/research/langfuse-seamless-sso-integration-jan-2026.md     #|
+        #| ===================================================================== #|
+        - name: AUTH_KEYCLOAK_CLIENT_ID
+          value: "langfuse"
+        - name: AUTH_KEYCLOAK_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-keycloak-credentials
+              key: client-secret
+        - name: AUTH_KEYCLOAK_ISSUER
+          value: "#{ keycloak_issuer_url }#"
+        - name: AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING
+          value: "true"
+        #| ===================================================================== #|
+        #| PKCE Configuration (adds security layer to confidential client)      #|
+        #| Keycloak client has: pkce.code.challenge.method: S256                #|
+        #| NOTE: Confidential client = uses client_secret + PKCE (both)         #|
+        #| AUTH_KEYCLOAK_CLIENT_AUTH_METHOD omitted = default client_secret_basic #|
+        #| ===================================================================== #|
+        - name: AUTH_KEYCLOAK_CHECKS
+          value: "pkce,state"
 #% endif %#
 
     #| ========================================================================= #|

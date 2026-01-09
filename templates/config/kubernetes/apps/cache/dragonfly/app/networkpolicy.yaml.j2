@@ -1,4 +1,5 @@
 #% if dragonfly_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
 ---
 #| CiliumNetworkPolicy for Dragonfly cache access control #|
 #| Allows ingress from authorized namespaces and monitoring #|
@@ -11,7 +12,7 @@ spec:
   endpointSelector:
     matchLabels:
       app: dragonfly
-#% if network_policies_mode | default('audit') == 'enforce' %#
+#% if enforce %#
   enableDefaultDeny:
     ingress: true
     egress: true
