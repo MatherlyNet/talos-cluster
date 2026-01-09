@@ -60,14 +60,25 @@ spec:
       enabled: false
 
     #| ========================================================================= #|
+    #| Extra Environment Variables from Secrets                                   #|
+    #| Sensitive values from obot-secret (SOPS-encrypted) override chart config   #|
+    #| ========================================================================= #|
+    extraEnvFrom:
+      - secretRef:
+          name: obot-secret
+
+    #| ========================================================================= #|
     #| Environment Configuration                                                  #|
+    #| NOTE: Secrets (DB password, encryption key, Keycloak secrets) are          #|
+    #| provided via extraEnvFrom from obot-secret, not in config section          #|
     #| ========================================================================= #|
     config:
       #| Core server settings #|
       OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname }#"
-      OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:${OBOT_DB_PASSWORD}@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
+      #| DSN uses OBOT_DB_PASSWORD env var from obot-secret via extraEnvFrom #|
+      OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:$(OBOT_DB_PASSWORD)@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
-      OBOT_SERVER_ENABLE_AUTHENTICATION: true
+      OBOT_SERVER_ENABLE_AUTHENTICATION: "true"
 
 #% if obot_admin_emails | default('') %#
       #| Admin access (full platform access) #|
@@ -77,22 +88,18 @@ spec:
       #| Owner access (highest privilege level) #|
       OBOT_SERVER_AUTH_OWNER_EMAILS: "#{ obot_owner_emails }#"
 #% endif %#
-#% if obot_bootstrap_token | default('') %#
-      #| Bootstrap token for initial setup #|
-      OBOT_BOOTSTRAP_TOKEN: "${OBOT_BOOTSTRAP_TOKEN}"
-#% endif %#
+      #| NOTE: OBOT_BOOTSTRAP_TOKEN provided via extraEnvFrom from obot-secret #|
 
 #% if obot_keycloak_enabled | default(false) %#
       #| ======================================================================= #|
       #| Keycloak Auth Provider - jrmatherly/obot-entraid fork variables         #|
+      #| NOTE: CLIENT_SECRET and COOKIE_SECRET from obot-secret via extraEnvFrom #|
       #| REF: https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md #|
       #| ======================================================================= #|
       OBOT_SERVER_AUTH_PROVIDER: "keycloak"
       OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
       OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "#{ obot_keycloak_realm }#"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "#{ obot_keycloak_client_id | default('obot') }#"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_KEYCLOAK_CLIENT_SECRET}"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "${OBOT_KEYCLOAK_COOKIE_SECRET}"
 #% if obot_keycloak_allowed_groups | default('') %#
       #| Optional: Restrict access to specific Keycloak groups #|
       OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS: "#{ obot_keycloak_allowed_groups }#"
@@ -104,19 +111,18 @@ spec:
 #% elif obot_entra_tenant_id | default('') %#
       #| ======================================================================= #|
       #| Entra ID (Azure AD) Auth Provider - Alternative to Keycloak            #|
+      #| NOTE: CLIENT_ID and CLIENT_SECRET from obot-secret via extraEnvFrom    #|
       #| ======================================================================= #|
       OBOT_SERVER_AUTH_PROVIDER: "entra-id"
       OBOT_ENTRA_AUTH_PROVIDER_TENANT_ID: "#{ obot_entra_tenant_id }#"
-      OBOT_ENTRA_AUTH_PROVIDER_CLIENT_ID: "${OBOT_ENTRA_CLIENT_ID}"
-      OBOT_ENTRA_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_ENTRA_CLIENT_SECRET}"
 #% endif %#
 
       #| ======================================================================= #|
       #| Encryption Configuration                                                #|
+      #| NOTE: OBOT_SERVER_ENCRYPTION_KEY from obot-secret via extraEnvFrom     #|
       #| ======================================================================= #|
 #% if obot_encryption_provider | default('custom') == 'custom' %#
       OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
-      OBOT_SERVER_ENCRYPTION_KEY: "${OBOT_SERVER_ENCRYPTION_KEY}"
 #% endif %#
 
       #| ======================================================================= #|
@@ -143,12 +149,11 @@ spec:
 #% if obot_workspace_provider | default('directory') == 's3' %#
       #| ======================================================================= #|
       #| S3 Workspace Provider - For multi-replica deployments                   #|
+      #| NOTE: AWS credentials from obot-secret via extraEnvFrom                 #|
       #| ======================================================================= #|
       OBOT_WORKSPACE_PROVIDER_TYPE: "s3"
       WORKSPACE_PROVIDER_S3_BUCKET: "#{ obot_s3_bucket }#"
       WORKSPACE_PROVIDER_S3_BASE_ENDPOINT: "#{ obot_s3_endpoint | default('http://rustfs.storage.svc.cluster.local:9000') }#"
-      AWS_ACCESS_KEY_ID: "${OBOT_S3_ACCESS_KEY}"
-      AWS_SECRET_ACCESS_KEY: "${OBOT_S3_SECRET_KEY}"
       AWS_REGION: "#{ obot_s3_region | default('us-east-1') }#"
       WORKSPACE_PROVIDER_S3_USE_PATH_STYLE: "true"
 #% endif %#

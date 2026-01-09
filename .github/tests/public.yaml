@@ -178,6 +178,11 @@ kubernetes_version: "1.35.0"
 # cnpg_pgvector_enabled: false
 # cnpg_pgvector_image: "ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie"
 # cnpg_pgvector_version: "0.8.1"
+# Barman Cloud Plugin for S3 backups (replaces deprecated in-tree barmanObjectStore)
+# REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
+# cnpg_barman_plugin_enabled: false
+# cnpg_barman_plugin_version: "0.10.0"
+# cnpg_barman_plugin_log_level: "info"
 
 # Keycloak OIDC Provider (optional - uncomment to test)
 # REF: docs/guides/keycloak-implementation.md

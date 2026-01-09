@@ -285,6 +285,15 @@ class Plugin(makejinja.plugin.Plugin):
         )
         data["cnpg_postgres_image"] = cnpg_postgres_image
 
+        # Barman Cloud Plugin - enabled when explicitly set or any backup is enabled
+        # Plugin provides barman-cloud binaries via sidecar (no -system- images needed)
+        # Requires cnpg_enabled for the operator to be present
+        cnpg_barman_plugin_enabled = (
+            cnpg_enabled
+            and data.get("cnpg_barman_plugin_enabled", False)
+        )
+        data["cnpg_barman_plugin_enabled"] = cnpg_barman_plugin_enabled
+
         # pgvector extension - enabled when cnpg and pgvector are both enabled
         cnpg_pgvector_enabled = cnpg_enabled and data.get(
             "cnpg_pgvector_enabled", False

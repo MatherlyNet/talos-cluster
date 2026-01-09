@@ -55,20 +55,11 @@ spec:
 
   priorityClassName: system-cluster-critical
 
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://obot-backups"
-      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
-      s3Credentials:
-        accessKeyId:
-          name: obot-backup-credentials
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: obot-backup-credentials
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-    retentionPolicy: "7d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: obot-objectstore
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
@@ -82,3 +73,35 @@ spec:
     name: obot-postgresql
   extensions:
     - name: vector
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: obot-objectstore
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot-objectstore
+    app.kubernetes.io/part-of: obot
+spec:
+  configuration:
+    destinationPath: "s3://obot-backups"
+    endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+    s3Credentials:
+      accessKeyId:
+        name: obot-backup-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: obot-backup-credentials
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    retentionPolicy: "7d"
+  instanceSidecarConfiguration:
+    retentionPolicyIntervalSeconds: 1800
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi

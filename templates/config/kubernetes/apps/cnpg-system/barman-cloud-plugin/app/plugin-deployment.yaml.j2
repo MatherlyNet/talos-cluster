@@ -1,0 +1,373 @@
+#% if cnpg_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| BARMAN CLOUD PLUGIN - CRDs, RBAC, Certificates, and Deployment               #|
+#| Version: #{ cnpg_barman_plugin_version | default('0.10.0') }#                                                             #|
+#| REF: https://github.com/cloudnative-pg/plugin-barman-cloud/releases          #|
+#| ============================================================================= #|
+#| ObjectStore CRD - defines backup destination configuration                    #|
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: objectstores.barmancloud.cnpg.io
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+spec:
+  group: barmancloud.cnpg.io
+  names:
+    kind: ObjectStore
+    listKind: ObjectStoreList
+    plural: objectstores
+    singular: objectstore
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: ObjectStore is the Schema for the objectstores API
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ObjectStoreSpec defines the desired state of ObjectStore
+              type: object
+              properties:
+                configuration:
+                  description: Configuration for the object store
+                  type: object
+                  properties:
+                    destinationPath:
+                      description: The path where to store the backup
+                      type: string
+                    endpointURL:
+                      description: The endpoint URL for S3-compatible storage
+                      type: string
+                    endpointCA:
+                      description: Reference to a secret containing the CA certificate
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                    s3Credentials:
+                      description: S3 credentials
+                      type: object
+                      properties:
+                        accessKeyId:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            key:
+                              type: string
+                        secretAccessKey:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            key:
+                              type: string
+                        region:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            key:
+                              type: string
+                        sessionToken:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            key:
+                              type: string
+                        inheritFromIAMRole:
+                          type: boolean
+                    azureCredentials:
+                      description: Azure credentials
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    googleCredentials:
+                      description: Google credentials
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    wal:
+                      description: WAL configuration
+                      type: object
+                      properties:
+                        compression:
+                          type: string
+                          enum: [gzip, bzip2, snappy, lz4, zstd, none]
+                        encryption:
+                          type: string
+                          enum: [AES256, aws:kms]
+                        maxParallel:
+                          type: integer
+                    data:
+                      description: Data backup configuration
+                      type: object
+                      properties:
+                        compression:
+                          type: string
+                          enum: [gzip, bzip2, snappy, lz4, zstd, none]
+                        encryption:
+                          type: string
+                          enum: [AES256, aws:kms]
+                        jobs:
+                          type: integer
+                        immediateCheckpoint:
+                          type: boolean
+                    retentionPolicy:
+                      description: Retention policy for backups
+                      type: string
+                    tags:
+                      description: Tags for backup objects
+                      type: object
+                      additionalProperties:
+                        type: string
+                instanceSidecarConfiguration:
+                  description: Configuration for sidecar containers
+                  type: object
+                  properties:
+                    retentionPolicyIntervalSeconds:
+                      type: integer
+                    resources:
+                      type: object
+                      properties:
+                        requests:
+                          type: object
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            x-kubernetes-int-or-string: true
+                        limits:
+                          type: object
+                          additionalProperties:
+                            anyOf:
+                              - type: integer
+                              - type: string
+                            x-kubernetes-int-or-string: true
+            status:
+              description: ObjectStoreStatus defines the observed state of ObjectStore
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+---
+#| ServiceAccount for barman-cloud plugin #|
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: barman-cloud
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+---
+#| ClusterRole for barman-cloud plugin #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: barman-cloud-plugin
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+rules:
+  #| Access to ObjectStore CRD #|
+  - apiGroups: ["barmancloud.cnpg.io"]
+    resources: ["objectstores"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["barmancloud.cnpg.io"]
+    resources: ["objectstores/status"]
+    verbs: ["get", "update", "patch"]
+  #| Access to CNPG Cluster CRD for backup operations #|
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters", "backups", "scheduledbackups"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters/status", "backups/status"]
+    verbs: ["get", "update", "patch"]
+  #| Access to secrets for credentials #|
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  #| Access to pods for sidecar injection #|
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  #| Events for status reporting #|
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+#| ClusterRoleBinding for barman-cloud plugin #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: barman-cloud-plugin
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: barman-cloud-plugin
+subjects:
+  - kind: ServiceAccount
+    name: barman-cloud
+    namespace: cnpg-system
+---
+#| Certificate for mTLS with operator (via cert-manager) #|
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: barman-cloud-selfsigned
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: barman-cloud-server
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+spec:
+  secretName: barman-cloud-server-cert
+  # 1 year validity
+  duration: 8760h
+  # Renew 30 days before expiry
+  renewBefore: 720h
+  isCA: false
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - barman-cloud
+    - barman-cloud.cnpg-system
+    - barman-cloud.cnpg-system.svc
+    - barman-cloud.cnpg-system.svc.cluster.local
+  issuerRef:
+    name: barman-cloud-selfsigned
+    kind: Issuer
+---
+#| Service for gRPC communication with operator #|
+apiVersion: v1
+kind: Service
+metadata:
+  name: barman-cloud
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+  annotations:
+    #| Required annotations for CNPG operator to discover plugin #|
+    cnpg.io/pluginName: "barman-cloud.cloudnative-pg.io"
+    cnpg.io/pluginPort: "9090"
+    cnpg.io/pluginCertificateSecretName: "barman-cloud-server-cert"
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: plugin-barman-cloud
+---
+#| Plugin Deployment #|
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: barman-cloud
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+    app.kubernetes.io/version: "#{ cnpg_barman_plugin_version | default('0.10.0') }#"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: plugin-barman-cloud
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plugin-barman-cloud
+    spec:
+      serviceAccountName: barman-cloud
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: plugin
+          image: ghcr.io/cloudnative-pg/plugin-barman-cloud:#{ cnpg_barman_plugin_version | default('0.10.0') }#
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=#{ cnpg_barman_plugin_log_level | default('info') }#
+          ports:
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: SIDECAR_IMAGE
+              value: "ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar:#{ cnpg_barman_plugin_version | default('0.10.0') }#"
+          volumeMounts:
+            - name: tls-cert
+              mountPath: /etc/tls
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          livenessProbe:
+            grpc:
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            grpc:
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: tls-cert
+          secret:
+            secretName: barman-cloud-server-cert
+            defaultMode: 0400
+      #% if cnpg_control_plane_only | default(true) %#
+      #| Schedule plugin alongside operator on control-plane #|
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      #% endif %#
+#% endif %#

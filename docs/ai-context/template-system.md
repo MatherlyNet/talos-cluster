@@ -211,6 +211,7 @@ Computed from other values:
 | `infrastructure_enabled` | proxmox_api_url + proxmox_node set |
 | `cnpg_enabled` | cnpg_enabled explicitly set to true |
 | `cnpg_backup_enabled` | cnpg + rustfs + backup flag + credentials set |
+| `cnpg_barman_plugin_enabled` | cnpg_enabled + cnpg_barman_plugin_enabled both true |
 | `cnpg_pgvector_enabled` | cnpg_enabled + cnpg_pgvector_enabled both true |
 | `loki_deployment_mode` | "SimpleScalable" when rustfs_enabled, else "SingleBinary" |
 | `keycloak_enabled` | keycloak_enabled explicitly set to true |

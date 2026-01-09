@@ -7,4 +7,7 @@ namespace: cnpg-system
 resources:
   - ./namespace.yaml
   - ./cloudnative-pg/ks.yaml
+#% if cnpg_barman_plugin_enabled | default(false) %#
+  - ./barman-cloud-plugin/ks.yaml
+#% endif %#
 #% endif %#

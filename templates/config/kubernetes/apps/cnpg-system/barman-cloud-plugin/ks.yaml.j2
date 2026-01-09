@@ -1,0 +1,34 @@
+#% if cnpg_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| BARMAN CLOUD PLUGIN - External backup plugin for CloudNativePG               #|
+#| Replaces deprecated in-tree barmanObjectStore backup functionality           #|
+#| Requires cert-manager for mTLS between plugin and operator                   #|
+#| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/installation/        #|
+#| REF: https://github.com/cloudnative-pg/plugin-barman-cloud                   #|
+#| ============================================================================= #|
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: barman-cloud-plugin
+spec:
+  #| Plugin must be deployed after CNPG operator is ready #|
+  dependsOn:
+    - name: cloudnative-pg
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: barman-cloud
+      namespace: cnpg-system
+  interval: 1h
+  retryInterval: 30s
+  path: ./kubernetes/apps/cnpg-system/barman-cloud-plugin/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: cnpg-system
+  timeout: 10m
+  wait: true
+#% endif %#

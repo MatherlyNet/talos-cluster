@@ -811,6 +811,20 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     },
+    "cnpg_barman_plugin_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Barman Cloud Plugin - External plugin for PostgreSQL backups to S3 REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/ Replaces deprecated in-tree barmanObjectStore (removal in CNPG 1.29) Provides barman-cloud binaries via sidecar container (no -system- images needed)"
+    },
+    "cnpg_barman_plugin_version": {
+      "default": "0.10.0",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "cnpg_barman_plugin_log_level": {
+      "default": "info",
+      "type": "string"
+    },
     "keycloak_enabled": {
       "default": false,
       "type": "boolean",

@@ -36,22 +36,23 @@ spec:
     ingress:
       enabled: false
 
+    extraEnvFrom:
+      - secretRef:
+          name: obot-secret
+
     config:
       OBOT_SERVER_HOSTNAME: "https://obot.matherly.net"
-      OBOT_SERVER_DSN: "postgresql://obot:${OBOT_DB_PASSWORD}@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
+      OBOT_SERVER_DSN: "postgresql://obot:$(OBOT_DB_PASSWORD)@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
-      OBOT_SERVER_ENABLE_AUTHENTICATION: true
+      OBOT_SERVER_ENABLE_AUTHENTICATION: "true"
 
 
       OBOT_SERVER_AUTH_PROVIDER: "keycloak"
       OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "https://sso.matherly.net"
       OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "matherlynet"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_KEYCLOAK_CLIENT_SECRET}"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "${OBOT_KEYCLOAK_COOKIE_SECRET}"
 
       OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
-      OBOT_SERVER_ENCRYPTION_KEY: "${OBOT_SERVER_ENCRYPTION_KEY}"
 
       OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
       OBOT_SERVER_DISABLE_UPDATE_CHECK: "true"

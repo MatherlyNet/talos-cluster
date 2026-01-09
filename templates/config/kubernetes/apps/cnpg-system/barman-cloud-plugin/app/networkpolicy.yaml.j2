@@ -1,0 +1,53 @@
+#% if cnpg_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) and network_policies_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| CILIUMNETWORKPOLICY - Barman Cloud Plugin                                     #|
+#| Allows communication between plugin, operator, and PostgreSQL pods            #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: barman-cloud-plugin
+  namespace: cnpg-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: plugin-barman-cloud
+  ingress:
+    #| Allow gRPC from CNPG operator #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: cloudnative-pg
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+  egress:
+    #| Allow DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Allow communication with Kubernetes API #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Allow communication to RustFS for S3 operations #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: storage
+            app.kubernetes.io/name: rustfs
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#

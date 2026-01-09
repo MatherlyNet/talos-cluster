@@ -654,7 +654,11 @@ cloudflare_gateway_addr: ""
 # cnpg_enabled: false
 
 # -- PostgreSQL image for new clusters
-#    Options: 18.1-standard-trixie (default, with JIT), 18.1-minimal-trixie (smaller)
+#    Options: 18.1-standard-trixie (with JIT, recommended)
+#             18.1-minimal-trixie (smaller footprint)
+#    NOTE: With Barman Cloud Plugin enabled, standard/minimal images work for S3 backups
+#    The plugin provides barman-cloud binaries via sidecar container
+#    REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
 #    (OPTIONAL) / (DEFAULT: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie")
 # cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
 
@@ -709,6 +713,40 @@ cloudflare_gateway_addr: ""
 # -- pgvector version (must match image tag)
 #    (OPTIONAL) / (DEFAULT: "0.8.1")
 # cnpg_pgvector_version: "0.8.1"
+
+# =============================================================================
+# CLOUDNATIVEPG BARMAN CLOUD PLUGIN - External backup plugin for S3
+# =============================================================================
+# Barman Cloud Plugin replaces the deprecated in-tree barmanObjectStore.
+# Provides barman-cloud binaries via sidecar container - no -system- images needed.
+# REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
+#
+# DEPRECATION TIMELINE:
+#   - CNPG 1.26: barmanObjectStore deprecated, plugin recommended
+#   - CNPG 1.29: In-tree barman-cloud support removed
+#
+# ARCHITECTURE:
+#   cnpg-system/
+#   ├── cloudnative-pg    # CNPG operator
+#   └── barman-cloud      # Plugin deployment (provides barman-cloud binaries)
+#
+# USAGE:
+#   Each backup-enabled PostgreSQL cluster gets an ObjectStore CRD that
+#   configures the S3 destination. The cluster references the plugin via
+#   spec.plugins instead of spec.backup.barmanObjectStore.
+
+# -- Enable Barman Cloud Plugin for S3 backups
+#    Required for any PostgreSQL cluster backups (Keycloak, LiteLLM, Langfuse, Obot)
+#    (OPTIONAL) / (DEFAULT: false)
+# cnpg_barman_plugin_enabled: false
+
+# -- Barman Cloud Plugin version
+#    (OPTIONAL) / (DEFAULT: "0.10.0")
+# cnpg_barman_plugin_version: "0.10.0"
+
+# -- Plugin log level for debugging
+#    (OPTIONAL) / (DEFAULT: "info") / (Options: trace, debug, info, warn, error)
+# cnpg_barman_plugin_log_level: "info"
 
 # =============================================================================
 # DRAGONFLY CACHE - Redis-compatible in-memory data store

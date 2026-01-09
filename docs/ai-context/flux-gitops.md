@@ -141,6 +141,7 @@ cilium
                     │           └─> echo
                     ├─> spegel (if >1 node)
                     ├─> cloudnative-pg (if cnpg_enabled)
+                    │     ├─> barman-cloud-plugin (if cnpg_barman_plugin_enabled)
                     │     └─> keycloak (if keycloak_enabled && db_mode=cnpg)
                     ├─> keycloak-operator (if keycloak_enabled)
                     │     └─> keycloak (keycloak CR)

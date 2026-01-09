@@ -267,6 +267,14 @@ import (
 	cnpg_pgvector_image?:   *"ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie" | string & =~"^ghcr\\.io/cloudnative-pg/"
 	cnpg_pgvector_version?: *"0.8.1" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 
+	// Barman Cloud Plugin - External plugin for PostgreSQL backups to S3
+	// REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
+	// Replaces deprecated in-tree barmanObjectStore (removal in CNPG 1.29)
+	// Provides barman-cloud binaries via sidecar container (no -system- images needed)
+	cnpg_barman_plugin_enabled?:   *false | bool
+	cnpg_barman_plugin_version?:   *"0.10.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	cnpg_barman_plugin_log_level?: *"info" | "trace" | "debug" | "info" | "warn" | "error"
+
 	// Keycloak OIDC Provider - Identity and Access Management
 	// REF: https://www.keycloak.org/operator/installation
 	// REF: docs/guides/keycloak-implementation.md

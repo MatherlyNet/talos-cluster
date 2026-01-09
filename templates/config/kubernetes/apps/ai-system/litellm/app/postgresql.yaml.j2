@@ -22,8 +22,10 @@ spec:
   #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ litellm_db_instances | default(1) }#
 
-  #| PostgreSQL image - use minimal image for extensions support #|
-  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie') }#
+  #| PostgreSQL image - standard/minimal images work with Barman Cloud Plugin #|
+  #| Plugin provides barman-cloud binaries via sidecar container               #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/                  #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
 
   #| Bootstrap from initdb (fresh database) #|
   bootstrap:
@@ -85,25 +87,17 @@ spec:
   #| Priority class for critical database workload #|
   priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
 
-#% if litellm_backup_enabled | default(false) %#
+#% if litellm_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
   #| =========================================================================== #|
-  #| CNPG Backup via barmanObjectStore to LiteLLM-specific RustFS bucket        #|
-  #| Uses litellm-backup-credentials with access to litellm-backups bucket      #|
+  #| BARMAN CLOUD PLUGIN - Backup via external plugin to RustFS S3              #|
+  #| References ObjectStore CRD for backup destination configuration            #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/             #|
   #| =========================================================================== #|
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://litellm-backups"
-      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
-      s3Credentials:
-        accessKeyId:
-          name: litellm-backup-credentials
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: litellm-backup-credentials
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-    retentionPolicy: "7d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: litellm-objectstore
 #% endif %#
 ---
 #| =========================================================================== #|
@@ -123,5 +117,44 @@ spec:
 #% if cnpg_pgvector_enabled | default(false) %#
   extensions:
     - name: vector
+#% endif %#
+#% if litellm_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+---
+#| =========================================================================== #|
+#| OBJECTSTORE - Barman Cloud Plugin backup destination for LiteLLM            #|
+#| Configures S3 credentials, WAL compression, and retention policy            #|
+#| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/              #|
+#| =========================================================================== #|
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: litellm-objectstore
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: litellm-objectstore
+    app.kubernetes.io/part-of: litellm
+spec:
+  configuration:
+    destinationPath: "s3://litellm-backups"
+    endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+    s3Credentials:
+      accessKeyId:
+        name: litellm-backup-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: litellm-backup-credentials
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    retentionPolicy: "#{ litellm_backup_retention | default('7d') }#"
+  instanceSidecarConfiguration:
+    retentionPolicyIntervalSeconds: 1800
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
 #% endif %#
 #% endif %#

@@ -1,0 +1,12 @@
+#% if cnpg_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cnpg-system
+
+resources:
+  - ./plugin-deployment.yaml
+#% if network_policies_enabled | default(false) %#
+  - ./networkpolicy.yaml
+#% endif %#
+#% endif %#

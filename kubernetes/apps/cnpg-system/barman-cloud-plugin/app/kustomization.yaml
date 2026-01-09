@@ -4,6 +4,5 @@ kind: Kustomization
 namespace: cnpg-system
 
 resources:
-  - ./namespace.yaml
-  - ./cloudnative-pg/ks.yaml
-  - ./barman-cloud-plugin/ks.yaml
+  - ./plugin-deployment.yaml
+  - ./networkpolicy.yaml

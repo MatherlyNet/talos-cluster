@@ -212,7 +212,7 @@ obot_owner_emails: ""                                # Owner email(s) - highest 
 
 # Database
 obot_postgres_user: "obot"                           # PostgreSQL username
-obot_postgres_password: "..."                        # SOPS-encrypted password
+obot_db_password: "..."                              # SOPS-encrypted password
 obot_postgres_db: "obot"                             # Database name
 obot_postgresql_replicas: 1                          # CNPG instances (3 for HA)
 obot_postgresql_storage_size: "10Gi"                 # PVC size

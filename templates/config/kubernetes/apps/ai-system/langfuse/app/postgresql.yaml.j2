@@ -22,15 +22,10 @@ spec:
   #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ langfuse_postgres_instances | default(1) }#
 
-  #| PostgreSQL image - use system image when backups enabled (includes barman-cloud binaries) #|
-  #| Must match major version of cnpg_postgres_image (default: 18) to avoid CNPG downgrade errors #|
-  #| Image tag format: <version>-system-trixie (barman support) or <version>-standard-trixie (no barman) #|
-  #| REF: https://github.com/cloudnative-pg/postgres-containers #|
-#% if langfuse_backup_enabled | default(false) %#
-  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie') }#
-#% else %#
+  #| PostgreSQL image - standard/minimal images work with Barman Cloud Plugin #|
+  #| Plugin provides barman-cloud binaries via sidecar container               #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/                  #|
   imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
-#% endif %#
 
   #| Bootstrap from initdb (fresh database) #|
   bootstrap:
@@ -85,25 +80,17 @@ spec:
   #| Priority class for critical database workload #|
   priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
 
-#% if langfuse_backup_enabled | default(false) %#
+#% if langfuse_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
   #| =========================================================================== #|
-  #| CNPG Backup via barmanObjectStore to Langfuse-specific RustFS bucket       #|
-  #| Uses langfuse-backup-credentials with access to langfuse-postgres-backups  #|
+  #| BARMAN CLOUD PLUGIN - Backup via external plugin to RustFS S3              #|
+  #| References ObjectStore CRD for backup destination configuration            #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/             #|
   #| =========================================================================== #|
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://langfuse-postgres-backups"
-      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
-      s3Credentials:
-        accessKeyId:
-          name: langfuse-backup-credentials
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: langfuse-backup-credentials
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-    retentionPolicy: "7d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: langfuse-objectstore
 #% endif %#
 ---
 #| =========================================================================== #|
@@ -119,4 +106,43 @@ spec:
   owner: langfuse
   cluster:
     name: langfuse-postgresql
+#% if langfuse_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+---
+#| =========================================================================== #|
+#| OBJECTSTORE - Barman Cloud Plugin backup destination for Langfuse           #|
+#| Configures S3 credentials, WAL compression, and retention policy            #|
+#| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/              #|
+#| =========================================================================== #|
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: langfuse-objectstore
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: langfuse-objectstore
+    app.kubernetes.io/part-of: langfuse
+spec:
+  configuration:
+    destinationPath: "s3://langfuse-postgres-backups"
+    endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+    s3Credentials:
+      accessKeyId:
+        name: langfuse-backup-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: langfuse-backup-credentials
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    retentionPolicy: "#{ langfuse_backup_retention | default('7d') }#"
+  instanceSidecarConfiguration:
+    retentionPolicyIntervalSeconds: 1800
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+#% endif %#
 #% endif %#

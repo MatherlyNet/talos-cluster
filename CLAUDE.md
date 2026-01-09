@@ -215,7 +215,17 @@ Optional CloudNativePG Operator (production PostgreSQL):
 - Shared infrastructure dependency for Keycloak and other database-backed apps
 - See `docs/guides/cnpg-implementation.md` for setup guide
 
-Optional CloudNativePG Backups (requires RustFS):
+Optional Barman Cloud Plugin (PostgreSQL backups):
+- `cnpg_barman_plugin_enabled` - Enable Barman Cloud Plugin for S3 backups (requires cnpg_enabled)
+- `cnpg_barman_plugin_version` - Plugin version (default: 0.10.0)
+- `cnpg_barman_plugin_log_level` - Log level: debug, info, warn, error (default: info)
+- Replaces deprecated in-tree barmanObjectStore with external plugin architecture
+- Plugin provides barman-cloud binaries via sidecar (standard/minimal images work)
+- Requires cert-manager for mTLS between plugin and CNPG operator
+- Creates ObjectStore CRDs per cluster for backup destination configuration
+- REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
+
+Optional CloudNativePG Backups (requires RustFS + Barman Plugin):
 - `cnpg_backup_enabled` - Enable PostgreSQL backups to RustFS S3
 - `cnpg_s3_access_key`, `cnpg_s3_secret_key` - SOPS-encrypted credentials (created via RustFS Console)
 - Backup credentials are separate from Loki S3 credentials
@@ -516,6 +526,7 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `rustfs_enabled` - true when rustfs_enabled is explicitly set to true
 - `loki_deployment_mode` - "SimpleScalable" when rustfs_enabled, "SingleBinary" otherwise
 - `cnpg_enabled` - true when cnpg_enabled is explicitly set to true
+- `cnpg_barman_plugin_enabled` - true when cnpg_enabled and cnpg_barman_plugin_enabled both true
 - `cnpg_backup_enabled` - true when cnpg + rustfs + backup flag + credentials all set
 - `cnpg_pgvector_enabled` - true when cnpg_enabled and cnpg_pgvector_enabled both true
 - `keycloak_enabled` - true when keycloak_enabled is explicitly set to true

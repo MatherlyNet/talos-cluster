@@ -535,5 +535,5 @@ When `network_policies_enabled: true`:
 - **Prometheus/Grafana** (`monitoring_enabled`): Metrics and dashboards
 - **Tempo** (`tracing_enabled`): Distributed tracing via OpenTelemetry
 - **Keycloak** (`keycloak_enabled`): OIDC authentication (optional)
-- **RustFS** (`rustfs_enabled`): PostgreSQL backups via CNPG barmanObjectStore (optional)
+- **RustFS** (`rustfs_enabled`): PostgreSQL backups via CNPG Barman Cloud Plugin (optional)
 - **SOPS/Age**: Secret encryption for API keys and credentials
