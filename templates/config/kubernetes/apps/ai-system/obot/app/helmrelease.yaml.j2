@@ -69,14 +69,14 @@ spec:
 
     #| ========================================================================= #|
     #| Environment Configuration                                                  #|
-    #| NOTE: Secrets (DB password, encryption key, Keycloak secrets) are          #|
-    #| provided via extraEnvFrom from obot-secret, not in config section          #|
+    #| NOTE: Some secrets must be in config section for envFrom to work          #|
+    #| (envFrom doesn't support $(VAR) interpolation)                            #|
     #| ========================================================================= #|
     config:
       #| Core server settings #|
       OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname }#"
-      #| DSN uses OBOT_DB_PASSWORD env var from obot-secret via extraEnvFrom #|
-      OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:$(OBOT_DB_PASSWORD)@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
+      #| DSN with embedded password (required because envFrom doesn't interpolate $(VAR)) #|
+      OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:#{ obot_db_password }#@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
       OBOT_SERVER_ENABLE_AUTHENTICATION: true
 

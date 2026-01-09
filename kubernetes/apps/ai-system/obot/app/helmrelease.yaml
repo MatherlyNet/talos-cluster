@@ -42,7 +42,7 @@ spec:
 
     config:
       OBOT_SERVER_HOSTNAME: "https://obot.matherly.net"
-      OBOT_SERVER_DSN: "postgresql://obot:$(OBOT_DB_PASSWORD)@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
+      OBOT_SERVER_DSN: "postgresql://obot:Elgu1ISYR9RTWYpLrKIOTc64DZF@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
       OBOT_SERVER_ENABLE_AUTHENTICATION: true
 
