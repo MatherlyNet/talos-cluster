@@ -126,6 +126,8 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
+    - toEntities:
+        - world
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -204,6 +206,8 @@ spec:
         - ports:
             - port: "9000"
               protocol: TCP
+    - toEntities:
+        - world
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

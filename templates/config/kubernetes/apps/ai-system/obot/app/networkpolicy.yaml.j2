@@ -182,6 +182,15 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
+#% if not enforce %#
+    #| ======================================================================= #|
+    #| AUDIT MODE: Allow all other egress for traffic observation             #|
+    #| In enforce mode, only explicitly allowed destinations are permitted    #|
+    #| This rule ensures audit mode truly observes without blocking           #|
+    #| ======================================================================= #|
+    - toEntities:
+        - world
+#% endif %#
 ---
 #| ============================================================================= #|
 #| CiliumNetworkPolicy - Obot PostgreSQL Database                               #|
@@ -275,6 +284,11 @@ spec:
         - ports:
             - port: "9000"
               protocol: TCP
+#% endif %#
+#% if not enforce %#
+    #| AUDIT MODE: Allow all other egress for traffic observation #|
+    - toEntities:
+        - world
 #% endif %#
 ---
 #| ============================================================================= #|
