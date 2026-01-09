@@ -1,17 +1,31 @@
 # Grafana SSO Authentication Integration Research
 
 **Date:** January 2026
-**Last Validated:** January 7, 2026
+**Last Validated:** January 8, 2026
 **Grafana Version:** 12.x (via kube-prometheus-stack)
 **Envoy Gateway Version:** 0.0.0-latest (for Kubernetes 1.35 support)
 **Keycloak Version:** 26.5.0
 **Scope:** Seamless SSO for Grafana with OIDC/Keycloak integration and RBAC
 
 > [!NOTE]
-> **Status:** Research Complete - Ready for Implementation
-> This document provides three validated approaches for Grafana SSO integration.
-> Implementation requires updates to `cluster.yaml`, `realm-import.sops.yaml.j2`,
-> and `helmrelease.yaml.j2` as detailed in the Implementation Recommendations section.
+> **Status:** ✅ IMPLEMENTATION COMPLETE (January 8, 2026)
+>
+> This research guide has been fully implemented using **Option 3: Gateway OIDC +
+> Grafana Native OAuth**. All template files, secrets, schema validation, and
+> documentation have been integrated into the project.
+>
+> **Implementation Details:**
+> - `grafana_oidc_enabled` and `grafana_oidc_client_secret` variables in cluster.yaml
+> - Keycloak OIDC client with realm-roles protocol mapper
+> - Grafana `auth.generic_oauth` configuration with JMESPath role mapping
+> - SOPS-encrypted client secret management
+> - Derived variable logic in plugin.py for conditional enablement
+>
+> **Role Mapping Adaptation:** The implementation uses existing generic roles
+> (`admin`, `operator`, `developer`) instead of Grafana-specific roles, making
+> configuration simpler by leveraging the default `keycloak_realm_roles`.
+>
+> **Configuration:** See `cluster.sample.yaml` lines 440-475 for setup instructions.
 >
 > [!IMPORTANT]
 > **Critical Insight:** The "ideal state" of sharing Envoy Gateway's OIDC session

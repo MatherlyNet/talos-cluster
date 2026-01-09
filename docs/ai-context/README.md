@@ -15,6 +15,7 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 | [cilium-networking.md](./cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
 | [template-system.md](./template-system.md) | makejinja | Template syntax, adding variables, creating new templates |
 | [infrastructure-opentofu.md](./infrastructure-opentofu.md) | OpenTofu | IaC operations, R2 backend, Proxmox automation |
+| [dragonfly.md](./dragonfly.md) | Dragonfly | Redis-compatible cache, ACL configuration, monitoring |
 | [litellm.md](./litellm.md) | LiteLLM | LLM proxy configuration, model routing, caching |
 | [langfuse.md](./langfuse.md) | Langfuse | LLM observability, tracing, prompt management, evaluation |
 
@@ -50,10 +51,16 @@ Read: docs/ai-context/infrastructure-opentofu.md
 Agent: .claude/agents/infra-expert.md
 ```
 
+### For Dragonfly/Cache
+```
+Read: docs/ai-context/dragonfly.md
+Related: docs/ai-context/litellm.md, docs/ai-context/langfuse.md (consumers)
+```
+
 ### For LiteLLM/AI Gateway
 ```
 Read: docs/ai-context/litellm.md
-Note: Dragonfly cache config is documented in CLAUDE.md
+Related: docs/ai-context/dragonfly.md (caching backend)
 ```
 
 ### For Langfuse/LLM Observability

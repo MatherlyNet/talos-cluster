@@ -77,7 +77,7 @@ All phases from the implementation guide have been successfully completed:
 | Feature | Guide Specification | Implementation | Status |
 | ------- | ------------------- | -------------- | ------ |
 | Replicas | Configurable | `#{ dragonfly_replicas }#` | **PASS** |
-| Image | v1.36.0 default | `#{ dragonfly_version | default('v1.36.0') }#` | **PASS** |
+| Image | v1.36.0 default | `#{ dragonfly_version \| default('v1.36.0') }#` | **PASS** |
 | Resources | Configurable requests/limits | CPU/memory configurable | **PASS** |
 | Authentication | passwordFromSecret | Correctly configured | **PASS** |
 | Admin Port | 9999 for metrics | `--admin_port=9999` | **PASS** |

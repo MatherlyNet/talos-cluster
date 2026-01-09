@@ -121,6 +121,38 @@ langfuse_backup_enabled: true
 # Uses langfuse S3 credentials for CNPG barmanObjectStore
 ```
 
+### Headless Initialization (GitOps Bootstrap)
+Bootstrap an initial admin account for GitOps/non-interactive deployments.
+When both email and password are configured, Langfuse auto-creates the admin
+on first startup (idempotent - only creates if not exists).
+
+```yaml
+# Initial Admin Account (SOPS-encrypted)
+langfuse_init_user_email: "admin@example.com"
+langfuse_init_user_password: "..."   # min 16 chars, generate: openssl rand -base64 24
+langfuse_init_user_name: "Admin"     # Display name
+langfuse_init_org_name: "MyOrg"      # Initial organization
+
+# Security Hardening
+langfuse_disable_signup: false       # Set true to disable self-registration
+```
+
+REF: https://langfuse.com/self-hosting/headless-initialization
+
+### Auto-Provisioning (SSO Default Roles)
+Configure default roles for users created via SSO (Keycloak OIDC).
+These apply when a user logs in via SSO for the first time.
+
+```yaml
+langfuse_default_org_role: "VIEWER"      # OWNER|ADMIN|MEMBER|VIEWER|NONE
+langfuse_default_project_role: "VIEWER"  # OWNER|ADMIN|MEMBER|VIEWER
+```
+
+- **NONE** = user must be explicitly invited to organizations
+- Other roles provide that level of access to the default organization
+
+REF: https://langfuse.com/self-hosting/automated-provisioning
+
 ## File Structure
 
 ```
@@ -300,6 +332,7 @@ When `network_policies_enabled: true`:
 ## Quick Reference
 
 ### Service DNS Names
+
 | Service | DNS | Port |
 | ------- | --- | ---- |
 | Web UI/API | `langfuse-web.ai-system.svc.cluster.local` | 3000 |
