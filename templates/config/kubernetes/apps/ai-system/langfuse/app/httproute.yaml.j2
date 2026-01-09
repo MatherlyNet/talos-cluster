@@ -25,7 +25,7 @@ spec:
     - name: envoy-internal
       namespace: network
   hostnames:
-    - "#{ langfuse_hostname }#"
+    - "#{ langfuse_subdomain | default('langfuse') }#.${SECRET_DOMAIN}"
   rules:
     - matches:
         - path:

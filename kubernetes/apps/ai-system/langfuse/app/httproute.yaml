@@ -13,7 +13,7 @@ spec:
     - name: envoy-internal
       namespace: network
   hostnames:
-    - "langfuse.matherly.net"
+    - "langfuse.${SECRET_DOMAIN}"
   rules:
     - matches:
         - path:

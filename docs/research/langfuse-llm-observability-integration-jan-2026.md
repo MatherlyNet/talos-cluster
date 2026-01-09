@@ -1770,3 +1770,179 @@ Consider adding a Langfuse Grafana dashboard ConfigMap for self-observability me
 - `task_completion_checklist.md` - Validation workflow
 
 All templates now conform to project conventions established in January 2026.
+
+---
+
+## Appendix E: Deployment Lessons Learned (January 2026)
+
+During initial deployment, several issues were discovered and resolved. These lessons are documented here for future reference.
+
+### Issue 1: PostgreSQL Image Tag Format
+
+**Problem:** The CNPG PostgreSQL image tag `18-barman-cloud-trixie` does not exist.
+
+**Root Cause:** CNPG postgres-containers use a different naming convention than expected.
+
+**Solution:** Use the correct CNPG image tag format:
+- With barman backup support: `ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie`
+- Without backup support: `ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie`
+
+**Template Fix (postgresql.yaml.j2):**
+```yaml
+#% if langfuse_backup_enabled | default(false) %#
+  imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie') }#
+#% else %#
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
+#% endif %#
+```
+
+**Reference:** https://github.com/cloudnative-pg/postgres-containers
+
+### Issue 2: ClickHouse ZooKeeper StorageClass
+
+**Problem:** ZooKeeper pods stuck in `Pending` state due to missing storageClass on PVCs.
+
+**Root Cause:** The Langfuse Helm chart's bundled ClickHouse includes ZooKeeper for cluster coordination, but the ZooKeeper persistence storageClass was not configured.
+
+**Solution:** Add explicit storageClass configuration for ZooKeeper persistence.
+
+**Template Fix (helmrelease.yaml.j2):**
+```yaml
+clickhouse:
+  deploy: true
+  # ... other settings ...
+  zookeeper:
+    persistence:
+      enabled: true
+      size: "#{ langfuse_zookeeper_storage | default('8Gi') }#"
+      storageClass: "#{ cnpg_storage_class | default(storage_class) | default('local-path') }#"
+```
+
+### Issue 3: Dragonfly ACL Connection Commands
+
+**Problem:** Redis authentication works but PING command fails with `NOPERM`.
+
+**Root Cause:** The ACL entry `+@read +@write -@dangerous` doesn't include `@connection` commands like PING, AUTH, CLIENT.
+
+**Solution:** Add `+@connection` to all Dragonfly ACL tenant users.
+
+**Template Fix (dragonfly secret.sops.yaml.j2):**
+```
+user keycloak on >password ~keycloak:* +@read +@write +@connection -@dangerous
+user litellm on >password ~litellm:* +@read +@write +@connection -@dangerous
+```
+
+### Issue 4: Langfuse Key Pattern Restriction
+
+**Problem:** Langfuse ACL with `~langfuse:*` pattern fails because Langfuse doesn't use key prefixes.
+
+**Root Cause:** Langfuse/BullMQ uses keys without any prefix (e.g., `bull:queue-name:*`), but the ACL restricted access to only `langfuse:*` keys.
+
+**Solution:** Allow all keys (`~*`) for the Langfuse user since Langfuse doesn't support configuring a key prefix.
+
+**Template Fix:**
+```
+user langfuse on >password ~* +@read +@write +@connection -@dangerous
+```
+
+### Issue 5: Dragonfly INFO Command in @dangerous
+
+**Problem:** `NOPERM langfuse has no ACL permissions` for INFO command.
+
+**Root Cause:** Unlike Redis, Dragonfly categorizes `INFO` and `CONFIG` commands under `@dangerous`. BullMQ requires INFO for connection health checks.
+
+**Solution:** Explicitly add `+INFO +CONFIG` after `-@dangerous` for the Langfuse user.
+
+**Template Fix:**
+```
+user langfuse on >password ~* +@all -@dangerous +INFO +CONFIG
+```
+
+### Issue 6: BullMQ Lua Script Undeclared Keys
+
+**Problem:** `ERR script tried accessing undeclared key` errors from BullMQ job queues.
+
+**Root Cause:** Dragonfly's multi-threaded architecture requires all keys accessed by Lua scripts to be declared upfront. BullMQ scripts access keys dynamically.
+
+**Solution:** Add `--default_lua_flags=allow-undeclared-keys` to Dragonfly args.
+
+**Template Fix (dragonfly-cr.yaml.j2):**
+```yaml
+args:
+  - --default_lua_flags=allow-undeclared-keys
+```
+
+**Reference:** https://www.dragonflydb.io/docs/integrations/bullmq
+
+**Performance Note:** This flag reduces Dragonfly's performance advantage. For optimal performance, use hashtags in queue names with `--cluster_mode=emulated --lock_on_hashtags`, but this requires application-level changes.
+
+### Issue 7: Eviction Policy Warning
+
+**Problem:** BullMQ warns `IMPORTANT! Eviction policy is eviction. It should be "noeviction"`.
+
+**Root Cause:** Dragonfly reports `maxmemory_policy:eviction` in INFO output, but this is Dragonfly's internal name for its 2Q eviction algorithm. Without `--cache_mode=true`, Dragonfly actually behaves as noeviction (errors on memory full rather than evicting).
+
+**Solution:** This is a cosmetic warning. Dragonfly defaults to noeviction behavior unless cache_mode is explicitly enabled. No code change needed.
+
+**Reference:** https://github.com/dragonflydb/dragonfly/discussions/4310
+
+### Complete Dragonfly ACL Configuration
+
+Final working ACL configuration for Langfuse with Dragonfly:
+
+```yaml
+#| ACL configuration for multi-tenant access #|
+#| Note: +@connection required for PING, AUTH, CLIENT commands #|
+acl.conf: |
+  user default on >default_password ~* +@all
+  user keycloak on >keycloak_password ~keycloak:* +@read +@write +@connection -@dangerous
+  user appcache on >appcache_password ~cache:* +@read +@write +@connection -@dangerous
+  user litellm on >litellm_password ~litellm:* +@read +@write +@connection -@dangerous
+  #| Note: Langfuse requires ~* and +@all for BullMQ (job queues use Lua scripts, INFO, CLIENT, etc.) #|
+  user langfuse on >langfuse_password ~* +@all -@dangerous +INFO +CONFIG
+```
+
+### Complete Dragonfly Args Configuration
+
+```yaml
+args:
+  - --maxmemory=512mb
+  - --proactor_threads=2
+  - --admin_port=9999
+  - --primary_port_http_enabled=false
+  - --default_lua_flags=allow-undeclared-keys
+  #| Note: Dragonfly defaults to noeviction (required by BullMQ) unless cache_mode is enabled #|
+```
+
+### Deployment Verification Checklist
+
+After deployment, verify the following:
+
+1. **PostgreSQL cluster healthy:**
+   ```bash
+   kubectl -n ai-system get clusters
+   kubectl cnpg status langfuse-postgresql -n ai-system
+   ```
+
+2. **ClickHouse and ZooKeeper running:**
+   ```bash
+   kubectl -n ai-system get pods -l app.kubernetes.io/name=clickhouse
+   kubectl -n ai-system get pods -l app.kubernetes.io/name=zookeeper
+   ```
+
+3. **Langfuse web and worker healthy:**
+   ```bash
+   kubectl -n ai-system get pods -l app.kubernetes.io/name=langfuse
+   kubectl -n ai-system logs -l app.kubernetes.io/component=worker --tail=20
+   ```
+
+4. **Dragonfly ACL correctly loaded:**
+   ```bash
+   kubectl -n cache exec -it dragonfly-0 -- redis-cli ACL LIST
+   ```
+
+5. **Langfuse Redis authentication working:**
+   ```bash
+   kubectl -n cache run redis-test --rm -i --restart=Never --image=redis:7-alpine -- \
+     redis-cli -h dragonfly.cache.svc.cluster.local --user langfuse -a PASSWORD INFO server
+   ```

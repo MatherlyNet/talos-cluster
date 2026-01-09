@@ -11,7 +11,7 @@ spec:
     - name: envoy-internal
       namespace: network
   hostnames:
-    - "sso.matherly.net"
+    - "sso.${SECRET_DOMAIN}"
   rules:
     - matches:
         - path:

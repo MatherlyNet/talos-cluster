@@ -19,7 +19,7 @@ spec:
     - name: envoy-internal
       namespace: network
   hostnames:
-    - "#{ keycloak_hostname }#"
+    - "#{ keycloak_subdomain | default('auth') }#.${SECRET_DOMAIN}"
   rules:
     - matches:
         - path:
