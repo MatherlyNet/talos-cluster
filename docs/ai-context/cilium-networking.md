@@ -514,11 +514,15 @@ network_policies_mode: "audit"   # "audit" (observe) or "enforce" (block)
 When `network_policies_enabled: true`:
 
 - **cluster-policies**: Cluster-wide DNS and API server access
-- **kube-system**: CoreDNS, metrics-server, Spegel, Reloader
+- **kube-system**: CoreDNS, metrics-server, Spegel, Reloader, Hubble UI/Relay (if hubble_enabled)
 - **monitoring**: Prometheus, Grafana, AlertManager, Loki, Tempo, Alloy
 - **flux-system**: Flux controllers
 - **cert-manager**: Controller, webhook, cainjector
 - **network**: Envoy Gateway, Cloudflare Tunnel, external-dns, k8s-gateway
+- **storage**: RustFS S3-compatible storage (if rustfs_enabled)
+- **cache**: Dragonfly Redis-compatible cache (if dragonfly_enabled)
+- **identity**: Keycloak OIDC provider (if keycloak_enabled)
+- **ai-system**: LiteLLM, Langfuse (if litellm_enabled or langfuse_enabled)
 
 ### Policy Structure
 

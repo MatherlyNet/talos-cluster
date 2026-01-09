@@ -156,7 +156,13 @@ templates/config/kubernetes/apps/ai-system/litellm/
     ├── referencegrant.yaml.j2  # Gateway API cross-namespace access
     ├── networkpolicy.yaml.j2   # Cilium NetworkPolicy
     └── servicemonitor.yaml.j2  # Prometheus scraping
+
 # Note: Dragonfly is provided by the shared cache namespace deployment
+
+# HTTPRoute is centralized in:
+# templates/config/kubernetes/apps/network/envoy-gateway/app/httproutes.yaml.j2
+# - Uses both envoy-internal and envoy-external gateways (split-horizon DNS)
+# - No OIDC protection (LiteLLM uses native SSO via GENERIC_* env vars)
 ```
 
 ## Key Implementation Details

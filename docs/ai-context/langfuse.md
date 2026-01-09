@@ -164,9 +164,14 @@ templates/config/kubernetes/apps/ai-system/langfuse/
     ├── helmrelease.yaml.j2     # Langfuse Helm chart
     ├── postgresql.yaml.j2      # CloudNativePG Cluster + Database
     ├── secret.sops.yaml.j2     # Encrypted credentials
-    ├── httproute.yaml.j2       # Gateway API routing
+    ├── referencegrant.yaml.j2  # Allow network namespace HTTPRoute access
     ├── networkpolicy.yaml.j2   # Cilium NetworkPolicy
     └── servicemonitor.yaml.j2  # Prometheus scraping
+
+# HTTPRoute is centralized in:
+# templates/config/kubernetes/apps/network/envoy-gateway/app/httproutes.yaml.j2
+# - Uses both envoy-internal and envoy-external gateways (split-horizon DNS)
+# - No OIDC protection (Langfuse uses native SSO via AUTH_KEYCLOAK_* env vars)
 ```
 
 ## LiteLLM Integration
