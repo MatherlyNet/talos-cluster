@@ -157,6 +157,12 @@ spec:
         - ports:
             - port: "53"
               protocol: UDP
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             cnpg.io/cluster: langfuse-postgresql

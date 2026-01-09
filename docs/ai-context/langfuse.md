@@ -105,6 +105,13 @@ langfuse_sso_enabled: true
 langfuse_keycloak_client_secret: "..."  # SOPS-encrypted
 ```
 
+### Cookie Domain Isolation
+Langfuse automatically sets `NEXTAUTH_COOKIE_DOMAIN` to the Langfuse hostname to prevent
+session cookie collision with Gateway OIDC protected apps (Hubble, RustFS, etc.) on the
+same parent domain.
+
+This is **automatically configured** - no user action required.
+
 ### Observability
 ```yaml
 # OpenTelemetry Tracing (requires tracing_enabled)

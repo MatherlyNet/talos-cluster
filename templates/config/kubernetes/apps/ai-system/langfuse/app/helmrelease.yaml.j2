@@ -65,10 +65,14 @@ spec:
           value: "#{ langfuse_log_level | default('info') }#"
         - name: LANGFUSE_LOG_FORMAT
           value: "#{ langfuse_log_format | default('text') }#"
-#% if langfuse_session_max_age | default('') %#
         #| ===================================================================== #|
         #| Authentication Configuration                                         #|
+        #| Cookie domain isolation prevents session collision with Gateway OIDC #|
+        #| REF: docs/research/langfuse-seamless-sso-integration-jan-2026.md     #|
         #| ===================================================================== #|
+        - name: NEXTAUTH_COOKIE_DOMAIN
+          value: "#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#"
+#% if langfuse_session_max_age | default('') %#
         - name: AUTH_SESSION_MAX_AGE
           value: "#{ langfuse_session_max_age }#"
 #% endif %#

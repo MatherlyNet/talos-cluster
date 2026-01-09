@@ -231,6 +231,13 @@ spec:
         - ports:
             - port: "53"
               protocol: UDP
+    #| Kubernetes API access (required for CNPG operator) #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
     #| Inter-pod replication #|
     - toEndpoints:
         - matchLabels:

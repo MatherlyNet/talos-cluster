@@ -46,6 +46,8 @@ spec:
           value: "info"
         - name: LANGFUSE_LOG_FORMAT
           value: "json"
+        - name: NEXTAUTH_COOKIE_DOMAIN
+          value: "langfuse.matherly.net"
         - name: AUTH_DISABLE_SIGNUP
           value: "true"
         - name: AUTH_DISABLE_USERNAME_PASSWORD

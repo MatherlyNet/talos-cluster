@@ -106,7 +106,7 @@ spec:
                     name: litellm-secret
                     key: REDIS_PASSWORD
 
-              AZURE_API_BASE: "https://ets-east-us.openai.azure.com/"
+              AZURE_API_BASE: "https://aaronsai.openai.azure.com/"
               AZURE_API_VERSION: "2025-01-01-preview"
               AZURE_API_KEY:
                 valueFrom:
@@ -122,21 +122,21 @@ spec:
                     name: litellm-secret
                     key: AZURE_API_KEY_EAST2
 
-              AZURE_ANTHROPIC_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_ANTHROPIC_API_BASE: "https://ets-east-us2.services.ai.azure.com/anthropic"
               AZURE_ANTHROPIC_API_KEY:
                 valueFrom:
                   secretKeyRef:
                     name: litellm-secret
                     key: AZURE_ANTHROPIC_API_KEY
 
-              AZURE_COHERE_RERANK_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_COHERE_RERANK_API_BASE: "https://aan-cohere-rerank-v3-5.eastus.models.ai.azure.com/v2/rerank"
               AZURE_COHERE_RERANK_API_KEY:
                 valueFrom:
                   secretKeyRef:
                     name: litellm-secret
                     key: AZURE_COHERE_RERANK_API_KEY
 
-              AZURE_COHERE_EMBED_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_COHERE_EMBED_API_BASE: "https://aaronsai.services.ai.azure.com/models/"
               AZURE_COHERE_EMBED_API_KEY:
                 valueFrom:
                   secretKeyRef:

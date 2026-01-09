@@ -133,6 +133,17 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
+#% if rustfs_monitoring_enabled | default(false) %#
+    #| OTLP metrics push to Alloy collector #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: alloy
+      toPorts:
+        - ports:
+            - port: "4318"
+              protocol: TCP
+#% endif %#
 ---
 #| ============================================================================= #|
 #| NetworkPolicy for RustFS (Standard Kubernetes)                                #|
@@ -187,4 +198,17 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
+#% if rustfs_monitoring_enabled | default(false) %#
+    #| OTLP metrics push to Alloy collector #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alloy
+      ports:
+        - port: 4318
+          protocol: TCP
+#% endif %#
 #% endif %#

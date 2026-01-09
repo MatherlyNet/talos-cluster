@@ -422,6 +422,71 @@ AUTH_KEYCLOAK_CHECKS: "state"  # or "nonce,state"
 # AUTH_KEYCLOAK_CLIENT_AUTH_METHOD: omit (uses default client_secret_basic)
 ```
 
+## Cookie Domain Isolation (Session Collision Fix)
+
+### Problem: Gateway OIDC and Native SSO Cookie Collision
+
+When accessing Langfuse after visiting another app with Gateway OIDC protection (e.g., Hubble), users may experience unexpected session behavior:
+- Being auto-logged in as the local admin account instead of Keycloak user
+- Session conflicts between Gateway OIDC cookies and NextAuth.js cookies
+
+**Root Cause:**
+Both Gateway OIDC and Langfuse's NextAuth.js set session cookies on the `*.matherly.net` domain:
+- Gateway OIDC: `IdToken`, `AccessToken`, `RefreshToken`
+- NextAuth.js: `next-auth.session-token`, `next-auth.csrf-token`
+
+Without explicit domain isolation, these cookies can interfere with each other.
+
+### Solution: NEXTAUTH_COOKIE_DOMAIN
+
+Langfuse supports the `NEXTAUTH_COOKIE_DOMAIN` environment variable to scope NextAuth.js cookies to a specific domain.
+
+**Implementation (`helmrelease.yaml.j2`):**
+```yaml
+additionalEnv:
+  - name: NEXTAUTH_COOKIE_DOMAIN
+    value: "langfuse.${cloudflare_domain}"
+```
+
+This ensures Langfuse's session cookies are scoped to `langfuse.matherly.net` only, preventing collision with Gateway OIDC cookies from other subdomains.
+
+### How Cookie Isolation Works
+
+**Langfuse Cookie Configuration (`web/src/server/utils/cookies.ts`):**
+```typescript
+export const getCookieOptions = () => ({
+  domain: env.NEXTAUTH_COOKIE_DOMAIN ?? undefined,
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: env.NEXT_PUBLIC_BASE_PATH || "/",
+  secure: shouldSecureCookies(),
+});
+
+export const getCookieName = (name: string) =>
+  [
+    shouldSecureCookies() ? "__Secure-" : "",
+    name,
+    env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION
+      ? `.${env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION}`
+      : "",
+  ].join("");
+```
+
+**Cookie Scope Comparison:**
+
+| Scenario | Cookie Domain | Visibility |
+| -------- | ------------- | ---------- |
+| Default (no NEXTAUTH_COOKIE_DOMAIN) | Browser default | Depends on browser |
+| `NEXTAUTH_COOKIE_DOMAIN=langfuse.example.com` | `langfuse.example.com` | Only Langfuse |
+| `NEXTAUTH_COOKIE_DOMAIN=.example.com` | `.example.com` | All subdomains |
+
+**Our configuration uses explicit hostname** (`langfuse.matherly.net`) to isolate cookies.
+
+### References
+
+- [Langfuse GitHub: cookies.ts](https://github.com/langfuse/langfuse/blob/main/web/src/server/utils/cookies.ts)
+- [NextAuth.js Cookie Configuration](https://next-auth.js.org/configuration/options#cookies)
+
 ## References
 
 - [Langfuse SSO Documentation](https://langfuse.com/self-hosting/authentication-and-sso)
