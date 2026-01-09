@@ -200,6 +200,12 @@ spec:
         #| REF: https://langfuse.com/self-hosting/authentication-and-sso        #|
         #| REF: docs/research/langfuse-seamless-sso-integration-jan-2026.md     #|
         #| ===================================================================== #|
+        #| NOTE: Uses internal Keycloak URL for OIDC discovery (backchannel)    #|
+        #| Keycloak's backchannelDynamic:true returns:                          #|
+        #|   - External issuer URL in tokens (https://sso.domain.com)           #|
+        #|   - Internal URLs for token/userinfo endpoints in OIDC config        #|
+        #| This allows pods to reach Keycloak without external DNS hairpinning  #|
+        #| ===================================================================== #|
         - name: AUTH_KEYCLOAK_CLIENT_ID
           value: "langfuse"
         - name: AUTH_KEYCLOAK_CLIENT_SECRET
@@ -208,7 +214,7 @@ spec:
               name: langfuse-keycloak-credentials
               key: client-secret
         - name: AUTH_KEYCLOAK_ISSUER
-          value: "#{ keycloak_issuer_url }#"
+          value: "#{ keycloak_internal_issuer_url }#"
         - name: AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING
           value: "true"
         #| ===================================================================== #|

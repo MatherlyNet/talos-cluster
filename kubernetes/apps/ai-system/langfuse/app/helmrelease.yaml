@@ -115,7 +115,7 @@ spec:
               name: langfuse-keycloak-credentials
               key: client-secret
         - name: AUTH_KEYCLOAK_ISSUER
-          value: "https://sso.matherly.net/realms/matherlynet"
+          value: "http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet"
         - name: AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING
           value: "true"
         - name: AUTH_KEYCLOAK_CHECKS

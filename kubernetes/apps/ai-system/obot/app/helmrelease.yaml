@@ -1,0 +1,138 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: obot
+  namespace: ai-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: obot
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    image:
+      repository: ghcr.io/jrmatherly/obot-entraid
+      tag: v0.2.30
+      pullPolicy: IfNotPresent
+
+    replicaCount: 1
+
+    updateStrategy: Recreate
+
+    service:
+      type: ClusterIP
+      port: 80
+
+    ingress:
+      enabled: false
+
+    config:
+      OBOT_SERVER_HOSTNAME: "https://obot.matherly.net"
+      OBOT_SERVER_DSN: "postgresql://obot:${OBOT_DB_PASSWORD}@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
+      OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
+      OBOT_SERVER_ENABLE_AUTHENTICATION: "true"
+
+
+      OBOT_SERVER_AUTH_PROVIDER: "keycloak"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "https://sso.matherly.net"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "matherlynet"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_KEYCLOAK_CLIENT_SECRET}"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "${OBOT_KEYCLOAK_COOKIE_SECRET}"
+
+      OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
+      OBOT_SERVER_ENCRYPTION_KEY: "${OBOT_SERVER_ENCRYPTION_KEY}"
+
+      OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
+      OBOT_SERVER_DISABLE_UPDATE_CHECK: "true"
+
+      OBOT_SERVER_LLM_BASE_URL: "http://litellm.ai-system.svc.cluster.local:4000/v1"
+
+      OBOT_SERVER_OTEL_BASE_EXPORT_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4317"
+      OBOT_SERVER_OTEL_SAMPLE_PROB: "0.1"
+
+
+    persistence:
+      enabled: true
+      storageClass: proxmox-zfs
+      size: 20Gi
+      accessMode: ReadWriteOnce
+
+    mcpNamespace:
+      name: obot-mcp
+      create: false
+
+    mcpServerDefaults:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "2000m"
+        memory: "4Gi"
+
+    podSecurityContext:
+      fsGroup: 1000
+
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: false
+      capabilities:
+        drop:
+          - ALL
+
+    livenessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 15
+      failureThreshold: 5
+      timeoutSeconds: 10
+
+    readinessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+
+    serviceAccount:
+      create: true
+      name: obot
+
+    rbac:
+      create: true
+
+    podLabels:
+      network.cilium.io/api-access: "true"

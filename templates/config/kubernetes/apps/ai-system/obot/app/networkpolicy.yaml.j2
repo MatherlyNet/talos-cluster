@@ -1,0 +1,495 @@
+#% if obot_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy - Obot Main Application Pod                              #|
+#| Zero-trust networking for Obot AI agent platform                             #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                  #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: obot
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: network-policy
+spec:
+  description: "Obot: Main application pod access controls"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: obot
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| ======================================================================= #|
+    #| Gateway API ingress (Envoy Gateway)                                    #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| MCP Server callbacks (obot-mcp namespace)                              #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8099"
+              protocol: TCP
+#% if obot_monitoring_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| Prometheus scraping                                                    #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| ======================================================================= #|
+    #| DNS resolution                                                         #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Kubernetes API (required for MCP runtime backend)                      #|
+    #| ======================================================================= #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| PostgreSQL (CNPG) - Obot database                                      #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: obot-postgresql
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| MCP Namespace - spawn and communicate with MCP servers                 #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+            - port: "8099"
+              protocol: TCP
+#% if obot_keycloak_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| Keycloak (OIDC SSO) - Internal cluster endpoint                        #|
+    #| NOTE: Keycloak Operator uses label 'app: keycloak' (not app.kubernetes.io/name) #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app: keycloak
+            io.kubernetes.pod.namespace: identity
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Keycloak (OIDC SSO) - External URL via FQDN                            #|
+    #| Required for token validation using external Keycloak URL              #|
+    #| ======================================================================= #|
+    - toFQDNs:
+        - matchName: "#{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }#"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+#% endif %#
+#% if litellm_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| LiteLLM proxy (AI model gateway)                                       #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: litellm
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
+#% endif %#
+#% if obot_tracing_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| OpenTelemetry (Tempo) - Trace export                                   #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: tempo
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+#% endif %#
+    #| ======================================================================= #|
+    #| External LLM providers (Azure OpenAI, etc) - for direct model access   #|
+    #| ======================================================================= #|
+    - toFQDNs:
+        - matchPattern: "*.openai.azure.com"
+        - matchPattern: "*.models.ai.azure.com"
+        - matchPattern: "*.cognitiveservices.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| External tool registries (GitHub, npm) - for MCP tool downloads        #|
+    #| ======================================================================= #|
+    - toFQDNs:
+        - matchPattern: "github.com"
+        - matchPattern: "*.github.com"
+        - matchPattern: "*.githubusercontent.com"
+        - matchPattern: "registry.npmjs.org"
+        - matchPattern: "*.npmjs.org"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy - Obot PostgreSQL Database                               #|
+#| Controls ingress/egress for CNPG database pods                               #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: obot-postgres
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot-postgres
+    app.kubernetes.io/component: database
+spec:
+  description: "Obot PostgreSQL: Database access, replication, backups"
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: obot-postgresql
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| CNPG operator health checks on port 8000 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: cloudnative-pg
+            io.kubernetes.pod.namespace: cnpg-system
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    #| Obot application access on port 5432 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: obot
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    #| Inter-pod replication between cluster instances #|
+    - fromEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: obot-postgresql
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% if monitoring_enabled | default(false) %#
+    #| Prometheus metrics scraping on port 9187 #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9187"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    #| Kubernetes API access (required for CNPG operator) #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    #| Inter-pod replication #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: obot-postgresql
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% if obot_backup_enabled | default(false) %#
+    #| Backup to RustFS S3 endpoint #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: rustfs
+            io.kubernetes.pod.namespace: storage
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
+---
+#| ============================================================================= #|
+#| NetworkPolicy - Obot Application (Standard K8s)                              #|
+#| Provides baseline network security for environments without Cilium           #|
+#| ============================================================================= #|
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: obot
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obot
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    #| Allow from Envoy Gateway (external access) #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - protocol: TCP
+          port: 8080
+    #| Allow from MCP servers namespace #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: #{ obot_mcp_namespace | default('obot-mcp') }#
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8099
+#% if obot_monitoring_enabled | default(false) %#
+    #| Allow Prometheus scraping #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+#% endif %#
+  egress:
+    #| Allow DNS queries #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    #| Allow PostgreSQL connection to CloudNativePG cluster #|
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: obot-postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    #| Allow MCP server communication #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: #{ obot_mcp_namespace | default('obot-mcp') }#
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8099
+#% if obot_keycloak_enabled | default(false) %#
+    #| Keycloak OIDC - internal cluster endpoint #|
+    #| NOTE: Keycloak Operator uses label 'app: keycloak' (not app.kubernetes.io/name) #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: identity
+          podSelector:
+            matchLabels:
+              app: keycloak
+      ports:
+        - protocol: TCP
+          port: 8080
+    #| Keycloak OIDC - external URL for token validation #|
+    #| Note: Standard K8s NetworkPolicy doesn't support FQDN - use Cilium policy #|
+#% endif %#
+#% if litellm_enabled | default(false) %#
+    #| LiteLLM proxy (AI model gateway) #|
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: litellm
+      ports:
+        - protocol: TCP
+          port: 4000
+#% endif %#
+#% if obot_tracing_enabled | default(false) %#
+    #| Tempo OTLP (tracing) #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tempo
+      ports:
+        - protocol: TCP
+          port: 4317
+#% endif %#
+---
+#| ============================================================================= #|
+#| NetworkPolicy - Obot PostgreSQL Database (Standard K8s)                      #|
+#| Provides baseline network security for CNPG database pods                    #|
+#| ============================================================================= #|
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: obot-db
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot-postgres
+    app.kubernetes.io/component: database
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: obot-postgresql
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    #| Allow from Obot pods #|
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obot
+      ports:
+        - protocol: TCP
+          port: 5432
+    #| Allow from other database replicas (replication and health checks) #|
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: obot-postgresql
+      ports:
+        #| PostgreSQL replication #|
+        - protocol: TCP
+          port: 5432
+        #| CNPG instance manager HTTP API #|
+        - protocol: TCP
+          port: 8000
+    #| Allow from CNPG operator (instance manager HTTP port) #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - protocol: TCP
+          port: 8000
+#% if monitoring_enabled | default(false) %#
+    #| Allow Prometheus scraping of PostgreSQL metrics #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9187
+#% endif %#
+  egress:
+    #| DNS #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    #| Replication and health checks between database pods #|
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: obot-postgresql
+      ports:
+        #| PostgreSQL replication #|
+        - protocol: TCP
+          port: 5432
+        #| CNPG instance manager HTTP API #|
+        - protocol: TCP
+          port: 8000
+#% if obot_backup_enabled | default(false) %#
+    #| RustFS S3 for backups #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: storage
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rustfs
+      ports:
+        - protocol: TCP
+          port: 9000
+#% endif %#
+#% endif %#

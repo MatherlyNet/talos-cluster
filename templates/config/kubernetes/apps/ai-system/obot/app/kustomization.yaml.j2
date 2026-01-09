@@ -1,0 +1,20 @@
+#% if obot_enabled | default(false) %#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+  - ./secret.sops.yaml
+  - ./postgresql.yaml
+  #| ReferenceGrant allows network namespace HTTPRoutes to access Obot service #|
+  #| HTTPRoute is centralized in network/envoy-gateway/app/httproutes.yaml.j2  #|
+  - ./referencegrant.yaml
+#% if obot_monitoring_enabled | default(false) %#
+  - ./servicemonitor.yaml
+  - ./dashboard-configmap.yaml
+#% endif %#
+#% if network_policies_enabled | default(false) %#
+  - ./networkpolicy.yaml
+#% endif %#
+#% endif %#

@@ -1,0 +1,51 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| ResourceQuota - MCP Server Namespace Resource Limits                          #|
+#| Prevents runaway resource consumption from dynamically spawned MCP servers    #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                  #|
+#| ============================================================================= #|
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: mcp-servers-quota
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot-mcp-quota
+    app.kubernetes.io/part-of: obot
+spec:
+  hard:
+    #| CPU limits #|
+    requests.cpu: "#{ obot_mcp_cpu_requests_quota | default('4') }#"
+    limits.cpu: "#{ obot_mcp_cpu_limits_quota | default('8') }#"
+    #| Memory limits #|
+    requests.memory: "#{ obot_mcp_memory_requests_quota | default('8Gi') }#"
+    limits.memory: "#{ obot_mcp_memory_limits_quota | default('16Gi') }#"
+    #| Pod count limit #|
+    pods: "#{ obot_mcp_max_pods | default('20') }#"
+---
+#| ============================================================================= #|
+#| LimitRange - Default resource requests/limits for MCP server containers      #|
+#| Ensures all MCP servers have bounded resource consumption                    #|
+#| ============================================================================= #|
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mcp-servers-limits
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot-mcp-limits
+    app.kubernetes.io/part-of: obot
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "#{ obot_mcp_default_cpu_limit | default('500m') }#"
+        memory: "#{ obot_mcp_default_memory_limit | default('512Mi') }#"
+      defaultRequest:
+        cpu: "#{ obot_mcp_default_cpu_request | default('100m') }#"
+        memory: "#{ obot_mcp_default_memory_request | default('256Mi') }#"
+      max:
+        cpu: "#{ obot_mcp_max_cpu | default('1000m') }#"
+        memory: "#{ obot_mcp_max_memory | default('1Gi') }#"
+#% endif %#

@@ -20,9 +20,9 @@ Langfuse is an open-source LLM observability platform providing tracing, prompt 
 │  │  (Next.js)  │  │   worker    │  │   (analytics DB)    │  │
 │  │  Port 3000  │  │ Port 3030   │  │  Ports 8123, 9000   │  │
 │  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────┘  │
-│         │                │                      │            │
-│         └────────┬───────┴──────────────────────┘            │
-│                  │                                           │
+│         │                │                     │            │
+│         └────────┬───────┴─────────────────────┘            │
+│                  │                                          │
 │  ┌───────────────▼───────────────────────────────────────┐  │
 │  │               CloudNativePG PostgreSQL                │  │
 │  │            langfuse-postgresql (Port 5432)            │  │
@@ -31,13 +31,13 @@ Langfuse is an open-source LLM observability platform providing tracing, prompt 
                            │
         Cross-namespace connections (ACL: langfuse user)
                            │
-┌──────────────────────────▼──────────────────────────────────┐
-│                      Shared Infrastructure                   │
-├─────────────────────────────────────────────────────────────┤
+┌──────────────────────────▼────────────────────────────────────┐
+│                      Shared Infrastructure                    │
+├───────────────────────────────────────────────────────────────┤
 │  cache/dragonfly        storage/rustfs       identity/keycloak│
 │  (Redis-compatible)     (S3-compatible)      (OIDC SSO)       │
 │  Port 6379              Port 9000            Port 8080        │
-└─────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ## Configuration Variables
@@ -79,12 +79,90 @@ langfuse_clickhouse_storage: "20Gi"
 langfuse_s3_access_key: ""      # Create via RustFS Console
 langfuse_s3_secret_key: ""      # SOPS-encrypted
 
-# Required buckets (create via RustFS Console):
+# Required buckets (created by RustFS setup job):
 # - langfuse-events (raw event storage)
 # - langfuse-media (multi-modal uploads)
 # - langfuse-exports (batch data exports)
 # - langfuse-postgres-backups (if backup enabled)
 ```
+
+#### RustFS IAM Setup (Principle of Least Privilege)
+
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+> The RustFS bucket setup job automatically creates the required buckets.
+
+**1. Create Custom Policy**
+
+Navigate to **Identity** → **Policies** → **Create Policy**
+
+**Policy Name:** `langfuse-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::langfuse-events",
+        "arn:aws:s3:::langfuse-media",
+        "arn:aws:s3:::langfuse-exports"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::langfuse-events/*",
+        "arn:aws:s3:::langfuse-media/*",
+        "arn:aws:s3:::langfuse-exports/*"
+      ]
+    }
+  ]
+}
+```
+
+| Permission | Purpose |
+| ---------- | ------- |
+| `s3:ListBucket` | List events, media files, exports |
+| `s3:GetObject` | Download media files, exports |
+| `s3:PutObject` | Upload events, media, exports |
+| `s3:DeleteObject` | Retention cleanup |
+| `s3:GetBucketLocation` | AWS SDK compatibility |
+
+**2. Create Group (or use existing `ai-system` group)**
+
+Navigate to **Identity** → **Groups** → **Create Group**
+
+- **Name:** `ai-system` (shared with LiteLLM, Obot)
+- **Assign Policy:** `langfuse-storage` (add to existing policies if group exists)
+- Click **Save**
+
+**3. Create Langfuse S3 User**
+
+Navigate to **Identity** → **Users** → **Create User**
+
+- **Access Key:** (auto-generated, copy this)
+- **Secret Key:** (auto-generated, copy this)
+- **Assign Group:** `ai-system`
+- Click **Save**
+
+**4. Update cluster.yaml**
+
+```yaml
+langfuse_s3_access_key: "<paste-access-key>"
+langfuse_s3_secret_key: "<paste-secret-key>"
+```
+
+Then run: `task configure && task reconcile`
 
 ### Dragonfly Cache (Shared)
 Langfuse uses the shared Dragonfly deployment in the `cache` namespace.
@@ -125,8 +203,67 @@ langfuse_monitoring_enabled: true     # ServiceMonitor + Dashboard
 ### Backups (requires rustfs_enabled)
 ```yaml
 langfuse_backup_enabled: true
-# Uses langfuse S3 credentials for CNPG barmanObjectStore
+langfuse_backup_s3_access_key: ""   # Create via RustFS Console
+langfuse_backup_s3_secret_key: ""   # SOPS-encrypted
+# Required bucket: langfuse-postgres-backups (created by RustFS setup job)
 ```
+
+#### RustFS IAM Setup for PostgreSQL Backups
+
+> Separate user for PostgreSQL backups provides better security isolation.
+
+**1. Create Backup Policy**
+
+Navigate to **Identity** → **Policies** → **Create Policy**
+
+**Policy Name:** `langfuse-backup-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::langfuse-postgres-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::langfuse-postgres-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+**2. Create Langfuse Backup User**
+
+Navigate to **Identity** → **Users** → **Create User**
+
+- **Access Key:** (auto-generated, copy this)
+- **Secret Key:** (auto-generated, copy this)
+- **Assign Group:** `ai-system` (add `langfuse-backup-storage` policy to group)
+- Click **Save**
+
+**3. Update cluster.yaml**
+
+```yaml
+langfuse_backup_s3_access_key: "<paste-access-key>"
+langfuse_backup_s3_secret_key: "<paste-secret-key>"
+```
+
+Then run: `task configure && task reconcile`
 
 ### Headless Initialization (GitOps Bootstrap)
 Bootstrap an initial admin account for GitOps/non-interactive deployments.
@@ -299,6 +436,9 @@ If Keycloak redirect fails:
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches: `langfuse_keycloak_client_secret`
 - Verify redirect URI in Keycloak client configuration
+- Check pod can reach internal Keycloak: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet/.well-known/openid-configuration`
+
+**Split-horizon DNS Issue**: If external Keycloak URL times out from pods (UniFi DNS resolves to LAN IP), the solution is already implemented - Langfuse uses `keycloak_internal_issuer_url` for OIDC discovery. Keycloak's `backchannelDynamic: true` returns external URLs for browser redirects and internal URLs for server-to-server token/userinfo calls.
 
 ### Traces Not Appearing from LiteLLM
 If LiteLLM callbacks are not working:

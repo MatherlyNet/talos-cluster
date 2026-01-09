@@ -32,12 +32,12 @@ LiteLLM is an LLM proxy that provides a unified OpenAI-compatible API for multip
           │  Cross-namespace connection (ACL: litellm user, litellm:* keys)
           │
 ┌─────────▼───────────────────────────────────────────────────┐
-│                        cache namespace                       │
+│                        cache namespace                      │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              Dragonfly (Operator-managed)            │    │
-│  │         Redis-compatible, 25x faster than Redis      │    │
-│  │                     Port 6379                        │    │
+│  │              Dragonfly (Operator-managed)           │    │
+│  │         Redis-compatible, 25x faster than Redis     │    │
+│  │                     Port 6379                       │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -139,7 +139,82 @@ litellm_langfuse_secret_key: ""    # SOPS-encrypted
 litellm_backup_enabled: true
 litellm_s3_access_key: ""          # SOPS-encrypted (create via RustFS Console)
 litellm_s3_secret_key: ""          # SOPS-encrypted
+# Required bucket: litellm-backups (created by RustFS setup job)
 ```
+
+#### RustFS IAM Setup (Principle of Least Privilege)
+
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+> The RustFS bucket setup job automatically creates the `litellm-backups` bucket.
+
+**1. Create Custom Policy**
+
+Navigate to **Identity** → **Policies** → **Create Policy**
+
+**Policy Name:** `litellm-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::litellm-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::litellm-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+| Permission | Purpose |
+| ---------- | ------- |
+| `s3:ListBucket` | List backup files for WAL management |
+| `s3:GetObject` | Download backups for restore (PITR) |
+| `s3:PutObject` | Upload WAL segments and base backups |
+| `s3:DeleteObject` | Retention cleanup of old WAL files |
+| `s3:GetBucketLocation` | AWS SDK compatibility |
+
+**2. Create Group (or use existing `ai-system` group)**
+
+Navigate to **Identity** → **Groups** → **Create Group**
+
+- **Name:** `ai-system` (shared with Obot, Langfuse)
+- **Assign Policy:** `litellm-storage` (add to existing policies if group exists)
+- Click **Save**
+
+**3. Create LiteLLM Backup User**
+
+Navigate to **Identity** → **Users** → **Create User**
+
+- **Access Key:** (auto-generated, copy this)
+- **Secret Key:** (auto-generated, copy this)
+- **Assign Group:** `ai-system`
+- Click **Save**
+
+**4. Update cluster.yaml**
+
+```yaml
+litellm_s3_access_key: "<paste-access-key>"
+litellm_s3_secret_key: "<paste-secret-key>"
+```
+
+Then run: `task configure && task reconcile`
 
 ## File Structure
 
@@ -437,6 +512,9 @@ If SSO redirect fails:
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches: `litellm_oidc_client_secret`
 - Verify redirect URLs in Keycloak client configuration
+- Check pod can reach internal Keycloak: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet/.well-known/openid-configuration`
+
+**Split-horizon DNS Issue**: If external Keycloak URL times out from pods (UniFi DNS resolves to LAN IP), the solution is already implemented - LiteLLM uses external URL for `GENERIC_AUTHORIZATION_ENDPOINT` (browser redirects) but internal URL for `GENERIC_TOKEN_ENDPOINT` and `GENERIC_USERINFO_ENDPOINT` (server-to-server calls). Keycloak's `backchannelDynamic: true` ensures issuer consistency in tokens.
 
 ## NetworkPolicy Considerations
 

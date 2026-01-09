@@ -10,3 +10,4 @@ resources:
   - ./namespace.yaml
   - ./litellm/ks.yaml
   - ./langfuse/ks.yaml
+  - ./obot/ks.yaml

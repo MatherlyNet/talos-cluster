@@ -126,6 +126,14 @@ spec:
               echo "NOTE: Create Langfuse backup access keys in RustFS Console and update cluster.yaml"
 #% endif %#
 
+#% if obot_backup_enabled | default(false) %#
+              #| Obot PostgreSQL backup bucket - access keys created manually in RustFS UI #|
+              #| See: docs/research/obot-mcp-gateway-integration-jan-2026.md #|
+              mc mb --ignore-existing rustfs/obot-postgres-backups
+              echo "obot-postgres-backups bucket created."
+              echo "NOTE: Create Obot backup access keys in RustFS Console and update cluster.yaml"
+#% endif %#
+
               echo ""
               echo "============================================="
               echo "Bucket setup complete!"
@@ -204,6 +212,15 @@ spec:
               echo "  - Create 'langfuse-backup' user in ai-system group"
               echo "  - Update langfuse_backup_s3_access_key/langfuse_backup_s3_secret_key in cluster.yaml"
               echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
+              echo ""
+#% endif %#
+#% if obot_backup_enabled | default(false) %#
+              echo "OBOT BACKUP (ai-system group):"
+              echo "  - Create 'obot-storage' policy scoped to obot-postgres-backups bucket"
+              echo "  - Create 'ai-system' group with policy attached (if not exists)"
+              echo "  - Create 'obot-backup' user in ai-system group"
+              echo "  - Update obot_s3_access_key/obot_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/obot-mcp-gateway-integration-jan-2026.md"
               echo ""
 #% endif %#
               echo "Then run: task configure && task reconcile"

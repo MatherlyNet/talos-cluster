@@ -18,9 +18,9 @@ Cilium uses eBPF (extended Berkeley Packet Filter) for high-performance networki
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  Linux Kernel                    │
+│                  Linux Kernel                   │
 │  ┌────────────────────────────────────────────┐ │
-│  │              eBPF Programs                  │ │
+│  │              eBPF Programs                 │ │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────────┐ │ │
 │  │  │ L3/L4   │  │ Service │  │ LoadBalancer│ │ │
 │  │  │ Routing │  │  Proxy  │  │ (L2/BGP)    │ │ │

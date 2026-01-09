@@ -1,0 +1,26 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| ReferenceGrant: Allow network namespace to access Obot                        #|
+#| Required for HTTPRoutes in network namespace to reference                     #|
+#| the obot service in ai-system namespace                                       #|
+#| REF: https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1beta1.ReferenceGrant #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                   #|
+#| ============================================================================= #|
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: network-obot-access
+  namespace: ai-system
+spec:
+  from:
+    #| Allow HTTPRoute from network namespace #|
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    #| Grant access to Obot service #|
+    - group: ""
+      kind: Service
+      name: obot-obot
+#% endif %#

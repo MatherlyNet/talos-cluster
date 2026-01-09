@@ -205,6 +205,9 @@ spec:
 
 #% if litellm_oidc_enabled | default(false) %#
               #| Keycloak OIDC SSO #|
+              #| Authorization endpoint uses EXTERNAL URL (browser redirect)   #|
+              #| Token/userinfo use INTERNAL URL (server-to-server calls)      #|
+              #| Keycloak's backchannelDynamic:true handles issuer consistency #|
               GENERIC_CLIENT_ID: "litellm"
               GENERIC_CLIENT_SECRET:
                 valueFrom:
@@ -212,8 +215,8 @@ spec:
                     name: litellm-secret
                     key: OIDC_CLIENT_SECRET
               GENERIC_AUTHORIZATION_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/auth"
-              GENERIC_TOKEN_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/token"
-              GENERIC_USERINFO_ENDPOINT: "#{ keycloak_issuer_url }#/protocol/openid-connect/userinfo"
+              GENERIC_TOKEN_ENDPOINT: "#{ keycloak_internal_issuer_url }#/protocol/openid-connect/token"
+              GENERIC_USERINFO_ENDPOINT: "#{ keycloak_internal_issuer_url }#/protocol/openid-connect/userinfo"
 #% endif %#
 
 #% if litellm_alerting_enabled | default(false) %#

@@ -14,7 +14,7 @@ Dragonfly is a Redis-compatible in-memory data store deployed via the Dragonfly 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 dragonfly-operator-system namespace          │
+│                 dragonfly-operator-system namespace         │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │           Dragonfly Operator (HelmRelease)          │    │
@@ -25,24 +25,24 @@ Dragonfly is a Redis-compatible in-memory data store deployed via the Dragonfly 
                               │ manages
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                        cache namespace                       │
+│                        cache namespace                      │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              Dragonfly Instance (CR)                 │    │
-│  │         Redis-compatible, 25x faster than Redis      │    │
-│  │                     Port 6379                        │    │
-│  │               Admin/Metrics: 9999                    │    │
+│  │              Dragonfly Instance (CR)                │    │
+│  │         Redis-compatible, 25x faster than Redis     │    │
+│  │                     Port 6379                       │    │
+│  │               Admin/Metrics: 9999                   │    │
 │  └──────────────────────┬──────────────────────────────┘    │
-│                         │                                    │
+│                         │                                   │
 │  ┌──────────────────────┴──────────────────────────────┐    │
-│  │                   ACL Users                          │    │
-│  │  default    ~*           Full access                 │    │
-│  │  keycloak   ~keycloak:*  Keycloak sessions           │    │
-│  │  appcache   ~cache:*     General app cache           │    │
-│  │  litellm    ~litellm:*   LiteLLM responses           │    │
-│  │  langfuse   ~*           Langfuse (BullMQ queues)    │    │
+│  │                   ACL Users                         │    │
+│  │  default    ~*           Full access                │    │
+│  │  keycloak   ~keycloak:*  Keycloak sessions          │    │
+│  │  appcache   ~cache:*     General app cache          │    │
+│  │  litellm    ~litellm:*   LiteLLM responses          │    │
+│  │  langfuse   ~*           Langfuse (BullMQ queues)   │    │
 │  └─────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────┘
                               │
                               │ Cross-namespace connections
                               ▼
@@ -87,7 +87,82 @@ dragonfly_s3_endpoint: "rustfs-svc.storage.svc.cluster.local:9000"
 dragonfly_s3_access_key: "dragonfly-backup"  # Created via RustFS Console
 dragonfly_s3_secret_key: "..."                # SOPS-encrypted
 dragonfly_snapshot_cron: "0 */6 * * *"        # Every 6 hours
+# Required bucket: dragonfly-backups (created by RustFS setup job)
 ```
+
+#### RustFS IAM Setup (Principle of Least Privilege)
+
+> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
+> The RustFS bucket setup job automatically creates the `dragonfly-backups` bucket.
+
+**1. Create Custom Policy**
+
+Navigate to **Identity** → **Policies** → **Create Policy**
+
+**Policy Name:** `dragonfly-storage`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dragonfly-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dragonfly-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+| Permission | Purpose |
+| ---------- | ------- |
+| `s3:ListBucket` | List snapshot files for retention |
+| `s3:GetObject` | Download snapshots for restore |
+| `s3:PutObject` | Upload RDB snapshots |
+| `s3:DeleteObject` | Retention cleanup of old snapshots |
+| `s3:GetBucketLocation` | AWS SDK compatibility |
+
+**2. Create Group (or use existing `cache` group)**
+
+Navigate to **Identity** → **Groups** → **Create Group**
+
+- **Name:** `cache`
+- **Assign Policy:** `dragonfly-storage`
+- Click **Save**
+
+**3. Create Dragonfly Backup User**
+
+Navigate to **Identity** → **Users** → **Create User**
+
+- **Access Key:** (auto-generated, copy this)
+- **Secret Key:** (auto-generated, copy this)
+- **Assign Group:** `cache`
+- Click **Save**
+
+**4. Update cluster.yaml**
+
+```yaml
+dragonfly_s3_access_key: "<paste-access-key>"
+dragonfly_s3_secret_key: "<paste-secret-key>"
+```
+
+Then run: `task configure && task reconcile`
 
 ### Monitoring (requires monitoring_enabled)
 ```yaml

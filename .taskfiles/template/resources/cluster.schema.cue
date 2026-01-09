@@ -599,6 +599,64 @@ import (
 	langfuse_default_org_role?:     *"VIEWER" | "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" | "NONE"
 	langfuse_default_project_id?:   string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Project for new users
 	langfuse_default_project_role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
+
+	// Obot MCP Gateway - AI Agent Platform with MCP Server Hosting
+	// REF: https://github.com/jrmatherly/obot-entraid
+	// REF: docs/research/obot-mcp-gateway-integration-jan-2026.md
+	// Provides AI agents with MCP (Model Context Protocol) server orchestration
+	// Uses custom fork with Keycloak authentication provider
+	obot_enabled?:    *false | bool
+	obot_subdomain?:  *"obot" | string & !=""
+	obot_version?:    *"0.2.30" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	obot_replicas?:   *1 | int & >=1 & <=10
+
+	// Obot PostgreSQL Database (CloudNativePG with pgvector)
+	// Requires cnpg_enabled: true and cnpg_pgvector_enabled: true
+	obot_db_password?:           string & !=""
+	obot_postgres_user?:         *"obot" | string & !=""
+	obot_postgres_db?:           *"obot" | string & !=""
+	obot_postgresql_replicas?:   *1 | int & >=1 & <=5
+	obot_postgresql_storage_size?: *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_storage_size?:          *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// Obot Encryption Key for data at rest
+	// Generate with: openssl rand -hex 32
+	obot_encryption_key?: string & =~"^[a-f0-9]{64}$"
+
+	// Obot Keycloak SSO (requires keycloak_enabled: true)
+	// Uses custom auth provider from jrmatherly/obot-entraid fork
+	obot_keycloak_enabled?:        *false | bool
+	obot_keycloak_client_id?:      *"obot" | string & !=""
+	obot_keycloak_client_secret?:  string & !=""
+	obot_keycloak_cookie_secret?:  string & =~".{32,}"  // At least 32 characters (openssl rand -base64 32)
+	obot_keycloak_allowed_groups?: string  // Comma-separated group restrictions
+	obot_keycloak_allowed_roles?:  string  // Comma-separated role restrictions
+
+	// Obot MCP Namespace Resource Quotas
+	obot_mcp_namespace?:               *"obot-mcp" | string & !=""
+	obot_mcp_cpu_requests_quota?:      *"4" | string & =~"^[0-9]+$"
+	obot_mcp_cpu_limits_quota?:        *"8" | string & =~"^[0-9]+$"
+	obot_mcp_memory_requests_quota?:   *"8Gi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_mcp_memory_limits_quota?:     *"16Gi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_mcp_max_pods?:                *"20" | string & =~"^[0-9]+$"
+	obot_mcp_default_cpu_request?:     *"100m" | string & =~"^[0-9]+m?$"
+	obot_mcp_default_cpu_limit?:       *"500m" | string & =~"^[0-9]+m?$"
+	obot_mcp_default_memory_request?:  *"256Mi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_mcp_default_memory_limit?:    *"512Mi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_mcp_max_cpu?:                 *"1000m" | string & =~"^[0-9]+m?$"
+	obot_mcp_max_memory?:              *"1Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// Obot PostgreSQL Backups (requires rustfs_enabled: true)
+	// Credentials must be created via RustFS Console UI
+	obot_s3_access_key?: string & !=""
+	obot_s3_secret_key?: string & !=""
+
+	// Obot Observability (requires monitoring_enabled and/or tracing_enabled)
+	obot_monitoring_enabled?: *false | bool  // ServiceMonitor for Prometheus metrics
+	obot_tracing_enabled?:    *false | bool  // OpenTelemetry traces to Tempo
+
+	// Obot LiteLLM Integration (uses internal LiteLLM as model gateway)
+	obot_litellm_enabled?: *false | bool
 }
 
 #Config

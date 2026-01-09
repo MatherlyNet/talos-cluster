@@ -18,6 +18,7 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 | [dragonfly.md](./dragonfly.md) | Dragonfly | Redis-compatible cache, ACL configuration, monitoring |
 | [litellm.md](./litellm.md) | LiteLLM | LLM proxy configuration, model routing, caching |
 | [langfuse.md](./langfuse.md) | Langfuse | LLM observability, tracing, prompt management, evaluation |
+| [obot.md](./obot.md) | Obot | MCP gateway, AI agent platform, MCP server hosting |
 
 ## Quick Reference
 
@@ -67,6 +68,12 @@ Related: docs/ai-context/dragonfly.md (caching backend)
 ```
 Read: docs/ai-context/langfuse.md
 Related: docs/ai-context/litellm.md (LiteLLM integration)
+```
+
+### For Obot/MCP Gateway
+```
+Read: docs/ai-context/obot.md
+Related: docs/ai-context/litellm.md (model gateway), docs/ai-context/langfuse.md (observability)
 ```
 
 ## Complementary Documentation

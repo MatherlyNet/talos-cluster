@@ -128,5 +128,19 @@ cloudflare_gateway_addr: "10.10.10.251"
 # langfuse_default_project_id: "default-project"
 # langfuse_default_project_role: "VIEWER"
 
+# Obot MCP Gateway (optional - uncomment to test)
+# REF: docs/research/obot-mcp-gateway-integration-jan-2026.md
+# NOTE: Requires cnpg_enabled: true for PostgreSQL with pgvector
+# obot_enabled: false
+# obot_db_password: "test-obot-db-password"
+# obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# obot_keycloak_enabled: false
+# obot_keycloak_client_secret: "test-obot-oidc-secret"
+# obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"
+# obot_s3_access_key: "test-obot-s3-access"
+# obot_s3_secret_key: "test-obot-s3-secret"
+# obot_monitoring_enabled: false
+# obot_tracing_enabled: false
+
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"

@@ -107,7 +107,7 @@ data:
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
-#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) %#
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) %#
     clients:
 #% if keycloak_bootstrap_oidc_client | default(false) %#
       #| Envoy Gateway SSO Client #|
@@ -343,6 +343,68 @@ data:
           - "address"
           - "phone"
           - "offline_access"
+#% endif %#
+#% if obot_keycloak_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| OBOT OIDC CLIENT - MCP Gateway Authentication                              #|
+      #| Auto-created when obot_keycloak_enabled + obot_keycloak_client_secret set  #|
+      #| Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork       #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                #|
+      #| =========================================================================== #|
+      - clientId: "$(env:OBOT_CLIENT_ID)"
+        name: "Obot MCP Gateway"
+        description: "OIDC client for Obot MCP Gateway - enables SSO for AI agent platform with MCP server hosting"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:OBOT_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://#{ obot_subdomain | default('obot') }#.#{ cloudflare_domain }#/*"
+          - "https://#{ obot_subdomain | default('obot') }#.#{ cloudflare_domain }#/oauth2/callback"
+        webOrigins:
+          - "https://#{ obot_subdomain | default('obot') }#.#{ cloudflare_domain }#"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://#{ obot_subdomain | default('obot') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        defaultClientScopes:
+          - "profile"
+          - "email"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+          - "offline_access"
+        #| Protocol mappers for role and group claims (used for ALLOWED_GROUPS/ALLOWED_ROLES) #|
+        protocolMappers:
+          #| Map realm roles to 'roles' claim for Obot role-based access control #|
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          #| Map groups to 'groups' claim for Obot group-based access control #|
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
 #% endif %#
 #% endif %#
 

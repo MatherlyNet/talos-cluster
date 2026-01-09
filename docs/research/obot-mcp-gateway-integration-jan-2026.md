@@ -22,7 +22,7 @@ This document provides comprehensive research and implementation guidance for in
 ### Version History
 
 | Version | Date | Key Changes |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | v0.15.1 | Dec 22, 2025 | OAuth fixes, audit log improvements |
 | v0.15.0 | Dec 16, 2025 | Gateway restructuring (reverse-proxy), auth overhaul |
 | v0.14.0 | Dec 4, 2025 | MCP Registry API support |
@@ -105,7 +105,7 @@ The custom chart extends upstream with:
 Both are AI-focused applications in the ai-system namespace with similar infrastructure requirements:
 
 | Feature | LiteLLM (Current) | Obot (Proposed) |
-|---------|-------------------|-----------------|
+| --------- | ------------------- | ----------------- |
 | Namespace | ai-system | ai-system (new: obot for isolation) |
 | Database | CNPG PostgreSQL | CNPG PostgreSQL + pgvector |
 | Cache | Dragonfly (cache ns) | Optional (can use same) |
@@ -191,7 +191,7 @@ templates/config/kubernetes/apps/ai-system/obot/
 ```yaml
 # Obot MCP Gateway Configuration
 obot_enabled: true                                    # Enable Obot deployment
-obot_version: "0.2.29"                               # Obot image/chart version
+obot_version: "0.2.30"                               # Obot image/chart version
 obot_subdomain: "obot"                               # Creates obot.${cloudflare_domain}
 obot_replicas: 1                                     # Pod replicas
 
@@ -1261,7 +1261,7 @@ data:
 ## Risk Assessment
 
 | Risk | Impact | Mitigation |
-|------|--------|------------|
+| ------ | -------- | ------------ |
 | MCP server resource exhaustion | High | ResourceQuota + LimitRange in MCP namespace |
 | Unauthorized access to LLM providers | High | Network policies restricting egress |
 | Database compromise | High | CNPG encryption, backups to RustFS |
@@ -1282,7 +1282,7 @@ data:
 ### Core Server Configuration
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ---------- | ------------- | ---------- |
 | `OBOT_SERVER_HOSTNAME` | Full URL including protocol | Yes |
 | `OBOT_SERVER_DSN` | PostgreSQL connection string | Yes |
 | `OBOT_SERVER_MCPRUNTIME_BACKEND` | `kubernetes` or `docker` | Yes |
@@ -1291,7 +1291,7 @@ data:
 ### Authentication (Keycloak - jrmatherly/obot-entraid fork)
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ---------- | ------------- | ---------- |
 | `OBOT_SERVER_AUTH_PROVIDER` | `keycloak` | Yes |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL` | Keycloak base URL (without /realms/...) | Yes |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` | Keycloak realm name | Yes |
@@ -1304,7 +1304,7 @@ data:
 ### Encryption
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ---------- | ------------- | ---------- |
 | `OBOT_SERVER_ENCRYPTION_PROVIDER` | `custom`, `aws`, `gcp`, `azure` | Yes |
 | `OBOT_SERVER_ENCRYPTION_KEY` | 32-byte base64 key | If custom |
 | `OBOT_SERVER_ENCRYPTION_CONFIG_FILE` | Path to encryption config | If custom |
@@ -1312,14 +1312,14 @@ data:
 ### Observability
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ---------- | ------------- | ---------- |
 | `OBOT_SERVER_OTEL_BASE_EXPORT_ENDPOINT` | OTLP endpoint | No |
 | `OBOT_SERVER_OTEL_SAMPLE_PROB` | Sampling rate (0.0-1.0) | No |
 
 ### S3 Workspace Provider
 
 | Variable | Description | Required |
-|----------|-------------|----------|
+| ---------- | ------------- | ---------- |
 | `OBOT_WORKSPACE_PROVIDER_TYPE` | `s3` | If using S3 |
 | `WORKSPACE_PROVIDER_S3_BUCKET` | Bucket name | If using S3 |
 | `WORKSPACE_PROVIDER_S3_BASE_ENDPOINT` | S3 endpoint | If using S3 |
@@ -1332,7 +1332,7 @@ data:
 **Research validated:** January 9, 2026
 
 | Item | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Upstream Obot v0.15.x | ✅ Verified | v0.15.1 (Dec 22, 2025) with gateway restructuring |
 | jrmatherly/obot-entraid | ✅ Verified | v0.2.29 (Jan 7, 2026), 2,857 commits, MIT license |
 | Keycloak PKCE S256 | ✅ Verified | Added in v0.2.21 (Dec 23, 2025) |
@@ -1350,7 +1350,7 @@ data:
 ### Project Pattern References
 
 | Component | Reference File |
-|-----------|---------------|
+| ----------- | --------------- |
 | Flux Kustomization | `templates/config/kubernetes/apps/ai-system/litellm/ks.yaml.j2` |
 | HelmRelease | `templates/config/kubernetes/apps/ai-system/litellm/app/helmrelease.yaml.j2` |
 | CNPG PostgreSQL | `templates/config/kubernetes/apps/ai-system/litellm/app/postgresql.yaml.j2` |

@@ -1,0 +1,23 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| OBOT MCP NAMESPACE - Dedicated namespace for MCP server pods                  #|
+#| All dynamically spawned MCP servers run here with restricted PSS             #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                  #|
+#| ============================================================================= #|
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    kubernetes.io/metadata.name: #{ obot_mcp_namespace | default('obot-mcp') }#
+    app.kubernetes.io/part-of: obot
+    app.kubernetes.io/managed-by: obot
+    #| Pod Security Standards - restricted baseline for MCP servers #|
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+#% endif %#

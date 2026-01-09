@@ -316,6 +316,13 @@ class Plugin(makejinja.plugin.Plugin):
             data["keycloak_issuer_url"] = (
                 f"https://{keycloak_hostname}/realms/{keycloak_realm}"
             )
+            # Internal issuer URL for backchannel OIDC discovery (pod-to-pod)
+            # Used by apps like Langfuse that need to reach Keycloak from inside the cluster
+            # Keycloak's backchannelDynamic:true returns external issuer in tokens but
+            # internal URLs for token/userinfo endpoints when queried via internal URL
+            data["keycloak_internal_issuer_url"] = (
+                f"http://keycloak-service.identity.svc.cluster.local:8080/realms/{keycloak_realm}"
+            )
             data["keycloak_jwks_uri"] = (
                 f"https://{keycloak_hostname}/realms/{keycloak_realm}/protocol/openid-connect/certs"
             )
@@ -460,10 +467,9 @@ class Plugin(makejinja.plugin.Plugin):
             data["dragonfly_backup_enabled"] = dragonfly_backup_enabled
 
             # Monitoring configuration - requires global monitoring_enabled
-            dragonfly_monitoring_enabled = (
-                data.get("monitoring_enabled", False)
-                and data.get("dragonfly_monitoring_enabled", False)
-            )
+            dragonfly_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("dragonfly_monitoring_enabled", False)
             data["dragonfly_monitoring_enabled"] = dragonfly_monitoring_enabled
 
             # ACL configuration - enabled when explicitly set
@@ -541,16 +547,16 @@ class Plugin(makejinja.plugin.Plugin):
             if data.get("langfuse_enabled", False):
                 data.setdefault(
                     "litellm_langfuse_host",
-                    "http://langfuse-web.ai-system.svc.cluster.local:3000"
+                    "http://langfuse-web.ai-system.svc.cluster.local:3000",
                 )
             else:
                 data.setdefault("litellm_langfuse_host", "https://cloud.langfuse.com")
 
             # LiteLLM Alerting - Slack/Discord webhook notifications
             # Enabled when alerting flag is set and at least one webhook is configured
-            litellm_alerting_enabled = (
-                data.get("litellm_alerting_enabled", False)
-                and (data.get("litellm_slack_webhook_url") or data.get("litellm_discord_webhook_url"))
+            litellm_alerting_enabled = data.get("litellm_alerting_enabled", False) and (
+                data.get("litellm_slack_webhook_url")
+                or data.get("litellm_discord_webhook_url")
             )
             data["litellm_alerting_enabled"] = litellm_alerting_enabled
             data.setdefault("litellm_alerting_threshold", 300)
@@ -563,7 +569,9 @@ class Plugin(makejinja.plugin.Plugin):
             litellm_presidio_enabled = data.get("litellm_presidio_enabled", False)
             data["litellm_presidio_enabled"] = litellm_presidio_enabled
 
-            litellm_prompt_injection_check = data.get("litellm_prompt_injection_check", False)
+            litellm_prompt_injection_check = data.get(
+                "litellm_prompt_injection_check", False
+            )
             data["litellm_prompt_injection_check"] = litellm_prompt_injection_check
         else:
             data["litellm_oidc_enabled"] = False
@@ -575,6 +583,71 @@ class Plugin(makejinja.plugin.Plugin):
             data["litellm_guardrails_enabled"] = False
             data["litellm_presidio_enabled"] = False
             data["litellm_prompt_injection_check"] = False
+
+        # Obot MCP Gateway - AI agent platform with MCP server hosting
+        # Enabled when obot_enabled is true
+        obot_enabled = data.get("obot_enabled", False)
+        data["obot_enabled"] = obot_enabled
+
+        if obot_enabled:
+            # Derive full hostname from subdomain + cloudflare_domain
+            obot_subdomain = data.get("obot_subdomain", "obot")
+            cloudflare_domain = data.get("cloudflare_domain", "")
+            obot_hostname = f"{obot_subdomain}.{cloudflare_domain}"
+            data["obot_hostname"] = obot_hostname
+
+            # Default settings
+            data.setdefault("obot_version", "0.2.30")
+            data.setdefault("obot_replicas", 1)
+            data.setdefault("obot_mcp_namespace", "obot-mcp")
+            data.setdefault("obot_postgres_user", "obot")
+            data.setdefault("obot_postgres_db", "obot")
+            data.setdefault("obot_postgresql_replicas", 1)
+            data.setdefault("obot_postgresql_storage_size", "10Gi")
+            data.setdefault("obot_storage_size", "20Gi")
+            data.setdefault("obot_keycloak_client_id", "obot")
+
+            # Keycloak integration - derive URLs for custom auth provider
+            # Uses jrmatherly/obot-entraid fork with OBOT_KEYCLOAK_AUTH_PROVIDER_* vars
+            if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
+                keycloak_realm = data.get("keycloak_realm", "matherlynet")
+                keycloak_hostname = data.get("keycloak_hostname", "")
+                # Base URL (without /realms/...) for OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL
+                data["obot_keycloak_base_url"] = f"https://{keycloak_hostname}"
+                # Issuer URL (with /realms/...) for reference
+                data["obot_keycloak_issuer_url"] = (
+                    f"https://{keycloak_hostname}/realms/{keycloak_realm}"
+                )
+                # Realm name for OBOT_KEYCLOAK_AUTH_PROVIDER_REALM
+                data["obot_keycloak_realm"] = keycloak_realm
+                data["obot_keycloak_enabled"] = True
+            else:
+                data["obot_keycloak_enabled"] = False
+
+            # Backup enabled when RustFS + credentials configured
+            obot_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("obot_s3_access_key")
+                and data.get("obot_s3_secret_key")
+            )
+            data["obot_backup_enabled"] = obot_backup_enabled
+
+            # Monitoring enabled when both flags set
+            obot_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("obot_monitoring_enabled", False)
+            data["obot_monitoring_enabled"] = obot_monitoring_enabled
+
+            # Tracing enabled when both flags set
+            obot_tracing_enabled = data.get("tracing_enabled", False) and data.get(
+                "obot_tracing_enabled", False
+            )
+            data["obot_tracing_enabled"] = obot_tracing_enabled
+        else:
+            data["obot_keycloak_enabled"] = False
+            data["obot_backup_enabled"] = False
+            data["obot_monitoring_enabled"] = False
+            data["obot_tracing_enabled"] = False
 
         # Langfuse LLM Observability - tracing, prompts, evaluation, analytics
         # Enabled when langfuse_enabled is true
@@ -605,8 +678,7 @@ class Plugin(makejinja.plugin.Plugin):
             data.setdefault("langfuse_init_user_name", "Admin")
             # Default org name derived from cluster_name
             data.setdefault(
-                "langfuse_init_org_name",
-                data.get("cluster_name", "Langfuse")
+                "langfuse_init_org_name", data.get("cluster_name", "Langfuse")
             )
             # Disable signup defaults to false (allow signups unless explicitly disabled)
             data.setdefault("langfuse_disable_signup", False)

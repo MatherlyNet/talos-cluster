@@ -4,7 +4,7 @@
 > **Last Validated:** 2026-01-03
 > **Status:** Research Complete - Native OIDC Implemented ✅
 > **Priority:** High - Native Integration Approach Recommended
-
+>
 > [!NOTE]
 > **Implementation Complete (January 2026)** - The recommended "Approach 1: Native SecurityPolicy OIDC" has been fully implemented:
 > - OIDC SecurityPolicy targeting HTTPRoutes with `security: oidc-protected` label

@@ -1,0 +1,54 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| Role - Obot MCP Manager                                                       #|
+#| Permissions for Obot to spawn and manage MCP server pods                      #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                  #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: obot-mcp-manager
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: rbac
+rules:
+  #| Pod management for MCP servers #|
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/exec"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| Services for MCP server communication #|
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| ConfigMaps and Secrets for MCP server configuration #|
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| Events for monitoring MCP server status #|
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+#| ============================================================================= #|
+#| RoleBinding - Obot MCP Manager                                                #|
+#| Binds Obot service account to MCP manager role                                #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: obot-mcp-manager
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: obot-mcp-manager
+subjects:
+  - kind: ServiceAccount
+    name: obot
+    namespace: ai-system
+#% endif %#

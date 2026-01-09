@@ -1,0 +1,127 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| CLOUDNATIVEPG POSTGRESQL CLUSTER - Database for Obot                          #|
+#| Stores agents, threads, tools, credentials, and audit logs                    #|
+#| Requires pgvector extension for semantic search/embeddings                    #|
+#| REF: https://cloudnative-pg.io/documentation/                                  #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                   #|
+#| ============================================================================= #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: obot-postgresql
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot-postgresql
+    app.kubernetes.io/part-of: obot
+#% if network_policies_enabled | default(false) %#
+    #| Network policy labels for CiliumNetworkPolicy tiered policies #|
+    network.cilium.io/api-access: "true"
+#% endif %#
+spec:
+  #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
+  instances: #{ obot_postgresql_replicas | default(1) }#
+
+  #| PostgreSQL image - use standard image for extensions support #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
+
+  #| Bootstrap from initdb (fresh database) #|
+  bootstrap:
+    initdb:
+      database: #{ obot_postgres_db | default('obot') }#
+      owner: #{ obot_postgres_user | default('obot') }#
+      secret:
+        name: obot-db-secret
+
+  #| Storage configuration #|
+  storage:
+    size: #{ obot_postgresql_storage_size | default('10Gi') }#
+    storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  #| Monitoring (if prometheus-stack enabled) #|
+  monitoring:
+    enablePodMonitor: #{ 'true' if monitoring_enabled | default(false) else 'false' }#
+
+  #| PostgreSQL configuration optimized for Obot #|
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "5242kB"
+#% if cnpg_pgvector_enabled | default(false) %#
+    #| pgvector extension via ImageVolume (K8s 1.35+, PostgreSQL 18+) #|
+    #| Required for semantic search and RAG capabilities in Obot      #|
+    #| REF: https://cloudnative-pg.io/documentation/current/imagevolume_extensions/ #|
+    extensions:
+      - name: pgvector
+        image:
+          reference: #{ cnpg_pgvector_image | default('ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie') }#
+#% endif %#
+
+  #| Affinity rules for HA deployments #|
+#% if (obot_postgresql_replicas | default(1)) > 1 %#
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+#% endif %#
+
+  #| Priority class for critical database workload #|
+  priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
+
+#% if obot_backup_enabled | default(false) %#
+  #| =========================================================================== #|
+  #| CNPG Backup via barmanObjectStore to Obot-specific RustFS bucket           #|
+  #| Uses obot-backup-credentials with access to obot-backups bucket            #|
+  #| =========================================================================== #|
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://obot-backups"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: obot-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: obot-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+#% endif %#
+---
+#| =========================================================================== #|
+#| Database resource to declaratively manage obot database                      #|
+#| Enables pgvector extension for semantic search/embeddings if enabled         #|
+#| =========================================================================== #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: obot-db-obot
+  namespace: ai-system
+spec:
+  name: obot
+  owner: obot
+  cluster:
+    name: obot-postgresql
+#% if cnpg_pgvector_enabled | default(false) %#
+  extensions:
+    - name: vector
+#% endif %#
+#% endif %#

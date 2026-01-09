@@ -383,5 +383,36 @@ kubernetes_version: "1.35.0"
 # langfuse_default_project_id: "default-project"
 # langfuse_default_project_role: "VIEWER"
 
+# Obot MCP Gateway (optional - uncomment to test)
+# REF: docs/research/obot-mcp-gateway-integration-jan-2026.md
+# NOTE: Requires cnpg_enabled: true for PostgreSQL with pgvector
+# obot_enabled: true
+# obot_subdomain: "obot"
+# obot_version: "0.2.30"
+# obot_replicas: 1
+# obot_db_password: "test-obot-db-password"
+# obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# Obot Keycloak SSO (requires keycloak_enabled: true)
+# obot_keycloak_enabled: true
+# obot_keycloak_client_id: "obot"
+# obot_keycloak_client_secret: "test-obot-oidc-secret"
+# obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"
+# obot_keycloak_allowed_groups: ""
+# obot_keycloak_allowed_roles: ""
+# Obot MCP Namespace Configuration
+# obot_mcp_namespace: "obot-mcp"
+# obot_mcp_cpu_requests_quota: "4"
+# obot_mcp_cpu_limits_quota: "8"
+# obot_mcp_memory_requests_quota: "8Gi"
+# obot_mcp_memory_limits_quota: "16Gi"
+# obot_mcp_max_pods: "20"
+# Obot Backups (requires rustfs_enabled: true)
+# obot_s3_access_key: "test-obot-s3-access"
+# obot_s3_secret_key: "test-obot-s3-secret"
+# Obot Observability
+# obot_monitoring_enabled: true
+# obot_tracing_enabled: true
+# obot_litellm_enabled: true
+
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"

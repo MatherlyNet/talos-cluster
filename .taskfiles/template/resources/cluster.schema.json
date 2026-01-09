@@ -1631,6 +1631,171 @@
         "MEMBER",
         "VIEWER"
       ]
+    },
+    "obot_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Obot MCP Gateway - AI Agent Platform with MCP Server Hosting REF: https://github.com/jrmatherly/obot-entraid REF: docs/research/obot-mcp-gateway-integration-jan-2026.md Provides AI agents with MCP (Model Context Protocol) server orchestration Uses custom fork with Keycloak authentication provider"
+    },
+    "obot_subdomain": {
+      "default": "obot",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_version": {
+      "default": "0.2.30",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "obot_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "obot_db_password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Obot PostgreSQL Database (CloudNativePG with pgvector) Requires cnpg_enabled: true and cnpg_pgvector_enabled: true"
+    },
+    "obot_postgres_user": {
+      "default": "obot",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_postgres_db": {
+      "default": "obot",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_postgresql_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "obot_postgresql_storage_size": {
+      "default": "10Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_storage_size": {
+      "default": "20Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_encryption_key": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Obot Encryption Key for data at rest Generate with: openssl rand -hex 32"
+    },
+    "obot_keycloak_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Obot Keycloak SSO (requires keycloak_enabled: true) Uses custom auth provider from jrmatherly/obot-entraid fork"
+    },
+    "obot_keycloak_client_id": {
+      "default": "obot",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_keycloak_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_keycloak_cookie_secret": {
+      "type": "string",
+      "pattern": ".{32,}"
+    },
+    "obot_keycloak_allowed_groups": {
+      "type": "string"
+    },
+    "obot_keycloak_allowed_roles": {
+      "type": "string"
+    },
+    "obot_mcp_namespace": {
+      "default": "obot-mcp",
+      "type": "string",
+      "minLength": 1,
+      "description": "Obot MCP Namespace Resource Quotas"
+    },
+    "obot_mcp_cpu_requests_quota": {
+      "default": 4,
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "obot_mcp_cpu_limits_quota": {
+      "default": 8,
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "obot_mcp_memory_requests_quota": {
+      "default": "8Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_mcp_memory_limits_quota": {
+      "default": "16Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_mcp_max_pods": {
+      "default": 20,
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "obot_mcp_default_cpu_request": {
+      "default": "100m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "obot_mcp_default_cpu_limit": {
+      "default": "500m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "obot_mcp_default_memory_request": {
+      "default": "256Mi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_mcp_default_memory_limit": {
+      "default": "512Mi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_mcp_max_cpu": {
+      "default": "1000m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "obot_mcp_max_memory": {
+      "default": "1Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_s3_access_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Obot PostgreSQL Backups (requires rustfs_enabled: true) Credentials must be created via RustFS Console UI"
+    },
+    "obot_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Obot Observability (requires monitoring_enabled and/or tracing_enabled)"
+    },
+    "obot_tracing_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "obot_litellm_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Obot LiteLLM Integration (uses internal LiteLLM as model gateway)"
     }
   },
   "required": [

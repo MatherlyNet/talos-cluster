@@ -12,9 +12,9 @@ This project uses OpenTofu v1.11+ for infrastructure as code, with Cloudflare R2
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     State Management Flow                        │
+│                     State Management Flow                       │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
+│                                                                 │
 │  Developer Workstation                                          │
 │  ┌──────────────────┐                                           │
 │  │  task infra:*    │                                           │
@@ -24,7 +24,7 @@ This project uses OpenTofu v1.11+ for infrastructure as code, with Cloudflare R2
 │  │  └─────┬──────┘  │                                           │
 │  └────────┼─────────┘                                           │
 │           │ HTTP (Basic Auth)                                   │
-│           ▼                                                      │
+│           ▼                                                     │
 │  ┌──────────────────┐                                           │
 │  │  tfstate-worker  │  Cloudflare Worker                        │
 │  │  ┌────────────┐  │  - Request validation                     │
@@ -33,16 +33,16 @@ This project uses OpenTofu v1.11+ for infrastructure as code, with Cloudflare R2
 │  │  └─────┬──────┘  │                                           │
 │  └────────┼─────────┘                                           │
 │           │ S3 API                                              │
-│           ▼                                                      │
+│           ▼                                                     │
 │  ┌──────────────────┐                                           │
-│  │  Cloudflare R2   │  Object Storage                          │
+│  │  Cloudflare R2   │  Object Storage                           │
 │  │  ┌────────────┐  │  - 10GB free tier                         │
 │  │  │ tfstate/   │  │  - Unlimited egress                       │
 │  │  │ proxmox/   │  │  - S3-compatible API                      │
 │  │  │ *.tfstate  │  │                                           │
 │  │  └────────────┘  │                                           │
 │  └──────────────────┘                                           │
-│                                                                  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

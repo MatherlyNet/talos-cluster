@@ -1,0 +1,152 @@
+#% if obot_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy - MCP Server Namespace Default Policy                    #|
+#| Controls all MCP server pods spawned by Obot                                 #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                  #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-servers-default
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot-mcp-policy
+    app.kubernetes.io/part-of: obot
+spec:
+  description: "MCP Servers: Default isolation policy for dynamically spawned pods"
+  #| Match all pods in this namespace #|
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| ======================================================================= #|
+    #| Obot main pod communication                                            #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: obot
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+            - port: "8099"
+              protocol: TCP
+  egress:
+    #| ======================================================================= #|
+    #| DNS resolution                                                         #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Callback to Obot main pod                                              #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: obot
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8099"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| External services (MCP tool APIs) - restricted to HTTPS                #|
+    #| ======================================================================= #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+#| ============================================================================= #|
+#| NetworkPolicy - MCP Server Namespace Default Policy (Standard K8s)           #|
+#| Provides baseline network security for environments without Cilium           #|
+#| ============================================================================= #|
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-servers-default
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot-mcp-policy
+    app.kubernetes.io/part-of: obot
+spec:
+  #| Match all pods in this namespace #|
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    #| Allow from Obot main pod #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ai-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obot
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8099
+  egress:
+    #| DNS #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    #| Callback to Obot main pod #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ai-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obot
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8099
+    #| Allow HTTPS to external services (MCP tool APIs) #|
+    #| Note: Standard K8s NetworkPolicy allows all egress ports without Cilium #|
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              #| Block internal cluster ranges - only allow external #|
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+#% endif %#

@@ -1,0 +1,262 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| OBOT MCP GATEWAY - AI Agent Platform with MCP Server Hosting                  #|
+#| Uses jrmatherly/obot-entraid fork with Keycloak authentication provider       #|
+#| REF: https://docs.obot.ai/                                                     #|
+#| REF: https://github.com/jrmatherly/obot-entraid                               #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                   #|
+#| ============================================================================= #|
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: obot
+  namespace: ai-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: obot
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    #| ========================================================================= #|
+    #| Image Configuration - jrmatherly/obot-entraid fork                        #|
+    #| ========================================================================= #|
+    image:
+      repository: ghcr.io/jrmatherly/obot-entraid
+      tag: v#{ obot_version | default('0.2.30') }#
+      pullPolicy: IfNotPresent
+
+    #| ========================================================================= #|
+    #| Deployment Configuration                                                   #|
+    #| ========================================================================= #|
+    replicaCount: #{ obot_replicas | default(1) }#
+
+#% if obot_workspace_provider | default('directory') == 's3' %#
+    updateStrategy: RollingUpdate
+#% else %#
+    #| Recreate required for directory workspace provider (single PVC) #|
+    updateStrategy: Recreate
+#% endif %#
+
+    #| ========================================================================= #|
+    #| Service Configuration                                                      #|
+    #| ========================================================================= #|
+    service:
+      type: ClusterIP
+      port: 80
+
+    #| Disable built-in ingress - use Gateway API HTTPRoute instead #|
+    ingress:
+      enabled: false
+
+    #| ========================================================================= #|
+    #| Environment Configuration                                                  #|
+    #| ========================================================================= #|
+    config:
+      #| Core server settings #|
+      OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname }#"
+      OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:${OBOT_DB_PASSWORD}@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
+      OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
+      OBOT_SERVER_ENABLE_AUTHENTICATION: "true"
+
+#% if obot_admin_emails | default('') %#
+      #| Admin access (full platform access) #|
+      OBOT_SERVER_AUTH_ADMIN_EMAILS: "#{ obot_admin_emails }#"
+#% endif %#
+#% if obot_owner_emails | default('') %#
+      #| Owner access (highest privilege level) #|
+      OBOT_SERVER_AUTH_OWNER_EMAILS: "#{ obot_owner_emails }#"
+#% endif %#
+#% if obot_bootstrap_token | default('') %#
+      #| Bootstrap token for initial setup #|
+      OBOT_BOOTSTRAP_TOKEN: "${OBOT_BOOTSTRAP_TOKEN}"
+#% endif %#
+
+#% if obot_keycloak_enabled | default(false) %#
+      #| ======================================================================= #|
+      #| Keycloak Auth Provider - jrmatherly/obot-entraid fork variables         #|
+      #| REF: https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md #|
+      #| ======================================================================= #|
+      OBOT_SERVER_AUTH_PROVIDER: "keycloak"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "#{ obot_keycloak_realm }#"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "#{ obot_keycloak_client_id | default('obot') }#"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_KEYCLOAK_CLIENT_SECRET}"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "${OBOT_KEYCLOAK_COOKIE_SECRET}"
+#% if obot_keycloak_allowed_groups | default('') %#
+      #| Optional: Restrict access to specific Keycloak groups #|
+      OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS: "#{ obot_keycloak_allowed_groups }#"
+#% endif %#
+#% if obot_keycloak_allowed_roles | default('') %#
+      #| Optional: Restrict access to specific Keycloak roles #|
+      OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES: "#{ obot_keycloak_allowed_roles }#"
+#% endif %#
+#% elif obot_entra_tenant_id | default('') %#
+      #| ======================================================================= #|
+      #| Entra ID (Azure AD) Auth Provider - Alternative to Keycloak            #|
+      #| ======================================================================= #|
+      OBOT_SERVER_AUTH_PROVIDER: "entra-id"
+      OBOT_ENTRA_AUTH_PROVIDER_TENANT_ID: "#{ obot_entra_tenant_id }#"
+      OBOT_ENTRA_AUTH_PROVIDER_CLIENT_ID: "${OBOT_ENTRA_CLIENT_ID}"
+      OBOT_ENTRA_AUTH_PROVIDER_CLIENT_SECRET: "${OBOT_ENTRA_CLIENT_SECRET}"
+#% endif %#
+
+      #| ======================================================================= #|
+      #| Encryption Configuration                                                #|
+      #| ======================================================================= #|
+#% if obot_encryption_provider | default('custom') == 'custom' %#
+      OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
+      OBOT_SERVER_ENCRYPTION_KEY: "${OBOT_SERVER_ENCRYPTION_KEY}"
+#% endif %#
+
+      #| ======================================================================= #|
+      #| Tool Registry and Update Settings                                       #|
+      #| ======================================================================= #|
+      OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
+      OBOT_SERVER_DISABLE_UPDATE_CHECK: "true"
+
+#% if litellm_enabled | default(false) %#
+      #| ======================================================================= #|
+      #| LiteLLM Integration - Route LLM requests through proxy gateway          #|
+      #| ======================================================================= #|
+      OBOT_SERVER_LLM_BASE_URL: "http://litellm.ai-system.svc.cluster.local:4000/v1"
+#% endif %#
+
+#% if obot_tracing_enabled | default(false) %#
+      #| ======================================================================= #|
+      #| OpenTelemetry Tracing - Export to Tempo                                 #|
+      #| ======================================================================= #|
+      OBOT_SERVER_OTEL_BASE_EXPORT_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4317"
+      OBOT_SERVER_OTEL_SAMPLE_PROB: "#{ obot_otel_sample_prob | default('0.1') }#"
+#% endif %#
+
+#% if obot_workspace_provider | default('directory') == 's3' %#
+      #| ======================================================================= #|
+      #| S3 Workspace Provider - For multi-replica deployments                   #|
+      #| ======================================================================= #|
+      OBOT_WORKSPACE_PROVIDER_TYPE: "s3"
+      WORKSPACE_PROVIDER_S3_BUCKET: "#{ obot_s3_bucket }#"
+      WORKSPACE_PROVIDER_S3_BASE_ENDPOINT: "#{ obot_s3_endpoint | default('http://rustfs.storage.svc.cluster.local:9000') }#"
+      AWS_ACCESS_KEY_ID: "${OBOT_S3_ACCESS_KEY}"
+      AWS_SECRET_ACCESS_KEY: "${OBOT_S3_SECRET_KEY}"
+      AWS_REGION: "#{ obot_s3_region | default('us-east-1') }#"
+      WORKSPACE_PROVIDER_S3_USE_PATH_STYLE: "true"
+#% endif %#
+
+    #| ========================================================================= #|
+    #| Persistence Configuration                                                  #|
+    #| ========================================================================= #|
+#% if obot_workspace_provider | default('directory') == 's3' %#
+    #| S3 workspace provider - no PVC needed #|
+    persistence:
+      enabled: false
+#% else %#
+    #| Directory workspace provider - requires PVC #|
+    persistence:
+      enabled: true
+      storageClass: #{ obot_storage_class | default(storage_class) | default('local-path') }#
+      size: #{ obot_storage_size | default('20Gi') }#
+      accessMode: ReadWriteOnce
+#% endif %#
+
+    #| ========================================================================= #|
+    #| MCP Runtime Configuration                                                  #|
+    #| ========================================================================= #|
+    mcpNamespace:
+      name: #{ obot_mcp_namespace | default('obot-mcp') }#
+      #| Namespace created by separate Kustomization #|
+      create: false
+
+    #| Default resource limits for dynamically spawned MCP servers #|
+    mcpServerDefaults:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+
+    #| ========================================================================= #|
+    #| Resource Configuration                                                     #|
+    #| ========================================================================= #|
+    resources:
+      requests:
+        cpu: "#{ obot_cpu_request | default('500m') }#"
+        memory: "#{ obot_memory_request | default('1Gi') }#"
+      limits:
+        cpu: "#{ obot_cpu_limit | default('2000m') }#"
+        memory: "#{ obot_memory_limit | default('4Gi') }#"
+
+    #| ========================================================================= #|
+    #| Security Context                                                           #|
+    #| ========================================================================= #|
+    podSecurityContext:
+      fsGroup: 1000
+
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: false
+      capabilities:
+        drop:
+          - ALL
+
+    #| ========================================================================= #|
+    #| Health Probes                                                              #|
+    #| ========================================================================= #|
+    livenessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 60
+      periodSeconds: 15
+      failureThreshold: 5
+      timeoutSeconds: 10
+
+    readinessProbe:
+      httpGet:
+        path: /api/healthz
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+
+    #| ========================================================================= #|
+    #| Service Account and RBAC                                                   #|
+    #| ========================================================================= #|
+    serviceAccount:
+      create: true
+      name: obot
+
+    rbac:
+      create: true
+
+#% if network_policies_enabled | default(false) %#
+    #| ========================================================================= #|
+    #| Network Policy Labels                                                      #|
+    #| ========================================================================= #|
+    podLabels:
+      network.cilium.io/api-access: "true"
+#% endif %#
+#% endif %#

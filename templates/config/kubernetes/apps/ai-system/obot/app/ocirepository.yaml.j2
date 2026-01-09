@@ -1,0 +1,23 @@
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| OBOT OCI REPOSITORY - Custom Helm chart from jrmatherly/obot-entraid         #|
+#| Chart version: 0.2.23 (chart may lag app version)                            #|
+#| REF: https://github.com/jrmatherly/obot-entraid                               #|
+#| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                   #|
+#| ============================================================================= #|
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: obot
+  namespace: ai-system
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    #| Chart version - use latest stable from jrmatherly/obot-entraid #|
+    tag: #{ obot_chart_version | default('0.2.23') }#
+  url: oci://ghcr.io/jrmatherly/charts/obot
+#% endif %#

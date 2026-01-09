@@ -441,6 +441,50 @@ Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
 - When set, new users via SSO are automatically assigned to default org/project with these roles
 - See https://langfuse.com/self-hosting/administration/automated-access-provisioning for details
 
+Optional Obot MCP Gateway (AI Agent Platform):
+- `obot_enabled` - Enable Obot deployment (jrmatherly/obot-entraid Helm chart)
+- `obot_subdomain` - Subdomain (default: "obot", creates obot.${cloudflare_domain})
+- `obot_version` - Obot image version (default: "0.2.30")
+- `obot_replicas` - Pod replicas (default: 1)
+- `obot_db_password` - SOPS-encrypted PostgreSQL password
+- `obot_encryption_key` - SOPS-encrypted 32-byte hex key for data encryption (generate with: openssl rand -hex 32)
+- When obot_enabled, derives: `obot_hostname`
+- Requires `cnpg_enabled: true` for PostgreSQL database with pgvector
+- See `docs/research/obot-mcp-gateway-integration-jan-2026.md` for setup guide
+
+Optional Obot Keycloak SSO (requires keycloak_enabled):
+- `obot_keycloak_enabled` - Enable Keycloak authentication (default: false)
+- `obot_keycloak_client_id` - OIDC client ID (default: "obot")
+- `obot_keycloak_client_secret` - SOPS-encrypted OIDC client secret
+- `obot_keycloak_cookie_secret` - SOPS-encrypted cookie encryption key (generate with: openssl rand -base64 32)
+- `obot_keycloak_allowed_groups` - Optional comma-separated group restrictions
+- `obot_keycloak_allowed_roles` - Optional comma-separated role restrictions
+- When enabled, creates `obot` client in Keycloak realm-config with PKCE S256
+- Uses custom auth provider from jrmatherly/obot-entraid fork
+
+Optional Obot MCP Namespace (Kubernetes MCP server hosting):
+- `obot_mcp_namespace` - Namespace for MCP server pods (default: "obot-mcp")
+- `obot_mcp_cpu_requests_quota`, `obot_mcp_cpu_limits_quota` - CPU quotas (default: "4", "8")
+- `obot_mcp_memory_requests_quota`, `obot_mcp_memory_limits_quota` - Memory quotas (default: "8Gi", "16Gi")
+- `obot_mcp_max_pods` - Maximum MCP server pods (default: 20)
+- `obot_mcp_default_cpu_request`, `obot_mcp_default_cpu_limit` - Default container CPU (default: "100m", "500m")
+- `obot_mcp_default_memory_request`, `obot_mcp_default_memory_limit` - Default container memory (default: "256Mi", "512Mi")
+- `obot_mcp_max_cpu`, `obot_mcp_max_memory` - Max container resources (default: "1000m", "1Gi")
+- MCP namespace uses restricted Pod Security Standards
+
+Optional Obot PostgreSQL Backup (requires RustFS):
+- `obot_s3_access_key`, `obot_s3_secret_key` - SOPS-encrypted S3 credentials
+- When configured with rustfs_enabled, `obot_backup_enabled=true` (derived in plugin.py)
+- Uses CNPG barmanObjectStore with continuous WAL archiving
+
+Optional Obot Observability (requires monitoring/tracing):
+- `obot_monitoring_enabled` - Deploy ServiceMonitor for Prometheus metrics + Grafana dashboard
+- `obot_tracing_enabled` - Enable trace export to Tempo via OTLP gRPC
+
+Optional Obot LiteLLM Integration (requires litellm_enabled):
+- `obot_litellm_enabled` - Use LiteLLM as model gateway (default: true when litellm_enabled)
+- When enabled, configures Obot to route LLM requests through internal LiteLLM proxy
+
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
@@ -503,6 +547,16 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `langfuse_backup_enabled` - true when rustfs_enabled + langfuse_backup_enabled + langfuse S3 credentials all set
 - `langfuse_monitoring_enabled` - true when monitoring_enabled + langfuse_monitoring_enabled both true
 - `langfuse_tracing_enabled` - true when tracing_enabled + langfuse_tracing_enabled both true
+- `obot_enabled` - true when obot_enabled is explicitly set to true
+- `obot_hostname` - auto-derived from obot_subdomain + cloudflare_domain
+- `obot_keycloak_enabled` - true when keycloak_enabled + obot_keycloak_enabled + obot_keycloak_client_secret all set
+- `obot_keycloak_base_url` - auto-derived Keycloak base URL (without /realms/)
+- `obot_keycloak_issuer_url` - auto-derived OIDC issuer URL
+- `obot_keycloak_realm` - auto-derived from keycloak_realm
+- `obot_backup_enabled` - true when rustfs_enabled + obot S3 credentials set
+- `obot_monitoring_enabled` - true when monitoring_enabled + obot_monitoring_enabled both true
+- `obot_tracing_enabled` - true when tracing_enabled + obot_tracing_enabled both true
+- `obot_litellm_enabled` - true when litellm_enabled + obot_litellm_enabled both true
 
 See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -568,6 +622,11 @@ Deep context in `docs/ai-context/`:
 | Langfuse worker issues | `kubectl -n ai-system logs -l app.kubernetes.io/component=worker` |
 | Langfuse DB connection | `kubectl -n ai-system exec -it langfuse-postgresql-1 -- psql -U langfuse -c "SELECT 1"` |
 | Langfuse ClickHouse | `kubectl -n ai-system logs -l app.kubernetes.io/name=clickhouse` |
+| Obot not ready | `kubectl get pods -n ai-system -l app.kubernetes.io/name=obot`, `kubectl -n ai-system logs -l app.kubernetes.io/name=obot` |
+| Obot DB connection | `kubectl -n ai-system exec -it obot-postgresql-1 -- psql -U obot -d obot -c "SELECT 1"` |
+| Obot Keycloak auth | `kubectl -n ai-system logs -l app.kubernetes.io/name=obot` (check OBOT_KEYCLOAK_AUTH_PROVIDER_* env vars) |
+| MCP namespace issues | `kubectl get pods -n obot-mcp`, `kubectl get resourcequota -n obot-mcp` |
+| MCP server network issues | `hubble observe -n obot-mcp --verdict DROPPED`, `kubectl get cnp -n obot-mcp` |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 

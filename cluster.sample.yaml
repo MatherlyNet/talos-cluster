@@ -1385,23 +1385,27 @@ cloudflare_gateway_addr: ""
 # litellm_oidc_client_secret: ""
 
 # =============================================================================
-# LITELLM POSTGRESQL BACKUPS (RustFS S3)
+# LITELLM POSTGRESQL BACKUPS (requires rustfs_enabled: true)
 # =============================================================================
-# Enable PostgreSQL backups to RustFS S3 storage.
 # Uses CloudNativePG barmanObjectStore for continuous WAL archiving.
-# Requires rustfs_enabled: true
+# The RustFS bucket setup job automatically creates the 'litellm-backups' bucket.
+# Credentials must be created via RustFS Console UI (Identity -> Users).
+# REQUIRES: rustfs_enabled: true
+# REF: docs/ai-context/litellm.md#rustfs-iam-setup-principle-of-least-privilege
+# -----------------------------------------------------------------------------
 
 # -- Enable PostgreSQL backups to RustFS
 #    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
 # litellm_backup_enabled: false
 
-# -- S3 access key for backups (created via RustFS Console)
+# -- S3 access key for PostgreSQL backups (SOPS-encrypted)
 #    Create policy 'litellm-storage' scoped to litellm-backups bucket
-#    Create user 'litellm-backup' with litellm-storage policy
+#    Create 'ai-system' group with litellm-storage policy (if not exists)
+#    Create user 'litellm-backup' in ai-system group
 #    (REQUIRED when litellm_backup_enabled: true)
 # litellm_s3_access_key: ""
 
-# -- S3 secret key for backups (SOPS-encrypted)
+# -- S3 secret key for PostgreSQL backups (SOPS-encrypted)
 #    (REQUIRED when litellm_backup_enabled: true)
 # litellm_s3_secret_key: ""
 
@@ -1887,6 +1891,244 @@ cloudflare_gateway_addr: ""
 #    When set, new users get this role on all projects in default org
 #    (OPTIONAL) / (DEFAULT: not set - no project access by default)
 # langfuse_default_project_role: "VIEWER"
+
+# =============================================================================
+# OBOT MCP GATEWAY - AI Agent Platform with MCP Server Hosting
+# =============================================================================
+# Obot provides an AI agent platform with Model Context Protocol (MCP) server
+# orchestration for enhanced AI capabilities. This deployment uses the custom
+# jrmatherly/obot-entraid fork which adds Keycloak authentication support.
+# REF: https://docs.obot.ai/
+# REF: https://github.com/jrmatherly/obot-entraid
+# REF: docs/research/obot-mcp-gateway-integration-jan-2026.md
+# REQUIRES: cnpg_enabled: true (PostgreSQL with pgvector)
+# -----------------------------------------------------------------------------
+#
+# ARCHITECTURE:
+#   - Main Obot pod runs in ai-system namespace
+#   - MCP servers spawn dynamically in dedicated obot-mcp namespace
+#   - PostgreSQL 17+ with pgvector for AI/ML workloads
+#   - Keycloak SSO via custom auth provider (OBOT_KEYCLOAK_AUTH_PROVIDER_*)
+#   - Optional integration with internal LiteLLM for model routing
+#
+# DEPENDENCIES:
+#   - cnpg_enabled: true (CloudNativePG operator for PostgreSQL)
+#   - cnpg_pgvector_enabled: true (pgvector extension for embeddings)
+#   - keycloak_enabled: true (for Keycloak SSO, optional but recommended)
+#   - litellm_enabled: true (for model gateway integration, optional)
+#   - rustfs_enabled: true (for PostgreSQL backups, optional)
+#
+# SETUP WORKFLOW:
+#   1. Enable cnpg_enabled: true and cnpg_pgvector_enabled: true
+#   2. Set obot_enabled: true and required credentials below
+#   3. Configure Keycloak SSO (recommended for production)
+#   4. Run 'task configure' and 'task reconcile'
+#   5. Access Obot at https://obot.<your-domain>
+
+# -- Enable Obot MCP Gateway
+#    (OPTIONAL) / (DEFAULT: false)
+# obot_enabled: false
+
+# -- Obot subdomain (creates obot.<cloudflare_domain>)
+#    (OPTIONAL) / (DEFAULT: "obot")
+# obot_subdomain: "obot"
+
+# -- Obot image version tag
+#    Uses jrmatherly/obot-entraid fork with Keycloak auth provider
+#    (OPTIONAL) / (DEFAULT: "0.2.30")
+# obot_version: "0.2.30"
+
+# -- Number of Obot pod replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# obot_replicas: 1
+
+# =============================================================================
+# OBOT POSTGRESQL DATABASE (CloudNativePG with pgvector)
+# =============================================================================
+# Obot requires PostgreSQL 17+ with pgvector extension for AI/ML workloads.
+# Uses CloudNativePG operator for automated HA and backup management.
+
+# -- PostgreSQL password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    (REQUIRED when obot_enabled: true)
+# obot_db_password: ""
+
+# -- PostgreSQL username
+#    (OPTIONAL) / (DEFAULT: "obot")
+# obot_postgres_user: "obot"
+
+# -- PostgreSQL database name
+#    (OPTIONAL) / (DEFAULT: "obot")
+# obot_postgres_db: "obot"
+
+# -- Number of PostgreSQL replicas (1=dev, 3+=production)
+#    (OPTIONAL) / (DEFAULT: 1)
+# obot_postgresql_replicas: 1
+
+# -- PostgreSQL PVC storage size
+#    (OPTIONAL) / (DEFAULT: "10Gi")
+# obot_postgresql_storage_size: "10Gi"
+
+# -- Obot data storage size (for file uploads, etc.)
+#    (OPTIONAL) / (DEFAULT: "20Gi")
+# obot_storage_size: "20Gi"
+
+# =============================================================================
+# OBOT ENCRYPTION
+# =============================================================================
+# Obot uses encryption for data at rest. This key must be 64 hex characters.
+
+# -- Data at rest encryption key (SOPS-encrypted)
+#    64-character hex string (256-bit key)
+#    Generate with: openssl rand -hex 32
+#    (REQUIRED when obot_enabled: true)
+# obot_encryption_key: ""
+
+# =============================================================================
+# OBOT KEYCLOAK SSO (requires keycloak_enabled: true)
+# =============================================================================
+# Uses custom Keycloak authentication provider from jrmatherly/obot-entraid fork.
+# Configures OBOT_KEYCLOAK_AUTH_PROVIDER_* environment variables automatically.
+# REF: https://github.com/jrmatherly/obot-entraid/tree/main/tools/keycloak-auth-provider
+# REQUIRES: keycloak_enabled: true
+# -----------------------------------------------------------------------------
+
+# -- Enable Keycloak SSO authentication
+#    When enabled, creates 'obot' client in Keycloak realm
+#    (OPTIONAL) / (DEFAULT: false)
+# obot_keycloak_enabled: false
+
+# -- OIDC client ID (registered in Keycloak)
+#    (OPTIONAL) / (DEFAULT: "obot")
+# obot_keycloak_client_id: "obot"
+
+# -- OIDC client secret (SOPS-encrypted)
+#    Generate in Keycloak or with: openssl rand -hex 32
+#    (REQUIRED when obot_keycloak_enabled: true)
+# obot_keycloak_client_secret: ""
+
+# -- Cookie encryption secret (SOPS-encrypted)
+#    Generate with: openssl rand -base64 32
+#    Must be at least 32 characters
+#    (REQUIRED when obot_keycloak_enabled: true)
+# obot_keycloak_cookie_secret: ""
+
+# -- Allowed groups (comma-separated, optional)
+#    Restricts access to users in specific Keycloak groups
+#    Leave empty to allow all authenticated users
+#    (OPTIONAL) / (e.g. "obot-users,obot-admins")
+# obot_keycloak_allowed_groups: ""
+
+# -- Allowed roles (comma-separated, optional)
+#    Restricts access to users with specific Keycloak roles
+#    Leave empty to allow all authenticated users
+#    (OPTIONAL) / (e.g. "obot-user,obot-admin")
+# obot_keycloak_allowed_roles: ""
+
+# =============================================================================
+# OBOT MCP NAMESPACE CONFIGURATION
+# =============================================================================
+# MCP servers spawn dynamically in a dedicated namespace with resource quotas
+# and network isolation. Pod Security Standards are set to 'restricted'.
+# -----------------------------------------------------------------------------
+
+# -- MCP server namespace name
+#    (OPTIONAL) / (DEFAULT: "obot-mcp")
+# obot_mcp_namespace: "obot-mcp"
+
+# -- Total CPU requests quota for MCP namespace
+#    (OPTIONAL) / (DEFAULT: "4")
+# obot_mcp_cpu_requests_quota: "4"
+
+# -- Total CPU limits quota for MCP namespace
+#    (OPTIONAL) / (DEFAULT: "8")
+# obot_mcp_cpu_limits_quota: "8"
+
+# -- Total memory requests quota for MCP namespace
+#    (OPTIONAL) / (DEFAULT: "8Gi")
+# obot_mcp_memory_requests_quota: "8Gi"
+
+# -- Total memory limits quota for MCP namespace
+#    (OPTIONAL) / (DEFAULT: "16Gi")
+# obot_mcp_memory_limits_quota: "16Gi"
+
+# -- Maximum number of MCP server pods
+#    (OPTIONAL) / (DEFAULT: "20")
+# obot_mcp_max_pods: "20"
+
+# -- Default CPU request per MCP container
+#    (OPTIONAL) / (DEFAULT: "100m")
+# obot_mcp_default_cpu_request: "100m"
+
+# -- Default CPU limit per MCP container
+#    (OPTIONAL) / (DEFAULT: "500m")
+# obot_mcp_default_cpu_limit: "500m"
+
+# -- Default memory request per MCP container
+#    (OPTIONAL) / (DEFAULT: "256Mi")
+# obot_mcp_default_memory_request: "256Mi"
+
+# -- Default memory limit per MCP container
+#    (OPTIONAL) / (DEFAULT: "512Mi")
+# obot_mcp_default_memory_limit: "512Mi"
+
+# -- Maximum CPU per MCP container
+#    (OPTIONAL) / (DEFAULT: "1000m")
+# obot_mcp_max_cpu: "1000m"
+
+# -- Maximum memory per MCP container
+#    (OPTIONAL) / (DEFAULT: "1Gi")
+# obot_mcp_max_memory: "1Gi"
+
+# =============================================================================
+# OBOT POSTGRESQL BACKUPS (requires rustfs_enabled: true)
+# =============================================================================
+# Uses CloudNativePG barmanObjectStore for continuous WAL archiving.
+# The RustFS bucket setup job automatically creates the 'obot-postgres-backups' bucket.
+# Credentials must be created via RustFS Console UI (Identity -> Users).
+# REQUIRES: rustfs_enabled: true
+# REF: docs/ai-context/obot.md#rustfs-iam-setup-principle-of-least-privilege
+# -----------------------------------------------------------------------------
+
+# -- S3 access key for PostgreSQL backups (SOPS-encrypted)
+#    Create policy 'obot-storage' scoped to obot-postgres-backups bucket
+#    Create 'ai-system' group with obot-storage policy (if not exists)
+#    Create user 'obot-backup' in ai-system group
+#    (REQUIRED when obot_enabled and rustfs_enabled: true)
+# obot_s3_access_key: ""
+
+# -- S3 secret key for PostgreSQL backups (SOPS-encrypted)
+#    (REQUIRED when obot_enabled and rustfs_enabled: true)
+# obot_s3_secret_key: ""
+
+# =============================================================================
+# OBOT OBSERVABILITY CONFIGURATION
+# =============================================================================
+# Optional monitoring and tracing integration.
+# REQUIRES: monitoring_enabled: true
+# REQUIRES: tracing_enabled: true
+# -----------------------------------------------------------------------------
+
+# -- Enable Prometheus ServiceMonitor and Grafana dashboards
+#    Requires monitoring_enabled: true
+#    (OPTIONAL) / (DEFAULT: false)
+# obot_monitoring_enabled: false
+
+# -- Enable OpenTelemetry tracing export to Tempo
+#    REQUIRES: tracing_enabled: true
+#    (OPTIONAL) / (DEFAULT: false)
+# obot_tracing_enabled: false
+
+# =============================================================================
+# OBOT LITELLM INTEGRATION
+# =============================================================================
+# Use internal LiteLLM as the model gateway for Obot AI capabilities.
+
+# -- Enable LiteLLM integration
+#    Routes Obot model requests through internal LiteLLM proxy
+#    Requires litellm_enabled: true
+#    (OPTIONAL) / (DEFAULT: false)
+# obot_litellm_enabled: false
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3
