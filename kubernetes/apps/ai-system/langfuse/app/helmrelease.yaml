@@ -41,15 +41,16 @@ spec:
           name: langfuse-credentials
           key: ENCRYPTION_KEY
 
+      logging:
+        level: "info"
+        format: "json"
+
+      features:
+        signUpDisabled: true
+
       additionalEnv:
-        - name: LANGFUSE_LOG_LEVEL
-          value: "info"
-        - name: LANGFUSE_LOG_FORMAT
-          value: "json"
         - name: NEXTAUTH_COOKIE_DOMAIN
           value: "langfuse.matherly.net"
-        - name: AUTH_DISABLE_SIGNUP
-          value: "true"
         - name: AUTH_DISABLE_USERNAME_PASSWORD
           value: "true"
         - name: LANGFUSE_INIT_ORG_ID

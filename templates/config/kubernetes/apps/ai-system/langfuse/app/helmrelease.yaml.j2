@@ -53,18 +53,24 @@ spec:
           key: ENCRYPTION_KEY
 
       #| ======================================================================= #|
+      #| Logging Configuration (via Helm chart values, not additionalEnv)       #|
+      #| REF: https://langfuse.com/self-hosting/configuration                   #|
+      #| ======================================================================= #|
+      logging:
+        level: "#{ langfuse_log_level | default('info') }#"
+        format: "#{ langfuse_log_format | default('text') }#"
+
+      #| ======================================================================= #|
+      #| Feature Flags (via Helm chart values, not additionalEnv)               #|
+      #| ======================================================================= #|
+      features:
+        signUpDisabled: #{ langfuse_disable_signup | default(false) | lower }#
+
+      #| ======================================================================= #|
       #| Additional Environment Variables                                       #|
-      #| Runtime configuration for logging, auth, caching, and initialization   #|
+      #| Only for variables NOT supported by Helm chart values                  #|
       #| ======================================================================= #|
       additionalEnv:
-        #| ===================================================================== #|
-        #| Logging Configuration                                                #|
-        #| REF: https://langfuse.com/self-hosting/configuration                 #|
-        #| ===================================================================== #|
-        - name: LANGFUSE_LOG_LEVEL
-          value: "#{ langfuse_log_level | default('info') }#"
-        - name: LANGFUSE_LOG_FORMAT
-          value: "#{ langfuse_log_format | default('text') }#"
         #| ===================================================================== #|
         #| Authentication Configuration                                         #|
         #| Cookie domain isolation prevents session collision with Gateway OIDC #|
@@ -75,11 +81,6 @@ spec:
 #% if langfuse_session_max_age | default('') %#
         - name: AUTH_SESSION_MAX_AGE
           value: "#{ langfuse_session_max_age }#"
-#% endif %#
-#% if langfuse_disable_signup | default(false) %#
-        #| Disable self-registration when using SSO as primary auth #|
-        - name: AUTH_DISABLE_SIGNUP
-          value: "true"
 #% endif %#
 #% if langfuse_disable_password_auth | default(false) %#
         #| Disable username/password auth (SSO-only mode) #|
