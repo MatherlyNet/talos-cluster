@@ -1492,10 +1492,18 @@
       "maximum": 31536000,
       "description": "Langfuse Session Configuration (optional)"
     },
+    "langfuse_init_org_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Langfuse Headless Initialization (optional) Bootstrap initial admin account for GitOps/non-interactive deployments REF: https://langfuse.com/self-hosting/headless-initialization NOTE: langfuse_init_org_id is REQUIRED when using headless initialization"
+    },
+    "langfuse_init_org_name": {
+      "type": "string",
+      "minLength": 1
+    },
     "langfuse_init_user_email": {
       "type": "string",
-      "pattern": "^[^@]+@[^@]+$",
-      "description": "Langfuse Headless Initialization (optional) Bootstrap initial admin account for GitOps/non-interactive deployments REF: https://langfuse.com/self-hosting/headless-initialization"
+      "pattern": "^[^@]+@[^@]+$"
     },
     "langfuse_init_user_password": {
       "type": "string",
@@ -1503,10 +1511,6 @@
     },
     "langfuse_init_user_name": {
       "default": "Admin",
-      "type": "string",
-      "minLength": 1
-    },
-    "langfuse_init_org_name": {
       "type": "string",
       "minLength": 1
     },

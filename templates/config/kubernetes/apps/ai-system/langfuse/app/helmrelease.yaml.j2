@@ -52,13 +52,24 @@ spec:
           name: langfuse-credentials
           key: ENCRYPTION_KEY
 
-#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') %#
+#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') and langfuse_init_org_id | default('') %#
       #| ======================================================================= #|
       #| Headless Initialization - Bootstrap Initial Admin                      #|
       #| Creates admin account on first startup; credentials used only once     #|
       #| REF: https://langfuse.com/self-hosting/headless-initialization         #|
       #| ======================================================================= #|
       additionalEnv:
+        #| Organization ID - Required for headless initialization #|
+        - name: LANGFUSE_INIT_ORG_ID
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_ORG_ID
+        - name: LANGFUSE_INIT_ORG_NAME
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_ORG_NAME
         #| Initial admin user credentials (from SOPS-encrypted secret) #|
         - name: LANGFUSE_INIT_USER_EMAIL
           valueFrom:
@@ -75,11 +86,6 @@ spec:
             secretKeyRef:
               name: langfuse-init-credentials
               key: LANGFUSE_INIT_USER_NAME
-        - name: LANGFUSE_INIT_ORG_NAME
-          valueFrom:
-            secretKeyRef:
-              name: langfuse-init-credentials
-              key: LANGFUSE_INIT_ORG_NAME
 #% if langfuse_disable_signup | default(false) %#
         #| Disable self-registration when using SSO as primary auth #|
         - name: AUTH_DISABLE_SIGNUP

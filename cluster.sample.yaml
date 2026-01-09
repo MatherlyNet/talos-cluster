@@ -1717,6 +1717,13 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "Admin")
 # langfuse_init_user_name: "Admin"
 
+# -- Initial organization ID (Required for headless initialization)
+#    Must be a valid UUID v4. Generate with: uuidgen | tr '[:upper:]' '[:lower:]'
+#    This ID uniquely identifies the organization in Langfuse.
+#    Cannot be auto-generated - must be explicitly provided.
+#    (REQUIRED when using headless initialization)
+# langfuse_init_org_id: ""
+
 # -- Initial organization name
 #    The admin user is created as OWNER of this organization.
 #    (OPTIONAL) / (DEFAULT: cluster_name or "Langfuse")

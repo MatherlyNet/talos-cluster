@@ -548,10 +548,12 @@ import (
 	// Langfuse Headless Initialization (optional)
 	// Bootstrap initial admin account for GitOps/non-interactive deployments
 	// REF: https://langfuse.com/self-hosting/headless-initialization
+	// NOTE: langfuse_init_org_id is REQUIRED when using headless initialization
+	langfuse_init_org_id?:        string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"  // Organization UUID (required)
+	langfuse_init_org_name?:      string & !=""               // Initial organization name
 	langfuse_init_user_email?:    string & =~"^[^@]+@[^@]+$"  // Admin email address
 	langfuse_init_user_password?: string & =~".{16,}"         // Minimum 16 characters (SOPS-encrypted)
 	langfuse_init_user_name?:     *"Admin" | string & !=""    // Admin display name
-	langfuse_init_org_name?:      string & !=""               // Initial organization name
 	langfuse_disable_signup?:     *false | bool               // Disable public registration after setup
 
 	// Langfuse Auto-Provisioning (optional)
