@@ -37,6 +37,8 @@ spec:
     #| BullMQ compatibility: allow Lua scripts to access undeclared keys #|
     #| REF: https://www.dragonflydb.io/docs/integrations/bullmq #|
     - --default_lua_flags=allow-undeclared-keys
+    #| BullMQ requires noeviction to prevent job data loss #|
+    - --maxmemory_policy=noeviction
 #% if dragonfly_cache_mode | default(false) %#
     #| Cache mode enables LRU-like eviction when near maxmemory #|
     - --cache_mode=true
