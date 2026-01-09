@@ -41,6 +41,32 @@ spec:
           name: langfuse-credentials
           key: ENCRYPTION_KEY
 
+      additionalEnv:
+        - name: LANGFUSE_INIT_USER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_USER_EMAIL
+        - name: LANGFUSE_INIT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_USER_PASSWORD
+        - name: LANGFUSE_INIT_USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_USER_NAME
+        - name: LANGFUSE_INIT_ORG_NAME
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_ORG_NAME
+        - name: AUTH_DISABLE_SIGNUP
+          value: "true"
+        - name: LANGFUSE_DEFAULT_ORG_ROLE
+          value: "VIEWER"
+
       auth:
         disableUsernamePassword: false
         additionalProviders:

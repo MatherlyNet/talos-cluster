@@ -1118,6 +1118,7 @@ cloudflare_gateway_addr: ""
 #    Controls when cookies are sent with cross-site requests
 #    Options: "Strict", "Lax", "None"
 #    (OPTIONAL) / (DEFAULT: "Lax" - browser default)
+#    NOTE: Not yet in Envoy Gateway v1alpha1 schema - uncomment when supported
 # oidc_cookie_samesite: "Lax"
 
 # -- Enable automatic token refresh (v1.6+ feature)
@@ -1125,6 +1126,7 @@ cloudflare_gateway_addr: ""
 #    NOTE: v1.6+ defaults to true (breaking change from v1.5)
 #    Set to false to disable automatic refresh
 #    (OPTIONAL) / (DEFAULT: true in v1.6+)
+#    NOTE: Not yet in Envoy Gateway v1alpha1 schema - uncomment when supported
 # oidc_refresh_token: true
 
 # -- Path that triggers logout flow
@@ -1688,6 +1690,67 @@ cloudflare_gateway_addr: ""
 # -- Langfuse Helm chart version
 #    (OPTIONAL) / (DEFAULT: "*" for latest)
 # langfuse_chart_version: "*"
+
+# =============================================================================
+# LANGFUSE INITIAL ADMIN USER (Headless Initialization)
+# =============================================================================
+# -----------------------------------------------------------------------------
+# Langfuse Headless Initialization (GitOps Bootstrap)
+# REF: https://langfuse.com/self-hosting/headless-initialization
+# Bootstrap an initial admin account for GitOps/non-interactive deployments.
+# When both email and password are configured, Langfuse auto-creates the admin
+# on first startup (idempotent - only creates if not exists).
+# -----------------------------------------------------------------------------
+
+# -- Initial admin user email address
+#    Used for login and password recovery.
+#    (OPTIONAL - but required for headless initialization)
+# langfuse_init_user_email: "admin@example.com"
+
+# -- Initial admin user password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24
+#    Minimum 16 characters for security.
+#    (OPTIONAL - but required for headless initialization)
+# langfuse_init_user_password: ""
+
+# -- Initial admin user display name
+#    (OPTIONAL) / (DEFAULT: "Admin")
+# langfuse_init_user_name: "Admin"
+
+# -- Initial organization name
+#    The admin user is created as OWNER of this organization.
+#    (OPTIONAL) / (DEFAULT: cluster_name or "Langfuse")
+# langfuse_init_org_name: ""
+
+# -- Disable new user signups (security hardening)
+#    Set to true when using SSO as primary authentication
+#    Prevents self-registration; only SSO or admin-created accounts allowed
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_disable_signup: false
+
+# =============================================================================
+# LANGFUSE AUTO-PROVISIONING (Default Access for New SSO Users)
+# =============================================================================
+# -----------------------------------------------------------------------------
+# Langfuse Auto-Provisioning (SSO Default Roles)
+# REF: https://langfuse.com/docs/rbac
+# REF: https://langfuse.com/self-hosting/automated-provisioning
+# Configure default roles for users created via SSO (Keycloak OIDC).
+# These apply when a user logs in via SSO for the first time.
+# -----------------------------------------------------------------------------
+
+# -- Default organization role for new users via SSO
+#    Roles: OWNER, ADMIN, MEMBER, VIEWER, NONE (no org access)
+#    VIEWER = read-only access to organization and projects
+#    NONE = must be explicitly granted project-level access
+#    (OPTIONAL) / (DEFAULT: not set - users must be manually added)
+# langfuse_default_org_role: "VIEWER"
+
+# -- Default project role for new users via SSO
+#    Roles: OWNER, ADMIN, MEMBER, VIEWER
+#    When set, new users get this role on all projects in default org
+#    (OPTIONAL) / (DEFAULT: not set - no project access by default)
+# langfuse_default_project_role: "VIEWER"
 
 # =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3

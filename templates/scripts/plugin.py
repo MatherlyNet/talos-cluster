@@ -600,6 +600,17 @@ class Plugin(makejinja.plugin.Plugin):
             data.setdefault("langfuse_web_replicas", 1)
             data.setdefault("langfuse_worker_replicas", 1)
 
+            # Headless initialization defaults
+            # Default admin display name
+            data.setdefault("langfuse_init_user_name", "Admin")
+            # Default org name derived from cluster_name
+            data.setdefault(
+                "langfuse_init_org_name",
+                data.get("cluster_name", "Langfuse")
+            )
+            # Disable signup defaults to false (allow signups unless explicitly disabled)
+            data.setdefault("langfuse_disable_signup", False)
+
             # Langfuse SSO - Keycloak OIDC integration
             # Requires keycloak_enabled and explicit enable with client secret
             langfuse_sso_enabled = (

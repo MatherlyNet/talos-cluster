@@ -1009,6 +1009,55 @@ stringData:
 # -- Enable JWT protection on HTTPRoute (requires OIDC)
 #    (OPTIONAL) / (DEFAULT: false)
 # langfuse_jwt_protected: false
+
+# =============================================================================
+# LANGFUSE INITIAL ADMIN USER (Headless Initialization)
+# =============================================================================
+# Bootstrap the initial admin account on first startup.
+# These credentials are only used once - change via UI after first login.
+# REF: https://langfuse.com/self-hosting/headless-initialization
+
+# -- Initial admin email address
+#    (REQUIRED for headless initialization)
+# langfuse_init_user_email: "admin@example.com"
+
+# -- Initial admin password (SOPS-encrypted)
+#    Generate with: openssl rand -base64 24 | tr -d '/+=' | head -c 24
+#    (REQUIRED for headless initialization)
+# langfuse_init_user_password: ""
+
+# -- Initial admin display name
+#    (OPTIONAL) / (DEFAULT: "Admin")
+# langfuse_init_user_name: "Admin"
+
+# -- Initial organization name
+#    (OPTIONAL) / (DEFAULT: derived from cluster_name)
+# langfuse_init_org_name: "MatherlyNet"
+
+# -- Disable new user signups (security hardening)
+#    Set to true when using SSO as primary authentication
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_disable_signup: false
+
+# =============================================================================
+# LANGFUSE AUTO-PROVISIONING (Default Access for New SSO Users)
+# =============================================================================
+# Automatically assign new users to default organization/project with roles.
+# When SSO users log in for the first time, they receive these permissions.
+# REF: https://langfuse.com/self-hosting/automated-provisioning
+
+# -- Default organization role for new users via SSO
+#    Roles: OWNER, ADMIN, MEMBER, VIEWER, NONE (no org access)
+#    VIEWER = read-only access to organization and projects
+#    NONE = must be explicitly granted project-level access
+#    (OPTIONAL) / (DEFAULT: not set - users must be manually added)
+# langfuse_default_org_role: "VIEWER"
+
+# -- Default project role for new users via SSO
+#    Roles: OWNER, ADMIN, MEMBER, VIEWER
+#    When set, new users get this role on all projects in default org
+#    (OPTIONAL) / (DEFAULT: not set - no project access by default)
+# langfuse_default_project_role: "VIEWER"
 ```
 
 ### Derived Variables (plugin.py additions)
@@ -1946,3 +1995,266 @@ After deployment, verify the following:
    kubectl -n cache run redis-test --rm -i --restart=Never --image=redis:7-alpine -- \
      redis-cli -h dragonfly.cache.svc.cluster.local --user langfuse -a PASSWORD INFO server
    ```
+
+---
+
+## Appendix F: Headless Initialization and Auto-Provisioning (January 2026)
+
+This appendix documents the implementation of Langfuse headless initialization and SSO auto-provisioning features, added to enable programmatic bootstrap of admin accounts and automatic role assignment for new SSO users.
+
+### Headless Initialization Overview
+
+Headless initialization allows bootstrapping an initial admin account on first startup without using the UI. This is essential for:
+- GitOps-based deployments where UI interaction is not possible
+- Automated CI/CD pipelines deploying Langfuse to multiple environments
+- Reproducible infrastructure-as-code deployments
+
+**Reference:** https://langfuse.com/self-hosting/headless-initialization
+
+### Environment Variables
+
+| Variable | Description | Required |
+| -------- | ----------- | -------- |
+| `LANGFUSE_INIT_USER_EMAIL` | Initial admin email address | Yes |
+| `LANGFUSE_INIT_USER_PASSWORD` | Initial admin password | Yes |
+| `LANGFUSE_INIT_USER_NAME` | Initial admin display name | No (default: "Admin") |
+| `LANGFUSE_INIT_ORG_NAME` | Initial organization name | No (default: cluster_name) |
+| `LANGFUSE_INIT_ORG_ID` | Custom organization ID | No |
+| `LANGFUSE_INIT_PROJECT_NAME` | Initial project name | No |
+| `LANGFUSE_INIT_PROJECT_ID` | Custom project ID | No |
+| `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` | Custom project public key | No |
+| `LANGFUSE_INIT_PROJECT_SECRET_KEY` | Custom project secret key | No |
+
+### Implementation
+
+The headless initialization credentials are stored in a SOPS-encrypted secret and injected as environment variables via the Helm chart's `additionalEnv` mechanism.
+
+**Secret Template (secret.sops.yaml.j2):**
+```yaml
+#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') %#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: langfuse-init-credentials
+  namespace: ai-system
+type: Opaque
+stringData:
+  LANGFUSE_INIT_USER_EMAIL: "#{ langfuse_init_user_email }#"
+  LANGFUSE_INIT_USER_PASSWORD: "#{ langfuse_init_user_password }#"
+  LANGFUSE_INIT_USER_NAME: "#{ langfuse_init_user_name | default('Admin') }#"
+  LANGFUSE_INIT_ORG_NAME: "#{ langfuse_init_org_name | default(cluster_name | default('Langfuse')) }#"
+#% endif %#
+```
+
+**HelmRelease Template (helmrelease.yaml.j2):**
+```yaml
+langfuse:
+  additionalEnv:
+    - name: LANGFUSE_INIT_USER_EMAIL
+      valueFrom:
+        secretKeyRef:
+          name: langfuse-init-credentials
+          key: LANGFUSE_INIT_USER_EMAIL
+    - name: LANGFUSE_INIT_USER_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: langfuse-init-credentials
+          key: LANGFUSE_INIT_USER_PASSWORD
+    # ... additional env vars
+```
+
+### SSO Auto-Provisioning
+
+When using SSO (Keycloak), new users can be automatically provisioned with default access levels. This eliminates manual user management for common access patterns.
+
+**Reference:** https://langfuse.com/self-hosting/automated-provisioning
+
+### Auto-Provisioning Environment Variables
+
+| Variable | Description | Values |
+| -------- | ----------- | ------ |
+| `LANGFUSE_DEFAULT_ORG_ROLE` | Default organization role for new SSO users | OWNER, ADMIN, MEMBER, VIEWER, NONE |
+| `LANGFUSE_DEFAULT_PROJECT_ROLE` | Default project role for new SSO users | OWNER, ADMIN, MEMBER, VIEWER |
+| `AUTH_DISABLE_SIGNUP` | Disable self-registration | true/false |
+
+### Role Definitions (RBAC)
+
+| Role | Organization Scope | Project Scope |
+| ---- | ------------------ | ------------- |
+| **OWNER** | Full control including delete, billing | Full control including delete |
+| **ADMIN** | Manage members, create projects | Manage project settings and members |
+| **MEMBER** | View organization | Create scores, datasets, prompts |
+| **VIEWER** | Read-only | Read-only |
+| **NONE** | No org access | N/A (org-level only) |
+
+**Reference:** https://langfuse.com/docs/administration/rbac
+
+### Security Recommendations
+
+1. **Initial Password**: Generate a strong initial password and change it via UI after first login
+   ```bash
+   openssl rand -base64 24 | tr -d '/+=' | head -c 24
+   ```
+
+2. **Disable Signup**: When using SSO as primary authentication, set `langfuse_disable_signup: true` to prevent self-registration
+
+3. **Role Selection**: For most deployments, use `VIEWER` as default to follow least-privilege principle
+   - `VIEWER` = read-only access (recommended for audit/compliance)
+   - `MEMBER` = can create resources (suitable for development teams)
+   - `NONE` = no automatic access (requires manual provisioning)
+
+### Verification
+
+After deployment, verify headless initialization:
+
+```bash
+# Check for init log messages
+kubectl -n ai-system logs -l app.kubernetes.io/component=web --tail=50 | grep -i init
+
+# Verify user was created (check database)
+kubectl -n ai-system exec -it langfuse-postgresql-1 -- psql -U langfuse -c "SELECT email FROM users;"
+
+# Verify organization was created
+kubectl -n ai-system exec -it langfuse-postgresql-1 -- psql -U langfuse -c "SELECT name FROM organizations;"
+```
+
+### Additional Enhancement Opportunities
+
+Based on research of the Langfuse documentation (January 2026), the following additional features could be implemented in future phases:
+
+#### 1. Direct SSO Provider Configuration (Alternative to Keycloak)
+
+Langfuse supports direct integration with multiple SSO providers without requiring Keycloak as an intermediary:
+
+| Provider | Environment Variables |
+| -------- | -------------------- |
+| Google | `AUTH_GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_CLIENT_SECRET`, `AUTH_GOOGLE_ALLOWED_DOMAINS` |
+| GitHub | `AUTH_GITHUB_CLIENT_ID`, `AUTH_GITHUB_CLIENT_SECRET` |
+| Azure AD | `AUTH_AZURE_AD_CLIENT_ID`, `AUTH_AZURE_AD_CLIENT_SECRET`, `AUTH_AZURE_AD_TENANT_ID` |
+| Okta | `AUTH_OKTA_CLIENT_ID`, `AUTH_OKTA_CLIENT_SECRET`, `AUTH_OKTA_ISSUER` |
+| Custom OIDC | `AUTH_CUSTOM_CLIENT_ID`, `AUTH_CUSTOM_CLIENT_SECRET`, `AUTH_CUSTOM_ISSUER`, `AUTH_CUSTOM_NAME` |
+
+**Use Case:** For simpler deployments without a dedicated identity provider, direct SSO integration reduces complexity.
+
+#### 2. SSO Domain Enforcement
+
+Force specific email domains to use SSO only (disable password auth for those domains):
+
+```yaml
+# Environment variable
+AUTH_DOMAINS_WITH_SSO_ENFORCEMENT: "matherly.net,company.com"
+```
+
+#### 3. Account Linking
+
+Allow automatic linking of accounts with the same email across different auth methods:
+
+```yaml
+# Enable for Keycloak provider
+AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: true
+```
+
+**Caution:** This can be a security risk if email verification is not enforced.
+
+#### 4. IdP-Initiated SSO
+
+Support for SSO flows initiated from the identity provider (e.g., Okta app catalog):
+
+```
+https://langfuse.${cloudflare_domain}/auth/sso-initiate?provider=KEYCLOAK
+```
+
+**Reference:** https://langfuse.com/self-hosting/security/authentication-and-sso#idp-initiated-sso
+
+#### 5. HTTP Proxy for SSO
+
+If the cluster requires proxy access to external identity providers:
+
+```yaml
+AUTH_HTTPS_PROXY: "http://proxy.internal:3128"
+```
+
+#### 6. Caching Configuration
+
+Fine-tune API key and prompt caching for performance:
+
+```yaml
+LANGFUSE_CACHE_API_KEY_TTL_SECONDS: 300    # Default: 300
+LANGFUSE_CACHE_PROMPT_TTL_SECONDS: 300     # Default: 300
+```
+
+#### 7. S3 Performance Tuning
+
+Adjust concurrent S3 operations for high-throughput deployments:
+
+```yaml
+LANGFUSE_S3_CONCURRENT_WRITES: 50   # Default: 50
+LANGFUSE_S3_CONCURRENT_READS: 50    # Default: 50
+```
+
+### Implementation Status
+
+| Feature | Status | Notes |
+| ------- | ------ | ----- |
+| Headless Initialization | ✅ Implemented | cluster.yaml variables, secret template, HelmRelease additionalEnv |
+| Auto-Provisioning | ✅ Implemented | Default org/project roles for SSO users |
+| Disable Signup | ✅ Implemented | AUTH_DISABLE_SIGNUP via additionalEnv |
+| Direct SSO Providers | 🔮 Future | Could add as alternative to Keycloak |
+| Domain SSO Enforcement | 🔮 Future | Requires AUTH_DOMAINS_WITH_SSO_ENFORCEMENT |
+| Account Linking | 🔮 Future | Requires AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING |
+| IdP-Initiated SSO | 🔮 Future | Requires Keycloak app configuration |
+
+---
+
+## Appendix G: Files Modified (Headless Initialization Implementation)
+
+### cluster.yaml
+
+Added new variables in the Langfuse section:
+- `langfuse_init_user_email` - Initial admin email
+- `langfuse_init_user_password` - Initial admin password (SOPS-encrypted)
+- `langfuse_init_user_name` - Initial admin display name
+- `langfuse_init_org_name` - Initial organization name
+- `langfuse_disable_signup` - Disable new user signups
+- `langfuse_default_org_role` - Default org role for SSO users
+- `langfuse_default_project_role` - Default project role for SSO users
+
+### templates/config/kubernetes/apps/ai-system/langfuse/app/secret.sops.yaml.j2
+
+Added new secret for init credentials:
+```yaml
+#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') %#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: langfuse-init-credentials
+  namespace: ai-system
+...
+#% endif %#
+```
+
+### templates/config/kubernetes/apps/ai-system/langfuse/app/helmrelease.yaml.j2
+
+Added `additionalEnv` section under `langfuse:` values:
+- LANGFUSE_INIT_USER_EMAIL (secretKeyRef)
+- LANGFUSE_INIT_USER_PASSWORD (secretKeyRef)
+- LANGFUSE_INIT_USER_NAME (secretKeyRef)
+- LANGFUSE_INIT_ORG_NAME (secretKeyRef)
+- AUTH_DISABLE_SIGNUP (conditional)
+- LANGFUSE_DEFAULT_ORG_ROLE (conditional)
+- LANGFUSE_DEFAULT_PROJECT_ROLE (conditional)
+
+### templates/scripts/plugin.py
+
+Added default values for headless initialization:
+- `langfuse_init_user_name` → "Admin"
+- `langfuse_init_org_name` → cluster_name
+- `langfuse_disable_signup` → False
+
+### CLAUDE.md
+
+Updated documentation with new sections:
+- "Optional Langfuse Headless Initialization"
+- "Optional Langfuse Auto-Provisioning"

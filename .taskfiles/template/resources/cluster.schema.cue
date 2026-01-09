@@ -544,6 +544,21 @@ import (
 
 	// Langfuse Session Configuration (optional)
 	langfuse_session_max_age?: *2592000 | int & >=3600 & <=31536000  // Session duration in seconds (1h to 1y)
+
+	// Langfuse Headless Initialization (optional)
+	// Bootstrap initial admin account for GitOps/non-interactive deployments
+	// REF: https://langfuse.com/self-hosting/headless-initialization
+	langfuse_init_user_email?:    string & =~"^[^@]+@[^@]+$"  // Admin email address
+	langfuse_init_user_password?: string & =~".{16,}"         // Minimum 16 characters (SOPS-encrypted)
+	langfuse_init_user_name?:     *"Admin" | string & !=""    // Admin display name
+	langfuse_init_org_name?:      string & !=""               // Initial organization name
+	langfuse_disable_signup?:     *false | bool               // Disable public registration after setup
+
+	// Langfuse Auto-Provisioning (optional)
+	// Default roles for SSO users without existing accounts
+	// REF: https://langfuse.com/docs/rbac
+	langfuse_default_org_role?:     *"VIEWER" | "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" | "NONE"
+	langfuse_default_project_role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
 }
 
 #Config

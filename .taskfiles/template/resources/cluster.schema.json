@@ -1491,6 +1491,42 @@
       "minimum": 3600,
       "maximum": 31536000,
       "description": "Langfuse Session Configuration (optional)"
+    },
+    "langfuse_init_user_email": {
+      "type": "string",
+      "pattern": "^[^@]+@[^@]+$",
+      "description": "Langfuse Headless Initialization (optional) Bootstrap initial admin account for GitOps/non-interactive deployments REF: https://langfuse.com/self-hosting/headless-initialization"
+    },
+    "langfuse_init_user_password": {
+      "type": "string",
+      "pattern": ".{16,}"
+    },
+    "langfuse_init_user_name": {
+      "default": "Admin",
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_init_org_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_disable_signup": {
+      "default": false,
+      "type": "boolean"
+    },
+    "langfuse_default_org_role": {
+      "default": "VIEWER",
+      "type": "string",
+      "description": "Langfuse Auto-Provisioning (optional) Default roles for SSO users without existing accounts REF: https://langfuse.com/docs/rbac"
+    },
+    "langfuse_default_project_role": {
+      "type": "string",
+      "enum": [
+        "OWNER",
+        "ADMIN",
+        "MEMBER",
+        "VIEWER"
+      ]
     }
   },
   "required": [

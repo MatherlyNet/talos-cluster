@@ -349,6 +349,15 @@ kubernetes_version: "1.35.0"
 # langfuse_smtp_url: "smtp://user:pass@mail.example.com:587"
 # langfuse_email_from: "noreply@example.com"
 # langfuse_session_max_age: 2592000
+# Langfuse Headless Initialization (GitOps bootstrap)
+# langfuse_init_user_email: "admin@example.com"
+# langfuse_init_user_password: "test-admin-password-16chars"
+# langfuse_init_user_name: "Admin"
+# langfuse_init_org_name: "MatherlyNet"
+# langfuse_disable_signup: false
+# Langfuse Auto-Provisioning (SSO default roles)
+# langfuse_default_org_role: "VIEWER"
+# langfuse_default_project_role: "VIEWER"
 
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"
