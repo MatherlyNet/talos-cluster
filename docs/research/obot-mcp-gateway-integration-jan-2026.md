@@ -1074,23 +1074,123 @@ spec:
 #% endif %#
 ```
 
-### MCP Namespace Resource Quotas
+### MCP Namespace Resource Quotas (mcp-policies/app/resourcequota.yaml.j2)
 
 ```yaml
-ResourceQuota:
-  requests.cpu: "4"
-  requests.memory: "8Gi"
-  limits.cpu: "8"
-  limits.memory: "16Gi"
-  pods: "20"
+#% if obot_enabled | default(false) %#
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: mcp-servers-quota
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+    pods: "20"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mcp-servers-limits
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "256Mi"
+      max:
+        cpu: "1000m"
+        memory: "1Gi"
+#% endif %#
+```
 
-LimitRange:
-  default:
-    cpu: "500m"
-    memory: "512Mi"
-  defaultRequest:
-    cpu: "100m"
-    memory: "256Mi"
+### RBAC for MCP Namespace (rbac.yaml.j2)
+
+The Obot service account in ai-system needs permissions to manage pods in the MCP namespace:
+
+```yaml
+#% if obot_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| Role - Obot MCP Manager                                                       #|
+#| Permissions for Obot to spawn and manage MCP server pods                      #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: obot-mcp-manager
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: rbac
+rules:
+  #| Pod management for MCP servers #|
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/exec"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| Services for MCP server communication #|
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| ConfigMaps and Secrets for MCP server configuration #|
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  #| Events for monitoring MCP server status #|
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+#| ============================================================================= #|
+#| RoleBinding - Obot MCP Manager                                                #|
+#| Binds Obot service account to MCP manager role                                #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: obot-mcp-manager
+  namespace: #{ obot_mcp_namespace | default('obot-mcp') }#
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: obot-mcp-manager
+subjects:
+  - kind: ServiceAccount
+    name: obot
+    namespace: ai-system
+#% endif %#
+```
+
+### Encryption Configuration (encryption-config.yaml.j2)
+
+```yaml
+#% if obot_enabled | default(false) and obot_encryption_provider | default('custom') == 'custom' %#
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obot-encryption-config
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: obot
+    app.kubernetes.io/component: config
+data:
+  encryption.yaml: |
+    #| Custom encryption configuration for credential storage #|
+    provider: custom
+    #| Key is injected via environment variable reference #|
+#% endif %#
 ```
 
 ## Implementation Checklist
@@ -1098,12 +1198,14 @@ LimitRange:
 ### Phase 1: Core Infrastructure
 
 - [ ] Add `obot_enabled` and related variables to cluster.yaml schema
-- [ ] Add derived variables to plugin.py
+- [ ] Add `obot_keycloak_cookie_secret` (SOPS-encrypted) to cluster.yaml
+- [ ] Add derived variables to plugin.py (`obot_keycloak_base_url`, `obot_keycloak_realm`)
 - [ ] Create directory structure under `templates/config/kubernetes/apps/ai-system/obot/`
 - [ ] Implement `ocirepository.yaml.j2` for chart source
-- [ ] Implement `helmrelease.yaml.j2` with full configuration
-- [ ] Implement `postgresql.yaml.j2` with CNPG cluster
+- [ ] Implement `helmrelease.yaml.j2` with correct `OBOT_KEYCLOAK_AUTH_PROVIDER_*` variables
+- [ ] Implement `postgresql.yaml.j2` with CNPG cluster (use `18.1-standard-trixie` image)
 - [ ] Implement `db-secret.sops.yaml.j2` for database credentials
+- [ ] Implement `encryption-config.yaml.j2` ConfigMap for custom encryption provider
 
 ### Phase 2: Routing & Access
 
@@ -1113,28 +1215,31 @@ LimitRange:
 
 ### Phase 3: Keycloak Integration
 
-- [ ] Add Obot client to `realm-config.yaml.j2`
-- [ ] Add secrets to `keycloak-realm-secrets.yaml.j2`
-- [ ] Implement cookie encryption secret generation
+- [ ] Add Obot client to `realm-config.yaml.j2` (PKCE S256, confidential)
+- [ ] Add secrets to `keycloak-realm-secrets.yaml.j2` (client_secret, cookie_secret)
+- [ ] Verify OIDC scopes: openid, profile, email
 
 ### Phase 4: MCP Namespace Setup
 
 - [ ] Create `mcp-namespace/` Kustomization structure
-- [ ] Implement namespace YAML with proper labels
+- [ ] Implement namespace YAML with proper labels and PodSecurityStandard (restricted)
 - [ ] Create `mcp-policies/` Kustomization structure
-- [ ] Implement NetworkPolicy, ResourceQuota, LimitRange
+- [ ] Implement CiliumNetworkPolicy with `enableDefaultDeny`
+- [ ] Implement ResourceQuota and LimitRange
+- [ ] Implement RBAC Role and RoleBinding for cross-namespace pod management
 
 ### Phase 5: Network Policies
 
-- [ ] Implement `networkpolicy.yaml.j2` for main Obot pod
-- [ ] Implement CiliumNetworkPolicy for kube-apiserver access
-- [ ] Implement MCP namespace isolation policies
+- [ ] Implement `networkpolicy.yaml.j2` for main Obot pod with `enableDefaultDeny`
+- [ ] Implement CiliumNetworkPolicy for kube-apiserver access (MCP runtime)
+- [ ] Implement MCP namespace isolation policies with external registry egress (GitHub, npm)
+- [ ] Implement PostgreSQL CiliumNetworkPolicy with backup egress to RustFS
 
 ### Phase 6: Observability (Optional)
 
 - [ ] Implement `servicemonitor.yaml.j2` for Prometheus
 - [ ] Implement `grafana-dashboard.yaml.j2` ConfigMap
-- [ ] Configure OTEL export to Tempo
+- [ ] Configure OTEL export to Tempo (port 4317 gRPC)
 
 ### Phase 7: Documentation & Testing
 
@@ -1142,6 +1247,7 @@ LimitRange:
 - [ ] Update docs/CONFIGURATION.md with variable schema
 - [ ] Add Obot to PROJECT_INDEX.json applications list
 - [ ] Test deployment with `task configure && task reconcile`
+- [ ] Verify Keycloak authentication flow with PKCE S256
 
 ## Security Considerations
 
@@ -1221,166 +1327,32 @@ LimitRange:
 | `AWS_SECRET_ACCESS_KEY` | S3 secret key | If using S3 |
 | `WORKSPACE_PROVIDER_S3_USE_PATH_STYLE` | Use path-style URLs | If MinIO/RustFS |
 
-## Appendix B: Research Validation (January 2026)
+## Appendix B: Research Validation Summary
 
-### Verification Summary
-
-**Research validated on:** January 9, 2026
+**Research validated:** January 9, 2026
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Upstream Obot v0.15.x releases | ✅ Verified | v0.15.1 (Dec 22, 2025) confirmed with gateway restructuring |
-| jrmatherly/obot-entraid fork | ✅ Verified | v0.2.29 (Jan 7, 2026), 2,857 commits, MIT license |
-| Keycloak PKCE S256 support | ✅ Verified | Added in v0.2.21 (Dec 23, 2025) |
-| Profile picture/name sync | ✅ Verified | Added in v0.2.22 (Dec 23, 2025) |
-| Helm chart availability | ✅ Verified | chart/ directory exists, version 0.2.23 |
-| Project pattern alignment | ✅ Verified | Matches LiteLLM/Langfuse patterns in ai-system namespace |
+| Upstream Obot v0.15.x | ✅ Verified | v0.15.1 (Dec 22, 2025) with gateway restructuring |
+| jrmatherly/obot-entraid | ✅ Verified | v0.2.29 (Jan 7, 2026), 2,857 commits, MIT license |
+| Keycloak PKCE S256 | ✅ Verified | Added in v0.2.21 (Dec 23, 2025) |
+| Helm chart (chart/) | ✅ Verified | Version 0.2.23 (may lag app version) |
+| Project pattern alignment | ✅ Verified | Follows LiteLLM/Langfuse patterns |
 
-### Known Issues and Corrections
+**All corrections have been applied inline in this document:**
+- Environment variables updated to `OBOT_KEYCLOAK_AUTH_PROVIDER_*` format
+- Cookie secret (`obot_keycloak_cookie_secret`) added to configuration
+- Network policies include `enableDefaultDeny` pattern
+- PostgreSQL image updated to `18.1-standard-trixie`
+- RBAC templates added for MCP namespace management
+- Encryption configuration template included
 
-#### 1. Helm Chart Version Lag
-The Helm chart version (0.2.23) may lag behind app version (0.2.29). When implementing, verify chart and image versions are compatible.
-
-#### 2. Keycloak Auth Provider Variables
-The custom fork's Keycloak auth provider uses a different naming convention than upstream. The actual environment variables in `tools/keycloak-auth-provider/` are:
-
-| Document Shows | Actual Fork Variable |
-|----------------|---------------------|
-| `OBOT_SERVER_AUTH_KEYCLOAK_ISSUER_URL` | `OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL` + `/realms/{realm}` |
-| `OBOT_SERVER_AUTH_KEYCLOAK_CLIENT_ID` | `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID` |
-| `OBOT_SERVER_AUTH_KEYCLOAK_CLIENT_SECRET` | `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET` |
-| N/A (missing) | `OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET` |
-| N/A (missing) | `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` |
-
-**Action Required:** Update HelmRelease template to use correct environment variable names before implementation.
-
-#### 3. Cookie Secret Generation
-The Keycloak auth provider requires a cookie encryption secret. Generate with:
-```bash
-openssl rand -base64 32
-```
-Add to cluster.yaml as `obot_keycloak_cookie_secret` (SOPS-encrypted).
-
-#### 4. Missing Network Policy Elements
-The proposed network policy design should be enhanced to match the Langfuse pattern:
-
-```yaml
-# Add to CiliumNetworkPolicy
-spec:
-  enableDefaultDeny:
-    egress: true  # or false for audit mode
-    ingress: true
-```
-
-Additionally, MCP namespace pods require:
-- Egress to kube-apiserver (port 6443) for Kubernetes runtime
-- Egress to external registries (GitHub, npm) for tool downloads
-
-#### 5. PostgreSQL Image Consistency
-Document uses `ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie` but project default is `ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie`. Use the project default for consistency.
-
-### Recommended Enhancements
-
-#### 1. Encryption Configuration Template
-Add `encryption.yaml` ConfigMap for custom encryption provider:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: obot-encryption-config
-  namespace: ai-system
-data:
-  encryption.yaml: |
-    encryptionKey: "${OBOT_SERVER_ENCRYPTION_KEY}"
-```
-
-#### 2. RBAC for MCP Namespace
-The Obot service account needs permissions in the MCP namespace:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: obot-mcp-manager
-  namespace: obot-mcp
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "pods/log", "pods/exec", "services", "configmaps", "secrets"]
-    verbs: ["*"]
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["*"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: obot-mcp-manager
-  namespace: obot-mcp
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: obot-mcp-manager
-subjects:
-  - kind: ServiceAccount
-    name: obot
-    namespace: ai-system
-```
-
-#### 3. ServiceMonitor for Prometheus
-Add to implementation checklist:
-
-```yaml
-#% if obot_monitoring_enabled | default(false) %#
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: obot
-  namespace: ai-system
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: obot
-  endpoints:
-    - port: http
-      path: /metrics
-      interval: 30s
-#% endif %#
-```
-
-#### 4. Dragonfly Dependency
-If Obot uses Redis caching (optional), add to ks.yaml.j2 dependsOn:
-```yaml
-#% if dragonfly_enabled | default(false) %#
-    - name: dragonfly
-      namespace: cache
-#% endif %#
-```
-
-### Implementation Checklist Updates
-
-Add to Phase 1:
-- [ ] Verify environment variable names against fork's actual implementation
-- [ ] Add `obot_keycloak_cookie_secret` to cluster.yaml schema
-- [ ] Create encryption.yaml ConfigMap template
-
-Add to Phase 4 (MCP Namespace):
-- [ ] Create RBAC Role and RoleBinding for cross-namespace pod management
-- [ ] Add PodSecurityStandard labels (restricted)
-
-Add to Phase 5 (Network Policies):
-- [ ] Add `enableDefaultDeny` to CiliumNetworkPolicy
-- [ ] Add kube-apiserver egress for MCP pods
-- [ ] Add external registry egress (GitHub, npm) for tool downloads
-
-### Cross-Reference: Project Patterns
-
-The implementation should follow these existing patterns:
+### Project Pattern References
 
 | Component | Reference File |
 |-----------|---------------|
 | Flux Kustomization | `templates/config/kubernetes/apps/ai-system/litellm/ks.yaml.j2` |
-| HelmRelease (bjw-s) | `templates/config/kubernetes/apps/ai-system/litellm/app/helmrelease.yaml.j2` |
+| HelmRelease | `templates/config/kubernetes/apps/ai-system/litellm/app/helmrelease.yaml.j2` |
 | CNPG PostgreSQL | `templates/config/kubernetes/apps/ai-system/litellm/app/postgresql.yaml.j2` |
 | Network Policies | `templates/config/kubernetes/apps/ai-system/langfuse/app/networkpolicy.yaml.j2` |
 | Keycloak Client | `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2` |
@@ -1388,7 +1360,6 @@ The implementation should follow these existing patterns:
 
 ### Research Sources
 
-- [GitHub: obot-platform/obot releases](https://github.com/obot-platform/obot/releases) - Verified Dec 2025 releases
-- [GitHub: jrmatherly/obot-entraid](https://github.com/jrmatherly/obot-entraid) - Fork verified Jan 2026
-- [GitHub: jrmatherly/obot-entraid/releases](https://github.com/jrmatherly/obot-entraid/releases) - v0.2.29 confirmed
-- Project codebase analysis: LiteLLM, Langfuse, Keycloak implementations
+- [GitHub: obot-platform/obot releases](https://github.com/obot-platform/obot/releases)
+- [GitHub: jrmatherly/obot-entraid](https://github.com/jrmatherly/obot-entraid)
+- [Keycloak Setup Guide](https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md)

@@ -34,6 +34,7 @@ spec:
   hostnames:
     - "#{ hubble_subdomain | default('hubble') }#.${SECRET_DOMAIN}"
   parentRefs:
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
     - name: envoy-internal
       namespace: network
       sectionName: https
@@ -67,6 +68,7 @@ spec:
   hostnames:
     - "#{ grafana_subdomain | default('grafana') }#.${SECRET_DOMAIN}"
   parentRefs:
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
     - name: envoy-internal
       namespace: network
       sectionName: https
@@ -100,6 +102,7 @@ spec:
   hostnames:
     - "#{ rustfs_subdomain | default('rustfs') }#.${SECRET_DOMAIN}"
   parentRefs:
+    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
     - name: envoy-internal
       namespace: network
       sectionName: https
@@ -137,9 +140,7 @@ spec:
     #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
     - name: envoy-external
       namespace: network
-    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
-    - name: envoy-internal
-      namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         - name: litellm
@@ -175,9 +176,7 @@ spec:
     #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
     - name: envoy-external
       namespace: network
-    #| Internal gateway: UniFi DNS creates record (direct LAN access) #|
-    - name: envoy-internal
-      namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         #| Langfuse web service from Helm chart #|

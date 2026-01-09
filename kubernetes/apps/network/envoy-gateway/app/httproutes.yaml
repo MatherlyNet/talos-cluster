@@ -84,8 +84,7 @@ spec:
   parentRefs:
     - name: envoy-external
       namespace: network
-    - name: envoy-internal
-      namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         - name: litellm
@@ -108,8 +107,7 @@ spec:
   parentRefs:
     - name: envoy-external
       namespace: network
-    - name: envoy-internal
-      namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         - name: langfuse-web
