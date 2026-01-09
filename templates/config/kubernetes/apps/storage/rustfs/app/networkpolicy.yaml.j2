@@ -81,6 +81,17 @@ spec:
             - port: "9000"
               protocol: TCP
 #% endif %#
+#% if obot_backup_enabled | default(false) %#
+    #| S3 API access from Obot CNPG PostgreSQL backups #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: ai-system
+            cnpg.io/cluster: obot-postgresql
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
 #% if langfuse_enabled | default(false) %#
     #| S3 API access from Langfuse application (events, media, exports buckets) #|
     - fromEndpoints:
