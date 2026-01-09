@@ -299,7 +299,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: plugin
-          image: ghcr.io/cloudnative-pg/plugin-barman-cloud:0.10.0
+          image: ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.10.0
           imagePullPolicy: IfNotPresent
           args:
             - --log-level=info
@@ -309,7 +309,7 @@ spec:
               protocol: TCP
           env:
             - name: SIDECAR_IMAGE
-              value: "ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar:0.10.0"
+              value: "ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar:v0.10.0"
           volumeMounts:
             - name: tls-cert
               mountPath: /etc/tls
