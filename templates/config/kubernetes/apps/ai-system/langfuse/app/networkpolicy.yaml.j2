@@ -126,7 +126,7 @@ spec:
 #% endif %#
 #% if langfuse_sso_enabled | default(false) %#
     #| ======================================================================= #|
-    #| Keycloak (OIDC SSO)                                                    #|
+    #| Keycloak (OIDC SSO) - Internal cluster endpoint                        #|
     #| ======================================================================= #|
     - toEndpoints:
         - matchLabels:
@@ -135,6 +135,17 @@ spec:
       toPorts:
         - ports:
             - port: "8080"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Keycloak (OIDC SSO) - External URL via FQDN                            #|
+    #| AUTH_KEYCLOAK_ISSUER uses external URL for token validation            #|
+    #| NextAuth.js must reach issuer URL for OIDC discovery and token checks  #|
+    #| ======================================================================= #|
+    - toFQDNs:
+        - matchName: "#{ keycloak_subdomain | default('sso') }#.#{ cloudflare_domain }#"
+      toPorts:
+        - ports:
+            - port: "443"
               protocol: TCP
 #% endif %#
 #% if langfuse_tracing_enabled | default(false) %#
@@ -362,7 +373,7 @@ spec:
           port: 9000
 #% endif %#
 #% if langfuse_sso_enabled | default(false) %#
-    #| Keycloak OIDC #|
+    #| Keycloak OIDC - internal cluster endpoint #|
     - to:
         - namespaceSelector:
             matchLabels:
@@ -373,6 +384,8 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    #| Keycloak OIDC - external URL (AUTH_KEYCLOAK_ISSUER) for token validation #|
+    #| Note: Standard K8s NetworkPolicy doesn't support FQDN - use Cilium policy #|
 #% endif %#
 #% if langfuse_tracing_enabled | default(false) %#
     #| Tempo OTLP (tracing) #|
