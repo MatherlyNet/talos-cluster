@@ -119,10 +119,12 @@ spec:
 
       #| ======================================================================= #|
       #| Encryption Configuration                                                #|
-      #| NOTE: OBOT_SERVER_ENCRYPTION_KEY from obot-secret via extraEnvFrom     #|
+      #| NOTE: Key must be in config for init container to read from obot-config #|
       #| ======================================================================= #|
 #% if obot_encryption_provider | default('custom') == 'custom' %#
       OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
+      #| Encryption key required by encryptionsetup init container #|
+      OBOT_SERVER_ENCRYPTION_KEY: "#{ obot_encryption_key }#"
 #% endif %#
 
       #| ======================================================================= #|
