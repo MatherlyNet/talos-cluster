@@ -457,7 +457,8 @@ Optional Obot MCP Gateway (AI Agent Platform):
 - `obot_version` - Obot image version (default: "0.2.30")
 - `obot_replicas` - Pod replicas (default: 1)
 - `obot_db_password` - SOPS-encrypted PostgreSQL password
-- `obot_encryption_key` - SOPS-encrypted 32-byte hex key for data encryption (generate with: openssl rand -hex 32)
+- `obot_encryption_key` - SOPS-encrypted 32-byte base64 key for data encryption (generate with: openssl rand -base64 32)
+- `obot_bootstrap_token` - SOPS-encrypted bootstrap token for initial setup (generate with: openssl rand -hex 32)
 - When obot_enabled, derives: `obot_hostname`
 - Requires `cnpg_enabled: true` for PostgreSQL database with pgvector
 - See `docs/research/obot-mcp-gateway-integration-jan-2026.md` for setup guide

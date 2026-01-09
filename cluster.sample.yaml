@@ -2021,6 +2021,12 @@ cloudflare_gateway_addr: ""
 #    (REQUIRED when obot_enabled: true)
 # obot_encryption_key: ""
 
+# -- Bootstrap token for initial platform setup (SOPS-encrypted)
+#    Used for API authentication before OIDC is configured
+#    Generate with: openssl rand -hex 32
+#    (OPTIONAL)
+# obot_bootstrap_token: ""
+
 # =============================================================================
 # OBOT KEYCLOAK SSO (requires keycloak_enabled: true)
 # =============================================================================

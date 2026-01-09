@@ -82,7 +82,7 @@ metadata:
 spec:
   configuration:
     destinationPath: "s3://langfuse-postgres-backups"
-    endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+    endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
     s3Credentials:
       accessKeyId:
         name: langfuse-backup-credentials

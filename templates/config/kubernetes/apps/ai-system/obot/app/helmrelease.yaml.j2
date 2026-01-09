@@ -184,7 +184,7 @@ spec:
       #| ======================================================================= #|
       OBOT_WORKSPACE_PROVIDER_TYPE: "s3"
       WORKSPACE_PROVIDER_S3_BUCKET: "#{ obot_s3_bucket }#"
-      WORKSPACE_PROVIDER_S3_BASE_ENDPOINT: "#{ obot_s3_endpoint | default('http://rustfs.storage.svc.cluster.local:9000') }#"
+      WORKSPACE_PROVIDER_S3_BASE_ENDPOINT: "#{ obot_s3_endpoint | default('http://rustfs-svc.storage.svc.cluster.local:9000') }#"
       AWS_REGION: "#{ obot_s3_region | default('us-east-1') }#"
       WORKSPACE_PROVIDER_S3_USE_PATH_STYLE: "true"
 #% endif %#

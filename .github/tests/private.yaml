@@ -134,6 +134,7 @@ cloudflare_gateway_addr: "10.10.10.251"
 # obot_enabled: false
 # obot_db_password: "test-obot-db-password"
 # obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# obot_bootstrap_token: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 # obot_keycloak_enabled: false
 # obot_keycloak_client_secret: "test-obot-oidc-secret"
 # obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"

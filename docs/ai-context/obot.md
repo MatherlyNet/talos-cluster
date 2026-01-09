@@ -67,10 +67,13 @@ obot_postgresql_storage_size: "10Gi"
 obot_storage_size: "20Gi"          # Workspace PVC size
 ```
 
-### Encryption
+### Encryption & Bootstrap
 ```yaml
-obot_encryption_key: "..."   # 64-char hex (256-bit), generate: openssl rand -hex 32
+obot_encryption_key: "..."     # Base64 32 bytes, generate: openssl rand -base64 32
+obot_bootstrap_token: "..."    # Optional, hex 32 bytes, generate: openssl rand -hex 32
 ```
+
+The bootstrap token is used for initial API authentication before OIDC is configured.
 
 ### Keycloak SSO (requires keycloak_enabled)
 ```yaml

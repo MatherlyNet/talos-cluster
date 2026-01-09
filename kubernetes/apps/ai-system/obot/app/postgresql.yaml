@@ -84,8 +84,8 @@ metadata:
     app.kubernetes.io/part-of: obot
 spec:
   configuration:
-    destinationPath: "s3://obot-backups"
-    endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+    destinationPath: "s3://obot-postgres-backups"
+    endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
     s3Credentials:
       accessKeyId:
         name: obot-backup-credentials

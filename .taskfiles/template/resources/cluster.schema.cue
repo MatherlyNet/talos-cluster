@@ -631,6 +631,10 @@ import (
 	// Generate with: openssl rand -base64 32
 	obot_encryption_key?: string & =~"^[A-Za-z0-9+/]{43}=$"
 
+	// Obot Bootstrap Token for initial platform setup
+	// Generate with: openssl rand -hex 32
+	obot_bootstrap_token?: string & !=""
+
 	// Obot Keycloak SSO (requires keycloak_enabled: true)
 	// Uses custom auth provider from jrmatherly/obot-entraid fork
 	obot_keycloak_enabled?:        *false | bool
