@@ -1,0 +1,86 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: litellm-postgresql
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: litellm-postgresql
+    app.kubernetes.io/part-of: litellm
+    network.cilium.io/api-access: "true"
+spec:
+  instances: 1
+
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+
+  bootstrap:
+    initdb:
+      database: litellm
+      owner: litellm
+      secret:
+        name: litellm-db-secret
+
+  storage:
+    size: 20Gi
+    storageClass: proxmox-zfs
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+  monitoring:
+    enablePodMonitor: true
+
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+    extensions:
+      - name: pgvector
+        image:
+          reference: ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie
+
+
+  priorityClassName: system-cluster-critical
+
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://litellm-backups"
+      endpointURL: "http://rustfs.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: litellm-backup-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: litellm-backup-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+    retentionPolicy: "7d"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: litellm-db-litellm
+  namespace: ai-system
+spec:
+  name: litellm
+  owner: litellm
+  cluster:
+    name: litellm-postgresql
+  extensions:
+    - name: vector

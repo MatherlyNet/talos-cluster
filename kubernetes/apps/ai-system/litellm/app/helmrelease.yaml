@@ -1,0 +1,261 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm
+  namespace: ai-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: litellm
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/metrics"
+      terminationGracePeriodSeconds: 60
+      labels:
+        network.cilium.io/api-access: "true"
+
+    controllers:
+      litellm:
+        type: deployment
+        replicas: 1
+        strategy: RollingUpdate
+        rollingUpdate:
+          unavailable: 0
+          surge: 1
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/berriai/litellm
+              tag: main-v1.80.8-stable.1
+              pullPolicy: IfNotPresent
+
+            args:
+              - --host
+              - "0.0.0.0"
+              - --port
+              - "4000"
+              - --config
+              - /app/config.yaml
+
+            env:
+              TZ: "America/New_York"
+              STORE_MODEL_IN_DB: "True"
+              USE_PRISMA_MIGRATE: "True"
+              LITELLM_MODE: "PRODUCTION"
+              LITELLM_DONT_SHOW_FEEDBACK_BOX: "True"
+              LITELLM_CALLBACKS: prometheus
+              LITELLM_MIGRATION_DIR: "/tmp/prisma"
+
+              REDIS_HOST: dragonfly.cache.svc.cluster.local
+              REDIS_PORT: "6379"
+              REDIS_NAMESPACE: litellm
+              REDIS_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: REDIS_URL
+
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: DATABASE_URL
+
+              LITELLM_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_MASTER_KEY
+              LITELLM_SALT_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_SALT_KEY
+
+              UI_USERNAME: admin
+              UI_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LITELLM_MASTER_KEY
+
+              REDIS_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: REDIS_PASSWORD
+
+              AZURE_API_BASE: "https://ets-east-us.openai.azure.com/"
+              AZURE_API_VERSION: "2025-01-01-preview"
+              AZURE_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_API_KEY
+
+              AZURE_API_BASE_EAST2: "https://ets-east-us2.openai.azure.com/"
+              AZURE_API_VERSION_EAST2: "2025-04-01-preview"
+              AZURE_API_KEY_EAST2:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_API_KEY_EAST2
+
+              AZURE_ANTHROPIC_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_ANTHROPIC_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_ANTHROPIC_API_KEY
+
+              AZURE_COHERE_RERANK_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_COHERE_RERANK_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_COHERE_RERANK_API_KEY
+
+              AZURE_COHERE_EMBED_API_BASE: "https://ets-east-us2.services.ai.azure.com/models"
+              AZURE_COHERE_EMBED_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: AZURE_COHERE_EMBED_API_KEY
+
+              OTEL_EXPORTER: "otlp_grpc"
+              OTEL_ENDPOINT: "http://tempo.monitoring.svc:4317"
+              OTEL_HEADERS: ""
+
+              LANGFUSE_HOST: "http://langfuse-web.ai-system.svc.cluster.local:3000"
+              LANGFUSE_PUBLIC_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LANGFUSE_PUBLIC_KEY
+              LANGFUSE_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-secret
+                    key: LANGFUSE_SECRET_KEY
+
+
+
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: &port 4000
+                  initialDelaySeconds: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 10
+                  failureThreshold: 30
+                  successThreshold: 1
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: *port
+                  initialDelaySeconds: 60
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/readiness
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              runAsNonRoot: false
+              privileged: false
+              capabilities: { drop: ["ALL"] }
+              seccompProfile: { type: RuntimeDefault }
+
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 1000m
+                memory: 1Gi
+
+    service:
+      litellm:
+        controller: litellm
+        ports:
+          http:
+            port: 4000
+            targetPort: *port
+
+    persistence:
+      config-file:
+        type: configMap
+        name: litellm-config
+        globalMounts:
+          - path: /app/config.yaml
+            subPath: config.yaml
+            readOnly: true
+
+      tmp:
+        type: emptyDir
+        sizeLimit: 100Mi
+        globalMounts:
+          - path: /tmp
+
+      cache:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /.cache
+
+      npm-cache:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /.npm
+
+      nonexistent:
+        type: emptyDir
+        sizeLimit: 500Mi
+        globalMounts:
+          - path: /nonexistent
+
+      data:
+        type: emptyDir
+        sizeLimit: 100Mi
+        globalMounts:
+          - path: /data

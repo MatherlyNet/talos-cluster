@@ -78,6 +78,9 @@ spec:
               echo "dragonfly-backups bucket created."
               echo "NOTE: Create Dragonfly backup access keys in RustFS Console and update cluster.yaml"
 
+              mc mb --ignore-existing rustfs/litellm-backups
+              echo "litellm-backups bucket created."
+              echo "NOTE: Create LiteLLM backup access keys in RustFS Console and update cluster.yaml"
 
               mc mb --ignore-existing rustfs/langfuse-events
               mc mb --ignore-existing rustfs/langfuse-media
@@ -134,6 +137,13 @@ spec:
               echo "  - Create 'dragonfly-backup' user in cache group"
               echo "  - Update dragonfly_s3_access_key/dragonfly_s3_secret_key in cluster.yaml"
               echo "  - See: docs/research/dragonfly-redis-alternative-integration-jan-2026.md"
+              echo ""
+              echo "LITELLM BACKUP (ai-system group):"
+              echo "  - Create 'litellm-storage' policy scoped to litellm-backups bucket"
+              echo "  - Create 'ai-system' group with policy attached"
+              echo "  - Create 'litellm-backup' user in ai-system group"
+              echo "  - Update litellm_s3_access_key/litellm_s3_secret_key in cluster.yaml"
+              echo "  - See: docs/research/litellm-proxy-gateway-integration-jan-2026.md"
               echo ""
               echo "LANGFUSE S3 (ai-system group):"
               echo "  - Create 'langfuse-storage' policy scoped to langfuse-* buckets"

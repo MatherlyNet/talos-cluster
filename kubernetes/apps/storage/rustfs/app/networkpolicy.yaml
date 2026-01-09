@@ -40,6 +40,14 @@ spec:
     - fromEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: ai-system
+            cnpg.io/cluster: litellm-postgresql
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: ai-system
             cnpg.io/cluster: langfuse-postgresql
       toPorts:
         - ports:
