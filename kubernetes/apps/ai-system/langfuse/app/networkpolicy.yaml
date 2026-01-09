@@ -86,7 +86,7 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: keycloak
+            app: keycloak
             io.kubernetes.pod.namespace: identity
       toPorts:
         - ports:
@@ -274,7 +274,7 @@ spec:
               kubernetes.io/metadata.name: identity
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: keycloak
+              app: keycloak
       ports:
         - protocol: TCP
           port: 8080

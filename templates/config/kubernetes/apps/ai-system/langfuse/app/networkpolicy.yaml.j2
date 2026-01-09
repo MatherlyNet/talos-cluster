@@ -127,10 +127,11 @@ spec:
 #% if langfuse_sso_enabled | default(false) %#
     #| ======================================================================= #|
     #| Keycloak (OIDC SSO) - Internal cluster endpoint                        #|
+    #| NOTE: Keycloak Operator uses label 'app: keycloak' (not app.kubernetes.io/name) #|
     #| ======================================================================= #|
     - toEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: keycloak
+            app: keycloak
             io.kubernetes.pod.namespace: identity
       toPorts:
         - ports:
@@ -374,13 +375,14 @@ spec:
 #% endif %#
 #% if langfuse_sso_enabled | default(false) %#
     #| Keycloak OIDC - internal cluster endpoint #|
+    #| NOTE: Keycloak Operator uses label 'app: keycloak' (not app.kubernetes.io/name) #|
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: identity
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: keycloak
+              app: keycloak
       ports:
         - protocol: TCP
           port: 8080
