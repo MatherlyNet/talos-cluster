@@ -395,15 +395,24 @@ Optional Langfuse Session Configuration:
 - `langfuse_session_max_age` - Session duration in seconds (default: 2592000 = 30 days)
 
 Optional Langfuse Headless Initialization (Bootstrap Admin Account):
-- `langfuse_init_org_id` - Organization UUID (REQUIRED, generate with: uuidgen | tr '[:upper:]' '[:lower:]')
-- `langfuse_init_org_name` - Initial organization name (default: derived from cluster_name)
+- `langfuse_init_org_id` - Organization identifier (slug format: lowercase alphanumeric with hyphens, 2-63 chars)
+- `langfuse_init_org_name` - Initial organization display name (default: derived from cluster_name)
 - `langfuse_init_user_email` - Initial admin email (SOPS-encrypted)
 - `langfuse_init_user_password` - Initial admin password (SOPS-encrypted, generate with: openssl rand -base64 24)
 - `langfuse_init_user_name` - Initial admin display name (default: "Admin")
 - `langfuse_disable_signup` - Disable new user signups for security hardening (default: false)
 - All three required variables (org_id, user_email, user_password) must be set to enable headless initialization
 - Credentials are only used once on first startup - change via UI after first login
-- See `docs/research/archive/implemented/langfuse-llm-observability-integration-jan-2026.md` for setup guide
+- See `docs/research/langfuse-llm-observability-integration-jan-2026.md` for setup guide
+
+Optional Langfuse Project Initialization (Create Initial Project):
+- `langfuse_init_project_id` - Project identifier (slug format: lowercase alphanumeric with hyphens, 2-63 chars)
+- `langfuse_init_project_name` - Project display name (default: "Default Project")
+- `langfuse_init_project_retention` - Data retention in days (1-3650, omit for indefinite)
+- `langfuse_init_project_public_key` - Public API key (format: lf_pk_*, SOPS-encrypted)
+- `langfuse_init_project_secret_key` - Secret API key (format: lf_sk_*, SOPS-encrypted)
+- Requires headless initialization (org_id, user_email, user_password) to be configured
+- Provides immediate API access after bootstrap without manual project creation
 
 Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
 - `langfuse_default_org_role` - Default org role for new SSO users: OWNER, ADMIN, MEMBER, VIEWER, NONE

@@ -86,6 +86,38 @@ spec:
             secretKeyRef:
               name: langfuse-init-credentials
               key: LANGFUSE_INIT_USER_NAME
+#% if langfuse_init_project_id | default('') %#
+        #| Project initialization - create initial project alongside organization #|
+        - name: LANGFUSE_INIT_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_ID
+        - name: LANGFUSE_INIT_PROJECT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_NAME
+#% if langfuse_init_project_retention | default('') %#
+        - name: LANGFUSE_INIT_PROJECT_RETENTION
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_RETENTION
+#% endif %#
+#% if langfuse_init_project_public_key | default('') and langfuse_init_project_secret_key | default('') %#
+        - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+        - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_SECRET_KEY
+#% endif %#
+#% endif %#
 #% if langfuse_disable_signup | default(false) %#
         #| Disable self-registration when using SSO as primary auth #|
         - name: AUTH_DISABLE_SIGNUP

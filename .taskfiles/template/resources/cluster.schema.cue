@@ -2,6 +2,7 @@ package config
 
 import (
 	"net"
+	"strings"
 )
 
 #Config: {
@@ -547,14 +548,23 @@ import (
 
 	// Langfuse Headless Initialization (optional)
 	// Bootstrap initial admin account for GitOps/non-interactive deployments
-	// REF: https://langfuse.com/self-hosting/headless-initialization
+	// REF: https://langfuse.com/self-hosting/administration/headless-initialization
 	// NOTE: langfuse_init_org_id is REQUIRED when using headless initialization
-	langfuse_init_org_id?:        string & =~"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"  // Organization UUID (required)
-	langfuse_init_org_name?:      string & !=""               // Initial organization name
+	langfuse_init_org_id?:        string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Organization identifier (slug format)
+	langfuse_init_org_name?:      string & !=""               // Initial organization display name
 	langfuse_init_user_email?:    string & =~"^[^@]+@[^@]+$"  // Admin email address
 	langfuse_init_user_password?: string & =~".{16,}"         // Minimum 16 characters (SOPS-encrypted)
 	langfuse_init_user_name?:     *"Admin" | string & !=""    // Admin display name
 	langfuse_disable_signup?:     *false | bool               // Disable public registration after setup
+
+	// Langfuse Project Initialization (optional)
+	// Create initial project alongside organization for immediate API access
+	// REF: https://langfuse.com/self-hosting/administration/headless-initialization
+	langfuse_init_project_id?:         string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Project identifier (slug format)
+	langfuse_init_project_name?:       string & !=""                        // Project display name
+	langfuse_init_project_retention?:  int & >=1 & <=3650                   // Data retention in days (1-3650, empty=indefinite)
+	langfuse_init_project_public_key?: string & =~"^lf_pk_[a-zA-Z0-9]+$"    // Public API key (format: lf_pk_*)
+	langfuse_init_project_secret_key?: string & =~"^lf_sk_[a-zA-Z0-9]+$"    // Secret API key (format: lf_sk_*, SOPS-encrypted)
 
 	// Langfuse Auto-Provisioning (optional)
 	// Default roles for SSO users without existing accounts

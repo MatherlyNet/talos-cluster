@@ -1691,6 +1691,12 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "*" for latest)
 # langfuse_chart_version: "*"
 
+# -- Disable new user signups (security hardening)
+#    Set to true when using SSO as primary authentication
+#    Prevents self-registration; only SSO or admin-created accounts allowed
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_disable_signup: false
+
 # =============================================================================
 # LANGFUSE INITIAL ADMIN USER (Headless Initialization)
 # =============================================================================
@@ -1707,33 +1713,67 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL - but required for headless initialization)
 # langfuse_init_user_email: "admin@example.com"
 
+# -- Initial admin user display name
+#    (OPTIONAL) / (DEFAULT: "Admin")
+# langfuse_init_user_name: "Langfuse Admin"
+
 # -- Initial admin user password (SOPS-encrypted)
 #    Generate with: openssl rand -base64 24
 #    Minimum 16 characters for security.
 #    (OPTIONAL - but required for headless initialization)
 # langfuse_init_user_password: ""
 
-# -- Initial admin user display name
-#    (OPTIONAL) / (DEFAULT: "Admin")
-# langfuse_init_user_name: "Admin"
-
 # -- Initial organization ID (Required for headless initialization)
-#    Must be a valid UUID v4. Generate with: uuidgen | tr '[:upper:]' '[:lower:]'
+#    A unique slug identifier for the organization (lowercase, alphanumeric, hyphens).
+#    Example: "my-org", "acme-corp", "matherly-net"
 #    This ID uniquely identifies the organization in Langfuse.
 #    Cannot be auto-generated - must be explicitly provided.
 #    (REQUIRED when using headless initialization)
-# langfuse_init_org_id: ""
+# langfuse_init_org_id: "my-org"
 
 # -- Initial organization name
 #    The admin user is created as OWNER of this organization.
 #    (OPTIONAL) / (DEFAULT: cluster_name or "Langfuse")
-# langfuse_init_org_name: ""
+# langfuse_init_org_name: "My Org"
 
-# -- Disable new user signups (security hardening)
-#    Set to true when using SSO as primary authentication
-#    Prevents self-registration; only SSO or admin-created accounts allowed
-#    (OPTIONAL) / (DEFAULT: false)
-# langfuse_disable_signup: false
+# =============================================================================
+# PROJECT INITIALIZATION (Optional - for immediate API access)
+# =============================================================================
+# Creates an initial project alongside the organization.
+# Useful for GitOps/CI pipelines that need API keys immediately after deployment.
+# REF: https://langfuse.com/self-hosting/administration/headless-initialization
+# -----------------------------------------------------------------------------
+
+# -- Initial project ID (Required for project initialization)
+#    A unique slug identifier for the project (lowercase, alphanumeric, hyphens).
+#    Example: "default-project", "llm-traces", "prod-observability"
+#    (REQUIRED when using project initialization)
+# langfuse_init_project_id: "default-project"
+
+# -- Initial project name
+#    Display name for the project in the Langfuse UI.
+#    (OPTIONAL) / (DEFAULT: langfuse_init_project_id)
+# langfuse_init_project_name: "Default Project"
+
+# -- Data retention period in days
+#    How long to retain trace data. Leave unset for indefinite retention.
+#    Valid range: 1-3650 days (10 years max)
+#    (OPTIONAL) / (DEFAULT: indefinite)
+# langfuse_init_project_retention: 90
+
+# -- Project public API key (Required for project initialization)
+#    Format: lf_pk_<random_string>
+#    Generate with: echo "lf_pk_$(openssl rand -hex 16)"
+#    This key is used for trace ingestion (can be exposed to clients).
+#    (REQUIRED when using project initialization)
+# langfuse_init_project_public_key: "lf_pk_abc123def456"
+
+# -- Project secret API key (Required for project initialization, SOPS-encrypted)
+#    Format: lf_sk_<random_string>
+#    Generate with: echo "lf_sk_$(openssl rand -hex 16)"
+#    This key is used for API authentication (keep secret!).
+#    (REQUIRED when using project initialization)
+# langfuse_init_project_secret_key: "lf_sk_xyz789ghi012"
 
 # =============================================================================
 # LANGFUSE AUTO-PROVISIONING (Default Access for New SSO Users)

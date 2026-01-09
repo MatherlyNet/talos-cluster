@@ -95,12 +95,18 @@ cloudflare_gateway_addr: "10.10.10.251"
 # langfuse_email_from: "noreply@example.com"
 # langfuse_session_max_age: 2592000
 # Langfuse Headless Initialization (GitOps bootstrap)
-# langfuse_init_org_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+# langfuse_init_org_id: "matherlynet"
 # langfuse_init_org_name: "MatherlyNet"
 # langfuse_init_user_email: "admin@example.com"
 # langfuse_init_user_password: "test-admin-password-16chars"
 # langfuse_init_user_name: "Admin"
 # langfuse_disable_signup: false
+# Langfuse Project Initialization (create initial project)
+# langfuse_init_project_id: "default-project"
+# langfuse_init_project_name: "Default Project"
+# langfuse_init_project_retention: 90
+# langfuse_init_project_public_key: "lf_pk_test1234567890abcdef"
+# langfuse_init_project_secret_key: "lf_sk_test1234567890abcdef"
 # Langfuse Auto-Provisioning (SSO default roles)
 # langfuse_default_org_role: "VIEWER"
 # langfuse_default_project_role: "VIEWER"

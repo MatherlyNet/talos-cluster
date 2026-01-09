@@ -67,6 +67,31 @@ spec:
             secretKeyRef:
               name: langfuse-init-credentials
               key: LANGFUSE_INIT_USER_NAME
+        - name: LANGFUSE_INIT_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_ID
+        - name: LANGFUSE_INIT_PROJECT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_NAME
+        - name: LANGFUSE_INIT_PROJECT_RETENTION
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_RETENTION
+        - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+        - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: langfuse-init-credentials
+              key: LANGFUSE_INIT_PROJECT_SECRET_KEY
         - name: AUTH_DISABLE_SIGNUP
           value: "true"
         - name: LANGFUSE_DEFAULT_ORG_ROLE
