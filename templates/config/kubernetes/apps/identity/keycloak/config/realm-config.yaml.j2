@@ -176,8 +176,8 @@ data:
 #% endif %#
             #{ logout_uris | join('##') }#
         #| Default scopes for this client #|
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
@@ -212,8 +212,8 @@ data:
         attributes:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
@@ -274,8 +274,8 @@ data:
         attributes:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
@@ -335,8 +335,8 @@ data:
         attributes:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:

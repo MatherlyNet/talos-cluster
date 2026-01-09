@@ -69,7 +69,6 @@ data:
           post.logout.redirect.uris: >-
             https://hubble.matherly.net/*##https://grafana.matherly.net/*##https://rustfs.matherly.net/*
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
@@ -96,7 +95,6 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://grafana.matherly.net/*"
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
@@ -145,7 +143,6 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://langfuse.matherly.net/*"
         defaultClientScopes:
-          - "openid"
           - "profile"
           - "email"
         optionalClientScopes:
