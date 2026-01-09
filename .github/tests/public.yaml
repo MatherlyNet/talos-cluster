@@ -331,8 +331,15 @@ kubernetes_version: "1.35.0"
 # langfuse_postgres_storage: "10Gi"
 # langfuse_clickhouse_password: "test-clickhouse-password"
 # langfuse_clickhouse_storage: "20Gi"
+# langfuse_clickhouse_cluster_enabled: false
+# Langfuse S3 Storage Configuration
 # langfuse_s3_access_key: "test-langfuse-s3-access"
 # langfuse_s3_secret_key: "test-langfuse-s3-secret"
+# langfuse_s3_concurrent_writes: 50
+# langfuse_s3_concurrent_reads: 50
+# langfuse_media_bucket: "langfuse-media"
+# langfuse_export_bucket: "langfuse-exports"
+# langfuse_batch_export_enabled: true
 # Langfuse PostgreSQL Backups (requires rustfs_enabled: true)
 # langfuse_backup_enabled: false
 # langfuse_backup_s3_access_key: "test-langfuse-backup-access"
@@ -340,11 +347,19 @@ kubernetes_version: "1.35.0"
 # Langfuse SSO (requires keycloak_enabled: true)
 # langfuse_sso_enabled: false
 # langfuse_keycloak_client_secret: "test-langfuse-oidc-secret"
+# langfuse_disable_password_auth: false
+# langfuse_sso_domain_enforcement: "example.com"
 # Langfuse Observability
 # langfuse_monitoring_enabled: false
 # langfuse_tracing_enabled: false
 # langfuse_log_level: "info"
+# langfuse_log_format: "text"
 # langfuse_trace_sampling_ratio: "0.1"
+# Langfuse Caching Configuration
+# langfuse_cache_api_key_enabled: true
+# langfuse_cache_api_key_ttl: 300
+# langfuse_cache_prompt_enabled: true
+# langfuse_cache_prompt_ttl: 300
 # Langfuse Email/Session Configuration
 # langfuse_smtp_url: "smtp://user:pass@mail.example.com:587"
 # langfuse_email_from: "noreply@example.com"
@@ -363,7 +378,9 @@ kubernetes_version: "1.35.0"
 # langfuse_init_project_public_key: "lf_pk_test1234567890abcdef"
 # langfuse_init_project_secret_key: "lf_sk_test1234567890abcdef"
 # Langfuse Auto-Provisioning (SSO default roles)
+# langfuse_default_org_id: "matherlynet"
 # langfuse_default_org_role: "VIEWER"
+# langfuse_default_project_id: "default-project"
 # langfuse_default_project_role: "VIEWER"
 
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)

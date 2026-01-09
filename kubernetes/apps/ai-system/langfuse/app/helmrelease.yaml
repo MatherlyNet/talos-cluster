@@ -42,6 +42,12 @@ spec:
           key: ENCRYPTION_KEY
 
       additionalEnv:
+        - name: LANGFUSE_LOG_LEVEL
+          value: "info"
+        - name: LANGFUSE_LOG_FORMAT
+          value: "text"
+        - name: AUTH_DISABLE_SIGNUP
+          value: "true"
         - name: LANGFUSE_INIT_ORG_ID
           valueFrom:
             secretKeyRef:
@@ -92,8 +98,8 @@ spec:
             secretKeyRef:
               name: langfuse-init-credentials
               key: LANGFUSE_INIT_PROJECT_SECRET_KEY
-        - name: AUTH_DISABLE_SIGNUP
-          value: "true"
+        - name: LANGFUSE_DEFAULT_ORG_ID
+          value: "matherly-net"
         - name: LANGFUSE_DEFAULT_ORG_ROLE
           value: "VIEWER"
 
@@ -133,6 +139,7 @@ spec:
     clickhouse:
       deploy: true
       replicaCount: 1
+      clusterEnabled: false
       persistence:
         enabled: true
         size: "20Gi"
@@ -155,6 +162,36 @@ spec:
     s3:
       deploy: false
       bucket: "langfuse-events"
+      region: "us-east-1"
+      endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+
+    mediaUpload:
+      enabled: true
+      bucket: "langfuse-media"
+      region: "us-east-1"
+      endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+
+    batchExport:
+      enabled: true
+      bucket: "langfuse-exports"
       region: "us-east-1"
       endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
       forcePathStyle: true

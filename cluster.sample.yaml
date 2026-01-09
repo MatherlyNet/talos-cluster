@@ -1621,13 +1621,44 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "20Gi")
 # langfuse_clickhouse_storage: "20Gi"
 
+# -- Enable ClickHouse cluster mode (ON CLUSTER commands)
+#    Set to true for multi-node ClickHouse deployments
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_clickhouse_cluster_enabled: false
+
 # -- S3 access key for RustFS (created via RustFS Console)
-#    (REQUIRED when langfuse_enabled: true)
+#    (REQUIRED when langfuse_enabled: true and rustfs_enabled: true)
 # langfuse_s3_access_key: ""
 
 # -- S3 secret key for RustFS (SOPS-encrypted)
-#    (REQUIRED when langfuse_enabled: true)
+#    (REQUIRED when langfuse_enabled: true and rustfs_enabled: true)
 # langfuse_s3_secret_key: ""
+
+# -- S3 concurrent write connections (for high-throughput)
+#    Increase if seeing "@smithy/node-http-handler:WARN - socket usage at capacity"
+#    (OPTIONAL) / (DEFAULT: 50)
+# langfuse_s3_concurrent_writes: 50
+
+# -- S3 concurrent read connections (for high-throughput)
+#    (OPTIONAL) / (DEFAULT: 50)
+# langfuse_s3_concurrent_reads: 50
+
+# -- S3 bucket name overrides (if using different bucket names)
+#    (OPTIONAL) / (DEFAULT: langfuse-media, langfuse-exports)
+# langfuse_media_bucket: "langfuse-media"
+# langfuse_export_bucket: "langfuse-exports"
+
+# -- Media upload max file size in bytes
+#    (OPTIONAL) / (DEFAULT: 1000000000 = 1GB)
+# langfuse_media_max_size: 1000000000
+
+# -- Media presigned URL expiry in seconds
+#    (OPTIONAL) / (DEFAULT: 3600 = 1 hour)
+# langfuse_media_download_url_expiry: 3600
+
+# -- Enable batch export feature
+#    (OPTIONAL) / (DEFAULT: true)
+# langfuse_batch_export_enabled: true
 
 # -- Enable PostgreSQL backups to RustFS S3
 #    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
@@ -1659,6 +1690,11 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "info")
 # langfuse_log_level: "info"
 
+# -- Log format (text or json)
+#    Use "json" for structured logging in production environments
+#    (OPTIONAL) / (DEFAULT: "text")
+# langfuse_log_format: "text"
+
 # -- Trace sampling ratio (0.0 to 1.0)
 #    (OPTIONAL) / (DEFAULT: "0.1" = 10%)
 # langfuse_trace_sampling_ratio: "0.1"
@@ -1667,6 +1703,47 @@ cloudflare_gateway_addr: ""
 #    Controls how long user sessions remain valid before requiring re-login.
 #    (OPTIONAL) / (DEFAULT: 2592000 = 30 days)
 # langfuse_session_max_age: 2592000
+
+# =============================================================================
+# LANGFUSE CACHING CONFIGURATION
+# =============================================================================
+# REF: https://langfuse.com/self-hosting/configuration/caching
+# -----------------------------------------------------------------------------
+
+# -- Enable API key caching in Redis/Dragonfly
+#    Set to false to disable API key caching (useful for debugging)
+#    (OPTIONAL) / (DEFAULT: true)
+# langfuse_cache_api_key_enabled: true
+
+# -- API key cache TTL in seconds
+#    (OPTIONAL) / (DEFAULT: 300 = 5 minutes)
+# langfuse_cache_api_key_ttl: 300
+
+# -- Enable prompt caching in Redis/Dragonfly
+#    Set to false to disable prompt caching
+#    (OPTIONAL) / (DEFAULT: true)
+# langfuse_cache_prompt_enabled: true
+
+# -- Prompt cache TTL in seconds
+#    (OPTIONAL) / (DEFAULT: 300 = 5 minutes)
+# langfuse_cache_prompt_ttl: 300
+
+# =============================================================================
+# LANGFUSE AUTHENTICATION CONFIGURATION
+# =============================================================================
+# REF: https://langfuse.com/self-hosting/security/authentication-and-sso
+# -----------------------------------------------------------------------------
+
+# -- Disable username/password authentication (SSO-only mode)
+#    Forces all users to authenticate via SSO; disables local password login
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_disable_password_auth: false
+
+# -- Enforce SSO for specific email domains
+#    Comma-separated list of domains that must use SSO authentication
+#    Example: "example.com,company.org"
+#    (OPTIONAL)
+# langfuse_sso_domain_enforcement: ""
 
 # -- SMTP connection URL for email notifications (SOPS-encrypted)
 #    Format: smtp://user:pass@host:port or smtps://user:pass@host:port
@@ -1786,12 +1863,24 @@ cloudflare_gateway_addr: ""
 # These apply when a user logs in via SSO for the first time.
 # -----------------------------------------------------------------------------
 
+# -- Default organization ID for new SSO users
+#    Organization where new SSO users are automatically provisioned
+#    If not set, defaults to langfuse_init_org_id (if configured)
+#    (OPTIONAL) / (DEFAULT: langfuse_init_org_id)
+# langfuse_default_org_id: "my-org"
+
 # -- Default organization role for new users via SSO
 #    Roles: OWNER, ADMIN, MEMBER, VIEWER, NONE (no org access)
 #    VIEWER = read-only access to organization and projects
 #    NONE = must be explicitly granted project-level access
 #    (OPTIONAL) / (DEFAULT: not set - users must be manually added)
 # langfuse_default_org_role: "VIEWER"
+
+# -- Default project ID for new SSO users
+#    Project where new SSO users are automatically provisioned
+#    If not set, defaults to langfuse_init_project_id (if configured)
+#    (OPTIONAL) / (DEFAULT: langfuse_init_project_id)
+# langfuse_default_project_id: "default-project"
 
 # -- Default project role for new users via SSO
 #    Roles: OWNER, ADMIN, MEMBER, VIEWER

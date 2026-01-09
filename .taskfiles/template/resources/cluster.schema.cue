@@ -507,15 +507,27 @@ import (
 	langfuse_postgres_storage?:   *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
 
 	// Langfuse ClickHouse (bundled analytics database)
-	langfuse_clickhouse_password?: string & !=""
-	langfuse_clickhouse_storage?:  *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
-	langfuse_clickhouse_replicas?: *1 | int & >=1 & <=5
+	langfuse_clickhouse_password?:        string & !=""
+	langfuse_clickhouse_storage?:         *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+	langfuse_clickhouse_replicas?:        *1 | int & >=1 & <=5
+	langfuse_clickhouse_cluster_enabled?: *false | bool  // Set true for multi-node ClickHouse
 
 	// Langfuse S3 Storage (requires rustfs_enabled: true)
 	// Credentials must be created via RustFS Console UI
 	// Buckets needed: langfuse-events, langfuse-media, langfuse-exports
-	langfuse_s3_access_key?: string & !=""
-	langfuse_s3_secret_key?: string & !=""
+	langfuse_s3_access_key?:        string & !=""
+	langfuse_s3_secret_key?:        string & !=""
+	langfuse_s3_concurrent_writes?: int & >=1 & <=500  // S3 write connection pool (default: 50)
+	langfuse_s3_concurrent_reads?:  int & >=1 & <=500  // S3 read connection pool (default: 50)
+
+	// Langfuse S3 Buckets (optional bucket name overrides)
+	langfuse_media_bucket?:  *"langfuse-media" | string & !=""   // Media/attachments bucket
+	langfuse_export_bucket?: *"langfuse-exports" | string & !="" // Batch export bucket
+
+	// Langfuse Media Upload Configuration
+	langfuse_media_max_size?:            int & >=1 & <=10000000000           // Max file size in bytes (default: 1GB)
+	langfuse_media_download_url_expiry?: int & >=60 & <=86400                // Presigned URL expiry in seconds (default: 3600)
+	langfuse_batch_export_enabled?:      *true | bool                        // Enable batch export feature
 
 	// Langfuse PostgreSQL Backups (requires rustfs_enabled: true)
 	// Bucket needed: langfuse-postgres-backups
@@ -534,10 +546,23 @@ import (
 
 	// Langfuse Resource Configuration
 	langfuse_log_level?:             *"info" | "trace" | "debug" | "info" | "warn" | "error" | "fatal"
+	langfuse_log_format?:            *"text" | "json"  // Log output format
 	langfuse_trace_sampling_ratio?:  *"0.1" | string & =~"^[01]?\\.[0-9]+$"  // 0.0 to 1.0
 	langfuse_web_replicas?:          *1 | int & >=1 & <=10
 	langfuse_worker_replicas?:       *1 | int & >=1 & <=10
 	langfuse_chart_version?:         *"*" | string & !=""
+
+	// Langfuse Caching Configuration (requires Redis/Dragonfly)
+	// REF: https://langfuse.com/self-hosting/configuration/caching
+	langfuse_cache_api_key_enabled?: bool             // Enable API key caching (default: true)
+	langfuse_cache_api_key_ttl?:     int & >=1 & <=86400  // API key cache TTL in seconds (default: 300)
+	langfuse_cache_prompt_enabled?:  bool             // Enable prompt caching (default: true)
+	langfuse_cache_prompt_ttl?:      int & >=1 & <=86400  // Prompt cache TTL in seconds (default: 300)
+
+	// Langfuse Authentication Configuration (optional)
+	// REF: https://langfuse.com/self-hosting/security/authentication-and-sso
+	langfuse_disable_password_auth?: *false | bool                   // Disable username/password login (SSO-only mode)
+	langfuse_sso_domain_enforcement?: string & =~"^[a-z0-9.-]+(,[a-z0-9.-]+)*$"  // Comma-separated domains requiring SSO
 
 	// Langfuse SMTP/Email Configuration (optional)
 	langfuse_smtp_url?:       string & =~"^smtp(s)?://"  // SMTP connection URL
@@ -568,8 +593,11 @@ import (
 
 	// Langfuse Auto-Provisioning (optional)
 	// Default roles for SSO users without existing accounts
-	// REF: https://langfuse.com/docs/rbac
+	// REF: https://langfuse.com/self-hosting/administration/automated-access-provisioning
+	// NOTE: If not specified, defaults to langfuse_init_org_id/langfuse_init_project_id
+	langfuse_default_org_id?:       string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Organization for new users
 	langfuse_default_org_role?:     *"VIEWER" | "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" | "NONE"
+	langfuse_default_project_id?:   string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Project for new users
 	langfuse_default_project_role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
 }
 

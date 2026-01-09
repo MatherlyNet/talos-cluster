@@ -1409,6 +1409,10 @@
       "minimum": 1,
       "maximum": 5
     },
+    "langfuse_clickhouse_cluster_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
     "langfuse_s3_access_key": {
       "type": "string",
       "minLength": 1,
@@ -1417,6 +1421,42 @@
     "langfuse_s3_secret_key": {
       "type": "string",
       "minLength": 1
+    },
+    "langfuse_s3_concurrent_writes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500
+    },
+    "langfuse_s3_concurrent_reads": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500
+    },
+    "langfuse_media_bucket": {
+      "default": "langfuse-media",
+      "type": "string",
+      "minLength": 1,
+      "description": "Langfuse S3 Buckets (optional bucket name overrides)"
+    },
+    "langfuse_export_bucket": {
+      "default": "langfuse-exports",
+      "type": "string",
+      "minLength": 1
+    },
+    "langfuse_media_max_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000000000,
+      "description": "Langfuse Media Upload Configuration"
+    },
+    "langfuse_media_download_url_expiry": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 86400
+    },
+    "langfuse_batch_export_enabled": {
+      "default": true,
+      "type": "boolean"
     },
     "langfuse_backup_enabled": {
       "default": false,
@@ -1454,6 +1494,10 @@
       "type": "string",
       "description": "Langfuse Resource Configuration"
     },
+    "langfuse_log_format": {
+      "default": "text",
+      "type": "string"
+    },
     "langfuse_trace_sampling_ratio": {
       "default": "0.1",
       "type": "string",
@@ -1475,6 +1519,32 @@
       "default": "*",
       "type": "string",
       "minLength": 1
+    },
+    "langfuse_cache_api_key_enabled": {
+      "type": "boolean",
+      "description": "Langfuse Caching Configuration (requires Redis/Dragonfly) REF: https://langfuse.com/self-hosting/configuration/caching"
+    },
+    "langfuse_cache_api_key_ttl": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400
+    },
+    "langfuse_cache_prompt_enabled": {
+      "type": "boolean"
+    },
+    "langfuse_cache_prompt_ttl": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400
+    },
+    "langfuse_disable_password_auth": {
+      "default": false,
+      "type": "boolean",
+      "description": "Langfuse Authentication Configuration (optional) REF: https://langfuse.com/self-hosting/security/authentication-and-sso"
+    },
+    "langfuse_sso_domain_enforcement": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+(,[a-z0-9.-]+)*$"
     },
     "langfuse_smtp_url": {
       "type": "string",
@@ -1540,10 +1610,18 @@
       "type": "string",
       "pattern": "^lf_sk_[a-zA-Z0-9]+$"
     },
+    "langfuse_default_org_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "description": "Langfuse Auto-Provisioning (optional) Default roles for SSO users without existing accounts REF: https://langfuse.com/self-hosting/administration/automated-access-provisioning NOTE: If not specified, defaults to langfuse_init_org_id/langfuse_init_project_id"
+    },
     "langfuse_default_org_role": {
       "default": "VIEWER",
+      "type": "string"
+    },
+    "langfuse_default_project_id": {
       "type": "string",
-      "description": "Langfuse Auto-Provisioning (optional) Default roles for SSO users without existing accounts REF: https://langfuse.com/docs/rbac"
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
     },
     "langfuse_default_project_role": {
       "type": "string",

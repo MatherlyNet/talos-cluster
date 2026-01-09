@@ -52,14 +52,67 @@ spec:
           name: langfuse-credentials
           key: ENCRYPTION_KEY
 
-#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') and langfuse_init_org_id | default('') %#
       #| ======================================================================= #|
-      #| Headless Initialization - Bootstrap Initial Admin                      #|
-      #| Creates admin account on first startup; credentials used only once     #|
-      #| REF: https://langfuse.com/self-hosting/headless-initialization         #|
+      #| Additional Environment Variables                                       #|
+      #| Runtime configuration for logging, auth, caching, and initialization   #|
       #| ======================================================================= #|
       additionalEnv:
-        #| Organization ID - Required for headless initialization #|
+        #| ===================================================================== #|
+        #| Logging Configuration                                                #|
+        #| REF: https://langfuse.com/self-hosting/configuration                 #|
+        #| ===================================================================== #|
+        - name: LANGFUSE_LOG_LEVEL
+          value: "#{ langfuse_log_level | default('info') }#"
+        - name: LANGFUSE_LOG_FORMAT
+          value: "#{ langfuse_log_format | default('text') }#"
+#% if langfuse_session_max_age | default('') %#
+        #| ===================================================================== #|
+        #| Authentication Configuration                                         #|
+        #| ===================================================================== #|
+        - name: AUTH_SESSION_MAX_AGE
+          value: "#{ langfuse_session_max_age }#"
+#% endif %#
+#% if langfuse_disable_signup | default(false) %#
+        #| Disable self-registration when using SSO as primary auth #|
+        - name: AUTH_DISABLE_SIGNUP
+          value: "true"
+#% endif %#
+#% if langfuse_disable_password_auth | default(false) %#
+        #| Disable username/password auth (SSO-only mode) #|
+        - name: AUTH_DISABLE_USERNAME_PASSWORD
+          value: "true"
+#% endif %#
+#% if langfuse_sso_domain_enforcement | default('') %#
+        #| Force SSO for specific email domains #|
+        - name: AUTH_DOMAINS_WITH_SSO_ENFORCEMENT
+          value: "#{ langfuse_sso_domain_enforcement }#"
+#% endif %#
+#% if langfuse_cache_api_key_enabled is defined %#
+        #| ===================================================================== #|
+        #| Caching Configuration                                                #|
+        #| REF: https://langfuse.com/self-hosting/configuration/caching         #|
+        #| ===================================================================== #|
+        - name: LANGFUSE_CACHE_API_KEY_ENABLED
+          value: "#{ langfuse_cache_api_key_enabled | lower }#"
+#% endif %#
+#% if langfuse_cache_api_key_ttl | default('') %#
+        - name: LANGFUSE_CACHE_API_KEY_TTL_SECONDS
+          value: "#{ langfuse_cache_api_key_ttl }#"
+#% endif %#
+#% if langfuse_cache_prompt_enabled is defined %#
+        - name: LANGFUSE_CACHE_PROMPT_ENABLED
+          value: "#{ langfuse_cache_prompt_enabled | lower }#"
+#% endif %#
+#% if langfuse_cache_prompt_ttl | default('') %#
+        - name: LANGFUSE_CACHE_PROMPT_TTL_SECONDS
+          value: "#{ langfuse_cache_prompt_ttl }#"
+#% endif %#
+#% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') and langfuse_init_org_id | default('') %#
+        #| ===================================================================== #|
+        #| Headless Initialization - Bootstrap Initial Admin                    #|
+        #| Creates admin account on first startup; credentials used only once   #|
+        #| REF: https://langfuse.com/self-hosting/headless-initialization       #|
+        #| ===================================================================== #|
         - name: LANGFUSE_INIT_ORG_ID
           valueFrom:
             secretKeyRef:
@@ -70,7 +123,6 @@ spec:
             secretKeyRef:
               name: langfuse-init-credentials
               key: LANGFUSE_INIT_ORG_NAME
-        #| Initial admin user credentials (from SOPS-encrypted secret) #|
         - name: LANGFUSE_INIT_USER_EMAIL
           valueFrom:
             secretKeyRef:
@@ -118,10 +170,6 @@ spec:
               key: LANGFUSE_INIT_PROJECT_SECRET_KEY
 #% endif %#
 #% endif %#
-#% if langfuse_disable_signup | default(false) %#
-        #| Disable self-registration when using SSO as primary auth #|
-        - name: AUTH_DISABLE_SIGNUP
-          value: "true"
 #% endif %#
 #% if langfuse_default_org_role | default('') %#
         #| ===================================================================== #|
@@ -129,13 +177,16 @@ spec:
         #| Assigns new users to default org/project with specified roles        #|
         #| REF: https://langfuse.com/self-hosting/automated-provisioning        #|
         #| ===================================================================== #|
+        - name: LANGFUSE_DEFAULT_ORG_ID
+          value: "#{ langfuse_default_org_id | default(langfuse_init_org_id) }#"
         - name: LANGFUSE_DEFAULT_ORG_ROLE
           value: "#{ langfuse_default_org_role }#"
 #% endif %#
 #% if langfuse_default_project_role | default('') %#
+        - name: LANGFUSE_DEFAULT_PROJECT_ID
+          value: "#{ langfuse_default_project_id | default(langfuse_init_project_id) }#"
         - name: LANGFUSE_DEFAULT_PROJECT_ROLE
           value: "#{ langfuse_default_project_role }#"
-#% endif %#
 #% endif %#
 
 #% if langfuse_sso_enabled | default(false) %#
@@ -193,6 +244,8 @@ spec:
     clickhouse:
       deploy: true
       replicaCount: #{ langfuse_clickhouse_replicas | default(1) }#
+      #| Cluster mode: set to false for single-node deployments #|
+      clusterEnabled: #{ langfuse_clickhouse_cluster_enabled | default(false) | lower }#
       persistence:
         enabled: true
         size: "#{ langfuse_clickhouse_storage | default('20Gi') }#"
@@ -215,11 +268,65 @@ spec:
 
     #| ========================================================================= #|
     #| S3 Storage - Use External RustFS                                         #|
+    #| Multi-bucket configuration: events, media, batch exports                 #|
+    #| REF: https://langfuse.com/self-hosting/deployment/infrastructure/blob    #|
     #| ========================================================================= #|
 #% if rustfs_enabled | default(false) %#
     s3:
       deploy: false
+      #| Primary S3 settings (used as defaults for event upload) #|
       bucket: "langfuse-events"
+      region: "us-east-1"
+      endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+#% if langfuse_s3_concurrent_writes | default('') or langfuse_s3_concurrent_reads | default('') %#
+      #| S3 connection pool settings for high-throughput #|
+#% if langfuse_s3_concurrent_writes | default('') %#
+      concurrentWrites: #{ langfuse_s3_concurrent_writes }#
+#% endif %#
+#% if langfuse_s3_concurrent_reads | default('') %#
+      concurrentReads: #{ langfuse_s3_concurrent_reads }#
+#% endif %#
+#% endif %#
+
+    #| ======================================================================= #|
+    #| Media Upload - Separate bucket for user uploads, images, files          #|
+    #| ======================================================================= #|
+    mediaUpload:
+      enabled: true
+      bucket: "#{ langfuse_media_bucket | default('langfuse-media') }#"
+      region: "us-east-1"
+      endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+#% if langfuse_media_max_size | default('') %#
+      maxContentLength: #{ langfuse_media_max_size }#
+#% endif %#
+#% if langfuse_media_download_url_expiry | default('') %#
+      downloadUrlExpirySeconds: #{ langfuse_media_download_url_expiry }#
+#% endif %#
+
+    #| ======================================================================= #|
+    #| Batch Export - Separate bucket for data exports                         #|
+    #| ======================================================================= #|
+    batchExport:
+      enabled: #{ langfuse_batch_export_enabled | default(true) | lower }#
+      bucket: "#{ langfuse_export_bucket | default('langfuse-exports') }#"
       region: "us-east-1"
       endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
       forcePathStyle: true

@@ -55,8 +55,8 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 ### Components WITH Network Policies
 
 | Component | Namespace | CiliumNetworkPolicy | Standard NetworkPolicy | Database NetworkPolicy | Location |
-|-----------|-----------|---------------------|------------------------|------------------------|----------|
-| **Infrastructure Components** |
+| ----------- | ----------- | --------------------- | ------------------------ | ------------------------ | ---------- |
+| **Infrastructure Components** | | | | | |
 | CoreDNS | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/coredns.yaml.j2` |
 | Spegel | kube-system | ✅ | ❌ | N/A | `kube-system/network-policies/app/spegel.yaml.j2` |
 | Grafana | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/grafana.yaml.j2` |
@@ -65,7 +65,7 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 | Alloy | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/alloy.yaml.j2` |
 | Tempo | monitoring | ✅ | ❌ | N/A | `monitoring/network-policies/app/tempo.yaml.j2` |
 | Dragonfly | cache | ✅ | ❌ | N/A | `cache/dragonfly/app/networkpolicy.yaml.j2` |
-| **Application Components** |
+| **Application Components** | | | | | |
 | Keycloak | identity | ✅ | ✅ | ✅ | `identity/keycloak/*/networkpolicy*.yaml.j2` |
 | LiteLLM | ai-system | ✅ (2x) | ✅ | ✅ | `ai-system/litellm/app/networkpolicy.yaml.j2` |
 | Langfuse | ai-system | ✅ (2x) | ✅ | ✅ | `ai-system/langfuse/app/networkpolicy.yaml.j2` |
@@ -75,7 +75,7 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 ### Components MISSING Network Policies
 
 | Component | Namespace | Exposed Externally | HTTPRoute | Priority | Risk Level |
-|-----------|-----------|-------------------|-----------|----------|------------|
+| ----------- | ----------- | ------------------- | ----------- | ---------- | ---------- |
 | **Hubble UI** | kube-system | ✅ Yes | ✅ Yes | **HIGH** | **HIGH** |
 | **RustFS** | storage | ✅ Yes | ✅ Yes | **HIGH** | **HIGH** |
 | Metrics Server | kube-system | ❌ No | ❌ No | Medium | Medium |
@@ -89,7 +89,7 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 All externally exposed components have HTTPRoutes configured in `templates/config/kubernetes/apps/network/envoy-gateway/app/internal-httproutes.yaml.j2`:
 
 | Component | HTTPRoute | OIDC Protection | Native Auth |
-|-----------|-----------|-----------------|-------------|
+| ----------- | ----------- | ----------------- | ------------- |
 | Hubble UI | ✅ (lines 16-43) | Optional (if `oidc_sso_enabled`) | No |
 | Grafana | ✅ (lines 48-75) | Optional (if `oidc_sso_enabled`) | Yes (optional) |
 | RustFS Console | ✅ (lines 83-107) | ❌ No (not supported) | ✅ Yes (required) |
@@ -448,7 +448,7 @@ spec:
 ### When to Use Which Pattern
 
 | Criteria | Pattern A (Single Cilium) | Pattern B (Triple Policy) |
-|----------|--------------------------|---------------------------|
+| ---------- | -------------------------- | --------------------------- |
 | **Component Type** | Infrastructure, monitoring | Applications |
 | **Database** | No database | Uses CNPG PostgreSQL |
 | **External APIs** | Few or no external calls | Multiple external APIs |

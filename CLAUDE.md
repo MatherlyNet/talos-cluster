@@ -361,13 +361,22 @@ Optional Langfuse LLM Observability Platform:
 - `langfuse_encryption_key` - SOPS-encrypted 256-bit hex key (generate with: openssl rand -hex 32)
 - `langfuse_postgres_password` - SOPS-encrypted PostgreSQL password
 - `langfuse_clickhouse_password` - SOPS-encrypted ClickHouse password
+- `langfuse_clickhouse_cluster_enabled` - Enable ClickHouse cluster mode (default: false)
+- `langfuse_log_level` - Log level: trace, debug, info, warn, error, fatal (default: "info")
+- `langfuse_log_format` - Log format: text or json (default: "text")
 - When langfuse_enabled, derives: `langfuse_hostname`, `langfuse_url`
 - Requires `cnpg_enabled: true` for PostgreSQL database
+- Requires `dragonfly_enabled: true` for Redis-compatible caching
 - Integrates with LiteLLM via callbacks for automatic trace ingestion
 - See `docs/research/langfuse-llm-observability-integration-jan-2026.md` for setup guide
 
 Optional Langfuse S3 Storage (requires RustFS):
 - `langfuse_s3_access_key`, `langfuse_s3_secret_key` - SOPS-encrypted credentials
+- `langfuse_s3_concurrent_writes`, `langfuse_s3_concurrent_reads` - S3 connection pool (default: 50)
+- `langfuse_media_bucket` - Media uploads bucket (default: "langfuse-media")
+- `langfuse_export_bucket` - Batch exports bucket (default: "langfuse-exports")
+- `langfuse_media_max_size` - Max file size in bytes (default: 1GB)
+- `langfuse_batch_export_enabled` - Enable batch export feature (default: true)
 - Required buckets: `langfuse-events`, `langfuse-media`, `langfuse-exports`
 - Create buckets and credentials via RustFS Console UI (port 9001)
 
@@ -382,6 +391,16 @@ Optional Langfuse SSO (requires Keycloak):
 - `langfuse_keycloak_client_secret` - SOPS-encrypted OIDC client secret
 - When enabled, creates `langfuse` client in Keycloak realm-config
 - Supports account linking with existing email-based accounts
+
+Optional Langfuse Authentication Configuration:
+- `langfuse_disable_password_auth` - Disable username/password login, SSO-only mode (default: false)
+- `langfuse_sso_domain_enforcement` - Comma-separated domains requiring SSO (e.g., "example.com,company.org")
+
+Optional Langfuse Caching Configuration (requires Redis/Dragonfly):
+- `langfuse_cache_api_key_enabled` - Enable API key caching (default: true)
+- `langfuse_cache_api_key_ttl` - API key cache TTL in seconds (default: 300)
+- `langfuse_cache_prompt_enabled` - Enable prompt caching (default: true)
+- `langfuse_cache_prompt_ttl` - Prompt cache TTL in seconds (default: 300)
 
 Optional Langfuse Observability (requires monitoring/tracing):
 - `langfuse_monitoring_enabled` - Deploy ServiceMonitor for Prometheus metrics + Grafana dashboard
@@ -415,10 +434,12 @@ Optional Langfuse Project Initialization (Create Initial Project):
 - Provides immediate API access after bootstrap without manual project creation
 
 Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
+- `langfuse_default_org_id` - Organization ID for new SSO users (default: langfuse_init_org_id)
 - `langfuse_default_org_role` - Default org role for new SSO users: OWNER, ADMIN, MEMBER, VIEWER, NONE
+- `langfuse_default_project_id` - Project ID for new SSO users (default: langfuse_init_project_id)
 - `langfuse_default_project_role` - Default project role for new SSO users: OWNER, ADMIN, MEMBER, VIEWER
 - When set, new users via SSO are automatically assigned to default org/project with these roles
-- See https://langfuse.com/self-hosting/automated-provisioning for details
+- See https://langfuse.com/self-hosting/administration/automated-access-provisioning for details
 
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
