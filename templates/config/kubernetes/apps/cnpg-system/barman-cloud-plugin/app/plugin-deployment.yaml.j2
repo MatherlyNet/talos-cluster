@@ -139,9 +139,35 @@ spec:
                   description: Configuration for sidecar containers
                   type: object
                   properties:
+                    additionalContainerArgs:
+                      description: Command-line arguments appended to container defaults
+                      type: array
+                      items:
+                        type: string
+                    env:
+                      description: Environment variables passed to the sidecar
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            type: object
+                            x-kubernetes-preserve-unknown-fields: true
+                    logLevel:
+                      description: Log level for the sidecar
+                      type: string
+                      enum: [error, warning, info, debug, trace]
+                      default: info
                     retentionPolicyIntervalSeconds:
+                      description: Frequency for checking and enforcing retention policies
                       type: integer
+                      default: 1800
                     resources:
+                      description: CPU/memory requests and limits for the sidecar
                       type: object
                       properties:
                         requests:

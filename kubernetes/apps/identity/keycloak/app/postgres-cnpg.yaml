@@ -84,6 +84,12 @@ spec:
       compression: gzip
     retentionPolicy: "7d"
   instanceSidecarConfiguration:
+    env:
+      - name: AWS_REQUEST_CHECKSUM_CALCULATION
+        value: when_required
+      - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+        value: when_required
+    logLevel: info
     retentionPolicyIntervalSeconds: 1800
     resources:
       requests:

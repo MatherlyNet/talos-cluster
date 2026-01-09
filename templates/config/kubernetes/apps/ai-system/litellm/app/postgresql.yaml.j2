@@ -148,6 +148,15 @@ spec:
       compression: gzip
     retentionPolicy: "#{ litellm_backup_retention | default('7d') }#"
   instanceSidecarConfiguration:
+    #| boto3 1.36+ S3 Data Integrity Protection workaround for RustFS/S3-compatible storage #|
+    #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/ #|
+    #| REF: docs/research/barman-cloud-plugin-wal-archive-remediation-jan-2026.md #|
+    env:
+      - name: AWS_REQUEST_CHECKSUM_CALCULATION
+        value: when_required
+      - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+        value: when_required
+    logLevel: info
     retentionPolicyIntervalSeconds: 1800
     resources:
       requests:
