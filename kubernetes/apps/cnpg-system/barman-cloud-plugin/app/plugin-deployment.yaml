@@ -181,23 +181,23 @@ rules:
     resources: ["objectstores"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["barmancloud.cnpg.io"]
+    resources: ["objectstores/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["barmancloud.cnpg.io"]
     resources: ["objectstores/status"]
     verbs: ["get", "update", "patch"]
   - apiGroups: ["postgresql.cnpg.io"]
-    resources: ["clusters", "backups", "scheduledbackups"]
+    resources: ["backups"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["postgresql.cnpg.io"]
-    resources: ["clusters/status", "backups/status"]
-    verbs: ["get", "update", "patch"]
+    resources: ["clusters/finalizers"]
+    verbs: ["update"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["create", "patch"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -209,6 +209,40 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: barman-cloud-plugin
+subjects:
+  - kind: ServiceAccount
+    name: barman-cloud
+    namespace: cnpg-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: barman-cloud-leader-election
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: barman-cloud-leader-election
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: barman-cloud-leader-election
 subjects:
   - kind: ServiceAccount
     name: barman-cloud

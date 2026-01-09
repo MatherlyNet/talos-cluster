@@ -178,7 +178,7 @@ metadata:
   labels:
     app.kubernetes.io/name: plugin-barman-cloud
 ---
-#| ClusterRole for barman-cloud plugin #|
+#| ClusterRole for barman-cloud plugin (cluster-scoped resources) #|
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -191,27 +191,26 @@ rules:
     resources: ["objectstores"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["barmancloud.cnpg.io"]
+    resources: ["objectstores/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["barmancloud.cnpg.io"]
     resources: ["objectstores/status"]
     verbs: ["get", "update", "patch"]
   #| Access to CNPG Cluster CRD for backup operations #|
   - apiGroups: ["postgresql.cnpg.io"]
-    resources: ["clusters", "backups", "scheduledbackups"]
+    resources: ["backups"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["postgresql.cnpg.io"]
-    resources: ["clusters/status", "backups/status"]
-    verbs: ["get", "update", "patch"]
+    resources: ["clusters/finalizers"]
+    verbs: ["update"]
   #| Access to secrets for credentials #|
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list", "watch"]
-  #| Access to pods for sidecar injection #|
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  #| Events for status reporting #|
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["create", "patch"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  #| RBAC management for sidecar service accounts #|
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
 ---
 #| ClusterRoleBinding for barman-cloud plugin #|
 apiVersion: rbac.authorization.k8s.io/v1
@@ -224,6 +223,45 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: barman-cloud-plugin
+subjects:
+  - kind: ServiceAccount
+    name: barman-cloud
+    namespace: cnpg-system
+---
+#| Role for leader election (namespace-scoped) #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: barman-cloud-leader-election
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+rules:
+  #| ConfigMaps for leader election #|
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  #| Leases for leader election #|
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  #| Events for status reporting #|
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+#| RoleBinding for leader election #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: barman-cloud-leader-election
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/name: plugin-barman-cloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: barman-cloud-leader-election
 subjects:
   - kind: ServiceAccount
     name: barman-cloud
