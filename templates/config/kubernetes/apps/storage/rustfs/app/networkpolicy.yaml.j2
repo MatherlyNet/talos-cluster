@@ -92,6 +92,17 @@ spec:
             - port: "9000"
               protocol: TCP
 #% endif %#
+#% if talos_backup_enabled | default(false) %#
+    #| S3 API access from Talos etcd backup CronJob (kube-system namespace) #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            app.kubernetes.io/name: talos-backup
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+#% endif %#
     #| S3 API access from storage namespace (setup Job for bucket creation) #|
     - fromEndpoints:
         - matchLabels:
@@ -182,6 +193,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: storage
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
       ports:
         - port: 9000
           protocol: TCP

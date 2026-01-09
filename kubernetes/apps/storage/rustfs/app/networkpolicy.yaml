@@ -63,6 +63,14 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            app.kubernetes.io/name: talos-backup
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
             io.kubernetes.pod.namespace: storage
       toPorts:
         - ports:
@@ -136,6 +144,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: storage
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
       ports:
         - port: 9000
           protocol: TCP
