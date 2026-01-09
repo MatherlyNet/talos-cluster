@@ -67,7 +67,7 @@ spec:
       OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname }#"
       OBOT_SERVER_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:${OBOT_DB_PASSWORD}@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
-      OBOT_SERVER_ENABLE_AUTHENTICATION: "true"
+      OBOT_SERVER_ENABLE_AUTHENTICATION: true
 
 #% if obot_admin_emails | default('') %#
       #| Admin access (full platform access) #|
