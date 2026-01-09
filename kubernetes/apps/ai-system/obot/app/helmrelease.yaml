@@ -40,6 +40,27 @@ spec:
       - secretRef:
           name: obot-secret
 
+    initContainers:
+      wait-for-postgres:
+        image: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Waiting for PostgreSQL to be ready..."
+            until pg_isready -h obot-postgresql-rw.ai-system.svc.cluster.local -p 5432 -U obot; do
+              echo "PostgreSQL not ready, waiting..."
+              sleep 2
+            done
+            echo "PostgreSQL is ready!"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
     config:
       OBOT_SERVER_HOSTNAME: "https://obot.matherly.net"
       OBOT_SERVER_DSN: "postgresql://obot:Elgu1ISYR9RTWYpLrKIOTc64DZF@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
@@ -53,7 +74,7 @@ spec:
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
 
       OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
-      OBOT_SERVER_ENCRYPTION_KEY: "916e5a97ab4c745f557256c29d692655c76c5f9d01c342fd5a9ee39b5e357f5a"
+      OBOT_SERVER_ENCRYPTION_KEY: "iZfjO1D4jjRgAp0U/3RVQpS4Y/+EzL8pk1kUaD/H5Xc="
       OBOT_SERVER_ENCRYPTION_CONFIG_FILE: "/config/encryption.yaml"
 
       OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"

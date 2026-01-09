@@ -627,9 +627,9 @@ import (
 	obot_postgresql_storage_size?: *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
 	obot_storage_size?:          *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
 
-	// Obot Encryption Key for data at rest
-	// Generate with: openssl rand -hex 32
-	obot_encryption_key?: string & =~"^[a-f0-9]{64}$"
+	// Obot Encryption Key for data at rest (base64-encoded 32 bytes)
+	// Generate with: openssl rand -base64 32
+	obot_encryption_key?: string & =~"^[A-Za-z0-9+/]{43}=$"
 
 	// Obot Keycloak SSO (requires keycloak_enabled: true)
 	// Uses custom auth provider from jrmatherly/obot-entraid fork

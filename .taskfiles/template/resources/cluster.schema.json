@@ -1700,8 +1700,8 @@
     },
     "obot_encryption_key": {
       "type": "string",
-      "pattern": "^[a-f0-9]{64}$",
-      "description": "Obot Encryption Key for data at rest Generate with: openssl rand -hex 32"
+      "pattern": "^[A-Za-z0-9+/]{43}=$",
+      "description": "Obot Encryption Key for data at rest (base64-encoded 32 bytes) Generate with: openssl rand -base64 32"
     },
     "obot_keycloak_enabled": {
       "default": false,

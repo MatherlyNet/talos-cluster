@@ -2014,11 +2014,10 @@ cloudflare_gateway_addr: ""
 # =============================================================================
 # OBOT ENCRYPTION
 # =============================================================================
-# Obot uses encryption for data at rest. This key must be 64 hex characters.
+# Obot uses encryption for data at rest. This key must be base64-encoded 32 bytes.
 
 # -- Data at rest encryption key (SOPS-encrypted)
-#    64-character hex string (256-bit key)
-#    Generate with: openssl rand -hex 32
+#    Generate with: openssl rand -base64 32
 #    (REQUIRED when obot_enabled: true)
 # obot_encryption_key: ""
 

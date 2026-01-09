@@ -68,6 +68,31 @@ spec:
           name: obot-secret
 
     #| ========================================================================= #|
+    #| Init Container - Wait for PostgreSQL to be ready                          #|
+    #| Prevents app startup failures when DB isn't ready yet                     #|
+    #| ========================================================================= #|
+    initContainers:
+      wait-for-postgres:
+        image: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Waiting for PostgreSQL to be ready..."
+            until pg_isready -h obot-postgresql-rw.ai-system.svc.cluster.local -p 5432 -U #{ obot_postgres_user | default('obot') }#; do
+              echo "PostgreSQL not ready, waiting..."
+              sleep 2
+            done
+            echo "PostgreSQL is ready!"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
+    #| ========================================================================= #|
     #| Environment Configuration                                                  #|
     #| NOTE: Some secrets must be in config section for envFrom to work          #|
     #| (envFrom doesn't support $(VAR) interpolation)                            #|
@@ -145,6 +170,8 @@ spec:
 #% if obot_tracing_enabled | default(false) %#
       #| ======================================================================= #|
       #| OpenTelemetry Tracing - Export to Tempo                                 #|
+      #| NOTE: Tempo only supports traces, not metrics. The "failed to upload    #|
+      #| metrics" error in logs is expected and non-fatal - traces still work.   #|
       #| ======================================================================= #|
       OBOT_SERVER_OTEL_BASE_EXPORT_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4317"
       OBOT_SERVER_OTEL_SAMPLE_PROB: "#{ obot_otel_sample_prob | default('0.1') }#"
