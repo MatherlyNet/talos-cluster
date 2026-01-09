@@ -25,6 +25,7 @@ spec:
     - --proactor_threads=2
     - --admin_port=9999
     - --primary_port_http_enabled=false
+    - --default_lua_flags=allow-undeclared-keys
     - --cache_mode=true
     - --slowlog_log_slower_than=10000
     - --slowlog_max_len=128

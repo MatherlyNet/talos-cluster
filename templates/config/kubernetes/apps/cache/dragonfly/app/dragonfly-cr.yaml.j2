@@ -34,6 +34,9 @@ spec:
     - --admin_port=9999
     #| Security: disable HTTP on main data port #|
     - --primary_port_http_enabled=false
+    #| BullMQ compatibility: allow Lua scripts to access undeclared keys #|
+    #| REF: https://www.dragonflydb.io/docs/integrations/bullmq #|
+    - --default_lua_flags=allow-undeclared-keys
 #% if dragonfly_cache_mode | default(false) %#
     #| Cache mode enables LRU-like eviction when near maxmemory #|
     - --cache_mode=true
