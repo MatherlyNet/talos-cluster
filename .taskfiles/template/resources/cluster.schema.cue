@@ -608,6 +608,20 @@ import (
 	langfuse_default_project_id?:   string & =~"^[a-z0-9][a-z0-9-]*[a-z0-9]$" & strings.MinRunes(2) & strings.MaxRunes(63)  // Project for new users
 	langfuse_default_project_role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
 
+	// Langfuse SCIM Role Sync - Keycloak to Langfuse role synchronization
+	// REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md
+	// Periodically syncs Keycloak realm roles to Langfuse organization roles via SCIM API
+	// Requires: langfuse_enabled: true, keycloak_enabled: true
+	langfuse_scim_sync_enabled?:           *false | bool
+	langfuse_scim_sync_schedule?:          *"*/5 * * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
+	langfuse_scim_public_key?:             string & !=""                 // Langfuse org API public key
+	langfuse_scim_secret_key?:             string & !=""                 // Langfuse org API secret key (SOPS-encrypted)
+	langfuse_sync_keycloak_client_id?:     *"langfuse-sync" | string & !=""  // Keycloak service account client
+	langfuse_sync_keycloak_client_secret?: string & !=""                 // Keycloak client secret (SOPS-encrypted)
+	langfuse_role_mapping?: {                                            // Keycloak role → Langfuse role mapping
+		[string]: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER" | "NONE"
+	}
+
 	// Obot MCP Gateway - AI Agent Platform with MCP Server Hosting
 	// REF: https://github.com/jrmatherly/obot-entraid
 	// REF: docs/research/obot-mcp-gateway-integration-jan-2026.md

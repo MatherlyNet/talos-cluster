@@ -288,9 +288,8 @@ class Plugin(makejinja.plugin.Plugin):
         # Barman Cloud Plugin - enabled when explicitly set or any backup is enabled
         # Plugin provides barman-cloud binaries via sidecar (no -system- images needed)
         # Requires cnpg_enabled for the operator to be present
-        cnpg_barman_plugin_enabled = (
-            cnpg_enabled
-            and data.get("cnpg_barman_plugin_enabled", False)
+        cnpg_barman_plugin_enabled = cnpg_enabled and data.get(
+            "cnpg_barman_plugin_enabled", False
         )
         data["cnpg_barman_plugin_enabled"] = cnpg_barman_plugin_enabled
 
@@ -721,11 +720,42 @@ class Plugin(makejinja.plugin.Plugin):
                 "langfuse_tracing_enabled", False
             )
             data["langfuse_tracing_enabled"] = langfuse_tracing_enabled
+
+            # Langfuse SCIM role sync - requires keycloak_enabled and explicit enable
+            # Syncs Keycloak realm roles to Langfuse organization roles via SCIM API
+            # REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md
+            langfuse_scim_sync_enabled = (
+                data.get("keycloak_enabled", False)
+                and data.get("langfuse_scim_sync_enabled", False)
+                and data.get("langfuse_scim_public_key")
+                and data.get("langfuse_scim_secret_key")
+                and data.get("langfuse_sync_keycloak_client_secret")
+            )
+            data["langfuse_scim_sync_enabled"] = langfuse_scim_sync_enabled
+
+            # Default SCIM sync schedule (every 5 minutes)
+            data.setdefault("langfuse_scim_sync_schedule", "*/5 * * * *")
+
+            # Default Keycloak sync client ID
+            data.setdefault("langfuse_sync_keycloak_client_id", "langfuse-sync")
+
+            # Default role mapping (Keycloak roles → Langfuse roles)
+            # admin → ADMIN, operator/developer → MEMBER, default → VIEWER
+            data.setdefault(
+                "langfuse_role_mapping",
+                {
+                    "admin": "ADMIN",
+                    "operator": "MEMBER",
+                    "developer": "MEMBER",
+                    "default": "VIEWER",
+                },
+            )
         else:
             data["langfuse_sso_enabled"] = False
             data["langfuse_backup_enabled"] = False
             data["langfuse_monitoring_enabled"] = False
             data["langfuse_tracing_enabled"] = False
+            data["langfuse_scim_sync_enabled"] = False
 
         # Infrastructure (OpenTofu/Proxmox) defaults
         # Check if infrastructure provisioning is enabled

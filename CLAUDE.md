@@ -452,6 +452,18 @@ Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
 - When set, new users via SSO are automatically assigned to default org/project with these roles
 - See https://langfuse.com/self-hosting/administration/automated-access-provisioning for details
 
+Optional Langfuse SCIM Role Sync (Keycloak → Langfuse):
+- `langfuse_scim_sync_enabled` - Enable SCIM role sync CronJob (default: false)
+- `langfuse_scim_sync_schedule` - Sync schedule in cron format (default: "*/5 * * * *")
+- `langfuse_scim_public_key` - Langfuse Organization API public key (create via UI)
+- `langfuse_scim_secret_key` - Langfuse Organization API secret key (SOPS-encrypted)
+- `langfuse_sync_keycloak_client_id` - Keycloak service account client ID (default: "langfuse-sync")
+- `langfuse_sync_keycloak_client_secret` - Keycloak client secret (SOPS-encrypted)
+- `langfuse_role_mapping` - Keycloak role → Langfuse role mapping (YAML object)
+- Requires: `langfuse_enabled`, `keycloak_enabled`, all credentials set
+- Default role mapping: admin→ADMIN, operator→MEMBER, developer→MEMBER, default→VIEWER
+- See `docs/research/langfuse-scim-role-sync-implementation-jan-2026.md` for setup guide
+
 Optional Obot MCP Gateway (AI Agent Platform):
 - `obot_enabled` - Enable Obot deployment (jrmatherly/obot-entraid Helm chart)
 - `obot_subdomain` - Subdomain (default: "obot", creates obot.${cloudflare_domain})
@@ -562,6 +574,7 @@ Derived Variables (computed in `templates/scripts/plugin.py`):
 - `langfuse_backup_enabled` - true when rustfs_enabled + langfuse_backup_enabled + langfuse S3 credentials all set
 - `langfuse_monitoring_enabled` - true when monitoring_enabled + langfuse_monitoring_enabled both true
 - `langfuse_tracing_enabled` - true when tracing_enabled + langfuse_tracing_enabled both true
+- `langfuse_scim_sync_enabled` - true when keycloak_enabled + langfuse_scim_sync_enabled + all SCIM credentials set
 - `obot_enabled` - true when obot_enabled is explicitly set to true
 - `obot_hostname` - auto-derived from obot_subdomain + cloudflare_domain
 - `obot_keycloak_enabled` - true when keycloak_enabled + obot_keycloak_enabled + obot_keycloak_client_secret all set

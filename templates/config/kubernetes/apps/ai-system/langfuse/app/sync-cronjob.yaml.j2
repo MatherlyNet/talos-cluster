@@ -1,0 +1,97 @@
+#% if langfuse_scim_sync_enabled | default(false) %#
+#| =========================================================================== #|
+#| Langfuse Role Sync CronJob - Syncs Keycloak roles to Langfuse via SCIM API  #|
+#| REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md       #|
+#| =========================================================================== #|
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: langfuse-role-sync
+  labels:
+    app.kubernetes.io/name: langfuse-role-sync
+    app.kubernetes.io/component: sync
+    app.kubernetes.io/part-of: langfuse
+spec:
+  schedule: "#{ langfuse_scim_sync_schedule | default('*/5 * * * *') }#"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: langfuse-role-sync
+            app.kubernetes.io/component: sync
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+            - name: sync
+              image: python:3.12-slim
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pip install --quiet requests && python /scripts/sync.py
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                - name: KEYCLOAK_URL
+                  value: "https://#{ keycloak_hostname }#"
+                - name: KEYCLOAK_REALM
+                  value: "#{ keycloak_realm | default('matherlynet') }#"
+                - name: KEYCLOAK_CLIENT_ID
+                  value: "#{ langfuse_sync_keycloak_client_id | default('langfuse-sync') }#"
+                - name: KEYCLOAK_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: langfuse-sync-secret
+                      key: KEYCLOAK_CLIENT_SECRET
+                - name: LANGFUSE_URL
+                  value: "https://#{ langfuse_hostname }#"
+                - name: LANGFUSE_ORG_ID
+                  value: "#{ langfuse_init_org_id }#"
+                - name: LANGFUSE_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: langfuse-sync-secret
+                      key: LANGFUSE_PUBLIC_KEY
+                - name: LANGFUSE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: langfuse-sync-secret
+                      key: LANGFUSE_SECRET_KEY
+                - name: ROLE_MAPPING
+                  valueFrom:
+                    configMapKeyRef:
+                      name: langfuse-sync-config
+                      key: ROLE_MAPPING
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: langfuse-sync-script
+                defaultMode: 0444
+#% endif %#

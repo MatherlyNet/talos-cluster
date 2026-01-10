@@ -1931,6 +1931,55 @@ cloudflare_gateway_addr: ""
 # langfuse_default_project_role: "VIEWER"
 
 # =============================================================================
+# LANGFUSE SCIM ROLE SYNC (Keycloak → Langfuse)
+# =============================================================================
+# Synchronizes user roles from Keycloak to Langfuse via SCIM API.
+# Since Langfuse doesn't natively support OIDC role claims, this CronJob
+# periodically syncs roles from Keycloak to Langfuse.
+# REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md
+# REQUIRES: langfuse_enabled: true, keycloak_enabled: true
+# -----------------------------------------------------------------------------
+
+# -- Enable SCIM role sync from Keycloak
+#    When enabled, a CronJob syncs Keycloak roles to Langfuse via SCIM API
+#    (OPTIONAL) / (DEFAULT: false)
+# langfuse_scim_sync_enabled: false
+
+# -- Sync schedule (cron format)
+#    How often to sync roles from Keycloak to Langfuse
+#    (OPTIONAL) / (DEFAULT: "*/5 * * * *" = every 5 minutes)
+# langfuse_scim_sync_schedule: "*/5 * * * *"
+
+# -- Langfuse Organization API Key (public key)
+#    Create in Langfuse UI: Organization Settings → API Keys
+#    (REQUIRED when langfuse_scim_sync_enabled: true)
+# langfuse_scim_public_key: ""
+
+# -- Langfuse Organization API Key (secret key, SOPS-encrypted)
+#    (REQUIRED when langfuse_scim_sync_enabled: true)
+# langfuse_scim_secret_key: ""
+
+# -- Keycloak service account client ID for sync
+#    Client with view-users and view-realm roles
+#    (OPTIONAL) / (DEFAULT: "langfuse-sync")
+# langfuse_sync_keycloak_client_id: "langfuse-sync"
+
+# -- Keycloak service account client secret (SOPS-encrypted)
+#    (REQUIRED when langfuse_scim_sync_enabled: true)
+# langfuse_sync_keycloak_client_secret: ""
+
+# -- Role mapping (Keycloak realm role → Langfuse organization role)
+#    Maps Keycloak realm roles to Langfuse organization roles
+#    Valid Langfuse roles: OWNER, ADMIN, MEMBER, VIEWER, NONE
+#    'default' is used for users without any matching Keycloak role
+#    (OPTIONAL) / (DEFAULT: see below)
+# langfuse_role_mapping:
+#   admin: "ADMIN"
+#   operator: "MEMBER"
+#   developer: "MEMBER"
+#   default: "VIEWER"
+
+# =============================================================================
 # OBOT MCP GATEWAY - AI Agent Platform with MCP Server Hosting
 # =============================================================================
 # Obot provides an AI agent platform with Model Context Protocol (MCP) server

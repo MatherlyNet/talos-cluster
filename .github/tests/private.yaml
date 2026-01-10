@@ -127,6 +127,18 @@ cloudflare_gateway_addr: "10.10.10.251"
 # langfuse_default_org_role: "VIEWER"
 # langfuse_default_project_id: "default-project"
 # langfuse_default_project_role: "VIEWER"
+# Langfuse SCIM Role Sync (requires keycloak_enabled: true)
+# langfuse_scim_sync_enabled: false
+# langfuse_scim_sync_schedule: "*/5 * * * *"
+# langfuse_scim_public_key: "lf_pk_test1234567890abcdef"
+# langfuse_scim_secret_key: "lf_sk_test1234567890abcdef"
+# langfuse_sync_keycloak_client_id: "langfuse-sync"
+# langfuse_sync_keycloak_client_secret: "test-langfuse-sync-secret"
+# langfuse_role_mapping:
+#   admin: "ADMIN"
+#   operator: "MEMBER"
+#   developer: "MEMBER"
+#   default: "VIEWER"
 
 # Obot MCP Gateway (optional - uncomment to test)
 # REF: docs/research/obot-mcp-gateway-integration-jan-2026.md

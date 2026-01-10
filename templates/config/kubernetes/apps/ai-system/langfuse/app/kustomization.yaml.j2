@@ -17,4 +17,10 @@ resources:
 #% if network_policies_enabled | default(false) %#
   - ./networkpolicy.yaml
 #% endif %#
+#% if langfuse_scim_sync_enabled | default(false) %#
+  #| SCIM role sync CronJob - syncs Keycloak roles to Langfuse #|
+  - ./sync-cronjob.yaml
+  - ./sync-secret.sops.yaml
+  - ./sync-configmap.yaml
+#% endif %#
 #% endif %#

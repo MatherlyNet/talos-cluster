@@ -133,7 +133,7 @@ data:
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
-#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) %#
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) or langfuse_scim_sync_enabled | default(false) %#
     clients:
 #% if keycloak_bootstrap_oidc_client | default(false) %#
       #| Envoy Gateway SSO Client #|
@@ -444,6 +444,37 @@ data:
               userinfo.token.claim: "true"
 #% endif %#
 #% endif %#
+#% if langfuse_scim_sync_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| LANGFUSE SCIM SYNC CLIENT - Service Account for Role Synchronization       #|
+      #| Auto-created when langfuse_scim_sync_enabled is true                        #|
+      #| Used by CronJob to query users and sync roles from Keycloak to Langfuse    #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md       #|
+      #| =========================================================================== #|
+      - clientId: "$(env:LANGFUSE_SYNC_CLIENT_ID)"
+        name: "Langfuse Role Sync"
+        description: "Service account for syncing Keycloak roles to Langfuse via SCIM API"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:LANGFUSE_SYNC_CLIENT_SECRET)"
+        #| Service account flow only - no user login #|
+        standardFlowEnabled: false
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: true
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        #| No redirect URIs needed for service accounts #|
+        redirectUris: []
+        webOrigins: []
+        #| NOTE: 'openid' is implicit in OIDC protocol #|
+        defaultClientScopes:
+          - "profile"
+          - "email"
+        optionalClientScopes: []
+        #| Service account roles will be configured in serviceAccountRealmRoles #|
+#% endif %#
 
 #% if google_idp_enabled | default(false) or github_idp_enabled | default(false) or microsoft_idp_enabled | default(false) %#
     #| =========================================================================== #|
@@ -590,4 +621,23 @@ data:
 #% endif %#
 #% endif %#
 #% endif %#
+#% endif %#
+
+#% if langfuse_scim_sync_enabled | default(false) %#
+    #| =========================================================================== #|
+    #| SERVICE ACCOUNT ROLE MAPPINGS - Langfuse Sync Client                        #|
+    #| Assigns realm-management roles to the sync service account                  #|
+    #| Required: view-users and view-realm for Admin API access                    #|
+    #| REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md       #|
+    #| =========================================================================== #|
+    #| Note: keycloak-config-cli handles service account role assignment via       #|
+    #| the users section with special service-account-* naming convention          #|
+    users:
+      - username: "service-account-#{ langfuse_sync_keycloak_client_id | default('langfuse-sync') }#"
+        enabled: true
+        serviceAccountClientId: "#{ langfuse_sync_keycloak_client_id | default('langfuse-sync') }#"
+        clientRoles:
+          realm-management:
+            - "view-users"
+            - "view-realm"
 #% endif %#
