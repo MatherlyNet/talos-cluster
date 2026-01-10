@@ -80,6 +80,14 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+            io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
             app: keycloak
             io.kubernetes.pod.namespace: identity
       toPorts:

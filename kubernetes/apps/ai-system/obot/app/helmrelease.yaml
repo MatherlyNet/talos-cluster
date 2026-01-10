@@ -69,7 +69,7 @@ spec:
 
 
       OBOT_SERVER_AUTH_PROVIDER: "keycloak"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "http://keycloak-service.identity.svc.cluster.local:8080"
+      OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "https://sso.matherly.net"
       OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "matherlynet"
       OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
