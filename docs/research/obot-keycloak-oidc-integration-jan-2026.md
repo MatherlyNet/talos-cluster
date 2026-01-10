@@ -21,11 +21,13 @@ This document provides comprehensive research and validation guidance for integr
 
 | Component | Status | Notes |
 | ----------- | -------- | ------- |
-| Keycloak Client Configuration | ✅ Validated | realm-config.yaml.j2 correctly configured |
-| Environment Variables | ✅ Validated | helmrelease.yaml.j2 and secret.sops.yaml.j2 correct |
+| Keycloak Client Configuration | ✅ Functional | Protocol mappers work; 'groups' scope recommended for OIDC compliance |
+| Environment Variables | ⚠️ Needs Fix | Variable name mismatch (BASE_URL vs URL) - CRITICAL |
 | Derived Variables (plugin.py) | ✅ Validated | obot_keycloak_base_url correctly derived |
 | Network Policies | ✅ Validated | Includes Keycloak egress |
-| Protocol Mappers | ✅ Validated | Groups and roles claims configured |
+| Protocol Mappers | ✅ Validated | Groups and roles claims configured on obot client |
+| Client Scopes Position | ℹ️ Recommended | offline_access works from optional; default is cleaner |
+| Email Domains Config | ℹ️ Recommended | OBOT_AUTH_PROVIDER_EMAIL_DOMAINS not explicitly set |
 
 ## Fork Analysis: jrmatherly/obot-entraid
 
@@ -481,9 +483,11 @@ kubectl exec -n ai-system deploy/obot-obot -- curl -v https://auth.example.com/r
 
 ## Recommended Remediation
 
-Based on this research, the following change is recommended:
+Based on this research, the following changes are recommended:
 
-### Fix Environment Variable Name
+### 1. Fix Environment Variable Name (CRITICAL)
+
+**Priority:** Critical - Authentication will not work without this fix
 
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 
@@ -501,6 +505,123 @@ This aligns with the fork's expected environment variable name as defined in `to
 ```
 Metadata: envVars: ...,OBOT_KEYCLOAK_AUTH_PROVIDER_URL,...
 ```
+
+### 2. Add 'groups' Client Scope Definition (MODERATE)
+
+**Priority:** Moderate - Recommended for OIDC compliance when using ALLOWED_GROUPS feature
+
+**Issue:** The Keycloak auth provider automatically requests the `groups` scope when `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS` is configured:
+
+```go
+// From main.go
+if opts.AllowedGroups != "" {
+    legacyOpts.LegacyProvider.Scope = "openid email profile offline_access groups"
+}
+```
+
+However, Keycloak does not have a built-in `groups` client scope. The current realm-config.yaml.j2 includes the group membership protocol mapper on the obot client, but the `groups` scope itself is not defined at the realm level.
+
+**Important Clarification:** The groups claim will still appear in tokens because the protocol mapper (`oidc-group-membership-mapper`) is configured directly on the obot client with `id.token.claim: "true"`. Keycloak typically ignores undefined scope requests rather than rejecting them. However, defining the scope explicitly is recommended for:
+- **OIDC Standards Compliance** - Proper scope-to-claim mapping
+- **Consent Screen Clarity** - Shows "Your group memberships" on consent screen if consent is required
+- **Future Maintainability** - Documents the intent clearly
+
+**File:** `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`
+
+**Add to clientScopes section:**
+```yaml
+#| 'groups' scope for Obot group-based access control #|
+- name: "groups"
+  description: "OpenID Connect scope for group memberships"
+  protocol: "openid-connect"
+  attributes:
+    include.in.token.scope: "true"
+    display.on.consent.screen: "true"
+    consent.screen.text: "Your group memberships"
+  protocolMappers:
+    - name: "groups"
+      protocol: "openid-connect"
+      protocolMapper: "oidc-group-membership-mapper"
+      config:
+        claim.name: "groups"
+        full.path: "false"
+        id.token.claim: "true"
+        access.token.claim: "true"
+        userinfo.token.claim: "true"
+```
+
+**Then add to obot client's optionalClientScopes:**
+```yaml
+optionalClientScopes:
+  - "address"
+  - "phone"
+  - "offline_access"
+  - "groups"  #| Add this for group-based access control #|
+```
+
+### 3. Move offline_access to defaultClientScopes (LOW)
+
+**Priority:** Low - Improves session persistence but not critical
+
+**Issue:** The `offline_access` scope is currently in `optionalClientScopes`, meaning it must be explicitly requested. The auth provider always requests it in its scope string:
+
+```go
+legacyOpts.LegacyProvider.Scope = "openid email profile offline_access"
+```
+
+For better session persistence, move it to default scopes.
+
+**File:** `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`
+
+**Current:**
+```yaml
+defaultClientScopes:
+  - "profile"
+  - "email"
+optionalClientScopes:
+  - "address"
+  - "phone"
+  - "offline_access"
+```
+
+**Change to:**
+```yaml
+defaultClientScopes:
+  - "profile"
+  - "email"
+  - "offline_access"  #| Moved from optional - always requested by auth provider #|
+optionalClientScopes:
+  - "address"
+  - "phone"
+```
+
+### 4. Add OBOT_AUTH_PROVIDER_EMAIL_DOMAINS (RECOMMENDED)
+
+**Priority:** Recommended - Improves security posture
+
+**Issue:** The `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` variable is not explicitly configured. While oauth2-proxy may default to `*` (allow all), explicitly setting it documents intent and allows future domain restrictions.
+
+**File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
+
+**Add to config section after OBOT_SERVER_AUTH_PROVIDER:**
+```yaml
+#| Allow all email domains (explicitly configured for clarity) #|
+OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
+```
+
+Or for domain-restricted deployments:
+```yaml
+OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') }#"
+```
+
+### Remediation Summary
+
+| Issue | Priority | Impact | Files to Modify |
+| ------- | ---------- | -------- | ----------------- |
+| Environment variable name mismatch | CRITICAL | Auth fails completely | helmrelease.yaml.j2 |
+| Missing 'groups' client scope | MODERATE | OIDC non-compliance (groups still work via protocol mapper) | realm-config.yaml.j2 |
+| offline_access scope position | LOW | Configuration clarity (already works) | realm-config.yaml.j2 |
+| EMAIL_DOMAINS not set | RECOMMENDED | Security documentation/clarity | helmrelease.yaml.j2 |
 
 ## Security Considerations
 
@@ -531,17 +652,17 @@ Metadata: envVars: ...,OBOT_KEYCLOAK_AUTH_PROVIDER_URL,...
 
 ## Appendix A: Complete Environment Variables Matrix
 
-| Variable | Source | Location in Deployment |
-| ---------- | -------- | ------------------------ |
-| `OBOT_SERVER_AUTH_PROVIDER` | Static | helmrelease.yaml.j2 config |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` | Derived (obot_keycloak_base_url) | helmrelease.yaml.j2 config |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` | Derived (obot_keycloak_realm) | helmrelease.yaml.j2 config |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID` | cluster.yaml | helmrelease.yaml.j2 config |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS` | cluster.yaml (optional) | helmrelease.yaml.j2 config |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES` | cluster.yaml (optional) | helmrelease.yaml.j2 config |
-| `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` | Not currently configured | Should default to `*` |
+| Variable | Source | Location in Deployment | Status |
+| ---------- | -------- | ------------------------ | -------- |
+| `OBOT_SERVER_AUTH_PROVIDER` | Static | helmrelease.yaml.j2 config | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` | Derived (obot_keycloak_base_url) | helmrelease.yaml.j2 config | ⚠️ Named incorrectly as BASE_URL |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` | Derived (obot_keycloak_realm) | helmrelease.yaml.j2 config | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID` | cluster.yaml | helmrelease.yaml.j2 config | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS` | cluster.yaml (optional) | helmrelease.yaml.j2 config | ✅ Correct |
+| `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES` | cluster.yaml (optional) | helmrelease.yaml.j2 config | ✅ Correct |
+| `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` | Not currently configured | Should add to helmrelease.yaml.j2 | ℹ️ Recommended |
 
 ## Appendix B: Token Claims Example
 
@@ -590,11 +711,35 @@ Example Keycloak ID token with all required claims:
 
 | Item | Validated | Date | Notes |
 | ------ | ----------- | ------ | ------- |
-| Fork tool.gpt env vars | ✅ | Jan 2026 | Confirmed URL variable name |
-| Fork main.go implementation | ✅ | Jan 2026 | Confirmed OIDC issuer construction |
+| Fork tool.gpt env vars | ✅ | Jan 2026 | Confirmed URL variable name (re-verified Jan 2026) |
+| Fork main.go implementation | ✅ | Jan 2026 | Confirmed OIDC issuer construction, scope handling (re-verified Jan 2026) |
 | oauth2-proxy keycloak-oidc provider | ✅ | Jan 2026 | Official docs reviewed |
 | PKCE S256 requirement | ✅ | Jan 2026 | Required per MCP 2025-11-25 spec |
 | Cookie secret format | ✅ | Jan 2026 | 16/24/32 bytes base64 |
-| Current helmrelease.yaml.j2 | ⚠️ | Jan 2026 | Variable name mismatch found |
-| Current realm-config.yaml.j2 | ✅ | Jan 2026 | Correctly configured |
+| Current helmrelease.yaml.j2 | ⚠️ | Jan 2026 | Variable name mismatch (CRITICAL - re-confirmed) |
+| Current realm-config.yaml.j2 | ✅ | Jan 2026 | Protocol mapper functional; scope definition recommended |
+| Current realm-config.yaml.j2 scopes | ℹ️ | Jan 2026 | offline_access works as optional; default is cleaner |
 | Current plugin.py | ✅ | Jan 2026 | Correctly derives URLs |
+| EMAIL_DOMAINS configuration | ℹ️ | Jan 2026 | Not explicitly set (RECOMMENDED) |
+
+### Reflection Phase Findings (Jan 2026)
+
+Additional issues identified during systematic review:
+
+1. **'groups' Client Scope Missing:** The fork's main.go adds `groups` to the OAuth scope string when `ALLOWED_GROUPS` is configured, but Keycloak doesn't have a built-in `groups` scope. While the protocol mapper exists on the obot client, the scope itself should be defined for proper OIDC compliance.
+
+2. **offline_access Scope Position:** The auth provider always requests `offline_access` in its scope string regardless of configuration. Having it in `optionalClientScopes` means it must be explicitly requested, which the provider does - but moving to `defaultClientScopes` aligns configuration with actual behavior.
+
+3. **EMAIL_DOMAINS Variable:** oauth2-proxy has an `email-domain` flag that defaults to `*` (allow all). Explicitly setting `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` documents intent and enables future domain restrictions without code changes.
+
+### Re-Review Phase Findings (Jan 2026)
+
+**Clarifications made during second review:**
+
+1. **'groups' Scope Functionality:** The protocol mapper (`oidc-group-membership-mapper`) on the obot client already produces the `groups` claim in tokens with `id.token.claim: "true"`. Keycloak ignores undefined scope requests rather than rejecting them. The 'groups' clientScope definition is recommended for OIDC standards compliance and consent screen clarity, but is not strictly required for the groups claim to appear in tokens.
+
+2. **Keycloak Scope Handling:** Confirmed that Keycloak's behavior is to silently ignore scope requests for scopes that don't exist as clientScopes, rather than failing the authorization request. This means authentication will work without the explicit scope definition.
+
+3. **Impact Assessment Refined:** Updated remediation summary to accurately reflect that groups functionality works via protocol mapper, and the scope definition improves OIDC compliance rather than being required for functionality.
+
+4. **Source Verification:** Re-fetched fork source files (tool.gpt, main.go) to re-confirm environment variable names and scope handling logic. All findings validated.

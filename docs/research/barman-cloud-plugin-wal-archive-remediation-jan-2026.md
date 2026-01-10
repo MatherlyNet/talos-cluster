@@ -1,10 +1,13 @@
 # Barman Cloud Plugin WAL Archive Remediation Guide
 
 > **Created:** January 2026
-> **Status:** Research Complete - Remediation Required
+> **Updated:** January 10, 2026
+> **Status:** Research Complete - Multiple Issues Identified
 > **Issue:** WAL archiving fails with `exit status 1` for CNPG clusters using RustFS S3 backend
-> **Affected:** obot-postgresql, potentially all CNPG clusters with barman-cloud plugin backup
-> **Root Cause:** boto3 1.36+ S3 Data Integrity Protection incompatibility with RustFS
+> **Affected:** All CNPG clusters with barman-cloud plugin backup to RustFS
+> **Root Causes:**
+> 1. boto3 1.36+ S3 Data Integrity Protection incompatibility with RustFS (RESOLVED)
+> 2. Stale archive data causing "Expected empty archive" errors (NEW FINDING)
 
 ---
 
@@ -16,7 +19,11 @@ The CloudNativePG Barman Cloud Plugin is failing to archive WAL files to RustFS 
 rpc error: code = Unknown desc = unexpected failure invoking barman-cloud-wal-archive: exit status 1
 ```
 
-This research identifies the root cause as **boto3 1.36+ S3 Data Integrity Protection** incompatibility with S3-compatible storage providers (including RustFS) that haven't implemented the new checksum validation features.
+This research identifies **two distinct issues**:
+
+1. **boto3 1.36+ S3 Data Integrity Protection** - Incompatibility with S3-compatible storage providers (including RustFS) that haven't implemented the new checksum validation features. **RESOLVED** via environment variable workaround.
+
+2. **Stale Archive Data** - When clusters are recreated (new timeline), old WAL files in the S3 bucket cause `barman-cloud-check-wal-archive` to fail with "Expected empty archive". This is the **current blocking issue** (January 10, 2026).
 
 ---
 
@@ -592,6 +599,169 @@ cnpg_barman_plugin_enabled: true
 
 ---
 
+## Issue 2: Stale Archive Data (Current Blocking Issue)
+
+### Symptoms
+
+After resolving the boto3 checksum issue, WAL archiving continues to fail with:
+
+```
+ERROR: WAL archive check failed for server obot-postgresql: Expected empty archive
+```
+
+### Root Cause
+
+This occurs when:
+1. A CNPG cluster is recreated (e.g., pod deleted and recreated, PVC data lost)
+2. The new cluster starts with timeline 1 (fresh initdb)
+3. Old WAL files from the previous cluster instance still exist in S3
+4. `barman-cloud-check-wal-archive` runs before every archive operation
+5. The check finds existing data and expects an empty archive for a new cluster
+
+### Evidence (January 10, 2026)
+
+```bash
+# S3 bucket contains old WAL files from January 9th
+$ aws s3 ls s3://obot-postgres-backups/ --recursive
+2026-01-09 21:08:59    2712544 obot-postgresql/wals/0000000100000000/000000010000000000000001.gz
+2026-01-09 21:09:04    1176261 obot-postgresql/wals/0000000100000000/000000010000000000000002.gz
+...
+
+# But current pod was recreated later
+$ kubectl get pod obot-postgresql-1 -o jsonpath='{.status.startTime}'
+2026-01-09T23:51:38Z
+```
+
+### Remediation Options
+
+#### Option 1: Clean S3 Bucket (Development/Fresh Start)
+
+For development environments or when starting fresh:
+
+```bash
+# Delete all objects in the backup bucket
+ACCESS_KEY=$(kubectl get secret obot-backup-credentials -n ai-system -o jsonpath='{.data.ACCESS_KEY_ID}' | base64 -d)
+SECRET_KEY=$(kubectl get secret obot-backup-credentials -n ai-system -o jsonpath='{.data.SECRET_ACCESS_KEY}' | base64 -d)
+
+kubectl run --rm -i s3-cleanup --image=amazon/aws-cli --restart=Never --namespace=ai-system \
+  --env="AWS_ACCESS_KEY_ID=$ACCESS_KEY" \
+  --env="AWS_SECRET_ACCESS_KEY=$SECRET_KEY" \
+  -- s3 rm s3://obot-postgres-backups/ --recursive \
+  --endpoint-url=http://rustfs-svc.storage.svc.cluster.local:9000
+
+# Restart the PostgreSQL pod to trigger fresh archiving
+kubectl delete pod obot-postgresql-1 -n ai-system
+```
+
+#### Option 2: Bootstrap from Existing Backup (Recovery Scenario)
+
+If you want to preserve the existing backup data and restore from it, use the CNPG recovery bootstrap mode:
+
+```yaml
+spec:
+  bootstrap:
+    recovery:
+      source: obot-postgresql-backup
+  externalClusters:
+    - name: obot-postgresql-backup
+      barmanObjectStore:
+        destinationPath: "s3://obot-postgres-backups"
+        endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
+        s3Credentials:
+          accessKeyId:
+            name: obot-backup-credentials
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: obot-backup-credentials
+            key: SECRET_ACCESS_KEY
+```
+
+#### Option 3: Use Separate Server Name (Coexistence)
+
+Configure the cluster to use a different server name prefix in the ObjectStore:
+
+```yaml
+# In the Cluster spec
+spec:
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: obot-objectstore
+        serverName: obot-postgresql-v2  # Different name from previous instance
+```
+
+This allows the new cluster to archive to a separate path without conflicting with old data.
+
+### Prevention
+
+To prevent this issue in the future:
+
+1. **Before deleting a cluster**, clean up or archive its S3 backup data
+2. **Use unique serverName** for each cluster incarnation if data needs to be preserved
+3. **Implement backup lifecycle management** to automatically clean old backups
+4. **Use recovery bootstrap** when recreating a cluster that has existing backups
+
+---
+
+## Plugin Architecture Deep Dive
+
+### Component Overview
+
+The barman-cloud plugin consists of two container images:
+
+| Image | Purpose | Location |
+| ----- | ------- | -------- |
+| `ghcr.io/cloudnative-pg/plugin-barman-cloud` | Plugin operator - handles gRPC communication with CNPG operator | Deployment in cnpg-system |
+| `ghcr.io/cloudnative-pg/plugin-barman-cloud-sidecar` | Sidecar - performs actual WAL archiving/backups | Injected as init container in PostgreSQL pods |
+
+### Communication Flow
+
+```
+┌─────────────────────┐     gRPC/mTLS     ┌─────────────────────┐
+│   CNPG Operator     │◄───────────────────►│  barman-cloud      │
+│   (cnpg-system)     │                    │  Plugin Operator    │
+└─────────────────────┘                    └─────────────────────┘
+          │                                         │
+          │ Cluster CRD                             │ ObjectStore CRD
+          ▼                                         ▼
+┌─────────────────────┐                    ┌─────────────────────┐
+│  PostgreSQL Pod     │                    │  ObjectStore        │
+│  ┌───────────────┐  │                    │  Configuration      │
+│  │ Init Container│  │                    │  (S3 credentials,   │
+│  │ (sidecar img) │  │                    │   env vars, etc.)   │
+│  └───────────────┘  │                    └─────────────────────┘
+│  ┌───────────────┐  │
+│  │   postgres    │──┼──────► WAL archiver process
+│  └───────────────┘  │              │
+└─────────────────────┘              │
+                                     ▼
+                            ┌─────────────────────┐
+                            │  RustFS S3 Storage  │
+                            │  (WAL files +       │
+                            │   base backups)     │
+                            └─────────────────────┘
+```
+
+### Environment Variable Propagation
+
+The `instanceSidecarConfiguration.env` variables in ObjectStore are passed to the **init container** (`plugin-barman-cloud-sidecar`), which:
+
+1. Reads the ObjectStore configuration
+2. Sets up environment variables for barman-cloud commands
+3. Creates configuration files in `/controller/` directory
+4. The main postgres container's archiver process invokes barman-cloud commands with these environment variables
+
+### Key Discovery: Init Container vs Sidecar
+
+Despite the name "sidecar", the plugin uses an **init container** pattern:
+- `plugin-barman-cloud` runs as init container, not a continuously running sidecar
+- WAL archiving is done by the main postgres container calling barman-cloud binaries
+- The init container prepares the environment and configuration
+- Environment variables must be available to processes spawned by the postgres container
+
+---
+
 ## Changelog
 
 | Date | Change |
@@ -603,3 +773,8 @@ cnpg_barman_plugin_enabled: true
 | 2026-01-09 | Updated affected files table with priority order and CRD as first entry |
 | 2026-01-09 | Added Step 0 for CRD verification and Step 5 for sidecar env verification |
 | 2026-01-09 | Validation completed - document ready for implementation |
+| 2026-01-10 | **NEW FINDING:** Identified "Expected empty archive" error as second blocking issue |
+| 2026-01-10 | Added comprehensive documentation research findings |
+| 2026-01-10 | Added Plugin Architecture Deep Dive section |
+| 2026-01-10 | Added Issue 2: Stale Archive Data remediation options |
+| 2026-01-10 | boto3 workaround confirmed working - env vars present in init container |
