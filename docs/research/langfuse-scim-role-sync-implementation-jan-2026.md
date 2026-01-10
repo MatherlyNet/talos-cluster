@@ -20,7 +20,7 @@ This document provides a comprehensive implementation plan for synchronizing Key
 ### Recommendation Summary
 
 | Approach | Complexity | Real-time | Recommended For |
-|----------|------------|-----------|-----------------|
+| ---------- | ---------- | ---------- | ----------------- |
 | Option A: CronJob Sync | Low | No (periodic) | Most deployments |
 | Option B: Keycloak Webhook | Medium-High | Yes | Enterprise/high-volume |
 | Option C: Login-Time Sync | High | Yes | Custom requirements |
@@ -50,7 +50,7 @@ langfuse_init_project_id: "litellm"
 ### Limitations of Current Approach
 
 | Feature | Current State | Desired State |
-|---------|---------------|---------------|
+| --------- | --------------- | --------------- |
 | SSO Authentication | Working | Working |
 | Role from Keycloak claims | Not supported | Map Keycloak roles to Langfuse |
 | Dynamic role updates | Not supported | Sync on role change |
@@ -61,8 +61,9 @@ langfuse_init_project_id: "litellm"
 Langfuse uses a two-tier RBAC model:
 
 **Organization Roles:**
+
 | Role | Permissions |
-|------|-------------|
+| ------ | ------------- |
 | `OWNER` | Full administrative access, can delete org |
 | `ADMIN` | Manage members, projects, settings |
 | `MEMBER` | Create traces, view dashboards |
@@ -70,8 +71,9 @@ Langfuse uses a two-tier RBAC model:
 | `NONE` | No org access (for project-only users) |
 
 **Project Roles:**
+
 | Role | Permissions |
-|------|-------------|
+| ------ | ------------- |
 | `OWNER` | Full project control |
 | `ADMIN` | Manage project settings, API keys |
 | `MEMBER` | Submit traces, create scores |
@@ -86,7 +88,7 @@ Langfuse uses a two-tier RBAC model:
 Base URL: `https://langfuse.matherly.net/api/public/scim`
 
 | Endpoint | Method | Purpose |
-|----------|--------|---------|
+| ---------- | ---------- | --------- |
 | `/ServiceProviderConfig` | GET | SCIM configuration |
 | `/ResourceTypes` | GET | Available resource types |
 | `/Schemas` | GET | Schema definitions |
@@ -101,7 +103,7 @@ Base URL: `https://langfuse.matherly.net/api/public/scim`
 Base URL: `https://langfuse.matherly.net/api/public`
 
 | Endpoint | Method | Purpose |
-|----------|--------|---------|
+| ---------- | ---------- | --------- |
 | `/organizations/{orgId}/memberships` | GET | List org members |
 | `/organizations/{orgId}/memberships/{userId}` | PATCH | Update member role |
 | `/projects/{projectId}/memberships` | GET | List project members |
@@ -273,7 +275,7 @@ kubernetes/apps/ai-system/langfuse/sync/
 **Keycloak Realm Roles → Langfuse Org Roles:**
 
 | Keycloak Role | Langfuse Org Role | Description |
-|---------------|-------------------|-------------|
+| --------------- | ------------------- | ------------- |
 | `langfuse-admin` | `ADMIN` | Full org management |
 | `langfuse-member` | `MEMBER` | Create traces, scores |
 | `langfuse-viewer` | `VIEWER` | Read-only (default) |
@@ -284,7 +286,7 @@ kubernetes/apps/ai-system/langfuse/sync/
 If you prefer to reuse existing Keycloak roles:
 
 | Keycloak Role | Langfuse Org Role |
-|---------------|-------------------|
+| --------------- | ------------------- |
 | `admin` | `ADMIN` |
 | `operator` | `MEMBER` |
 | `developer` | `MEMBER` |
@@ -763,7 +765,7 @@ This eliminates the manual UI step entirely.
 ### API Endpoints Available
 
 | Endpoint | Method | Purpose |
-|----------|--------|---------|
+| ---------- | ---------- | --------- |
 | `/api/admin/organizations` | POST | Create organization |
 | `/api/admin/organizations/{id}` | GET | Get organization |
 | `/api/admin/organizations/{id}` | PATCH | Update organization |
