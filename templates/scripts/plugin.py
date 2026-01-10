@@ -620,9 +620,13 @@ class Plugin(makejinja.plugin.Plugin):
             if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
                 keycloak_realm = data.get("keycloak_realm", "matherlynet")
                 keycloak_hostname = data.get("keycloak_hostname", "")
-                # Base URL (without /realms/...) for OBOT_KEYCLOAK_AUTH_PROVIDER_URL
-                data["obot_keycloak_base_url"] = f"https://{keycloak_hostname}"
-                # Issuer URL (with /realms/...) for reference
+                # Internal base URL for OBOT_KEYCLOAK_AUTH_PROVIDER_URL
+                # Uses internal service URL to avoid hairpin NAT issues where pods
+                # cannot reach LoadBalancer IPs from inside the cluster
+                data["obot_keycloak_base_url"] = (
+                    "http://keycloak-service.identity.svc.cluster.local:8080"
+                )
+                # External issuer URL (with /realms/...) for reference
                 data["obot_keycloak_issuer_url"] = (
                     f"https://{keycloak_hostname}/realms/{keycloak_realm}"
                 )

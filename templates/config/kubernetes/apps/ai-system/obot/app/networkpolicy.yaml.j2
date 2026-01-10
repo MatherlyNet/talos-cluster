@@ -121,16 +121,6 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
-    #| ======================================================================= #|
-    #| Keycloak (OIDC SSO) - External URL via FQDN                            #|
-    #| Required for token validation using external Keycloak URL              #|
-    #| ======================================================================= #|
-    - toFQDNs:
-        - matchName: "#{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }#"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
 #% endif %#
 #% if litellm_enabled | default(false) %#
     #| ======================================================================= #|
