@@ -76,6 +76,11 @@ spec:
           disable_login_form: true
           #| Keep signout menu enabled for logout functionality #|
           disable_signout_menu: false
+          #| Allow OAuth users to be matched to existing accounts by email address #|
+          #| This provides resilience when Keycloak is recreated (new subject IDs) #|
+          #| Safe for self-hosted Keycloak since we control the email claims #|
+          #| REF: https://github.com/grafana/grafana/issues/111139 #|
+          oauth_allow_insecure_email_lookup: true
         auth.generic_oauth:
           enabled: true
           name: "Keycloak"

@@ -60,6 +60,7 @@ spec:
         auth:
           disable_login_form: true
           disable_signout_menu: false
+          oauth_allow_insecure_email_lookup: true
         auth.generic_oauth:
           enabled: true
           name: "Keycloak"
