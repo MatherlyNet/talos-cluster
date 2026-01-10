@@ -122,8 +122,11 @@ spec:
       #| REF: https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md #|
       #| ======================================================================= #|
       OBOT_SERVER_AUTH_PROVIDER: "keycloak"
-      OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
+      #| Base URL without /realms/{realm} - fork constructs issuer URL internally #|
+      OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "#{ obot_keycloak_base_url }#"
       OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "#{ obot_keycloak_realm }#"
+      #| Allow all email domains (explicitly configured for clarity) #|
+      OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') }#"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "#{ obot_keycloak_client_id | default('obot') }#"
 #% if obot_keycloak_allowed_groups | default('') %#
       #| Optional: Restrict access to specific Keycloak groups #|

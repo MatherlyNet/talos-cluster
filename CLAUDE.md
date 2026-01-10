@@ -405,6 +405,7 @@ Optional Langfuse SSO (requires Keycloak):
 Optional Langfuse Authentication Configuration:
 - `langfuse_disable_password_auth` - Disable username/password login, SSO-only mode (default: false)
 - `langfuse_sso_domain_enforcement` - Comma-separated domains requiring SSO (e.g., "example.com,company.org")
+- **CRITICAL SSO Note:** When using `langfuse_sso_enabled: true`, you MUST set `langfuse_disable_signup: false` to allow SSO users to be created on first login. Setting both `langfuse_sso_enabled: true` and `langfuse_disable_signup: true` causes `OAuthCreateAccount` errors because new SSO users cannot be created.
 
 Optional Langfuse Caching Configuration (requires Redis/Dragonfly):
 - `langfuse_cache_api_key_enabled` - Enable API key caching (default: true)
@@ -470,8 +471,10 @@ Optional Obot Keycloak SSO (requires keycloak_enabled):
 - `obot_keycloak_cookie_secret` - SOPS-encrypted cookie encryption key (generate with: openssl rand -base64 32)
 - `obot_keycloak_allowed_groups` - Optional comma-separated group restrictions
 - `obot_keycloak_allowed_roles` - Optional comma-separated role restrictions
+- `obot_allowed_email_domains` - Allowed email domains (default: "*" for all, or "example.com,example.org")
 - When enabled, creates `obot` client in Keycloak realm-config with PKCE S256
 - Uses custom auth provider from jrmatherly/obot-entraid fork
+- See `docs/research/obot-keycloak-oidc-integration-jan-2026.md` for integration details
 
 Optional Obot MCP Namespace (Kubernetes MCP server hosting):
 - `obot_mcp_namespace` - Namespace for MCP server pods (default: "obot-mcp")

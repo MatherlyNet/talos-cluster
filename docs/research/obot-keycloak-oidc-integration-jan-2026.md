@@ -1,8 +1,15 @@
 # Obot Keycloak OIDC Integration Research
 
+> **✅ IMPLEMENTED:** All critical issues identified in this document have been resolved. See [obot-keycloak-oidc-remediation-jan-2026.md](./obot-keycloak-oidc-remediation-jan-2026.md) for the complete remediation details.
+>
+> **Resolved Issues:**
+> 1. ✅ `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` - Correctly named (was BASE_URL)
+> 2. ✅ `OBOT_AUTH_PROVIDER_COOKIE_SECRET` - Correctly named (was KEYCLOAK prefix)
+> 3. ✅ `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` - Added with configurable default
+
 **Date:** January 2026
-**Status:** Research Complete - Implementation Validated
-**Priority:** High
+**Status:** ✅ Implemented
+**Priority:** Critical (Resolved)
 **Related Components:** Obot (ai-system), Keycloak (identity), jrmatherly/obot-entraid fork
 
 ## Executive Summary
@@ -22,12 +29,13 @@ This document provides comprehensive research and validation guidance for integr
 | Component | Status | Notes |
 | ----------- | -------- | ------- |
 | Keycloak Client Configuration | ✅ Functional | Protocol mappers work; 'groups' scope recommended for OIDC compliance |
-| Environment Variables | ⚠️ Needs Fix | Variable name mismatch (BASE_URL vs URL) - CRITICAL |
+| Environment Variables (URL) | ✅ Fixed | Variable name corrected to OBOT_KEYCLOAK_AUTH_PROVIDER_URL |
+| Environment Variables (Cookie) | ✅ Fixed | Variable name corrected to OBOT_AUTH_PROVIDER_COOKIE_SECRET |
 | Derived Variables (plugin.py) | ✅ Validated | obot_keycloak_base_url correctly derived |
 | Network Policies | ✅ Validated | Includes Keycloak egress |
 | Protocol Mappers | ✅ Validated | Groups and roles claims configured on obot client |
 | Client Scopes Position | ℹ️ Recommended | offline_access works from optional; default is cleaner |
-| Email Domains Config | ℹ️ Recommended | OBOT_AUTH_PROVIDER_EMAIL_DOMAINS not explicitly set |
+| Email Domains Config | ✅ Fixed | OBOT_AUTH_PROVIDER_EMAIL_DOMAINS added with configurable default |
 
 ## Fork Analysis: jrmatherly/obot-entraid
 
@@ -659,7 +667,7 @@ OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') 
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` | Derived (obot_keycloak_realm) | helmrelease.yaml.j2 config | ✅ Correct |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID` | cluster.yaml | helmrelease.yaml.j2 config | ✅ Correct |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 | ✅ Correct |
-| `OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 | ✅ Correct |
+| `OBOT_AUTH_PROVIDER_COOKIE_SECRET` | cluster.yaml (SOPS) | secret.sops.yaml.j2 | ⚠️ Named incorrectly with KEYCLOAK prefix |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS` | cluster.yaml (optional) | helmrelease.yaml.j2 config | ✅ Correct |
 | `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES` | cluster.yaml (optional) | helmrelease.yaml.j2 config | ✅ Correct |
 | `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` | Not currently configured | Should add to helmrelease.yaml.j2 | ℹ️ Recommended |

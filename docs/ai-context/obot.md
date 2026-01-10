@@ -83,9 +83,12 @@ obot_keycloak_client_secret: "..."    # SOPS-encrypted
 obot_keycloak_cookie_secret: "..."    # Min 32 chars, generate: openssl rand -base64 32
 obot_keycloak_allowed_groups: ""      # Optional group restrictions
 obot_keycloak_allowed_roles: ""       # Optional role restrictions
+obot_allowed_email_domains: "*"       # Email domain restrictions (default: all)
 ```
 
-Uses custom Keycloak auth provider (`OBOT_KEYCLOAK_AUTH_PROVIDER_*` env vars) from jrmatherly/obot-entraid fork.
+Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork with two env var patterns:
+- `OBOT_KEYCLOAK_AUTH_PROVIDER_*` - Keycloak-specific vars (URL, REALM, CLIENT_ID, CLIENT_SECRET)
+- `OBOT_AUTH_PROVIDER_*` - Shared auth provider vars (COOKIE_SECRET, EMAIL_DOMAINS)
 
 ### MCP Namespace Resource Quotas
 ```yaml
@@ -234,14 +237,24 @@ templates/config/kubernetes/apps/identity/keycloak/realm-config/app/realm-import
 Obot uses `jrmatherly/obot-entraid` fork which adds Keycloak auth provider support via environment variables:
 
 ```yaml
-# In HelmRelease values
-env:
-  OBOT_KEYCLOAK_AUTH_PROVIDER_TYPE: keycloak
-  OBOT_KEYCLOAK_AUTH_PROVIDER_ISSUER: https://auth.${cloudflare_domain}/realms/${realm}
-  OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: obot
-  OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: <from-secret>
-  OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: <from-secret>
+# In HelmRelease config section
+config:
+  OBOT_SERVER_AUTH_PROVIDER: "keycloak"
+  # Base URL without /realms/{realm} - fork constructs issuer URL internally
+  OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "https://auth.${cloudflare_domain}"
+  OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "${keycloak_realm}"
+  OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
+  # Allow all email domains (explicitly configured for clarity)
+  OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
+
+# In Secret (via extraEnvFrom)
+stringData:
+  OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET: "<from-sops>"
+  # NOTE: Cookie secret is NOT prefixed with KEYCLOAK - it's the shared auth provider cookie secret
+  OBOT_AUTH_PROVIDER_COOKIE_SECRET: "<from-sops>"
 ```
+
+> **REF:** See `docs/research/obot-keycloak-oidc-integration-jan-2026.md` for complete integration details.
 
 ### Client Configuration
 When `obot_keycloak_enabled: true`, a Keycloak client is created in realm-import.yaml.j2:

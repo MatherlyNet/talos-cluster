@@ -621,7 +621,7 @@ class Plugin(makejinja.plugin.Plugin):
             if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
                 keycloak_realm = data.get("keycloak_realm", "matherlynet")
                 keycloak_hostname = data.get("keycloak_hostname", "")
-                # Base URL (without /realms/...) for OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL
+                # Base URL (without /realms/...) for OBOT_KEYCLOAK_AUTH_PROVIDER_URL
                 data["obot_keycloak_base_url"] = f"https://{keycloak_hostname}"
                 # Issuer URL (with /realms/...) for reference
                 data["obot_keycloak_issuer_url"] = (

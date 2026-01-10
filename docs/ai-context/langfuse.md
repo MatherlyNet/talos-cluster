@@ -278,8 +278,13 @@ langfuse_init_user_name: "Admin"     # Display name
 langfuse_init_org_name: "MyOrg"      # Initial organization
 
 # Security Hardening
-langfuse_disable_signup: false       # Set true to disable self-registration
+langfuse_disable_signup: false       # MUST be false when using SSO!
 ```
+
+> **CRITICAL SSO WARNING:** When `langfuse_sso_enabled: true`, you MUST set `langfuse_disable_signup: false`.
+> Setting both to `true` causes `OAuthCreateAccount` errors because NextAuth.js cannot create
+> accounts for new SSO users. The `disable_signup` setting blocks ALL new user creation, including SSO.
+> See: `docs/research/langfuse-keycloak-sso-validation-jan-2026.md`
 
 REF: https://langfuse.com/self-hosting/headless-initialization
 
@@ -437,6 +442,13 @@ If Keycloak redirect fails:
 - Check client secret matches: `langfuse_keycloak_client_secret`
 - Verify redirect URI in Keycloak client configuration
 - Check pod can reach internal Keycloak: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet/.well-known/openid-configuration`
+
+**OAuthCreateAccount Error:** If clicking "Login with Keycloak" returns `OAuthCreateAccount - Contact support if this error is unexpected`:
+- **Root cause:** `langfuse_disable_signup: true` is blocking SSO user creation
+- **Fix:** Set `langfuse_disable_signup: false` in cluster.yaml, then `task configure && task reconcile`
+- **Why:** The `disable_signup` setting blocks ALL new users, including SSO users logging in for the first time
+- **Note:** This is secure because `langfuse_disable_password_auth: true` still hides the password form; only SSO is available
+- **REF:** `docs/research/langfuse-keycloak-sso-validation-jan-2026.md`
 
 **Split-horizon DNS Issue**: If external Keycloak URL times out from pods (UniFi DNS resolves to LAN IP), the solution is already implemented - Langfuse uses `keycloak_internal_issuer_url` for OIDC discovery. Keycloak's `backchannelDynamic: true` returns external URLs for browser redirects and internal URLs for server-to-server token/userinfo calls.
 

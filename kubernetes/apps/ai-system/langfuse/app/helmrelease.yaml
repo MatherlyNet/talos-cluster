@@ -46,7 +46,7 @@ spec:
         format: "json"
 
       features:
-        signUpDisabled: true
+        signUpDisabled: false
 
       additionalEnv:
         - name: NEXTAUTH_COOKIE_DOMAIN
