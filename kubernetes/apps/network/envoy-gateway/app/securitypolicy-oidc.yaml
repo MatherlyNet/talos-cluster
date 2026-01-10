@@ -22,6 +22,12 @@ spec:
   oidc:
     provider:
       issuer: "https://sso.matherly.net/realms/matherlynet"
+      authorizationEndpoint: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/auth"
+      tokenEndpoint: "http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet/protocol/openid-connect/token"
+      backendRefs:
+        - name: keycloak-service
+          namespace: identity
+          port: 8080
     clientID: "envoy-gateway"
     clientSecret:
       name: oidc-client-secret

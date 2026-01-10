@@ -23,11 +23,28 @@ spec:
   oidc:
     provider:
       issuer: "#{ oidc_issuer_url }#"
+      #| ======================================================================= #|
+      #| OIDC Endpoints Configuration                                           #|
+      #| External authorizationEndpoint for user browser redirects              #|
+      #| Internal tokenEndpoint for server-to-server token exchange             #|
+      #| ======================================================================= #|
+      #% if keycloak_enabled | default(false) %#
+      #| User-facing authorization - always external via Cloudflare Tunnel #|
+      authorizationEndpoint: "https://#{ keycloak_hostname }#/realms/#{ keycloak_realm }#/protocol/openid-connect/auth"
+      #| Server-to-server token exchange - use internal service to avoid TLS issues with Cloudflare #|
+      tokenEndpoint: "http://keycloak-service.identity.svc.cluster.local:8080/realms/#{ keycloak_realm }#/protocol/openid-connect/token"
+      #| Specify backend for internal OIDC provider connections #|
+      backendRefs:
+        - name: keycloak-service
+          namespace: identity
+          port: 8080
+      #% else %#
       #% if oidc_authorization_endpoint is defined %#
       authorizationEndpoint: "#{ oidc_authorization_endpoint }#"
       #% endif %#
       #% if oidc_token_endpoint is defined %#
       tokenEndpoint: "#{ oidc_token_endpoint }#"
+      #% endif %#
       #% endif %#
     clientID: "#{ oidc_client_id }#"
     clientSecret:

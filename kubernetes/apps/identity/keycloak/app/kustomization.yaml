@@ -6,6 +6,7 @@ resources:
   - ./postgres-cnpg.yaml
   - ./keycloak-cr.yaml
   - ./httproute.yaml
+  - ./referencegrant.yaml
   - ./dashboard-troubleshooting.yaml
   - ./dashboard-capacity-planning.yaml
   - ./networkpolicy-postgres.yaml

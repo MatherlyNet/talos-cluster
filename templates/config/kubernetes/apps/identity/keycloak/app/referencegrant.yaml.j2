@@ -1,0 +1,27 @@
+#% if keycloak_enabled | default(false) and oidc_sso_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| ReferenceGrant - Allow network namespace to reference Keycloak service        #|
+#| Required for Envoy Gateway SecurityPolicy OIDC backendRefs                    #|
+#| REF: https://gateway.envoyproxy.io/docs/tasks/security/oidc/                  #|
+#| ============================================================================= #|
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-oidc-from-network
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: oidc
+spec:
+  from:
+    #| Allow SecurityPolicy in network namespace to reference this namespace's services #|
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: network
+  to:
+    #| Allow referencing the keycloak-service for OIDC token exchange #|
+    - group: ""
+      kind: Service
+      name: keycloak-service
+#% endif %#
