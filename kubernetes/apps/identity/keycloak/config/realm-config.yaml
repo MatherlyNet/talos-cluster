@@ -220,6 +220,24 @@ data:
               id.token.claim: "true"
               access.token.claim: "true"
               userinfo.token.claim: "true"
+      - clientId: "$(env:LANGFUSE_SYNC_CLIENT_ID)"
+        name: "Langfuse Role Sync"
+        description: "Service account for syncing Keycloak roles to Langfuse via SCIM API"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:LANGFUSE_SYNC_CLIENT_SECRET)"
+        standardFlowEnabled: false
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: true
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris: []
+        webOrigins: []
+        defaultClientScopes:
+          - "profile"
+          - "email"
+        optionalClientScopes: []
 
     identityProviders:
       - alias: "google"
@@ -244,3 +262,11 @@ data:
           syncMode: "INHERIT"
           role: "admin"
 
+    users:
+      - username: "service-account-langfuse-sync"
+        enabled: true
+        serviceAccountClientId: "langfuse-sync"
+        clientRoles:
+          realm-management:
+            - "view-users"
+            - "view-realm"

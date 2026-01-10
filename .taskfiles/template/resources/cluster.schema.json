@@ -1675,8 +1675,17 @@
     },
     "langfuse_role_mapping": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "OWNER",
+          "ADMIN",
+          "MEMBER",
+          "VIEWER",
+          "NONE"
+        ]
+      },
+      "description": "Keycloak role \u2192 Langfuse role mapping"
     },
     "obot_enabled": {
       "default": false,

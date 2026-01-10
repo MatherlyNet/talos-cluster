@@ -454,7 +454,7 @@ Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
 
 Optional Langfuse SCIM Role Sync (Keycloak → Langfuse):
 - `langfuse_scim_sync_enabled` - Enable SCIM role sync CronJob (default: false)
-- `langfuse_scim_sync_schedule` - Sync schedule in cron format (default: "*/5 * * * *")
+- `langfuse_scim_sync_schedule` - Sync schedule in cron format (default: "*/5* ** *")
 - `langfuse_scim_public_key` - Langfuse Organization API public key (create via UI)
 - `langfuse_scim_secret_key` - Langfuse Organization API secret key (SOPS-encrypted)
 - `langfuse_sync_keycloak_client_id` - Keycloak service account client ID (default: "langfuse-sync")

@@ -1965,6 +1965,7 @@ cloudflare_gateway_addr: ""
 # langfuse_sync_keycloak_client_id: "langfuse-sync"
 
 # -- Keycloak service account client secret (SOPS-encrypted)
+#    Generate with: openssl rand -base64 32
 #    (REQUIRED when langfuse_scim_sync_enabled: true)
 # langfuse_sync_keycloak_client_secret: ""
 

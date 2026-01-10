@@ -1,0 +1,327 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: langfuse-sync-config
+  labels:
+    app.kubernetes.io/name: langfuse-role-sync
+    app.kubernetes.io/component: sync
+    app.kubernetes.io/part-of: langfuse
+data:
+  ROLE_MAPPING: '{"admin": "ADMIN", "default": "VIEWER", "developer": "MEMBER", "operator": "MEMBER"}'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: langfuse-sync-script
+  labels:
+    app.kubernetes.io/name: langfuse-role-sync
+    app.kubernetes.io/component: sync
+    app.kubernetes.io/part-of: langfuse
+data:
+  sync.py: |
+    #!/usr/bin/env python3
+    """
+    Langfuse SCIM Role Sync from Keycloak
+
+    This script syncs user roles from Keycloak to Langfuse via SCIM API.
+    It runs as a Kubernetes CronJob.
+
+    Environment Variables:
+      KEYCLOAK_URL: Keycloak base URL (e.g., https://auth.example.com)
+      KEYCLOAK_REALM: Keycloak realm name
+      KEYCLOAK_CLIENT_ID: Service account client ID
+      KEYCLOAK_CLIENT_SECRET: Service account client secret
+      LANGFUSE_URL: Langfuse base URL
+      LANGFUSE_ORG_ID: Langfuse organization ID
+      LANGFUSE_PUBLIC_KEY: Langfuse org API public key
+      LANGFUSE_SECRET_KEY: Langfuse org API secret key
+      ROLE_MAPPING: JSON mapping of Keycloak roles to Langfuse roles
+    """
+
+    import os
+    import sys
+    import json
+    import logging
+    import requests
+    from typing import Dict, List, Optional
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+
+    # Configuration from environment
+    KEYCLOAK_URL = os.environ.get('KEYCLOAK_URL', '').rstrip('/')
+    KEYCLOAK_REALM = os.environ.get('KEYCLOAK_REALM', 'matherlynet')
+    KEYCLOAK_CLIENT_ID = os.environ.get('KEYCLOAK_CLIENT_ID')
+    KEYCLOAK_CLIENT_SECRET = os.environ.get('KEYCLOAK_CLIENT_SECRET')
+
+    LANGFUSE_URL = os.environ.get('LANGFUSE_URL', '').rstrip('/')
+    LANGFUSE_ORG_ID = os.environ.get('LANGFUSE_ORG_ID')
+    LANGFUSE_PUBLIC_KEY = os.environ.get('LANGFUSE_PUBLIC_KEY')
+    LANGFUSE_SECRET_KEY = os.environ.get('LANGFUSE_SECRET_KEY')
+
+    # Role mapping: Keycloak role -> Langfuse role
+    ROLE_MAPPING = json.loads(os.environ.get('ROLE_MAPPING', '{}'))
+    DEFAULT_ROLE = ROLE_MAPPING.get('default', 'VIEWER')
+
+
+    def validate_config() -> bool:
+        """Validate required configuration is present."""
+        required = [
+            ('KEYCLOAK_URL', KEYCLOAK_URL),
+            ('KEYCLOAK_CLIENT_ID', KEYCLOAK_CLIENT_ID),
+            ('KEYCLOAK_CLIENT_SECRET', KEYCLOAK_CLIENT_SECRET),
+            ('LANGFUSE_URL', LANGFUSE_URL),
+            ('LANGFUSE_ORG_ID', LANGFUSE_ORG_ID),
+            ('LANGFUSE_PUBLIC_KEY', LANGFUSE_PUBLIC_KEY),
+            ('LANGFUSE_SECRET_KEY', LANGFUSE_SECRET_KEY),
+        ]
+        missing = [name for name, value in required if not value]
+        if missing:
+            logger.error(f"Missing required environment variables: {', '.join(missing)}")
+            return False
+        return True
+
+
+    def get_keycloak_token() -> str:
+        """Get access token from Keycloak using client credentials."""
+        token_url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
+
+        response = requests.post(token_url, data={
+            'grant_type': 'client_credentials',
+            'client_id': KEYCLOAK_CLIENT_ID,
+            'client_secret': KEYCLOAK_CLIENT_SECRET,
+        }, timeout=30)
+        response.raise_for_status()
+        return response.json()['access_token']
+
+
+    def get_keycloak_users(token: str) -> List[dict]:
+        """Fetch all users from Keycloak with their realm roles."""
+        users_url = f"{KEYCLOAK_URL}/admin/realms/{KEYCLOAK_REALM}/users"
+        headers = {'Authorization': f'Bearer {token}'}
+
+        # Get all users (paginate if needed)
+        all_users = []
+        first = 0
+        max_per_page = 100
+
+        while True:
+            response = requests.get(
+                users_url,
+                headers=headers,
+                params={'first': first, 'max': max_per_page},
+                timeout=30
+            )
+            response.raise_for_status()
+            users = response.json()
+            if not users:
+                break
+            all_users.extend(users)
+            first += len(users)
+            if len(users) < max_per_page:
+                break
+
+        logger.info(f"Fetched {len(all_users)} users from Keycloak")
+
+        # Get roles for each user
+        for user in all_users:
+            if not user.get('email'):
+                continue
+            roles_url = f"{KEYCLOAK_URL}/admin/realms/{KEYCLOAK_REALM}/users/{user['id']}/role-mappings/realm"
+            try:
+                roles_response = requests.get(roles_url, headers=headers, timeout=30)
+                if roles_response.ok:
+                    user['realm_roles'] = [r['name'] for r in roles_response.json()]
+                else:
+                    user['realm_roles'] = []
+            except Exception as e:
+                logger.warning(f"Failed to get roles for user {user['id']}: {e}")
+                user['realm_roles'] = []
+
+        return all_users
+
+
+    def get_langfuse_users() -> Dict[str, dict]:
+        """Fetch all users from Langfuse SCIM API."""
+        scim_url = f"{LANGFUSE_URL}/api/public/scim/Users"
+
+        response = requests.get(
+            scim_url,
+            auth=(LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY),
+            timeout=30
+        )
+        response.raise_for_status()
+
+        users = {}
+        for user in response.json().get('Resources', []):
+            email = None
+            for email_entry in user.get('emails', []):
+                if email_entry.get('primary'):
+                    email = email_entry.get('value')
+                    break
+            if email:
+                users[email.lower()] = user
+
+        logger.info(f"Fetched {len(users)} users from Langfuse SCIM")
+        return users
+
+
+    def get_langfuse_memberships() -> Dict[str, str]:
+        """Get current org memberships from Langfuse."""
+        memberships_url = f"{LANGFUSE_URL}/api/public/organizations/{LANGFUSE_ORG_ID}/memberships"
+
+        try:
+            response = requests.get(
+                memberships_url,
+                auth=(LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY),
+                timeout=30
+            )
+            response.raise_for_status()
+            memberships = response.json().get('memberships', [])
+            return {m['userId']: m['role'] for m in memberships}
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning("Memberships endpoint not found, may need to use SCIM only")
+                return {}
+            raise
+
+
+    def map_role(keycloak_roles: List[str]) -> str:
+        """Map Keycloak roles to Langfuse role using priority order."""
+        # Check roles in order of priority (admin > operator > developer > default)
+        for kc_role in ['admin', 'langfuse-admin']:
+            if kc_role in keycloak_roles and kc_role in ROLE_MAPPING:
+                return ROLE_MAPPING[kc_role]
+
+        for kc_role in ['operator', 'langfuse-member']:
+            if kc_role in keycloak_roles and kc_role in ROLE_MAPPING:
+                return ROLE_MAPPING[kc_role]
+
+        for kc_role in ['developer']:
+            if kc_role in keycloak_roles and kc_role in ROLE_MAPPING:
+                return ROLE_MAPPING[kc_role]
+
+        # Check any other mapped roles
+        for kc_role, lf_role in ROLE_MAPPING.items():
+            if kc_role != 'default' and kc_role in keycloak_roles:
+                return lf_role
+
+        return DEFAULT_ROLE
+
+
+    def update_langfuse_role(user_id: str, email: str, new_role: str) -> bool:
+        """Update user's organization role in Langfuse via SCIM PATCH."""
+        scim_url = f"{LANGFUSE_URL}/api/public/scim/Users/{user_id}"
+
+        # SCIM PATCH operation to update role
+        patch_data = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "replace",
+                    "path": "urn:ietf:params:scim:schemas:extension:langfuse:2.0:User:orgRole",
+                    "value": new_role
+                }
+            ]
+        }
+
+        try:
+            response = requests.patch(
+                scim_url,
+                auth=(LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY),
+                json=patch_data,
+                headers={'Content-Type': 'application/scim+json'},
+                timeout=30
+            )
+
+            if response.ok:
+                logger.info(f"Updated {email} to role {new_role}")
+                return True
+            else:
+                logger.error(f"Failed to update {email}: {response.status_code} - {response.text}")
+                return False
+        except Exception as e:
+            logger.error(f"Exception updating {email}: {e}")
+            return False
+
+
+    def sync_roles():
+        """Main sync function."""
+        logger.info("=" * 60)
+        logger.info("Starting Langfuse role sync from Keycloak")
+        logger.info(f"Keycloak: {KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}")
+        logger.info(f"Langfuse: {LANGFUSE_URL} (org: {LANGFUSE_ORG_ID})")
+        logger.info(f"Role mapping: {ROLE_MAPPING}")
+        logger.info("=" * 60)
+
+        # Get Keycloak users with roles
+        kc_token = get_keycloak_token()
+        kc_users = get_keycloak_users(kc_token)
+
+        # Get Langfuse users
+        lf_users = get_langfuse_users()
+        lf_memberships = get_langfuse_memberships()
+
+        # Build email -> Keycloak user mapping
+        kc_by_email = {
+            u['email'].lower(): u
+            for u in kc_users
+            if u.get('email')
+        }
+
+        # Sync roles
+        updated = 0
+        skipped = 0
+        not_in_keycloak = 0
+
+        for email, lf_user in lf_users.items():
+            kc_user = kc_by_email.get(email)
+            if not kc_user:
+                logger.debug(f"User {email} not found in Keycloak, skipping")
+                not_in_keycloak += 1
+                continue
+
+            # Determine desired role from Keycloak roles
+            keycloak_roles = kc_user.get('realm_roles', [])
+            desired_role = map_role(keycloak_roles)
+
+            # Get current role from memberships or SCIM user
+            current_role = lf_memberships.get(lf_user['id'])
+            if not current_role:
+                # Try to get from SCIM extension
+                ext = lf_user.get('urn:ietf:params:scim:schemas:extension:langfuse:2.0:User', {})
+                current_role = ext.get('orgRole')
+
+            if current_role != desired_role:
+                logger.info(f"User {email}: {current_role} -> {desired_role} (KC roles: {keycloak_roles})")
+                if update_langfuse_role(lf_user['id'], email, desired_role):
+                    updated += 1
+            else:
+                logger.debug(f"User {email} already has role {current_role}")
+                skipped += 1
+
+        logger.info("=" * 60)
+        logger.info(f"Sync complete:")
+        logger.info(f"  - Updated: {updated}")
+        logger.info(f"  - Already correct: {skipped}")
+        logger.info(f"  - Not in Keycloak: {not_in_keycloak}")
+        logger.info("=" * 60)
+
+
+    if __name__ == '__main__':
+        if not validate_config():
+            sys.exit(1)
+
+        try:
+            sync_roles()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HTTP request failed: {e}")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Sync failed: {e}")
+            sys.exit(1)

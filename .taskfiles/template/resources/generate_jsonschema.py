@@ -250,6 +250,26 @@ def parse_nested_object(type_def: str) -> dict[str, Any]:
                 current_comment = comment
             continue
 
+        # Handle CUE map pattern: [string]: value_type
+        # This indicates any string key is allowed with values of the specified type
+        # Example: langfuse_role_mapping?: { [string]: "OWNER" | "ADMIN" | "MEMBER" }
+        map_match = re.match(r"^\[string\]\s*:\s*(.+)$", line)
+        if map_match:
+            value_type = map_match.group(1).rstrip(",")
+            # Parse enum values (e.g., "OWNER" | "ADMIN" | "MEMBER")
+            enum_values = re.findall(r'"([^"]+)"', value_type)
+            if enum_values and "|" in value_type:
+                prop["additionalProperties"] = {"type": "string", "enum": enum_values}
+            else:
+                # Default to string type for unknown value types
+                prop["additionalProperties"] = {"type": "string"}
+            # Remove empty properties since we're using additionalProperties
+            if not prop["properties"]:
+                del prop["properties"]
+            if current_comment:
+                prop["description"] = current_comment
+            continue
+
         field_match = re.match(r"^(\w+)(\?)?\s*:\s*(.+)$", line)
         if field_match:
             field_name = field_match.group(1)
