@@ -1,7 +1,7 @@
 # Grafana SSO Authentication Integration Research
 
 **Date:** January 2026
-**Last Validated:** January 8, 2026
+**Last Validated:** January 10, 2026
 **Grafana Version:** 12.x (via kube-prometheus-stack)
 **Envoy Gateway Version:** 0.0.0-latest (for Kubernetes 1.35 support)
 **Keycloak Version:** 26.5.0
@@ -9,6 +9,10 @@
 
 > [!NOTE]
 > **Status:** ✅ IMPLEMENTATION COMPLETE (January 8, 2026)
+>
+> **Update (January 10, 2026):** Added `oauth_allow_insecure_email_lookup: true` to handle
+> Keycloak recreation scenarios where users receive new subject IDs. This provides resilience
+> for self-hosted Keycloak deployments without compromising security.
 >
 > This research guide has been fully implemented using **Option 3: Gateway OIDC +
 > Grafana Native OAuth**. All template files, secrets, schema validation, and
@@ -878,6 +882,59 @@ A potential enhancement would be to implement realm configuration via Keycloak A
    - Close browser, reopen
    - Navigate to Grafana
    - Should remain authenticated (if within session lifetime)
+
+### Keycloak Recreation - Subject ID Mismatch
+
+> [!WARNING]
+> **Critical Issue:** When Keycloak is deleted and recreated (identity namespace reset), all
+> users receive NEW subject IDs (the `sub` claim in OAuth tokens). If Grafana's PVC survived
+> (monitoring namespace was NOT deleted), the existing user records have stale subject IDs.
+>
+> **Symptom:** "Login failed - User sync failed" error after Keycloak recreation
+>
+> **Log Evidence:**
+> ```
+> logger=user.sync t=... level=error msg="Failed to create user" error="user not found"
+> auth_module=oauth_generic_oauth auth_id=<new-subject-id>
+> ```
+>
+> **Root Cause:** Grafana matches OAuth users by subject ID, not email by default. When
+> Keycloak is recreated, users get new `sub` claims that don't match existing Grafana records.
+
+#### Permanent Fix (Implemented)
+
+The `oauth_allow_insecure_email_lookup` setting is enabled in the HelmRelease template:
+
+```yaml
+auth:
+  oauth_allow_insecure_email_lookup: true
+```
+
+This allows Grafana to match OAuth users to existing accounts by email address instead of
+subject ID, providing resilience when Keycloak is recreated.
+
+**Security Note:** This is safe for self-hosted Keycloak deployments where you control
+the email claims. It prevents account hijacking scenarios that could occur with public
+identity providers.
+
+**REF:** https://github.com/grafana/grafana/issues/111139
+
+#### Manual Fix (Delete Stale User)
+
+If the permanent fix isn't deployed yet, delete the stale user via API:
+
+```bash
+# List Grafana users to find the stale one
+kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana -- \
+  curl -s -u "admin:$(kubectl -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath='{.data.admin-password}' | base64 -d)" \
+  http://localhost:3000/api/users | jq .
+
+# Delete the stale user (replace ID with actual user ID)
+kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana -- \
+  curl -s -X DELETE \
+  -u "admin:$(kubectl -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath='{.data.admin-password}' | base64 -d)" \
+  http://localhost:3000/api/admin/users/<USER_ID>
+```
 
 ### Troubleshooting Commands
 
