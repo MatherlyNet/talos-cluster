@@ -514,10 +514,139 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 
 ---
 
+## Split-Path OIDC Architecture (Hairpin NAT Solution)
+
+> **Added:** January 2026 (Post-implementation fix)
+
+### Problem: Hairpin NAT and TLS Errors
+
+When Keycloak is accessed via Cloudflare Tunnel, Envoy Gateway's OIDC filter fails during token exchange with:
+```
+TLS_error:|268436526:SSL routines:OPENSSL_internal:TLSV1_ALERT_PROTOCOL_VERSION
+```
+
+**Root cause:** Envoy Gateway cannot complete TLS handshake with Cloudflare when exchanging authorization code for tokens. This is a server-to-server call that needs to reach Keycloak, but:
+1. Hairpin NAT: Pods cannot reach LoadBalancer IPs from inside the cluster
+2. Cloudflare TLS: The Envoy OAuth2 filter has TLS compatibility issues with Cloudflare
+
+### Solution: Internal Token Exchange with External Authorization
+
+Configure SecurityPolicy to use:
+- **External** authorization endpoint (user browser redirects to Cloudflare → Keycloak)
+- **Internal** token endpoint (server-to-server via Kubernetes service)
+- **backendRefs** pointing to internal Keycloak service
+
+### Updated Template Configuration
+
+**File:** `templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy-oidc.yaml.j2`
+
+```yaml
+oidc:
+  provider:
+    issuer: "#{ oidc_issuer_url }#"
+    #% if keycloak_enabled | default(false) %#
+    # User-facing authorization - always external via Cloudflare Tunnel
+    authorizationEndpoint: "https://#{ keycloak_hostname }#/realms/#{ keycloak_realm }#/protocol/openid-connect/auth"
+    # Server-to-server token exchange - use internal service to avoid TLS issues
+    tokenEndpoint: "http://keycloak-service.identity.svc.cluster.local:8080/realms/#{ keycloak_realm }#/protocol/openid-connect/token"
+    # Backend reference for internal OIDC provider connections
+    backendRefs:
+      - name: keycloak-service
+        namespace: identity
+        port: 8080
+    #% endif %#
+```
+
+### ReferenceGrant Requirement
+
+Create ReferenceGrant in identity namespace to allow cross-namespace reference:
+
+**File:** `templates/config/kubernetes/apps/identity/keycloak/app/referencegrant.yaml.j2`
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-oidc-from-network
+  namespace: identity
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: keycloak-service
+```
+
+### Keycloak HTTPRoute (External Only)
+
+Keycloak HTTPRoute must use `envoy-external` only (no internal route):
+
+**File:** `templates/config/kubernetes/apps/identity/keycloak/app/httproute.yaml.j2`
+
+```yaml
+spec:
+  parentRefs:
+    # External gateway only: all traffic via Cloudflare Tunnel
+    - name: envoy-external
+      namespace: network
+```
+
+### Traffic Flow After Fix
+
+```
+User Browser
+     │
+     ▼ (1) Access protected resource
+┌────────────────────┐
+│  envoy-internal    │ HTTPRoute: grafana.matherly.net
+│  (Grafana/Hubble)  │
+└────────────────────┘
+     │
+     ▼ (2) Redirect to Keycloak (external URL)
+┌────────────────────┐
+│ Cloudflare Tunnel  │ → sso.matherly.net
+│   envoy-external   │
+│     Keycloak       │
+└────────────────────┘
+     │
+     ▼ (3) User authenticates, redirect back with code
+┌────────────────────┐
+│  envoy-internal    │ /oauth2/callback?code=xxx
+│  OIDC Filter       │
+└────────────────────┘
+     │
+     ▼ (4) Token exchange (INTERNAL)
+┌────────────────────┐
+│ keycloak-service   │ HTTP://keycloak-service.identity.svc:8080
+│ (identity ns)      │
+└────────────────────┘
+     │
+     ▼ (5) Session established, access granted
+┌────────────────────┐
+│  Backend Service   │
+└────────────────────┘
+```
+
+### Apply Fix After SecurityPolicy Changes
+
+```bash
+# Restart Envoy pods to pick up new configuration
+kubectl rollout restart deploy/envoy-internal deploy/envoy-external deploy/envoy-gateway -n network
+
+# Wait for pods to be ready
+kubectl rollout status deploy/envoy-internal -n network
+```
+
+---
+
 ## Changelog
 
 | Date | Change |
 | ---- | ------ |
+| 2026-01-10 | Added Split-Path OIDC Architecture section for hairpin NAT workaround |
 | 2026-01-08 | Added critical troubleshooting: client secret must use hex encoding (not base64) to avoid URL-unsafe characters |
 | 2026-01-07 | Schema validation and JSON schema generator fixes |
 | 2026-01 | Initial implementation guide created |

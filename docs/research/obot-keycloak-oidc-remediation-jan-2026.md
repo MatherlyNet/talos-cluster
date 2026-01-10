@@ -6,6 +6,12 @@
 **Source Document:** [obot-keycloak-oidc-integration-jan-2026.md](./obot-keycloak-oidc-integration-jan-2026.md)
 **Related Components:** Obot (ai-system), Keycloak (identity), jrmatherly/obot-entraid fork
 
+> **Architecture Note:** Obot uses **native OAuth** via its built-in Keycloak auth provider, NOT Envoy Gateway SecurityPolicy.
+> This is fundamentally different from Hubble/Grafana which use gateway-level OIDC (split-path architecture).
+> - **Native OAuth apps** (Obot, LiteLLM, Langfuse, Grafana native): Handle their own OAuth flow directly with Keycloak
+> - **Gateway-level OIDC apps** (Hubble, Grafana if using SecurityPolicy): Use Envoy Gateway SecurityPolicy with split-path architecture
+> - For split-path OIDC details, see: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
+
 ## Executive Summary
 
 A systematic validation of the Obot-Keycloak OIDC integration research document against the actual project codebase has revealed **two critical environment variable naming mismatches** that will prevent Keycloak authentication from functioning. Additionally, one recommended improvement was identified.

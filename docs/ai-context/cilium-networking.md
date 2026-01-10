@@ -431,6 +431,59 @@ DNS (Split Horizon)
 └─────────────────────────┘
 ```
 
+## OIDC Authentication Integration
+
+### Hairpin NAT Problem
+
+Kubernetes pods cannot reach LoadBalancer IPs from inside the cluster (hairpin NAT).
+This affects OIDC token exchange when Envoy Gateway needs to contact Keycloak.
+
+### Split-Path OIDC Architecture
+
+The cluster uses a **split-path OIDC architecture** to solve this:
+
+```
+User Browser → Cloudflare Tunnel → envoy-external → Keycloak (login)
+                                          │
+                                   redirect with code
+                                          │
+User Browser → envoy-internal (Grafana/Hubble)
+                                          │
+                              Envoy OIDC Filter
+                                          │
+                    Internal: keycloak-service.identity.svc:8080 (token exchange)
+```
+
+### Key Configuration
+
+**SecurityPolicy OIDC:**
+- `issuer`: External URL (`https://sso.matherly.net/realms/matherlynet`)
+- `authorizationEndpoint`: External URL (user browser redirects)
+- `tokenEndpoint`: Internal URL (`http://keycloak-service.identity.svc.cluster.local:8080/...`)
+- `backendRefs`: Internal Keycloak service reference
+
+**ReferenceGrant:**
+Required in identity namespace to allow network namespace SecurityPolicy to reference Keycloak service.
+
+**Keycloak HTTPRoute:**
+External gateway only (`envoy-external`) - no internal route to avoid hairpin NAT issues.
+
+### Gateway Routing
+
+| Gateway | Purpose | OIDC Role |
+| ------- | ------- | --------- |
+| envoy-external | Cloudflare Tunnel traffic | User-facing Keycloak authentication |
+| envoy-internal | Direct LAN access | Protected apps with internal token exchange |
+
+### DNS Configuration
+
+| External-DNS Instance | Gateway | Sources |
+| --------------------- | ------- | ------- |
+| cloudflare-dns | envoy-external | `gateway-httproute`, `crd` |
+| unifi-dns | envoy-internal | `gateway-httproute` only |
+
+**Note:** unifi-dns excludes `crd` source to prevent DNSEndpoints (cloudflare-tunnel) from creating internal records.
+
 ## Hubble Network Observability (Optional)
 
 Cilium's observability layer providing deep visibility into network flows.

@@ -11,6 +11,13 @@
 #|   - envoy-external: Public access (Cloudflare DNS + Tunnel)                 #|
 #|   - Both: Split-horizon DNS (prevents asymmetric routing)                   #|
 #|                                                                             #|
+#| OIDC-PROTECTED ROUTES (label: security: oidc-protected):                    #|
+#|   Routes with this label use Envoy Gateway SecurityPolicy for SSO.          #|
+#|   Uses SPLIT-PATH architecture to avoid hairpin NAT/TLS issues:             #|
+#|   - authorizationEndpoint: External URL (user browser → Keycloak)           #|
+#|   - tokenEndpoint: Internal service (Envoy → keycloak-service:8080)         #|
+#|   REF: docs/guides/completed/native-oidc-securitypolicy-implementation.md   #|
+#|                                                                             #|
 #| Routes that should NOT be centralized (Keycloak, webhooks) remain in        #|
 #| their original namespaces for independent lifecycle management.             #|
 #| =========================================================================== #|

@@ -28,6 +28,8 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 - Proxmox CCM for node lifecycle management on Proxmox infrastructure
 - Full observability stack (kube-prometheus-stack, Loki, Alloy, Tempo, Hubble, PrometheusRule alerts)
 - RustFS shared S3-compatible storage (alpha) for Loki SimpleScalable backend
+- Keycloak Identity Provider for OIDC SSO with social login (Google, GitHub, Microsoft)
+- Split-path OIDC architecture for hairpin NAT avoidance (internal token exchange)
 
 **Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
 

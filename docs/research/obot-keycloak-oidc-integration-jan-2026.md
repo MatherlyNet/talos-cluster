@@ -7,6 +7,16 @@
 > 2. ✅ `OBOT_AUTH_PROVIDER_COOKIE_SECRET` - Correctly named (was KEYCLOAK prefix)
 > 3. ✅ `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` - Added with configurable default
 
+> **Architecture Note:** Obot uses **native OAuth** via its built-in Keycloak auth provider (oauth2-proxy library).
+> This pattern is used by apps that handle their own OAuth flow: Obot, LiteLLM, Langfuse, Grafana (native OAuth).
+> These apps connect to Keycloak via external URLs (through Cloudflare Tunnel) because the OAuth flow
+> originates from the application itself, not from Envoy Gateway.
+>
+> For apps protected by Envoy Gateway SecurityPolicy (Hubble UI), a **split-path OIDC architecture** is used:
+> - External authorization endpoint for browser redirects
+> - Internal token endpoint for server-to-server token exchange (avoids hairpin NAT/TLS issues)
+> - See: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
+
 **Date:** January 2026
 **Status:** ✅ Implemented
 **Priority:** Critical (Resolved)

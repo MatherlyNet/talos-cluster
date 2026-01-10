@@ -127,7 +127,8 @@ cloudflare_gateway_addr: "10.10.10.251"
 # langfuse_default_org_role: "VIEWER"
 # langfuse_default_project_id: "default-project"
 # langfuse_default_project_role: "VIEWER"
-# Langfuse SCIM Role Sync (requires keycloak_enabled: true)
+# Langfuse SCIM Role Sync (requires keycloak_enabled: true + Langfuse Enterprise license)
+# NOTE: SCIM API requires Organization API Keys which require Langfuse Enterprise license
 # langfuse_scim_sync_enabled: false
 # langfuse_scim_sync_schedule: "*/5 * * * *"
 # langfuse_scim_public_key: "lf_pk_test1234567890abcdef"

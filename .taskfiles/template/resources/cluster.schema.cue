@@ -610,8 +610,9 @@ import (
 
 	// Langfuse SCIM Role Sync - Keycloak to Langfuse role synchronization
 	// REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md
+	// NOTE: SCIM API requires Organization API Keys which require Langfuse Enterprise license
 	// Periodically syncs Keycloak realm roles to Langfuse organization roles via SCIM API
-	// Requires: langfuse_enabled: true, keycloak_enabled: true
+	// Requires: langfuse_enabled: true, keycloak_enabled: true, Langfuse Enterprise license
 	langfuse_scim_sync_enabled?:           *false | bool
 	langfuse_scim_sync_schedule?:          *"*/5 * * * *" | string & =~"^[0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+ [0-9*,/-]+$"
 	langfuse_scim_public_key?:             string & !=""                 // Langfuse org API public key

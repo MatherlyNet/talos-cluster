@@ -6,6 +6,12 @@
 - `docs/research/archive/implemented/langfuse-seamless-sso-integration-jan-2026.md`
 - `docs/research/archive/implemented/langfuse-llm-observability-integration-jan-2026.md`
 
+> **Architecture Note:** Langfuse uses **native SSO** via NextAuth.js with Keycloak provider (`AUTH_KEYCLOAK_*` env vars).
+> This is different from gateway-level OIDC (Envoy SecurityPolicy) used by Hubble UI.
+> - **Native SSO** (Langfuse, Obot, LiteLLM, Grafana): Application handles its own OAuth flow
+> - **Gateway OIDC** (Hubble UI): Envoy Gateway SecurityPolicy with split-path architecture
+> - For split-path architecture details, see: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
+
 ## Executive Summary
 
 Initial validation indicated the Langfuse-Keycloak SSO integration was fully implemented. However, **production testing revealed a critical configuration conflict** that prevents SSO users from logging in.
@@ -103,10 +109,12 @@ Grafana uses a different approach:
 
 ### Why Hubble SSO Works
 
-Hubble uses Gateway OIDC (Envoy SecurityPolicy):
+Hubble uses Gateway OIDC (Envoy SecurityPolicy with **split-path architecture**):
 - User is authenticated at the gateway level
 - No application-level user creation needed
 - Keycloak session is the only requirement
+- Uses external authorizationEndpoint (browser) + internal tokenEndpoint (server-to-server)
+- REF: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
 
 ## Updated Validation Checklist
 

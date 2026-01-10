@@ -10,6 +10,3 @@ resources:
   - ./servicemonitor.yaml
   - ./dashboard-configmap.yaml
   - ./networkpolicy.yaml
-  - ./sync-cronjob.yaml
-  - ./sync-secret.sops.yaml
-  - ./sync-configmap.yaml

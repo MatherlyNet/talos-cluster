@@ -233,15 +233,37 @@ templates/config/kubernetes/apps/identity/keycloak/realm-config/app/realm-import
 
 ## Keycloak Integration
 
+### Hairpin NAT and External URL Requirement
+
+**Critical:** Obot uses the `jrmatherly/obot-entraid` fork which performs strict OIDC issuer validation.
+The Keycloak URL configured in Obot MUST be the **external URL** (`https://sso.matherly.net`) because:
+
+1. **Hairpin NAT**: Pods cannot reach LoadBalancer IPs from inside the cluster
+2. **Issuer validation**: Keycloak returns external issuer URL in tokens; Obot validates this matches
+3. **Token exchange**: Obot contacts Keycloak directly (not via Envoy Gateway) for token validation
+
+**Traffic flow:**
+```
+User Browser → Cloudflare Tunnel → envoy-external → Keycloak (login)
+                                          ↓
+                               redirect with code to Obot
+                                          ↓
+Obot pod → https://sso.matherly.net → Cloudflare → Keycloak (token exchange)
+```
+
+**Network Policy:** Obot egress to Keycloak uses FQDN matching (`toFQDNs`) on port 443,
+routing through Cloudflare Tunnel to avoid hairpin NAT.
+
 ### Custom Auth Provider
+
 Obot uses `jrmatherly/obot-entraid` fork which adds Keycloak auth provider support via environment variables:
 
 ```yaml
 # In HelmRelease config section
 config:
   OBOT_SERVER_AUTH_PROVIDER: "keycloak"
-  # Base URL without /realms/{realm} - fork constructs issuer URL internally
-  OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "https://auth.${cloudflare_domain}"
+  # MUST be external URL - fork constructs issuer URL and validates against Keycloak response
+  OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "https://sso.${cloudflare_domain}"
   OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "${keycloak_realm}"
   OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
   # Allow all email domains (explicitly configured for clarity)
@@ -255,6 +277,7 @@ stringData:
 ```
 
 > **REF:** See `docs/research/obot-keycloak-oidc-integration-jan-2026.md` for complete integration details.
+> **REF:** See `docs/research/obot-keycloak-oidc-remediation-jan-2026.md` for hairpin NAT solution.
 
 ### Client Configuration
 When `obot_keycloak_enabled: true`, a Keycloak client is created in realm-import.yaml.j2:
@@ -369,7 +392,9 @@ https://obot.<domain>/
 ### Keycloak Auth Fails
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches in both secrets and realm-import
-- Verify pod can reach Keycloak: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/health`
+- Verify pod can reach Keycloak **externally**: `kubectl exec -n ai-system <pod> -- wget -qO- https://sso.matherly.net/health`
+- **Note:** Obot must use external URL due to hairpin NAT and issuer validation requirements
+- Check CiliumNetworkPolicy allows egress to Keycloak FQDN on port 443
 
 ### MCP Servers Not Starting
 - Check ResourceQuota: `kubectl describe resourcequota -n obot-mcp`
@@ -384,13 +409,16 @@ https://obot.<domain>/
 
 Obot requires egress to:
 
-| Destination | Namespace | Port | Purpose |
-| ----------- | --------- | ---- | ------- |
+| Destination | Namespace/FQDN | Port | Purpose |
+| ----------- | -------------- | ---- | ------- |
 | PostgreSQL | ai-system | 5432 | Database |
 | LiteLLM | ai-system | 4000 | AI models |
-| Keycloak | identity | 8080 | OIDC auth |
+| Keycloak | `sso.matherly.net` (FQDN) | 443 | OIDC auth (external via Cloudflare) |
 | MCP servers | obot-mcp | 8080+ | MCP orchestration |
 | Tempo | monitoring | 4318 | OTEL traces |
+
+**Note:** Keycloak egress uses FQDN-based CiliumNetworkPolicy (`toFQDNs`) to route through Cloudflare,
+avoiding hairpin NAT issues with internal LoadBalancer IPs.
 
 ## Dependencies
 

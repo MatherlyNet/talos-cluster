@@ -66,6 +66,10 @@ spec:
 #% if grafana_oidc_enabled | default(false) %#
         #| =========================================================================== #|
         #| OIDC/OAuth Configuration - Keycloak Native OAuth for Grafana RBAC          #|
+        #| NOTE: Grafana uses NATIVE OAuth (auth.generic_oauth) - NOT Envoy Gateway   #|
+        #|       SecurityPolicy. Uses external Keycloak URLs because Grafana handles  #|
+        #|       its own OAuth flow and can reach Keycloak via Cloudflare Tunnel.     #|
+        #|       This is different from gateway-level OIDC which requires split-path. #|
         #| REF: docs/research/grafana-sso-authentication-integration-jan-2026.md      #|
         #| =========================================================================== #|
         server:

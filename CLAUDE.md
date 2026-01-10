@@ -452,15 +452,16 @@ Optional Langfuse Auto-Provisioning (Default Access for SSO Users):
 - When set, new users via SSO are automatically assigned to default org/project with these roles
 - See https://langfuse.com/self-hosting/administration/automated-access-provisioning for details
 
-Optional Langfuse SCIM Role Sync (Keycloak → Langfuse):
+Optional Langfuse SCIM Role Sync (requires keycloak_enabled: true + Langfuse Enterprise license):
+- NOTE: SCIM API requires Organization API Keys which require Langfuse Enterprise license
 - `langfuse_scim_sync_enabled` - Enable SCIM role sync CronJob (default: false)
-- `langfuse_scim_sync_schedule` - Sync schedule in cron format (default: "*/5* ** *")
-- `langfuse_scim_public_key` - Langfuse Organization API public key (create via UI)
+- `langfuse_scim_sync_schedule` - Sync schedule in cron format (default: "*/5 * * * *")
+- `langfuse_scim_public_key` - Langfuse Organization API public key (SOPS-encrypted)
 - `langfuse_scim_secret_key` - Langfuse Organization API secret key (SOPS-encrypted)
 - `langfuse_sync_keycloak_client_id` - Keycloak service account client ID (default: "langfuse-sync")
 - `langfuse_sync_keycloak_client_secret` - Keycloak client secret (SOPS-encrypted)
 - `langfuse_role_mapping` - Keycloak role → Langfuse role mapping (YAML object)
-- Requires: `langfuse_enabled`, `keycloak_enabled`, all credentials set
+- Requires: `langfuse_enabled`, `keycloak_enabled`, Langfuse Enterprise license, all credentials set
 - Default role mapping: admin→ADMIN, operator→MEMBER, developer→MEMBER, default→VIEWER
 - See `docs/research/langfuse-scim-role-sync-implementation-jan-2026.md` for setup guide
 
@@ -514,8 +515,16 @@ Optional Obot LiteLLM Integration (requires litellm_enabled):
 Optional OIDC/JWT Authentication (Envoy Gateway SecurityPolicy):
 - `oidc_issuer_url`, `oidc_jwks_uri` (both required to enable)
 - When configured, `oidc_enabled=true` (derived in plugin.py)
-- Creates SecurityPolicy targeting HTTPRoutes with label `security: jwt-protected`
+- Creates SecurityPolicy targeting HTTPRoutes with label `security: oidc-protected`
 - Note: Keycloak auto-derives these values when keycloak_enabled is true
+
+**OIDC Split-Path Architecture (Hairpin NAT Workaround):**
+- HTTPRoutes with `security: oidc-protected` label use Envoy Gateway SecurityPolicy for SSO
+- User authentication flows through Cloudflare Tunnel → envoy-external → Keycloak
+- Token exchange uses internal Keycloak service via SecurityPolicy `backendRefs` + `tokenEndpoint`
+- ReferenceGrant in identity namespace allows cross-namespace service reference
+- Keycloak HTTPRoute uses envoy-external only (no internal route)
+- See `docs/ai-context/cilium-networking.md#oidc-authentication-integration` for details
 
 Optional Proxmox Infrastructure (VM provisioning via OpenTofu):
 - `proxmox_api_url`, `proxmox_node` (both required to enable)
@@ -652,9 +661,12 @@ Deep context in `docs/ai-context/`:
 | Langfuse ClickHouse | `kubectl -n ai-system logs -l app.kubernetes.io/name=clickhouse` |
 | Obot not ready | `kubectl get pods -n ai-system -l app.kubernetes.io/name=obot`, `kubectl -n ai-system logs -l app.kubernetes.io/name=obot` |
 | Obot DB connection | `kubectl -n ai-system exec -it obot-postgresql-1 -- psql -U obot -d obot -c "SELECT 1"` |
-| Obot Keycloak auth | `kubectl -n ai-system logs -l app.kubernetes.io/name=obot` (check OBOT_KEYCLOAK_AUTH_PROVIDER_* env vars) |
+| Obot Keycloak auth | `kubectl -n ai-system logs -l app.kubernetes.io/name=obot` (check OBOT_KEYCLOAK_AUTH_PROVIDER_* env vars; must use external URL) |
 | MCP namespace issues | `kubectl get pods -n obot-mcp`, `kubectl get resourcequota -n obot-mcp` |
 | MCP server network issues | `hubble observe -n obot-mcp --verdict DROPPED`, `kubectl get cnp -n obot-mcp` |
+| OIDC "OAuth flow failed" | Check envoy-internal logs for TLS errors; verify SecurityPolicy has internal `tokenEndpoint` + `backendRefs` |
+| OIDC token exchange fails | Restart envoy pods after SecurityPolicy changes: `kubectl rollout restart deploy/envoy-internal -n network` |
+| Stale DNS in UniFi | Verify unifi-dns uses `sources: ["gateway-httproute"]` only (excludes DNSEndpoints) |
 
 For comprehensive troubleshooting with diagnostic flowcharts and decision trees, see `docs/TROUBLESHOOTING.md`.
 
