@@ -31,16 +31,6 @@ spec:
             configBlock: |-
               lameduck 5s
           - name: ready
-#% if keycloak_enabled | default(false) %#
-          #| ================================================================== #|
-          #| Hairpin NAT Fix: Rewrite internal Gateway hostnames to ClusterIP   #|
-          #| Pods cannot reach LoadBalancer IPs from inside the cluster, so we  #|
-          #| rewrite external hostnames to the envoy-internal service FQDN      #|
-          #| which resolves to the ClusterIP instead of the LoadBalancer IP.    #|
-          #| ================================================================== #|
-          - name: rewrite
-            parameters: name #{ keycloak_subdomain | default('auth') }#.#{ cloudflare_domain }# envoy-internal.network.svc.cluster.local
-#% endif %#
           - name: kubernetes
             parameters: cluster.local in-addr.arpa ip6.arpa
             configBlock: |-

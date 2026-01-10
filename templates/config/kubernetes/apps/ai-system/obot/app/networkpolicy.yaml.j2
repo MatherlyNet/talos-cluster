@@ -110,27 +110,13 @@ spec:
               protocol: TCP
 #% if obot_keycloak_enabled | default(false) %#
     #| ======================================================================= #|
-    #| Keycloak (OIDC SSO) - Via internal Envoy Gateway                       #|
-    #| CoreDNS rewrites keycloak hostname to envoy-internal ClusterIP to      #|
-    #| avoid hairpin NAT issues. OIDC issuer must match external URL.         #|
+    #| Keycloak (OIDC SSO) - Direct internal access                           #|
+    #| Uses internal HTTP URL to avoid hairpin NAT and TLS complexity         #|
+    #| Allow all traffic to identity namespace for OIDC operations            #|
     #| ======================================================================= #|
     - toEndpoints:
         - matchLabels:
-            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
-            io.kubernetes.pod.namespace: network
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-    #| Direct Keycloak access (for backchannel token exchange via internal URL) #|
-    - toEndpoints:
-        - matchLabels:
-            app: keycloak
             io.kubernetes.pod.namespace: identity
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
 #% endif %#
 #% if litellm_enabled | default(false) %#
     #| ======================================================================= #|
@@ -374,19 +360,11 @@ spec:
           port: 8099
 #% if obot_keycloak_enabled | default(false) %#
     #| Keycloak OIDC - internal cluster endpoint #|
-    #| NOTE: Keycloak Operator uses label 'app: keycloak' (not app.kubernetes.io/name) #|
+    #| Allow all traffic to identity namespace for OIDC operations #|
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: identity
-          podSelector:
-            matchLabels:
-              app: keycloak
-      ports:
-        - protocol: TCP
-          port: 8080
-    #| Keycloak OIDC - external URL for token validation #|
-    #| Note: Standard K8s NetworkPolicy doesn't support FQDN - use Cilium policy #|
 #% endif %#
 #% if litellm_enabled | default(false) %#
     #| LiteLLM proxy (AI model gateway) #|

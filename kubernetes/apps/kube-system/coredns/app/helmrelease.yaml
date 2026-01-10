@@ -31,8 +31,6 @@ spec:
             configBlock: |-
               lameduck 5s
           - name: ready
-          - name: rewrite
-            parameters: name sso.matherly.net envoy-internal.network.svc.cluster.local
           - name: kubernetes
             parameters: cluster.local in-addr.arpa ip6.arpa
             configBlock: |-

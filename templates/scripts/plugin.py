@@ -619,15 +619,16 @@ class Plugin(makejinja.plugin.Plugin):
             # Uses jrmatherly/obot-entraid fork with OBOT_KEYCLOAK_AUTH_PROVIDER_* vars
             if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
                 keycloak_realm = data.get("keycloak_realm", "matherlynet")
-                keycloak_hostname = data.get("keycloak_hostname", "")
-                # External base URL for OBOT_KEYCLOAK_AUTH_PROVIDER_URL
-                # Uses external HTTPS URL to match OIDC issuer returned by Keycloak
-                # CoreDNS rewrite rule redirects this to envoy-internal ClusterIP
-                # to avoid hairpin NAT issues with LoadBalancer IPs
-                data["obot_keycloak_base_url"] = f"https://{keycloak_hostname}"
-                # External issuer URL (with /realms/...) for reference
+                # Internal base URL for OBOT_KEYCLOAK_AUTH_PROVIDER_URL
+                # Uses internal HTTP URL to avoid hairpin NAT and TLS issues
+                # Network policy allows all ai-system -> identity namespace traffic
+                data["obot_keycloak_base_url"] = (
+                    "http://keycloak-service.identity.svc.cluster.local:8080"
+                )
+                # Issuer URL for reference (internal)
                 data["obot_keycloak_issuer_url"] = (
-                    f"https://{keycloak_hostname}/realms/{keycloak_realm}"
+                    f"http://keycloak-service.identity.svc.cluster.local:8080"
+                    f"/realms/{keycloak_realm}"
                 )
                 # Realm name for OBOT_KEYCLOAK_AUTH_PROVIDER_REALM
                 data["obot_keycloak_realm"] = keycloak_realm
