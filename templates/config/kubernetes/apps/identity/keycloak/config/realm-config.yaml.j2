@@ -105,6 +105,32 @@ data:
 #% endif %#
 
     #| =========================================================================== #|
+    #| CLIENT SCOPES - Realm-level OIDC scope definitions                          #|
+    #| 'groups' scope provides OIDC-compliant group membership claims              #|
+    #| REF: https://openid.net/specs/openid-connect-core-1_0.html                  #|
+    #| =========================================================================== #|
+    clientScopes:
+      #| Groups scope - provides group membership claims for RBAC #|
+      - name: "groups"
+        description: "OpenID Connect scope for group membership claims"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Your group memberships"
+        protocolMappers:
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+
+    #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
 #% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) %#
@@ -177,13 +203,14 @@ data:
             #{ logout_uris | join('##') }#
         #| Default scopes for this client #|
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
 #% endif %#
 #% if grafana_oidc_enabled | default(false) %#
       #| =========================================================================== #|
@@ -213,13 +240,16 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ grafana_subdomain | default('grafana') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| groups scope provides OIDC-compliant group membership claims #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
+          - "groups"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
         #| Protocol mappers for role and group claims #|
         protocolMappers:
           #| Map realm roles to 'roles' claim for JMESPath role_attribute_path #|
@@ -275,13 +305,16 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ litellm_subdomain | default('litellm') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| groups scope provides OIDC-compliant group membership claims #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
+          - "groups"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
         #| Protocol mappers for role and group claims #|
         protocolMappers:
           #| Map realm roles to 'roles' claim for LiteLLM team/role mapping #|
@@ -336,13 +369,14 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ langfuse_subdomain | default('langfuse') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
 #% endif %#
 #% if obot_keycloak_enabled | default(false) %#
       #| =========================================================================== #|
@@ -373,13 +407,16 @@ data:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://#{ obot_subdomain | default('obot') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| groups scope provides OIDC-compliant group membership claims for ALLOWED_GROUPS #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
+          - "groups"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
         #| Protocol mappers for role and group claims (used for ALLOWED_GROUPS/ALLOWED_ROLES) #|
         protocolMappers:
           #| Map realm roles to 'roles' claim for Obot role-based access control #|

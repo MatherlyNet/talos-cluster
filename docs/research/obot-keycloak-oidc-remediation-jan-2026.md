@@ -166,13 +166,13 @@ The original research document identified the cookie secret variable issue incor
 3. **PKCE S256:** Correctly enabled in Keycloak client attributes (line 373)
 4. **Redirect URIs:** Correctly include both wildcard and explicit callback URL (lines 368-369)
 
-### Low Priority Recommendations (Optional)
+### Low Priority Recommendations (Optional) - ✅ IMPLEMENTED
 
-The following items from the original research are low priority and not blocking:
+The following items from the original research were low priority but have now been implemented for OIDC compliance and configuration clarity:
 
-1. **'groups' Client Scope Definition:** The protocol mapper on the client already produces the groups claim. The scope definition would improve OIDC compliance but is not required for functionality.
+1. **'groups' Client Scope Definition:** ✅ **IMPLEMENTED** - Added realm-level `groups` clientScope in realm-config.yaml.j2. The scope is now included in defaultClientScopes for Grafana, LiteLLM, and Obot clients, providing OIDC-compliant group membership claims.
 
-2. **Move offline_access to defaultClientScopes:** oauth2-proxy explicitly requests this scope, so it works from optionalClientScopes. Moving to default is cleaner but not required.
+2. **Move offline_access to defaultClientScopes:** ✅ **IMPLEMENTED** - Moved `offline_access` from optionalClientScopes to defaultClientScopes for all OIDC clients. This enables refresh tokens by default for better session persistence.
 
 ---
 
@@ -189,8 +189,8 @@ The following items from the original research are low priority and not blocking
 
 ### Optional (Nice to Have)
 
-- [ ] Define 'groups' clientScope in realm-config.yaml.j2 for OIDC compliance
-- [ ] Move offline_access to defaultClientScopes for configuration clarity
+- [x] Define 'groups' clientScope in realm-config.yaml.j2 for OIDC compliance ✅ Implemented Jan 2026
+- [x] Move offline_access to defaultClientScopes for configuration clarity ✅ Implemented Jan 2026
 
 ---
 

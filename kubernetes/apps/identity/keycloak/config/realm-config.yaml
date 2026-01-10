@@ -43,6 +43,26 @@ data:
         - name: "user"
           description: "Basic authenticated user access to standard applications"
 
+    clientScopes:
+      - name: "groups"
+        description: "OpenID Connect scope for group membership claims"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Your group memberships"
+        protocolMappers:
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+
     clients:
       - clientId: "$(env:OIDC_CLIENT_ID)"
         name: "Envoy Gateway SSO"
@@ -71,10 +91,10 @@ data:
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
       - clientId: "$(env:GRAFANA_CLIENT_ID)"
         name: "Grafana"
         description: "OIDC client for Grafana native OAuth - provides RBAC and role-based access control"
@@ -97,10 +117,11 @@ data:
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
+          - "groups"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
         protocolMappers:
           - name: "realm-roles"
             protocol: "openid-connect"
@@ -145,10 +166,10 @@ data:
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
       - clientId: "$(env:OBOT_CLIENT_ID)"
         name: "Obot MCP Gateway"
         description: "OIDC client for Obot MCP Gateway - enables SSO for AI agent platform with MCP server hosting"
@@ -172,10 +193,11 @@ data:
         defaultClientScopes:
           - "profile"
           - "email"
+          - "offline_access"
+          - "groups"
         optionalClientScopes:
           - "address"
           - "phone"
-          - "offline_access"
         protocolMappers:
           - name: "realm-roles"
             protocol: "openid-connect"
