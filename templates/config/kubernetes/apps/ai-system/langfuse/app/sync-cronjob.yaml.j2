@@ -40,7 +40,7 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  pip install --quiet requests && python /scripts/sync.py
+                  pip install --quiet --user requests && python /scripts/sync.py
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: false
@@ -48,6 +48,9 @@ spec:
                   drop:
                     - ALL
               env:
+                #| HOME must be writable for pip install --user to work with non-root user #|
+                - name: HOME
+                  value: /tmp
                 - name: KEYCLOAK_URL
                   value: "https://#{ keycloak_hostname }#"
                 - name: KEYCLOAK_REALM

@@ -35,7 +35,7 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  pip install --quiet requests && python /scripts/sync.py
+                  pip install --quiet --user requests && python /scripts/sync.py
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: false
@@ -43,6 +43,8 @@ spec:
                   drop:
                     - ALL
               env:
+                - name: HOME
+                  value: /tmp
                 - name: KEYCLOAK_URL
                   value: "https://sso.matherly.net"
                 - name: KEYCLOAK_REALM
