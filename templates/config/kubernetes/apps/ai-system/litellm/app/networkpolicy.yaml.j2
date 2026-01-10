@@ -166,12 +166,12 @@ spec:
           port: 4317
 #% endif %#
 #% if litellm_langfuse_enabled | default(false) and langfuse_enabled | default(false) %#
-    #| Self-hosted Langfuse (same namespace) #|
+    #| Self-hosted Langfuse web API (same namespace) #|
     - to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: langfuse
-              app.kubernetes.io/component: web
+              app: web
       ports:
         - protocol: TCP
           port: 3000
