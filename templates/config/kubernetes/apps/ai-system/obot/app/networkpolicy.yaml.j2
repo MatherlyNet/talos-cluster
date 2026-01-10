@@ -110,13 +110,16 @@ spec:
               protocol: TCP
 #% if obot_keycloak_enabled | default(false) %#
     #| ======================================================================= #|
-    #| Keycloak (OIDC SSO) - Direct internal access                           #|
-    #| Uses internal HTTP URL to avoid hairpin NAT and TLS complexity         #|
-    #| Allow all traffic to identity namespace for OIDC operations            #|
+    #| Keycloak (OIDC SSO) - External access via Cloudflare Tunnel            #|
+    #| All Keycloak traffic routes through Cloudflare to avoid hairpin NAT    #|
+    #| and ensure OIDC issuer consistency (Keycloak returns external issuer)  #|
     #| ======================================================================= #|
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: identity
+    - toFQDNs:
+        - matchName: "#{ keycloak_hostname }#"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
 #% endif %#
 #% if litellm_enabled | default(false) %#
     #| ======================================================================= #|
@@ -359,12 +362,10 @@ spec:
         - protocol: TCP
           port: 8099
 #% if obot_keycloak_enabled | default(false) %#
-    #| Keycloak OIDC - internal cluster endpoint #|
-    #| Allow all traffic to identity namespace for OIDC operations #|
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: identity
+    #| Keycloak OIDC - External via Cloudflare Tunnel #|
+    #| Standard K8s NetworkPolicy allows all external egress by default #|
+    #| CiliumNetworkPolicy enforces FQDN-based Keycloak access above #|
+    - {}
 #% endif %#
 #% if litellm_enabled | default(false) %#
     #| LiteLLM proxy (AI model gateway) #|

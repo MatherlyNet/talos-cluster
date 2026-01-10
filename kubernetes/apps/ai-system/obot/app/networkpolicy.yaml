@@ -78,9 +78,12 @@ spec:
               protocol: TCP
             - port: "8099"
               protocol: TCP
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: identity
+    - toFQDNs:
+        - matchName: "sso.matherly.net"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: litellm
@@ -267,10 +270,7 @@ spec:
           port: 8080
         - protocol: TCP
           port: 8099
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: identity
+    - {}
     - to:
         - podSelector:
             matchLabels:

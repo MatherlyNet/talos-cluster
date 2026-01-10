@@ -45,12 +45,13 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 5
     extraArgs:
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
+      #| Only process gateway-httproute for envoy-internal #|
+      #| DNSEndpoints should only be processed by cloudflare-dns #|
       - --gateway-name=envoy-internal
     triggerLoopOnEvent: true
     policy: sync
-    sources: ["crd", "gateway-httproute"]
+    #| Only gateway-httproute source - excludes DNSEndpoints (cloudflare-tunnel) #|
+    sources: ["gateway-httproute"]
     txtPrefix: k8s.unifi.
     txtOwnerId: unifi
     domainFilters: ["${SECRET_DOMAIN}"]

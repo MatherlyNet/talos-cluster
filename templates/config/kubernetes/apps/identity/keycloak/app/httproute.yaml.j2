@@ -1,10 +1,11 @@
 #% if keycloak_enabled | default(false) %#
 ---
-#| HTTPRoute for Keycloak via Envoy Gateway #|
-#| Attached to BOTH gateways for split-horizon DNS (prevents asymmetric routing) #|
-#| - External users: Cloudflare DNS → envoy-external (192.168.22.90) → Keycloak #|
-#| - Internal users: UniFi DNS → envoy-internal (192.168.22.80) → Keycloak #|
-#| Both paths are symmetric; DNS determines the complete request/response path #|
+#| HTTPRoute for Keycloak via Envoy Gateway (external only)                     #|
+#| All traffic routes through Cloudflare Tunnel for consistent OIDC behavior:   #|
+#| - External users: Cloudflare DNS → Cloudflare Tunnel → envoy-external        #|
+#| - Internal pods: CoreDNS → Cloudflare DNS → Cloudflare Tunnel → envoy-external #|
+#| This eliminates hairpin NAT issues and ensures OIDC issuer consistency.      #|
+#| Internal clients on LAN will also route via Cloudflare (no split-horizon).   #|
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -12,11 +13,8 @@ metadata:
   namespace: identity
 spec:
   parentRefs:
-    #| External gateway: cloudflare-dns creates Cloudflare record (public access via tunnel) #|
+    #| External gateway only: all traffic via Cloudflare Tunnel #|
     - name: envoy-external
-      namespace: network
-    #| Internal gateway: unifi-dns creates UniFi record (direct LAN access) #|
-    - name: envoy-internal
       namespace: network
   hostnames:
     - "#{ keycloak_subdomain | default('auth') }#.${SECRET_DOMAIN}"

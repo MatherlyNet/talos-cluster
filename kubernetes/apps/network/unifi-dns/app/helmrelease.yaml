@@ -45,12 +45,10 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 5
     extraArgs:
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
       - --gateway-name=envoy-internal
     triggerLoopOnEvent: true
     policy: sync
-    sources: ["crd", "gateway-httproute"]
+    sources: ["gateway-httproute"]
     txtPrefix: k8s.unifi.
     txtOwnerId: unifi
     domainFilters: ["${SECRET_DOMAIN}"]
