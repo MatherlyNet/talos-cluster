@@ -302,6 +302,56 @@ langfuse_default_project_role: "VIEWER"  # OWNER|ADMIN|MEMBER|VIEWER
 
 REF: https://langfuse.com/self-hosting/automated-provisioning
 
+### SCIM Role Sync (Keycloak → Langfuse)
+Synchronize Keycloak realm roles to Langfuse organization roles via CronJob.
+This enables role-based access control where Keycloak is the source of truth.
+
+```yaml
+langfuse_scim_sync_enabled: true
+langfuse_scim_sync_schedule: "*/5 * * * *"  # Every 5 minutes
+
+# Langfuse SCIM API credentials (org-scoped API keys)
+langfuse_scim_public_key: "lf_pk_..."      # SOPS-encrypted
+langfuse_scim_secret_key: "lf_sk_..."      # SOPS-encrypted
+
+# Keycloak service account for Admin API access
+langfuse_sync_keycloak_client_id: "langfuse-sync"
+langfuse_sync_keycloak_client_secret: "..."  # SOPS-encrypted
+
+# Role mapping: Keycloak realm role → Langfuse org role
+langfuse_role_mapping:
+  admin: "ADMIN"           # Keycloak 'admin' → Langfuse ADMIN
+  langfuse-admin: "ADMIN"  # Alternative admin role
+  operator: "MEMBER"       # Keycloak 'operator' → Langfuse MEMBER
+  langfuse-member: "MEMBER"
+  developer: "MEMBER"
+  default: "VIEWER"        # Fallback for unmapped roles
+```
+
+**Requirements:**
+- `keycloak_enabled: true` - Keycloak as identity provider
+- `langfuse_sso_enabled: true` - SSO must be enabled
+- Keycloak service account with `view-users` and `view-realm` roles
+
+**Architecture:**
+```
+┌─────────────────┐     ┌──────────────────────┐     ┌────────────────┐
+│    Keycloak     │────▶│   langfuse-sync      │────▶│    Langfuse    │
+│  (Admin API)    │     │    (CronJob)         │     │   (SCIM API)   │
+│                 │     │   Every 5 mins       │     │                │
+│  - Users        │     │   - Fetch KC users   │     │  - Update      │
+│  - Realm roles  │     │   - Map roles        │     │    org roles   │
+└─────────────────┘     │   - PATCH via SCIM   │     └────────────────┘
+                        └──────────────────────┘
+```
+
+**Files Generated:**
+- `sync-cronjob.yaml.j2` - Kubernetes CronJob definition
+- `sync-secret.sops.yaml.j2` - SOPS-encrypted API credentials
+- `sync-configmap.yaml.j2` - Role mapping config + Python sync script
+
+REF: https://langfuse.com/docs/integrations/scim
+
 ## File Structure
 
 ```
@@ -315,7 +365,10 @@ templates/config/kubernetes/apps/ai-system/langfuse/
     ├── secret.sops.yaml.j2     # Encrypted credentials
     ├── referencegrant.yaml.j2  # Allow network namespace HTTPRoute access
     ├── networkpolicy.yaml.j2   # Cilium NetworkPolicy
-    └── servicemonitor.yaml.j2  # Prometheus scraping
+    ├── servicemonitor.yaml.j2  # Prometheus scraping
+    ├── sync-cronjob.yaml.j2    # SCIM role sync CronJob (if scim_sync_enabled)
+    ├── sync-secret.sops.yaml.j2    # SCIM sync credentials (if scim_sync_enabled)
+    └── sync-configmap.yaml.j2  # Role mapping + Python sync script (if scim_sync_enabled)
 
 # HTTPRoute is centralized in:
 # templates/config/kubernetes/apps/network/envoy-gateway/app/httproutes.yaml.j2
@@ -464,6 +517,15 @@ If event uploads fail:
 - Check S3 credentials: `kubectl get secret -n ai-system langfuse-s3-credentials`
 - Verify `LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"` is set
 
+### SCIM Role Sync Issues
+If roles are not syncing from Keycloak:
+- Check CronJob status: `kubectl get cronjobs -n ai-system -l app.kubernetes.io/name=langfuse-role-sync`
+- View recent job logs: `kubectl logs -n ai-system -l job-name=langfuse-role-sync-* --tail=100`
+- Verify Keycloak service account has required roles: `view-users`, `view-realm` on `realm-management` client
+- Check SCIM API credentials are correct: `kubectl get secret -n ai-system langfuse-sync-credentials`
+- Verify role mapping in ConfigMap: `kubectl get configmap -n ai-system langfuse-sync-config -o yaml`
+- Test Keycloak connectivity from pod: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/admin/realms/matherlynet/users`
+
 ## NetworkPolicy Considerations
 
 Langfuse requires egress to multiple services:
@@ -511,3 +573,4 @@ When `network_policies_enabled: true`:
 - `langfuse_backup_enabled` - true when rustfs + backup flag + S3 credentials
 - `langfuse_monitoring_enabled` - true when monitoring + langfuse_monitoring_enabled
 - `langfuse_tracing_enabled` - true when tracing + langfuse_tracing_enabled
+- `langfuse_scim_sync_enabled` - true when keycloak + scim_sync_enabled + all credentials set
