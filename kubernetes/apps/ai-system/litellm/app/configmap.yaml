@@ -87,7 +87,7 @@ data:
               role: system
         model_info:
           id: "54"
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/us/o4-mini-2025-04-16
 
       - model_name: text-embedding-3-small
@@ -99,7 +99,7 @@ data:
         model_info:
           id: "86"
           mode: embedding
-          access_groups: ["default-models", "developer-models"]
+          access_groups: ["default-models", "developer-models", "aangpt-models", "aanai-models"]
           base_model: azure/text-embedding-3-small
 
       - model_name: text-embedding-ada-002
@@ -111,7 +111,7 @@ data:
         model_info:
           id: "88"
           mode: embedding
-          access_groups: ["default-models", "developer-models"]
+          access_groups: ["default-models", "developer-models", "aangpt-models", "aanai-models"]
           base_model: azure/text-embedding-ada-002
 
       - model_name: gpt-5
@@ -126,7 +126,7 @@ data:
               role: system
         model_info:
           id: "10"
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/us/gpt-5-2025-08-07
 
       - model_name: gpt-5-chat
@@ -144,7 +144,7 @@ data:
         model_info:
           id: "11"
           mode: chat
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/gpt-5-chat-latest
 
       - model_name: gpt-5-mini
@@ -159,7 +159,7 @@ data:
               role: system
         model_info:
           id: "12"
-          access_groups: ["default-models"]
+          access_groups: ["default-models", "aangpt-models", "aanai-models"]
           base_model: azure/us/gpt-5-mini-2025-08-07
 
       - model_name: gpt-5-nano
@@ -174,7 +174,7 @@ data:
               role: system
         model_info:
           id: "13"
-          access_groups: ["default-models"]
+          access_groups: ["default-models", "aangpt-models", "aanai-models"]
           base_model: azure/us/gpt-5-nano-2025-08-07
 
       - model_name: gpt-5.1
@@ -190,8 +190,59 @@ data:
         model_info:
           id: "6"
           supports_reasoning: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/global/gpt-5.1
+
+      - model_name: gpt-5.1-chat
+        litellm_params:
+          model: azure/gpt5_series/gpt-5.1-chat
+          litellm_credential_name: azure_credential_us_east2
+          max_completion_tokens: 16384
+          rpm: 20000
+          tpm: 2000000
+          cache_control_injection_points:
+            - location: message
+              role: system
+        model_info:
+          id: "7"
+          mode: chat
+          supports_reasoning: true
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
+          base_model: azure/global/gpt-5.1-chat
+
+      - model_name: gpt-5.1-codex
+        litellm_params:
+          model: azure/gpt-5.1-codex
+          litellm_credential_name: azure_credential_us_east2
+          api_version: preview
+          max_tokens: 16384
+          rpm: 2000
+          tpm: 2000000
+          cache_control_injection_points:
+            - location: message
+              role: system
+        model_info:
+          id: "8"
+          mode: responses
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
+          base_model: gpt-5.1-codex
+
+      - model_name: gpt-5.1-codex-mini
+        litellm_params:
+          model: azure/gpt-5.1-codex-mini
+          litellm_credential_name: azure_credential_us_east2
+          api_version: preview
+          max_tokens: 16384
+          rpm: 2500
+          tpm: 2500000
+          cache_control_injection_points:
+            - location: message
+              role: system
+        model_info:
+          id: "9"
+          mode: responses
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
+          base_model: gpt-5.1-codex-mini
 
       - model_name: gpt-5.2
         litellm_params:
@@ -207,7 +258,7 @@ data:
           id: "1"
           mode: chat
           supports_reasoning: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/global/gpt-5.2
 
       - model_name: gpt-audio
@@ -222,7 +273,7 @@ data:
           id: "96"
           supports_audio_output: true
           supports_audio_input: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           disable_background_health_check: true
           base_model: azure/gpt-audio-2025-08-28
 
@@ -238,7 +289,7 @@ data:
           id: "98"
           supports_audio_output: true
           supports_audio_input: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           disable_background_health_check: true
           base_model: azure/gpt-audio-mini-2025-10-06
 
@@ -250,7 +301,7 @@ data:
         model_info:
           id: "66"
           mode: image_generation
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: azure/gpt-image-1
 
       - model_name: gpt-realtime
@@ -264,7 +315,7 @@ data:
         model_info:
           id: "92"
           mode: realtime
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           disable_background_health_check: true
           base_model: gpt-realtime-2025-08-28
 
@@ -279,7 +330,7 @@ data:
         model_info:
           id: "94"
           mode: realtime
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           disable_background_health_check: true
           base_model: gpt-realtime-mini-2025-10-06
 
@@ -292,8 +343,24 @@ data:
         model_info:
           id: "84"
           mode: embedding
-          access_groups: ["default-models", "developer-models"]
+          access_groups: ["default-models", "developer-models", "aangpt-models", "aanai-models"]
           base_model: azure/text-embedding-3-large
+
+      - model_name: azure-speech
+        litellm_params:
+          model: azure/speech/azure-tts
+          api_base: https://eastus2.tts.speech.microsoft.com
+          api_key: "os.environ/AZURE_API_KEY_EAST2"
+          voice_name: Alloy
+          output_format: wav
+        model_info:
+          id: "32"
+          # mode: chat
+          # mode: completion
+          mode: audio_speech
+          # health_check_voice: alloy
+          disable_background_health_check: true # LiteLLM Health Checks does not support realtime health checks currently
+          base_model: azure/speech/azure-tts
 
       - model_name: claude-opus-4-5
         litellm_params:
@@ -308,7 +375,7 @@ data:
         model_info:
           id: "20"
           supports_reasoning: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: claude-opus-4-5
 
       - model_name: claude-sonnet-4-5
@@ -324,7 +391,7 @@ data:
         model_info:
           id: "21"
           supports_reasoning: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: claude-sonnet-4-5
 
       - model_name: claude-opus-4-1
@@ -340,7 +407,7 @@ data:
         model_info:
           id: "22"
           supports_reasoning: true
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: claude-opus-4-1
 
       - model_name: claude-haiku-4-5
@@ -356,7 +423,7 @@ data:
         model_info:
           id: "23"
           supports_reasoning: true
-          access_groups: ["default-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: claude-haiku-4-5
 
       - model_name: cohere-rerank-v3.5
@@ -368,7 +435,7 @@ data:
         model_info:
           id: "76"
           mode: rerank
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: cohere-rerank-v3.5
 
       - model_name: cohere-embed-v-4-0
@@ -380,7 +447,7 @@ data:
         model_info:
           id: "77"
           mode: embedding
-          access_groups: ["premium-models", "restricted-models"]
+          access_groups: ["premium-models", "restricted-models", "aangpt-models", "aanai-models"]
           base_model: cohere-embed-v-4-0
           disable_background_health_check: true
 
@@ -420,88 +487,243 @@ data:
       service_callbacks:
         - "prometheus_system"
 
+      # callback_settings:
+          # otel:
+              # message_logging: true  # OTEL logging callback specific settings
 
 
-      turn_off_message_logging: true
-      redact_user_api_key_info: true
-      redact_messages_in_exceptions: true
-      set_verbose: false
-      json_logs: true
 
-      request_timeout: 30
+      # GitHub Copilot compatibility
+      disable_copilot_system_to_assistant: false  # If false (default), converts all 'system' role messages to 'assistant' for GitHub Copilot compatibility. Set to true to disable this behavior.
+
+      turn_off_message_logging: true # boolean  # prevent the messages and responses from being logged to on your callbacks, but request metadata will still be logged. Useful for privacy/compliance when handling sensitive data.
+      redact_user_api_key_info: true # boolean  # Redact information about the user api key (hashed token, user_id, team id, etc.), from logs. Currently supported for Langfuse, OpenTelemetry, Logfire, ArizeAI logging.
+      redact_messages_in_exceptions: true # boolean  # Redact messages from exceptions. Currently supported for Langfuse, OpenTelemetry, Logfire, ArizeAI logging.
+      set_verbose: false # boolean  # Set verbose logging for litellm. Sets litellm.set_verbose
+      json_logs: true # if true, logs will be in json format
+
+      request_timeout: 30 # (int) llm requesttimeout in seconds. Raise Timeout error if call takes longer than 10s. Sets litellm.request_timeout
 
       langfuse_host: "os.environ/LANGFUSE_HOST"
       langfuse_public_key: "os.environ/LANGFUSE_PUBLIC_KEY"
       langfuse_secret: "os.environ/LANGFUSE_SECRET_KEY"
       langfuse_enabled: true
-      langfuse_sample_rate: 1.0
+      langfuse_sample_rate: 0.2
+      langfuse_default_tags:
+        [
+          "cache_hit",
+          "cache_key",
+          "proxy_base_url",
+          "user_api_key_alias",
+          "user_api_key_user_id",
+          "user_api_key_user_email",
+          "user_api_key_team_alias",
+          "semantic-similarity"
+        ]
 
       cache: true
-      cache_params:
-        type: redis
-        host: "os.environ/REDIS_HOST"
-        port: "os.environ/REDIS_PORT"
-        password: "os.environ/REDIS_PASSWORD"
-        namespace: "os.environ/REDIS_NAMESPACE"
-        max_connections: 100
-        supported_call_types: ["acompletion", "atext_completion", "aembedding", "atranscription"]
-        mode: default_on
-        ttl: 600
+      cache_params:        # set cache params for redis
+        type: redis        # type of cache to initialize
+        # Optional - Redis Settings
+        host: "os.environ/REDIS_HOST"  # The host address for the Redis cache. Required if type is "redis".
+        port: "os.environ/REDIS_PORT"  # The port number for the Redis cache. Required if type is "redis".
+        password: "os.environ/REDIS_PASSWORD"  # The password for the Redis cache. Required if type is "redis".
+        namespace: "os.environ/REDIS_NAMESPACE" # namespace for redis cache
+        max_connections: 100  # [OPTIONAL] Set Maximum number of Redis connections. Passed directly to redis-py.
+        supported_call_types: ["acompletion", "atext_completion", "aembedding", "atranscription"] # [OPTIONAL] Set supported call types for caching. Passed directly to redis-py.
+        mode: default_on # [OPTIONAL] Set mode for caching. Passed directly to redis-py.
+        ttl: 600 # [OPTIONAL] Set time to live for caching. Passed directly to redis-py.
+
+        # Optional - Redis Cluster Settings
+        # redis_startup_nodes: [{"host": "127.0.0.1", "port": "7001"}]
+
+        # Optional - Redis Sentinel Settings
+        # service_name: "mymaster"
+        # sentinel_nodes: [["localhost", 26379]]
+
+        # Optional - GCP IAM Authentication for Redis
+        # gcp_service_account: "projects/-/serviceAccounts/your-sa@project.iam.gserviceaccount.com"  # GCP service account for IAM authentication
+        # gcp_ssl_ca_certs: "./server-ca.pem"  # Path to SSL CA certificate file for GCP Memorystore Redis
+        # ssl: true  # Enable SSL for secure connections
+        # ssl_cert_reqs: null  # Set to null for self-signed certificates
+        # ssl_check_hostname: false  # Set to false for self-signed certificates
+
+        # Optional - Qdrant Semantic Cache Settings
+        # qdrant_semantic_cache_embedding_model: openai-embedding # the model should be defined on the model_list
+        # qdrant_collection_name: test_collection
+        # qdrant_quantization_config: binary
+        # similarity_threshold: 0.8   # similarity threshold for semantic cache
+
+        # Optional - S3 Cache Settings
+        # s3_bucket_name: cache-bucket-litellm   # AWS Bucket Name for S3
+        # s3_region_name: us-west-2              # AWS Region Name for S3
+        # s3_aws_access_key_id: "os.environ/AWS_ACCESS_KEY_ID"  # us os.environ/<variable name> to pass environment variables. This is AWS Access Key ID for S3
+        # s3_aws_secret_access_key: "os.environ/AWS_SECRET_ACCESS_KEY"  # AWS Secret Access Key for S3
+        # s3_endpoint_url: https://s3.amazonaws.com  # [OPTIONAL] S3 endpoint URL, if you want to use Backblaze/cloudflare s3 bucket
+
+      security_settings:
+        # IP-based rate limiting
+        ip_whitelist: [] # Optional: List of allowed IP addresses
+        ip_blacklist: [] # Optional: List of blocked IP addresses
+        # Request validation
+        # enforce_user_header: true # Require user identification headers
+        log_failed_requests: true # Log all failed authentication attempts
+        max_requests_per_minute_per_ip: 1000 # Rate limit per IP address
+
+      monitoring:
+        # Performance metrics
+        track_response_time: true
+        track_token_usage: true
+        track_error_rates: true
+        # Alerting thresholds
+        response_time_threshold_ms: 5000 # Alert if responses take > 5 seconds
+        error_rate_threshold_percent: 5.0 # Alert if error rate > 5%
 
       telemetry: false
       tpm_limit: 3500000
       rpm_limit: 35000
       max_file_size_mb: 25
+
+      # budget_alert_ttl: 86400 # 24 hours between budget alerts
+      # budget_alert_webhook: "os.environ/BUDGET_ALERT_WEBHOOK_URL" # Optional webhook for budget alerts
       max_budget: 1000
       budget_duration: 30d
 
-      track_cost_per_model: true
-      track_cost_per_team: true
-      track_cost_per_user: true
+      track_cost_per_model: true # Track costs per model
+      track_cost_per_team: true # Track costs per team
+      track_cost_per_user: true # Track costs per user
+      disable_end_user_cost_tracking: false # Disable cost tracking for end users to avoid unnecessary database writes
+      disable_end_user_cost_tracking_prometheus_only: false # Only track costs in Prometheus, not in database
+
+      enable_budget_tracking: true
+      enable_usage_analytics: true
+      create_monthly_spend_views: true
+      create_user_spend_views: true
 
     general_settings:
-      master_key: "os.environ/LITELLM_MASTER_KEY"
-      database_url: "os.environ/DATABASE_URL"
-      database_connection_pool_limit: 20
-      database_connection_timeout: 60
-      allow_requests_on_db_unavailable: true
-      disable_spend_logs: false
-      store_model_in_db: "os.environ/STORE_MODEL_IN_DB"
-      store_prompts_in_spend_logs: true
-      proxy_batch_write_at: 60
-      proxy_budget_rescheduler_min_time: 300
-      proxy_budget_rescheduler_max_time: 3600
-      disable_error_logs: true
+      master_key: "os.environ/LITELLM_MASTER_KEY" # Master API key for administrative access
+      # enable_jwt_auth: false # Enterprise Only - enable JWT-based authentication
+      # litellm_jwtauth: false # Enterprise Only - enable Litellm JWT-based authentication
+      # allowed_routes: ["route1", "route2"]  # list of allowed proxy API routes - a user can access. (currently JWT-Auth only)
+      # admin_only_routes: # Enterprise Only - routes that only admin users can access
+      #   - "/model/list"
+      #   - "/model/delete"
+      #   - "/model/update"
+      # allowed_ips: # Optional - restrict API access to specific IP addresses
+      #   - "192.168.1.0/24"
+      #   - "10.0.0.0/8"
+      # enforce_user_param: false # Require user parameter for all requests
+      # enable_oauth2_proxy_auth: false # Enterprise Only - enable OAuth2 proxy authentication
+      # use_x_forwarded_for: false # Use X-Forwarded-For header for client IP
+      # custom_auth: # Enterprise Only - custom authentication function
+      # allow_user_auth: false # Deprecated
+      # custom_sso: # Enterprise Only - custom SSO configuration
+      user_header_name: X-OpenWebUI-User-Email # Header name to extract user email from requests
 
-      background_health_checks: false
-      health_check_interval: 300
+      database_url: "os.environ/DATABASE_URL"
+      database_connection_pool_limit: 20  # default 10
+      database_connection_timeout: 60  # default 60s
+      allow_requests_on_db_unavailable: true  # if true, will allow requests that can not connect to the DB to verify Virtual Key to still work
+      disable_spend_logs: false  # turn off writing each transaction to the db
+      # disable_adding_master_key_hash_to_db: false  # turn off storing master key hash in db, for spend tracking
+      store_model_in_db: "os.environ/STORE_MODEL_IN_DB" # store model info in DB for better observability
+      store_prompts_in_spend_logs: true # store prompts in spend logs for better observability
+      # disable_prisma_schema_update: false  # turn off Prisma schema updates
+      proxy_batch_write_at: 60 # batch write to DB every 60 seconds
+      proxy_budget_rescheduler_min_time: 300 # reschedule budget updates every 5 minutes
+      proxy_budget_rescheduler_max_time: 3600 # reschedule budget updates at most every 1 hour
+      disable_error_logs: true # turn off writing LLM Exceptions to DB
+
+      # key_management_system: azure_kms # Enterprise Only - either google_kms or azure_kms
+      # key_management_settings: # Enterprise Only - configure encryption settings for keys
+      # use_azure_key_vault: # Enterprise Only - use Azure Key Vault for key management
+      # use_google_kms: # Enterprise Only - use Google KMS for key management
+      # default_team_disabled: # Enterprise Only - disable default team for new users
+      # custom_key_generate: # Custom key generation function
+
+      # max_parallel_requests: 0  # the max parallel requests allowed per deployment
+      # global_max_parallel_requests: 0  # the max parallel requests allowed on the proxy all up
+      # max_request_size_mb: 0  # maximum request size in MB
+      # max_response_size_mb: 0  # maximum response size in MB
+      # proxy_budget_rescheduler_min_time: 0  # reschedule budget updates every X seconds
+      # proxy_budget_rescheduler_max_time: 0  # reschedule budget updates at most every X seconds
+
+      background_health_checks: false # disable to avoid Prisma overload
+      health_check_interval: 300 # health check interval in seconds (unused when disabled)
+      # health_check_details: # health check details configuration
+      # alerting: ["slack", "email"] # alerting configuration
+      # alerting_threshold: 0.8 # alert when health check fails above this threshold
+      # alerting_args: {} # alerting arguments
+      # alert_types: [] # alert types to trigger
+      # alert_to_webhook_url: "" # webhook URL to send alerts to
+      # spend_report_frequency: # Enterprise Only - how often to send spend reports (e.g., "1d", "1w")
+      # forward_openai_org_id: "" # Forward OpenAI organization ID to LLM API
+      # forward_client_headers_to_llm_api: false # Forward client request headers to LLM API
+      # use_client_credentials_pass_through_routes: # Enterprise Only - enable client credentials pass-through routes
+      # allow_client_side_credentials: # Use with Caution - allows client-side credentials to be passed through to LLM providers
+
+      # service_account_settings: # Enterprise Only - configure service account permissions and policies
+      # provider_budget_config: # Enterprise Only - configure provider-specific budget settings
+      # model_group_alias: # Map model names to aliases for easier management
+      # retry_after: # Enterprise Only - configure retry behavior after rate limit errors
+      # num_retries: # Number of retries for failed requests
+
+      # disable_master_key_return: true  # turn off returning master key on UI (checked on '/user/info' endpoint)
+      # disable_retry_on_max_parallel_request_limit_error: true  # turn off retries when max parallel request limit is reached
+      # disable_reset_budget: false  # turn off reset budget scheduled task
+
+      # disable_responses_id_security: false  # turn off response ID security checks that prevent users from accessing other users' responses
+      # reject_clientside_metadata_tags: true  # if true, rejects requests with client-side 'metadata.tags' to prevent users from influencing budgets
+
+      # maximum_spend_logs_retention_period: 35d # The maximum time to retain spend logs before deletion.
+      # maximum_spend_logs_retention_interval: 1d # interval in which the spend log cleanup task should run in.
 
     router_settings:
-      routing_strategy: simple-shuffle
-      enable_pre_call_checks: true
-      enable_tag_filtering: true
-      timeout: 120
-      stream_timeout: 300
+      routing_strategy: simple-shuffle # Literal["simple-shuffle", "least-busy", "usage-based-routing","latency-based-routing"], default="simple-shuffle" - RECOMMENDED for best performance
+      enable_tag_filtering: true # Use tag based routing for requests
+      model_group_alias: # Map model names to aliases for easier management
+        {"my-special-fake-model-alias-name": "fake-openai-endpoint-3"}
+      # default_max_parallel_requests: 1000 # Maximum parallel requests allowed per model
+      # default_priority: 1 # Default priority for models (higher number = higher priority)
+      # polling_interval: 30 # (in seconds) how often to poll for model updates
+      # caching_groups: # List of cache groups to use for caching
+      # assistants_config: # Enterprise Only - Configure assistants for your LLMs
 
-      redis_host: "os.environ/REDIS_HOST"
-      redis_port: "os.environ/REDIS_PORT"
-      redis_password: "os.environ/REDIS_PASSWORD"
+      redis_host: "os.environ/REDIS_HOST" # Redis host for multi-instance coordination
+      redis_port: "os.environ/REDIS_PORT" # Redis port for multi-instance coordination
+      redis_password: "os.environ/REDIS_PASSWORD" # Redis password for multi-instance coordination
+      # redis_url: "os.environ/REDIS_URL" # Redis URL for multi-instance coordination
+      # client_ttl: 3600 # TTL for client cache in seconds
+      # cache_responses: true # Enable response caching for improved performance
+      # routing_strategy_args: { # Additional arguments for routing strategy
+      #   "latency_threshold": 2.0, # Only consider models with latency < 2.0s
+      # }
 
-      allowed_fails: 3
-      cooldown_time: 30
-      disable_cooldowns: true
+      enable_pre_call_checks: true # Before call is made, check if a call is within model context window
+      # optional_pre_call_checks: { # Optional pre-call checks to perform
+      #   "check_model_supported": true, # Check if model is supported
+      #   "check_model_max_tokens": true, # Check if request is within model max tokens
+      #   "check_model_context_window": true, # Check if request is within model context window
+      # }
+
+      allowed_fails: 3 # cooldown model if it fails > 1 call in a minute.
+      cooldown_time: 30 # (in seconds) how long to cooldown model if fails/min > allowed_fails
+      disable_cooldowns: true # Disable cooldowns for all models
       retry_policy:
-        AuthenticationErrorRetries: 1
-        TimeoutErrorRetries: 2
-        RateLimitErrorRetries: 3
-        ContentPolicyViolationErrorRetries: 2
-        InternalServerErrorRetries: 3
+        AuthenticationErrorRetries: 1 # Default: 1 retry for authentication errors
+        TimeoutErrorRetries: 2 # Default: 2 retries for timeout errors
+        RateLimitErrorRetries: 3 # Default: 3 retries for rate limit errors
+        ContentPolicyViolationErrorRetries: 2 # Default: 2 retries for content policy violation errors
+        InternalServerErrorRetries: 3 # Default: 3 retries for internal server errors
       allowed_fails_policy:
-        BadRequestErrorAllowedFails: 1000
-        AuthenticationErrorAllowedFails: 10
-        TimeoutErrorAllowedFails: 12
-        RateLimitErrorAllowedFails: 10000
-        ContentPolicyViolationErrorAllowedFails: 15
-        InternalServerErrorAllowedFails: 20
+        BadRequestErrorAllowedFails: 1000 # Allow (Default: 1000) BadRequestErrors before cooling down a deployment
+        AuthenticationErrorAllowedFails: 10 # Allow (Default: 10) AuthenticationErrors before cooling down a deployment
+        TimeoutErrorAllowedFails: 12 # Allow (Default: 12) TimeoutErrors before cooling down a deployment
+        RateLimitErrorAllowedFails: 10000 # Allow (Default: 10000) RateLimitErrors before cooling down a deployment
+        ContentPolicyViolationErrorAllowedFails: 15 # Allow (Default: 15) ContentPolicyViolationErrors before cooling down a deployment
+        InternalServerErrorAllowedFails: 20 # Allow (Default: 20) InternalServerErrors before cooling down a deployment
 
-      debug_level: "INFO"
+      timeout: 120 # Request timeout in seconds
+      stream_timeout: 300 # Stream request timeout in seconds
+      debug_level: "INFO" # Debug level for logging
+      # set_verbose: false # Deprecated - use debug_level instead
