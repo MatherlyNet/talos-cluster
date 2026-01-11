@@ -386,8 +386,19 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    #| Keycloak OIDC - external URL (AUTH_KEYCLOAK_ISSUER) for token validation #|
-    #| Note: Standard K8s NetworkPolicy doesn't support FQDN - use Cilium policy #|
+    #| External HTTPS - Required for OIDC discovery, token validation, and callbacks #|
+    #| AUTH_KEYCLOAK_ISSUER uses external URL which requires egress to internet #|
+    #| Note: Standard K8s NetworkPolicy doesn't support FQDN - using ipBlock instead #|
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
 #% endif %#
 #% if langfuse_tracing_enabled | default(false) %#
     #| Tempo OTLP (tracing) #|
