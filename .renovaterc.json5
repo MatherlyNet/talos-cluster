@@ -12,6 +12,7 @@
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard :robot:",
   schedule: ["every weekend"],
+  rebaseWhen: "conflicted",
   ignorePaths: ["**/*.sops.*"],
   flux: {
     managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"],
@@ -46,8 +47,10 @@
       minimumGroupSize: 3,
     },
     {
-      description: "Auto-merge GitHub Actions",
+      description: "Auto-merge GitHub Actions (grouped)",
       matchManagers: ["github-actions"],
+      groupName: "github-actions",
+      groupSlug: "github-actions",
       automerge: true,
       automergeType: "branch",
       matchUpdateTypes: ["minor", "patch", "digest"],
@@ -61,6 +64,15 @@
       automergeType: "branch",
       matchUpdateTypes: ["minor", "patch"],
       ignoreTests: true,
+    },
+    {
+      description: "Group container digest updates",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["digest"],
+      groupName: "container-digests",
+      groupSlug: "container-digests",
+      automerge: true,
+      automergeType: "branch",
     },
     {
       description: "Restrict Helm to v3.x",
