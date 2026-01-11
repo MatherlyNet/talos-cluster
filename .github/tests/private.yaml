@@ -16,6 +16,11 @@ repository_visibility: "private"
 cloudflare_domain: "example.com"
 cloudflare_token: "fake"
 cloudflare_gateway_addr: "10.10.10.251"
+
+# Talos Upgrade Controller (tuppr) - Automated OS/K8s upgrades
+talos_version: "1.12.0"
+kubernetes_version: "1.35.0"
+
 # cilium_bgp_router_addr: ""
 # cilium_bgp_router_asn: ""
 # cilium_bgp_node_asn: ""
