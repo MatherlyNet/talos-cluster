@@ -143,6 +143,8 @@ spec:
                     name: litellm-secret
                     key: AZURE_COHERE_EMBED_API_KEY
 
+              AZURE_API_BASE_REALTIME: "https://ets-east-us2.cognitiveservices.azure.com/"
+
               OTEL_EXPORTER: "otlp_grpc"
               OTEL_ENDPOINT: "http://tempo.monitoring.svc:4317"
               OTEL_HEADERS: ""

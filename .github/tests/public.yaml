@@ -322,6 +322,7 @@ kubernetes_version: "1.35.0"
 # azure_cohere_embed_api_base: "https://test-ai-services.cognitiveservices.azure.com"
 # azure_cohere_rerank_api_key: "test-azure-cohere-rerank-key"
 # azure_cohere_rerank_api_base: "https://test-ai-services.cognitiveservices.azure.com"
+# azure_openai_realtime_api_base: "https://test-ai-services.cognitiveservices.azure.com"
 
 # Langfuse LLM Observability (optional - uncomment to test)
 # REF: docs/research/langfuse-llm-observability-integration-jan-2026.md

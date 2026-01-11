@@ -307,7 +307,7 @@ data:
       - model_name: gpt-realtime
         litellm_params:
           model: azure/gpt-realtime
-          api_base: "os.environ/AZURE_API_BASE_EAST2"
+          api_base: "os.environ/AZURE_API_BASE_REALTIME"
           api_key: "os.environ/AZURE_API_KEY_EAST2"
           api_version: 2024-10-01-preview
           rpm: 200
@@ -322,7 +322,7 @@ data:
       - model_name: gpt-realtime-mini
         litellm_params:
           model: azure/gpt-realtime-mini
-          api_base: "os.environ/AZURE_API_BASE_EAST2"
+          api_base: "os.environ/AZURE_API_BASE_REALTIME"
           api_key: "os.environ/AZURE_API_KEY_EAST2"
           api_version: 2024-10-01-preview
           rpm: 200

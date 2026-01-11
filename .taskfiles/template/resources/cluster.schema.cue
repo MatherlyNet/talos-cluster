@@ -456,6 +456,9 @@ import (
 	azure_cohere_rerank_api_key?:  string & !=""
 	azure_cohere_rerank_api_base?: string & =~"^https://"
 
+	// Azure OpenAI Realtime API (gpt-realtime models via Azure Cognitive Services)
+	azure_openai_realtime_api_base?: string & =~"^https://"
+
 	// Dragonfly Cache - Redis-compatible in-memory data store
 	// REF: https://www.dragonflydb.io/
 	// REF: docs/research/dragonfly-redis-alternative-integration-jan-2026.md

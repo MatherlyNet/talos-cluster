@@ -1593,6 +1593,11 @@ cloudflare_gateway_addr: ""
 # azure_cohere_rerank_api_key: ""
 # azure_cohere_rerank_api_base: ""
 
+# -- Azure OpenAI Realtime API Base (gpt-realtime models via Azure Cognitive Services)
+#    Uses Azure Cognitive Services endpoint for realtime audio/video models
+#    (OPTIONAL) Only required if using gpt-realtime or gpt-realtime-mini models
+# azure_openai_realtime_api_base: ""
+
 # =============================================================================
 # LANGFUSE LLM OBSERVABILITY PLATFORM (Self-Hosted)
 # =============================================================================

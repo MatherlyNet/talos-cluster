@@ -1249,6 +1249,11 @@
       "type": "string",
       "pattern": "^https://"
     },
+    "azure_openai_realtime_api_base": {
+      "type": "string",
+      "pattern": "^https://",
+      "description": "Azure OpenAI Realtime API (gpt-realtime models via Azure Cognitive Services)"
+    },
     "dragonfly_enabled": {
       "default": false,
       "type": "boolean",

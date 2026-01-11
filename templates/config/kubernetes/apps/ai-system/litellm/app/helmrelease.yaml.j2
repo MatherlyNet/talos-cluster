@@ -181,6 +181,11 @@ spec:
                     key: AZURE_COHERE_EMBED_API_KEY
 #% endif %#
 
+#% if azure_openai_realtime_api_base %#
+              #| Azure OpenAI Realtime API (gpt-realtime models) #|
+              AZURE_API_BASE_REALTIME: "#{ azure_openai_realtime_api_base }#"
+#% endif %#
+
 #% if litellm_tracing_enabled | default(false) %#
               #| OpenTelemetry Tracing (Tempo) #|
               OTEL_EXPORTER: "otlp_grpc"
