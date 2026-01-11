@@ -1,0 +1,13 @@
+# ShellCheck configuration for scripts directory
+
+# Disable specific checks
+disable=SC1091  # Not following sourced files (not applicable)
+
+# Enable all optional checks
+enable=all
+
+# Set shell dialect
+shell=bash
+
+# Source path for included files
+source-path=SCRIPTDIR
