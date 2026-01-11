@@ -10,9 +10,10 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 
 | Document | Domain | Use When |
 | ---------- | -------- | ---------- |
+| [configuration-variables.md](./configuration-variables.md) | cluster.yaml | Complete reference for all configuration variables, derived values |
 | [flux-gitops.md](./flux-gitops.md) | Flux CD | Adding apps, troubleshooting sync issues, understanding GitOps flow |
 | [talos-operations.md](./talos-operations.md) | Talos Linux | Node operations, upgrades, configuration changes |
-| [cilium-networking.md](./cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer issues, BGP config |
+| [cilium-networking.md](./cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer issues, BGP config, OIDC |
 | [template-system.md](./template-system.md) | makejinja | Template syntax, adding variables, creating new templates |
 | [infrastructure-opentofu.md](./infrastructure-opentofu.md) | OpenTofu | IaC operations, R2 backend, Proxmox automation |
 | [dragonfly.md](./dragonfly.md) | Dragonfly | Redis-compatible cache, ACL configuration, monitoring |
@@ -21,6 +22,12 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 | [obot.md](./obot.md) | Obot | MCP gateway, AI agent platform, MCP server hosting |
 
 ## Quick Reference
+
+### For Configuration Variables
+```
+Read: docs/ai-context/configuration-variables.md
+Related: docs/CONFIGURATION.md (complete schema), templates/scripts/plugin.py (derived logic)
+```
 
 ### For GitOps Tasks
 ```
