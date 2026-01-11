@@ -122,6 +122,26 @@ spec:
         - protocol: TCP
           port: 4000
 #% endif %#
+    #| Allow from Obot (internal LLM gateway) #|
+#% if obot_litellm_enabled | default(false) %#
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obot
+      ports:
+        - protocol: TCP
+          port: 4000
+#% endif %#
+    #| Allow from Langfuse worker (LLM observability callbacks) #|
+#% if litellm_langfuse_enabled | default(false) and langfuse_enabled | default(false) %#
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: langfuse
+      ports:
+        - protocol: TCP
+          port: 4000
+#% endif %#
   egress:
     #| Allow DNS queries #|
     - to:

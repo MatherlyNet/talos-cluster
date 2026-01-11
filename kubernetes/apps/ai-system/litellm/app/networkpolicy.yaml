@@ -89,6 +89,20 @@ spec:
       ports:
         - protocol: TCP
           port: 4000
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obot
+      ports:
+        - protocol: TCP
+          port: 4000
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: langfuse
+      ports:
+        - protocol: TCP
+          port: 4000
   egress:
     - to:
         - namespaceSelector:
