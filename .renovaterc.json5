@@ -63,6 +63,12 @@
       ignoreTests: true,
     },
     {
+      description: "Restrict Helm to v3.x",
+      matchManagers: ["mise"],
+      matchPackageNames: ["aqua:helm/helm"],
+      allowedVersions: "<4.0.0",
+    },
+    {
       matchUpdateTypes: ["major"],
       semanticCommitType: "feat",
       commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}})!:",
