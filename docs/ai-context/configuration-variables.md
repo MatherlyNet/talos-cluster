@@ -533,6 +533,24 @@ See: `docs/research/obot-keycloak-oidc-integration-jan-2026.md`
 | `obot_s3_access_key` | S3 access key (SOPS) |
 | `obot_s3_secret_key` | S3 secret key (SOPS) |
 
+#### Obot Audit Log Export
+
+| Variable | Description |
+| -------- | ----------- |
+| `obot_audit_s3_access_key` | S3 access key for audit log export (SOPS) |
+| `obot_audit_s3_secret_key` | S3 secret key for audit log export (SOPS) |
+
+**Derived:** `obot_audit_logs_enabled=true` when both keys set + `rustfs_enabled: true`
+
+Configure via Obot UI: Admin Settings → Audit Logs → Export Audit Logs
+
+RustFS IAM setup:
+- Bucket: `obot-audit-logs` (auto-created by RustFS setup job)
+- Policy: `obot-audit-storage` (scoped to obot-audit-logs bucket)
+- User: `obot-audit` in `ai-system` group
+
+See: `docs/ai-context/obot.md#audit-log-export`
+
 #### Obot OpenTelemetry Tracing
 
 | Variable | Description | Default |

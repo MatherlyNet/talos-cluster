@@ -128,6 +128,13 @@ spec:
       #| Allow all email domains (explicitly configured for clarity) #|
       OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') }#"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "#{ obot_keycloak_client_id | default('obot') }#"
+      #| Server URL - Required by keycloak-auth-provider tool for redirect URI construction #|
+      #| REF: https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/main.go #|
+      OBOT_SERVER_URL: "https://#{ obot_hostname }#"
+      #| PostgreSQL session storage - avoids 4KB cookie limit that causes multi-cookie #|
+      #| session failures with large Keycloak tokens (roles/groups)                    #|
+      #| REF: https://github.com/obot-platform/obot/pull/5348                          #|
+      OBOT_AUTH_PROVIDER_POSTGRES_CONNECTION_DSN: "postgresql://#{ obot_postgres_user | default('obot') }#:#{ obot_db_password }#@obot-postgresql-rw.ai-system.svc.cluster.local:5432/#{ obot_postgres_db | default('obot') }#?sslmode=require"
 #% if obot_keycloak_allowed_groups | default('') %#
       #| Optional: Restrict access to specific Keycloak groups #|
       OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS: "#{ obot_keycloak_allowed_groups }#"

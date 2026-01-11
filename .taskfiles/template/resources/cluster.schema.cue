@@ -681,6 +681,12 @@ import (
 	obot_s3_access_key?: string & !=""
 	obot_s3_secret_key?: string & !=""
 
+	// Obot Audit Log Export (requires rustfs_enabled: true)
+	// Export audit logs to S3-compatible storage for compliance and analysis
+	// Configure via Obot UI: Admin Settings → Audit Logs → Export Audit Logs
+	obot_audit_s3_access_key?: string & !=""
+	obot_audit_s3_secret_key?: string & !=""
+
 	// Obot Observability (requires monitoring_enabled and/or tracing_enabled)
 	obot_monitoring_enabled?: *false | bool  // ServiceMonitor for Prometheus metrics
 	obot_tracing_enabled?:    *false | bool  // OpenTelemetry traces to Tempo

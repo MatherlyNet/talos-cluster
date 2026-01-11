@@ -1848,6 +1848,15 @@
       "type": "string",
       "minLength": 1
     },
+    "obot_audit_s3_access_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Obot Audit Log Export (requires rustfs_enabled: true) Export audit logs to S3-compatible storage for compliance and analysis Configure via Obot UI: Admin Settings \u2192 Audit Logs \u2192 Export Audit Logs"
+    },
+    "obot_audit_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
     "obot_monitoring_enabled": {
       "default": false,
       "type": "boolean",

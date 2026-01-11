@@ -642,6 +642,14 @@ class Plugin(makejinja.plugin.Plugin):
             )
             data["obot_backup_enabled"] = obot_backup_enabled
 
+            # Audit log export enabled when RustFS + audit credentials configured
+            obot_audit_logs_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("obot_audit_s3_access_key")
+                and data.get("obot_audit_s3_secret_key")
+            )
+            data["obot_audit_logs_enabled"] = obot_audit_logs_enabled
+
             # Monitoring enabled when both flags set
             obot_monitoring_enabled = data.get(
                 "monitoring_enabled", False
@@ -656,6 +664,7 @@ class Plugin(makejinja.plugin.Plugin):
         else:
             data["obot_keycloak_enabled"] = False
             data["obot_backup_enabled"] = False
+            data["obot_audit_logs_enabled"] = False
             data["obot_monitoring_enabled"] = False
             data["obot_tracing_enabled"] = False
 

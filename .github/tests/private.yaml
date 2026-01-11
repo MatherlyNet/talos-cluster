@@ -153,6 +153,9 @@ cloudflare_gateway_addr: "10.10.10.251"
 # obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"
 # obot_s3_access_key: "test-obot-s3-access"
 # obot_s3_secret_key: "test-obot-s3-secret"
+# Obot Audit Log Export (requires rustfs_enabled: true)
+# obot_audit_s3_access_key: "test-obot-audit-access"
+# obot_audit_s3_secret_key: "test-obot-audit-secret"
 # obot_monitoring_enabled: false
 # obot_tracing_enabled: false
 

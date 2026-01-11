@@ -429,6 +429,9 @@ kubernetes_version: "1.35.0"
 # Obot Backups (requires rustfs_enabled: true)
 # obot_s3_access_key: "test-obot-s3-access"
 # obot_s3_secret_key: "test-obot-s3-secret"
+# Obot Audit Log Export (requires rustfs_enabled: true)
+# obot_audit_s3_access_key: "test-obot-audit-access"
+# obot_audit_s3_secret_key: "test-obot-audit-secret"
 # Obot Observability
 # obot_monitoring_enabled: true
 # obot_tracing_enabled: true

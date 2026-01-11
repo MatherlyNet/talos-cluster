@@ -73,6 +73,8 @@ spec:
       OBOT_KEYCLOAK_AUTH_PROVIDER_REALM: "matherlynet"
       OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
       OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_ID: "obot"
+      OBOT_SERVER_URL: "https://obot.matherly.net"
+      OBOT_AUTH_PROVIDER_POSTGRES_CONNECTION_DSN: "postgresql://obot:Elgu1ISYR9RTWYpLrKIOTc64DZF@obot-postgresql-rw.ai-system.svc.cluster.local:5432/obot?sslmode=require"
 
       OBOT_SERVER_ENCRYPTION_PROVIDER: "custom"
       OBOT_SERVER_ENCRYPTION_KEY: "iZfjO1D4jjRgAp0U/3RVQpS4Y/+EzL8pk1kUaD/H5Xc="
