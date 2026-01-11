@@ -500,6 +500,36 @@ kubectl exec -n ai-system obot-postgresql-1 -- \
   )"
 ```
 
+### 5. Secret Type Immutability (Migration Caveat)
+
+**CRITICAL for existing clusters:** Kubernetes Secret `type` field is **immutable**. You cannot change an existing secret from `type: Opaque` to `type: kubernetes.io/basic-auth` via normal GitOps apply.
+
+**Symptom:**
+```
+Secret "litellm-db-secret" is invalid: type: Invalid value: "kubernetes.io/basic-auth": field is immutable
+```
+
+**Solution for existing deployments:**
+```bash
+# Delete the secrets with wrong type (Flux will recreate with correct type)
+kubectl delete secret keycloak-db-secret -n identity
+kubectl delete secret litellm-db-secret -n ai-system
+kubectl delete secret obot-db-secret -n ai-system
+
+# Force Flux reconciliation
+flux reconcile ks keycloak -n identity --with-source
+flux reconcile ks litellm -n ai-system --with-source
+flux reconcile ks obot -n ai-system --with-source
+```
+
+**Why this is safe:**
+- CNPG clusters remain healthy (they cache the connection)
+- Passwords are stored in SOPS-encrypted templates
+- Flux immediately recreates secrets with correct type
+- Reloader restarts application pods with new secret references
+
+**Prevention:** For new deployments, secrets are created with correct type from the start. This issue only affects clusters migrating from `Opaque` to `kubernetes.io/basic-auth`.
+
 ---
 
 ## Integration with External Secrets Operator
@@ -630,3 +660,5 @@ The following validation was performed against actual project templates:
 | 2026-01-11 | Updated Phase 3 with verification status for all apps |
 | 2026-01-11 | Added Validation Findings section with cross-reference analysis |
 | 2026-01-11 | Expanded Files to Modify with phase-organized structure |
+| 2026-01-11 | **Implementation complete**: All changes deployed to cluster |
+| 2026-01-11 | Added Section 5: Secret Type Immutability migration caveat (learned from production) |
