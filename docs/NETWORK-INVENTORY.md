@@ -231,49 +231,49 @@ Key internal service dependencies:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        ai-system namespace                       │
+│                        ai-system namespace                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  obot ──────────────► litellm (port 4000)                      │
+│  obot ──────────────► litellm (port 4000)                       │
 │    │                      │                                     │
-│    │                      ├──► litellm-postgresql (5432)       │
-│    │                      ├──► dragonfly (cache, 6379)         │
-│    │                      └──► Azure OpenAI (external HTTPS)   │
+│    │                      ├──► litellm-postgresql (5432)        │
+│    │                      ├──► dragonfly (cache, 6379)          │
+│    │                      └──► Azure OpenAI (external HTTPS)    │
 │    │                                                            │
-│    ├──────────────► obot-postgresql (5432)                     │
-│    ├──────────────► tempo (4317)                               │
-│    ├──────────────► obot-mcp namespace (8080, 8099)            │
-│    └──────────────► keycloak (8080, via FQDN)                  │
+│    ├──────────────► obot-postgresql (5432)                      │
+│    ├──────────────► tempo (4317)                                │
+│    ├──────────────► obot-mcp namespace (8080, 8099)             │
+│    └──────────────► keycloak (8080, via FQDN)                   │
 │                                                                 │
-│  langfuse-web ────► langfuse-postgresql (5432)                 │
-│       │           ├──► dragonfly (cache, 6379)                 │
-│       │           ├──► langfuse-clickhouse (8123, 9000)        │
-│       │           └──► tempo (4317)                            │
+│  langfuse-web ────► langfuse-postgresql (5432)                  │
+│       │           ├──► dragonfly (cache, 6379)                  │
+│       │           ├──► langfuse-clickhouse (8123, 9000)         │
+│       │           └──► tempo (4317)                             │
 │       │                                                         │
-│  langfuse-worker ──► (same as web)                             │
+│  langfuse-worker ──► (same as web)                              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                      identity namespace                          │
+│                      identity namespace                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  keycloak ──────────► keycloak-postgres (5432)                 │
+│  keycloak ──────────► keycloak-postgres (5432)                  │
 │     │                                                           │
-│     ├──────────────► dragonfly (sessions, 6379)                │
-│     └──────────────► tempo (4317)                              │
+│     ├──────────────► dragonfly (sessions, 6379)                 │
+│     └──────────────► tempo (4317)                               │
 │                                                                 │
-│  keycloak-config-cli ──► keycloak (8080)                       │
+│  keycloak-config-cli ──► keycloak (8080)                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                       storage namespace                          │
+│                       storage namespace                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  rustfs ◄──────────── loki-write (monitoring, 9000)            │
-│         ◄──────────── cnpg-backups (ai-system, identity, 9000) │
-│         ◄──────────── langfuse (media/exports, 9000)           │
+│  rustfs ◄──────────── loki-write (monitoring, 9000)             │
+│         ◄──────────── cnpg-backups (ai-system, identity, 9000)  │
+│         ◄──────────── langfuse (media/exports, 9000)            │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
