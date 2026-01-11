@@ -55,7 +55,7 @@ jobs:
             return `${nextMajorMinor}.${nextPatch}`;
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@55dc4ee22412511ee8c3142cbea40418e6cec693 # v0.17.8
+        uses: anchore/sbom-action@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0.21.1
         with:
           path: .
           format: spdx-json
@@ -63,7 +63,7 @@ jobs:
           artifact-name: sbom-${{ steps.determine-next-tag.outputs.result }}
 
       - name: Generate CycloneDX SBOM
-        uses: anchore/sbom-action@55dc4ee22412511ee8c3142cbea40418e6cec693 # v0.17.8
+        uses: anchore/sbom-action@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0.21.1
         with:
           path: .
           format: cyclonedx-json
