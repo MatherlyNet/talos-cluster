@@ -20,6 +20,18 @@ spec:
       secret:
         name: langfuse-postgresql-credentials
 
+  managed:
+    roles:
+      - name: langfuse
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: langfuse-postgresql-credentials
+
   storage:
     size: 10Gi
     storageClass: proxmox-zfs

@@ -53,7 +53,7 @@ Obot is an AI agent platform with Model Context Protocol (MCP) server hosting ca
 ```yaml
 obot_enabled: true           # Enable Obot deployment
 obot_subdomain: "obot"       # Creates obot.${cloudflare_domain}
-obot_version: "0.2.30"       # jrmatherly/obot-entraid image tag
+obot_version: "0.2.31"       # jrmatherly/obot-entraid image tag
 obot_replicas: 1             # Pod replicas
 ```
 
@@ -66,6 +66,8 @@ obot_postgresql_replicas: 1        # PostgreSQL instances
 obot_postgresql_storage_size: "10Gi"
 obot_storage_size: "20Gi"          # Workspace PVC size
 ```
+
+**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `obot_db_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
 
 ### Encryption & Bootstrap
 ```yaml

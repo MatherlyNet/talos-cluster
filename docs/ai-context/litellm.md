@@ -75,6 +75,8 @@ litellm_db_instances: 1         # 1 for dev, 3+ for HA
 litellm_db_storage_size: "20Gi"
 ```
 
+**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `litellm_db_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+
 ### Dragonfly Cache (Shared)
 LiteLLM uses the shared Dragonfly deployment in the `cache` namespace for caching.
 Requires the following configuration in the Dragonfly section:

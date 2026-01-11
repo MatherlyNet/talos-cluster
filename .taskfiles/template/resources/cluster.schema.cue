@@ -633,7 +633,7 @@ import (
 	// Uses custom fork with Keycloak authentication provider
 	obot_enabled?:    *false | bool
 	obot_subdomain?:  *"obot" | string & !=""
-	obot_version?:    *"0.2.30" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	obot_version?:    *"0.2.31" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 	obot_replicas?:   *1 | int & >=1 & <=10
 
 	// Obot PostgreSQL Database (CloudNativePG with pgvector)

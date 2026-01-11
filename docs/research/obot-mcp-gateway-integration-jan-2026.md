@@ -191,7 +191,7 @@ templates/config/kubernetes/apps/ai-system/obot/
 ```yaml
 # Obot MCP Gateway Configuration
 obot_enabled: true                                    # Enable Obot deployment
-obot_version: "0.2.30"                               # Obot image/chart version
+obot_version: "0.2.31"                               # Obot image/chart version
 obot_subdomain: "obot"                               # Creates obot.${cloudflare_domain}
 obot_replicas: 1                                     # Pod replicas
 

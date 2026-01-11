@@ -20,6 +20,18 @@ spec:
       secret:
         name: litellm-db-secret
 
+  managed:
+    roles:
+      - name: litellm
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: litellm-db-secret
+
   storage:
     size: 20Gi
     storageClass: proxmox-zfs

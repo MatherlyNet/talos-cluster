@@ -40,6 +40,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "4000"
         prometheus.io/path: "/metrics"
+        #| Reloader annotation for automatic pod restarts on secret changes #|
+        #| REF: docs/research/cnpg-managed-roles-password-rotation-jan-2026.md #|
+        secret.reloader.stakater.com/reload: "litellm-db-secret,litellm-secret"
       terminationGracePeriodSeconds: 60
 #% if network_policies_enabled | default(false) %#
       #| Network policy labels for CiliumNetworkPolicy tiered policies #|

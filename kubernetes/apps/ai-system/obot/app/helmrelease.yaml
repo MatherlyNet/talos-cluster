@@ -22,7 +22,7 @@ spec:
   values:
     image:
       repository: ghcr.io/jrmatherly/obot-entraid
-      tag: v0.2.30
+      tag: v0.2.31
       pullPolicy: IfNotPresent
 
     replicaCount: 1
@@ -63,6 +63,7 @@ spec:
 
     config:
       OBOT_SERVER_HOSTNAME: "https://obot.matherly.net"
+      OBOT_SERVER_DSN: "postgresql://placeholder:placeholder@placeholder:5432/placeholder"
       OBOT_SERVER_MCPRUNTIME_BACKEND: "kubernetes"
       OBOT_SERVER_ENABLE_AUTHENTICATION: true
 
@@ -158,6 +159,9 @@ spec:
 
     rbac:
       create: true
+
+    podAnnotations:
+      secret.reloader.stakater.com/reload: "obot-db-secret,obot-secret"
 
     podLabels:
       network.cilium.io/api-access: "true"

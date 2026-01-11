@@ -31,6 +31,24 @@ spec:
       secret:
         name: keycloak-db-secret
 
+  #| =========================================================================== #|
+  #| MANAGED ROLES - Declarative role management with password auto-rotation     #|
+  #| CNPG syncs password changes from secret when cnpg.io/reload: "true" label   #|
+  #| REF: https://cloudnative-pg.io/documentation/current/declarative_role_management/ #|
+  #| REF: docs/research/cnpg-managed-roles-password-rotation-jan-2026.md         #|
+  #| =========================================================================== #|
+  managed:
+    roles:
+      - name: #{ keycloak_db_user | default('keycloak') }#
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: keycloak-db-secret
+
   #| Storage configuration #|
   storage:
     size: #{ keycloak_storage_size | default('10Gi') }#

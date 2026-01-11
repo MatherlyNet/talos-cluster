@@ -20,6 +20,18 @@ spec:
       secret:
         name: obot-db-secret
 
+  managed:
+    roles:
+      - name: obot
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: obot-db-secret
+
   storage:
     size: 10Gi
     storageClass: proxmox-zfs

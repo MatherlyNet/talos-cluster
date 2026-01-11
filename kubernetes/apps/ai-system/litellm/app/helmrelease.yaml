@@ -30,6 +30,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "4000"
         prometheus.io/path: "/metrics"
+        secret.reloader.stakater.com/reload: "litellm-db-secret,litellm-secret"
       terminationGracePeriodSeconds: 60
       labels:
         network.cilium.io/api-access: "true"

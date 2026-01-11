@@ -68,6 +68,8 @@ langfuse_postgres_instances: 1     # 1 for dev, 3+ for HA
 langfuse_postgres_storage: "10Gi"
 ```
 
+**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `langfuse_postgres_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+
 ### ClickHouse Analytics
 ```yaml
 langfuse_clickhouse_password: "..."   # SOPS-encrypted

@@ -35,6 +35,24 @@ spec:
       secret:
         name: litellm-db-secret
 
+  #| =========================================================================== #|
+  #| MANAGED ROLES - Declarative role management with password auto-rotation     #|
+  #| CNPG syncs password changes from secret when cnpg.io/reload: "true" label   #|
+  #| REF: https://cloudnative-pg.io/documentation/current/declarative_role_management/ #|
+  #| REF: docs/research/cnpg-managed-roles-password-rotation-jan-2026.md         #|
+  #| =========================================================================== #|
+  managed:
+    roles:
+      - name: #{ litellm_db_user | default('litellm') }#
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: litellm-db-secret
+
   #| Storage configuration #|
   storage:
     size: #{ litellm_db_storage_size | default('20Gi') }#

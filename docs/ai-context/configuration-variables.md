@@ -132,6 +132,31 @@ See: `docs/research/cilium-network-policies-jan-2026.md`
 
 See: `docs/guides/cnpg-implementation.md`
 
+#### CNPG Managed Roles (Password Rotation)
+
+All CNPG clusters use **declarative role management** via `spec.managed.roles` for automatic password synchronization. This enables password rotation without manual `ALTER USER` commands.
+
+**Requirements:**
+- Database credential secrets MUST have `cnpg.io/reload: "true"` label
+- Secret type MUST be `kubernetes.io/basic-auth`
+- Application pods require Reloader annotations for restart on secret change
+
+**Implemented clusters:** Obot, LiteLLM, Langfuse, Keycloak
+
+**Password rotation procedure:**
+```bash
+# 1. Update password in cluster.yaml (e.g., obot_db_password)
+# 2. Regenerate templates
+task configure
+# 3. Commit and push
+git add -A && git commit -m "chore: rotate database password"
+git push
+# 4. Force reconcile
+task reconcile
+```
+
+See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+
 #### Barman Cloud Plugin (PostgreSQL Backups)
 
 | Variable | Description | Default |
@@ -483,7 +508,7 @@ See: `docs/research/langfuse-scim-role-sync-implementation-jan-2026.md`
 | -------- | ----------- | ------- |
 | `obot_enabled` | Enable Obot | false |
 | `obot_subdomain` | Subdomain | "obot" |
-| `obot_version` | Image version | "0.2.30" |
+| `obot_version` | Image version | "0.2.31" |
 | `obot_replicas` | Pod replicas | 1 |
 | `obot_db_password` | PostgreSQL password (SOPS) | - |
 | `obot_encryption_key` | Data encryption key (SOPS) | - |
