@@ -97,6 +97,13 @@ spec:
         - protocol: TCP
           port: 4000
     - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: obot-mcp
+      ports:
+        - protocol: TCP
+          port: 4000
+    - from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: langfuse

@@ -131,6 +131,14 @@ spec:
       ports:
         - protocol: TCP
           port: 4000
+    #| Allow from Obot MCP tools (obot-mcp namespace) #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: obot-mcp
+      ports:
+        - protocol: TCP
+          port: 4000
 #% endif %#
     #| Allow from Langfuse worker (LLM observability callbacks) #|
 #% if litellm_langfuse_enabled | default(false) and langfuse_enabled | default(false) %#
