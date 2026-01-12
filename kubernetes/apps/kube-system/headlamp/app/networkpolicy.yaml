@@ -18,8 +18,8 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: envoy
-            app.kubernetes.io/component: proxy
+            name: envoy
+            component: proxy
             gateway.envoyproxy.io/owning-gateway-namespace: network
       toPorts:
         - ports:

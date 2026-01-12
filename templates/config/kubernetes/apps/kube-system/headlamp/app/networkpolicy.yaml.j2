@@ -25,12 +25,12 @@ spec:
   ingress:
     #| ======================================================================= #|
     #| Gateway API ingress (Envoy Gateway - internal gateway)                 #|
-    #| Match Envoy pods in network namespace by gateway name                  #|
+    #| Match Envoy pods using Cilium label format (strips app.k8s.io prefix) #|
     #| ======================================================================= #|
     - fromEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: envoy
-            app.kubernetes.io/component: proxy
+            name: envoy
+            component: proxy
             gateway.envoyproxy.io/owning-gateway-namespace: network
       toPorts:
         - ports:
