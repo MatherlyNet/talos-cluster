@@ -37,18 +37,15 @@ spec:
       oidc:
         clientID: headlamp
 
-        clientSecret: ${HEADLAMP_OIDC_CLIENT_SECRET}
+        clientSecret: "6a2ea6bb7c6918cf6ea960d5f158cf2a44a38d2dc0957b6337e75e1a0ab6c711"
 
         issuerURL: https://sso.${SECRET_DOMAIN}/realms/matherlynet
 
         scopes: "openid,profile,email"
 
-    env:
-      - name: HEADLAMP_OIDC_CLIENT_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: headlamp-secret
-            key: oidc-client-secret
+        secret:
+          create: true
+          name: headlamp-oidc
 
     service:
       type: ClusterIP
@@ -117,6 +114,3 @@ spec:
 
     podLabels:
       network.cilium.io/api-access: "true"
-
-    podAnnotations:
-      secret.reloader.stakater.com/reload: "headlamp-secret"

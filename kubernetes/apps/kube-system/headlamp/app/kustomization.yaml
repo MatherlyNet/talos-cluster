@@ -4,6 +4,5 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./helmrepository.yaml
-  - ./secret.sops.yaml
   - ./networkpolicy.yaml
   - ./referencegrant.yaml

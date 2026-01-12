@@ -49,15 +49,15 @@ spec:
 
     #| ========================================================================= #|
     #| OIDC Configuration - Keycloak Authentication                               #|
-    #| Uses external secret for client credentials                               #|
+    #| Chart will create secret from these values                                #|
     #| ========================================================================= #|
     config:
       oidc:
         #| Client ID registered in Keycloak #|
         clientID: #{ headlamp_oidc_client_id | default('headlamp') }#
 
-        #| Client secret from external secret (mounted as env var) #|
-        clientSecret: ${HEADLAMP_OIDC_CLIENT_SECRET}
+        #| Client secret - value from cluster.yaml (SOPS encrypted) #|
+        clientSecret: "#{ headlamp_oidc_client_secret }#"
 
         #| Keycloak issuer URL #|
         issuerURL: https://#{ keycloak_subdomain | default('sso') }#.${SECRET_DOMAIN}/realms/#{ keycloak_realm | default('matherlynet') }#
@@ -65,16 +65,10 @@ spec:
         #| Scopes to request during authentication #|
         scopes: "openid,profile,email"
 
-    #| ========================================================================= #|
-    #| Extra Environment Variables from Secret                                    #|
-    #| Provides OIDC client secret and other sensitive values                    #|
-    #| ========================================================================= #|
-    env:
-      - name: HEADLAMP_OIDC_CLIENT_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: headlamp-secret
-            key: oidc-client-secret
+        #| Let the chart create the secret from config.oidc values #|
+        secret:
+          create: true
+          name: headlamp-oidc
 
     #| ========================================================================= #|
     #| Service Configuration                                                      #|
@@ -171,10 +165,4 @@ spec:
     podLabels:
       network.cilium.io/api-access: "true"
 #% endif %#
-
-    #| ========================================================================= #|
-    #| Pod Annotations - Reloader for automatic restarts on secret changes       #|
-    #| ========================================================================= #|
-    podAnnotations:
-      secret.reloader.stakater.com/reload: "headlamp-secret"
 #% endif %#
