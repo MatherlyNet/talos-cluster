@@ -47,6 +47,10 @@ spec:
           create: true
           name: headlamp-oidc
 
+    env:
+      - name: HEADLAMP_LOG_LEVEL
+        value: "warn"
+
     service:
       type: ClusterIP
       port: 80
