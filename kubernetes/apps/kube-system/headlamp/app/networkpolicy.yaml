@@ -18,7 +18,9 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            io.kubernetes.pod.namespace: network
+            app.kubernetes.io/name: envoy
+            app.kubernetes.io/component: proxy
+            gateway.envoyproxy.io/owning-gateway-namespace: network
       toPorts:
         - ports:
             - port: "80"
