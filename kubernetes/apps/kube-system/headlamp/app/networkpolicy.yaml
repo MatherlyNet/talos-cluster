@@ -23,7 +23,7 @@ spec:
             gateway.envoyproxy.io/owning-gateway-namespace: network
       toPorts:
         - ports:
-            - port: "80"
+            - port: "4466"
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
@@ -31,7 +31,7 @@ spec:
             io.kubernetes.pod.namespace: monitoring
       toPorts:
         - ports:
-            - port: "80"
+            - port: "4466"
               protocol: TCP
   egress:
     - toEndpoints:
@@ -81,14 +81,14 @@ spec:
               kubernetes.io/metadata.name: network
       ports:
         - protocol: TCP
-          port: 80
+          port: 4466
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: monitoring
       ports:
         - protocol: TCP
-          port: 80
+          port: 4466
   egress:
     - to:
         - namespaceSelector:

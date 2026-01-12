@@ -26,6 +26,8 @@ spec:
     #| ======================================================================= #|
     #| Gateway API ingress (Envoy Gateway - internal gateway)                 #|
     #| Match Envoy pods using Cilium label format (strips app.k8s.io prefix) #|
+    #| NOTE: Envoy connects to pod IPs on container port 4466, not Service   #|
+    #| port 80. Network policies must match the actual container port.       #|
     #| ======================================================================= #|
     - fromEndpoints:
         - matchLabels:
@@ -34,11 +36,12 @@ spec:
             gateway.envoyproxy.io/owning-gateway-namespace: network
       toPorts:
         - ports:
-            - port: "80"
+            - port: "4466"
               protocol: TCP
 #% if monitoring_enabled | default(false) %#
     #| ======================================================================= #|
     #| Prometheus scraping                                                    #|
+    #| NOTE: Scraping targets container port 4466 directly                   #|
     #| ======================================================================= #|
     - fromEndpoints:
         - matchLabels:
@@ -46,7 +49,7 @@ spec:
             io.kubernetes.pod.namespace: monitoring
       toPorts:
         - ports:
-            - port: "80"
+            - port: "4466"
               protocol: TCP
 #% endif %#
   egress:
@@ -116,13 +119,14 @@ spec:
     - Egress
   ingress:
     #| Allow from Envoy Gateway (internal network access) #|
+    #| NOTE: Must match container port 4466, not Service port 80 #|
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: network
       ports:
         - protocol: TCP
-          port: 80
+          port: 4466
 #% if monitoring_enabled | default(false) %#
     #| Allow Prometheus scraping #|
     - from:
@@ -131,7 +135,7 @@ spec:
               kubernetes.io/metadata.name: monitoring
       ports:
         - protocol: TCP
-          port: 80
+          port: 4466
 #% endif %#
   egress:
     #| Allow DNS queries #|
