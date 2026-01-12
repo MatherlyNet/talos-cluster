@@ -39,4 +39,3 @@
 ## Related Issues
 
 <!-- Link related issues: Fixes #123, Relates to #456 -->
-
