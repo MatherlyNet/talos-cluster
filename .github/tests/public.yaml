@@ -442,8 +442,8 @@ kubernetes_version: "1.35.0"
 # NOTE: Requires keycloak_enabled: true for OIDC authentication
 # headlamp_enabled: true
 # headlamp_hostname: "headlamp"
-# headlamp_version: "0.30.0"
-# headlamp_chart_version: "0.30.0"
+# headlamp_version: "0.39.0"
+# headlamp_chart_version: "0.39.0"
 # headlamp_replicas: 2
 # headlamp_oidc_client_id: "headlamp"
 # headlamp_oidc_client_secret: "test-headlamp-oidc-secret-hex-32-chars"

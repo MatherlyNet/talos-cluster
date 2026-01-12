@@ -13,9 +13,14 @@ metadata:
   name: headlamp
   namespace: kube-system
 spec:
-  chartRef:
-    kind: OCIRepository
-    name: headlamp
+  chart:
+    spec:
+      chart: headlamp
+      version: #{ headlamp_chart_version | default('0.39.0') }#
+      sourceRef:
+        kind: HelmRepository
+        name: headlamp
+        namespace: kube-system
   interval: 1h
   timeout: 15m
   install:
@@ -34,7 +39,7 @@ spec:
     image:
       registry: ghcr.io
       repository: headlamp-k8s/headlamp
-      tag: v#{ headlamp_version | default('0.30.0') }#
+      tag: v#{ headlamp_version | default('0.39.0') }#
       pullPolicy: IfNotPresent
 
     #| ========================================================================= #|

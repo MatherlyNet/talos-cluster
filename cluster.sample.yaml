@@ -2244,12 +2244,12 @@ cloudflare_gateway_addr: ""
 # headlamp_hostname: "headlamp"
 
 # -- Headlamp version (image tag)
-#    (OPTIONAL) / (DEFAULT: "0.30.0")
-# headlamp_version: "0.30.0"
+#    (OPTIONAL) / (DEFAULT: "0.39.0")
+# headlamp_version: "0.39.0"
 
 # -- Headlamp Helm chart version
-#    (OPTIONAL) / (DEFAULT: "0.30.0")
-# headlamp_chart_version: "0.30.0"
+#    (OPTIONAL) / (DEFAULT: "0.39.0")
+# headlamp_chart_version: "0.39.0"
 
 # -- Number of Headlamp replicas
 #    (OPTIONAL) / (DEFAULT: 2)
