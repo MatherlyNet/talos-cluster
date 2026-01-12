@@ -35,9 +35,9 @@ spec:
 
     config:
       oidc:
-        clientID: kubernetes
+        clientID: headlamp
 
-        clientSecret: "840480f0e9446b2254967e4fdbf773d8afc46192d921298be7a7cb69c05789ae"
+        clientSecret: "6a2ea6bb7c6918cf6ea960d5f158cf2a44a38d2dc0957b6337e75e1a0ab6c711"
 
         issuerURL: https://sso.${SECRET_DOMAIN}/realms/matherlynet
 
