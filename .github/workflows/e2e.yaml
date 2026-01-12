@@ -20,6 +20,7 @@ jobs:
     if: ${{ github.repository == 'MatherlyNet/talos-cluster' }}
     name: configure
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -35,8 +36,10 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MISE_HTTP_TIMEOUT: "120"
+          MISE_FETCH_REMOTE_VERSIONS_TIMEOUT: "60"
         with:
           cache: true
+          install_args: "--jobs 4"
 
       - name: Run init task
         run: task init

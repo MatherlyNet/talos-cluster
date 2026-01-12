@@ -16,6 +16,7 @@ jobs:
   pre-job:
     name: Flux Local Pre-Job
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       any_changed: ${{ steps.changed-files.outputs.any_changed }}
     steps:
@@ -32,6 +33,7 @@ jobs:
     name: Flux Local Test
     needs: pre-job
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
     steps:
       - name: Checkout
@@ -46,6 +48,7 @@ jobs:
     name: Security Scan
     needs: pre-job
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       security-events: write
@@ -75,14 +78,14 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-fs-results.sarif'
           category: 'trivy-filesystem'
 
       - name: Upload Trivy config scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-config-results.sarif'
@@ -102,6 +105,7 @@ jobs:
     name: Flux Local Diff
     needs: pre-job
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -169,6 +173,7 @@ jobs:
     name: Flux Local Success
     needs: ["test", "security-scan", "diff"]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ always() }}
     steps:
       - name: Any jobs failed?
