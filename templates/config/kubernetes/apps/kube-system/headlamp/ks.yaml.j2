@@ -13,10 +13,10 @@ metadata:
 spec:
   dependsOn:
     - name: envoy-gateway
-      namespace: flux-system
+      namespace: network
 #% if keycloak_enabled | default(false) %#
     - name: keycloak
-      namespace: flux-system
+      namespace: identity
 #% endif %#
   interval: 1h
   retryInterval: 30s
