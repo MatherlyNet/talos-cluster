@@ -133,7 +133,7 @@ data:
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
-#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) or headlamp_enabled | default(false) or langfuse_scim_sync_enabled | default(false) %#
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) or headlamp_enabled | default(false) or langfuse_scim_sync_enabled | default(false) or kubernetes_oidc_enabled | default(false) %#
     clients:
 #% if keycloak_bootstrap_oidc_client | default(false) %#
       #| Envoy Gateway SSO Client #|
@@ -510,6 +510,92 @@ data:
               access.token.claim: "true"
               userinfo.token.claim: "true"
 #% endif %#
+#% endif %#
+#% if kubernetes_oidc_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| KUBERNETES API SERVER OIDC CLIENT                                           #|
+      #| Dedicated client for Kubernetes API Server OIDC authentication              #|
+      #| Used by: Headlamp, kubectl with oidc-login, kubelogin, and future tools    #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md    #|
+      #| =========================================================================== #|
+      - clientId: "$(env:KUBERNETES_CLIENT_ID)"
+        name: "Kubernetes API Server"
+        description: "OIDC client for Kubernetes API Server authentication - enables kubectl and web UI access via OIDC tokens"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:KUBERNETES_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        #| Redirect URIs for kubectl oidc-login and kubelogin plugins #|
+        redirectUris:
+          - "http://localhost:8000/*"
+          - "http://localhost:18000/*"
+        #| Web origins not critical for API server validation #|
+        webOrigins:
+          - "+"
+        #| No PKCE required for confidential client with client_secret #|
+        attributes:
+          pkce.code.challenge.method: ""
+          post.logout.redirect.uris: "http://localhost:8000/*"
+        #| Default scopes for Kubernetes authentication #|
+        defaultClientScopes:
+          - "profile"
+          - "email"
+          - "offline_access"
+          - "groups"  # Critical for RBAC group membership
+        optionalClientScopes:
+          - "address"
+          - "phone"
+        #| Protocol mappers to include required claims in tokens #|
+        protocolMappers:
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          - name: "email"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-property-mapper"
+            consentRequired: false
+            config:
+              user.attribute: "email"
+              claim.name: "email"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+              jsonType.label: "String"
+          - name: "email_verified"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-property-mapper"
+            consentRequired: false
+            config:
+              user.attribute: "emailVerified"
+              claim.name: "email_verified"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+              jsonType.label: "boolean"
 #% endif %#
 #% if langfuse_scim_sync_enabled | default(false) %#
       #| =========================================================================== #|

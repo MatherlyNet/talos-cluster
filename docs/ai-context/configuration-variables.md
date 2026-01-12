@@ -249,6 +249,52 @@ See: `docs/research/keycloak-social-identity-providers-integration-jan-2026.md`
 | `microsoft_default_role` | Hardcoded role for Microsoft users |
 | `microsoft_group_role_mappings` | Map Entra ID groups to roles |
 
+#### Kubernetes API Server OIDC Authentication
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `kubernetes_oidc_enabled` | Enable OIDC authentication on API Server | false |
+| `kubernetes_oidc_client_id` | Audience claim expected in tokens | "kubernetes" |
+| `kubernetes_oidc_client_secret` | Client secret (SOPS-encrypted) | - |
+| `kubernetes_oidc_username_claim` | Claim for Kubernetes username | "email" |
+| `kubernetes_oidc_username_prefix` | Prefix for OIDC usernames | "oidc:" |
+| `kubernetes_oidc_groups_claim` | Claim for RBAC group membership | "groups" |
+| `kubernetes_oidc_groups_prefix` | Prefix for OIDC groups | "oidc:" |
+| `kubernetes_oidc_signing_algs` | Accepted token signing algorithms | "RS256" |
+
+**Purpose:** Enables user authentication to Kubernetes API Server via Keycloak OIDC tokens. Creates dedicated "kubernetes" client in Keycloak for token validation.
+
+**Used by:**
+- Headlamp (web UI)
+- kubectl with oidc-login plugin (CLI)
+- kubelogin (alternative CLI)
+- Future Kubernetes tools requiring OIDC authentication
+
+**Configuration:**
+- Configures kube-apiserver with `--oidc-*` flags via Talos patches
+- Updates Headlamp to use "kubernetes" client instead of separate "headlamp" client
+- Creates Keycloak client with proper protocol mappers (groups, email, roles)
+
+**RBAC Setup Required:** After enabling, create ClusterRoleBinding for admin group:
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: oidc:admin  # Keycloak "admin" group
+    apiGroup: rbac.authorization.k8s.io
+```
+
+See:
+- `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md` (implementation guide)
+- `docs/guides/kubectl-oidc-login-setup.md` (CLI setup)
+
 ---
 
 ### Grafana Dashboards (requires monitoring_enabled)

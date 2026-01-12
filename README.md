@@ -13,7 +13,7 @@ A GitOps-driven Kubernetes cluster on Talos Linux, forked from [onedr0p/cluster-
 - **[OpenTofu](https://opentofu.org/)** - Infrastructure as Code (optional)
 - **[UniFi DNS](https://github.com/kashalls/external-dns-unifi-webhook)** - Native UniFi DNS integration (optional)
 
-**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns), talos-ccm, tuppr, talos-backup (optional), cloudnative-pg (optional), keycloak (optional), rustfs (optional), dragonfly (optional), litellm (optional), langfuse (optional), obot (optional)
+**Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns), talos-ccm, tuppr, talos-backup (optional), cloudnative-pg (optional), keycloak (optional), headlamp (optional), rustfs (optional), dragonfly (optional), litellm (optional), langfuse (optional), obot (optional)
 
 **Other features:**
 - Dev environment managed with [mise](https://mise.jdx.dev/)

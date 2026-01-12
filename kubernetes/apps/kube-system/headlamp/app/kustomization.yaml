@@ -6,3 +6,4 @@ resources:
   - ./helmrepository.yaml
   - ./networkpolicy.yaml
   - ./referencegrant.yaml
+  - ./oidc-rbac.yaml

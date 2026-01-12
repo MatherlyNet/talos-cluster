@@ -8,6 +8,15 @@ cluster:
       enable-aggregator-routing: true
       # Enable ImageVolume feature gate for CNPG managed extensions
       feature-gates: ImageVolume=true
+      # OIDC Authentication Configuration
+      # REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md
+      oidc-issuer-url: "https://sso.matherly.net/realms/matherlynet"
+      oidc-client-id: "kubernetes"
+      oidc-username-claim: "email"
+      oidc-username-prefix: "oidc:"
+      oidc-groups-claim: "groups"
+      oidc-groups-prefix: "oidc:"
+      oidc-signing-algs: "RS256"
   controllerManager:
     extraArgs:
       bind-address: 0.0.0.0

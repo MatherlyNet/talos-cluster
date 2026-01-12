@@ -42,3 +42,4 @@ docs/serena-archive/
 local_docs/
 templates/scripts/__pycache__/
 claudedocs/
+docs/kubeconfig-examples/

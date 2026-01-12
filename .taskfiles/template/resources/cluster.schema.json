@@ -922,10 +922,13 @@
       "description": "Keycloak Config-CLI - GitOps realm management via keycloak-config-cli Replaces KeycloakRealmImport CRD which only supports one-time imports REF: https://github.com/adorsys/keycloak-config-cli REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md"
     },
     "headlamp_pkce_method": {
-      "default": "",
       "type": "string",
-      "enum": ["", "S256", "plain"],
-      "description": "Headlamp PKCE Method - Proof Key for Code Exchange (PKCE) configuration for Headlamp OIDC client. Options: '' (disabled), 'S256' (SHA256), 'plain' (not recommended). Headlamp v0.39.0 does not support PKCE - keep disabled. As a confidential client with client_secret, PKCE is not required."
+      "enum": [
+        " | ",
+        " | ",
+        " | "
+      ],
+      "description": "Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client Options: \"\" (disabled), \"S256\" (SHA256), \"plain\" (not recommended) Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)"
     },
     "keycloak_config_version": {
       "default": 1,
@@ -1915,6 +1918,43 @@
       "minLength": 1
     },
     "headlamp_oidc_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kubernetes_oidc_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "Kubernetes API Server OIDC Authentication REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md Enables OIDC authentication on Kubernetes API Server for user authentication via Keycloak Creates dedicated \"kubernetes\" client in Keycloak for API Server token validation Used by: Headlamp, kubectl with oidc-login plugin, kubelogin, and future K8s tools Requires: keycloak_enabled: true"
+    },
+    "kubernetes_oidc_client_id": {
+      "default": "kubernetes",
+      "type": "string",
+      "minLength": 1
+    },
+    "kubernetes_oidc_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kubernetes_oidc_username_claim": {
+      "default": "email",
+      "type": "string",
+      "minLength": 1
+    },
+    "kubernetes_oidc_username_prefix": {
+      "default": "oidc:",
+      "type": "string"
+    },
+    "kubernetes_oidc_groups_claim": {
+      "default": "groups",
+      "type": "string",
+      "minLength": 1
+    },
+    "kubernetes_oidc_groups_prefix": {
+      "default": "oidc:",
+      "type": "string"
+    },
+    "kubernetes_oidc_signing_algs": {
+      "default": "RS256",
       "type": "string",
       "minLength": 1
     }

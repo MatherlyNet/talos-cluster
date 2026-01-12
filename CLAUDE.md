@@ -175,6 +175,7 @@ Deep context in `docs/ai-context/`:
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Network policy blocking | `hubble observe --verdict DROPPED` |
 | OIDC "OAuth flow failed" | Check envoy logs; verify SecurityPolicy has internal `tokenEndpoint` |
+| OIDC API Server auth | Headlamp/kubectl OIDC: verify API Server has `--oidc-*` flags; check token aud claim matches |
 | PostgreSQL issues | `kubectl cnpg status <cluster> -n <namespace>` |
 
 For comprehensive troubleshooting with diagnostic flowcharts, see `docs/TROUBLESHOOTING.md`.

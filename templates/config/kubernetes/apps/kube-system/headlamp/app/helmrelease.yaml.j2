@@ -54,16 +54,19 @@ spec:
     config:
       oidc:
         #| Client ID registered in Keycloak #|
-        clientID: #{ headlamp_oidc_client_id | default('headlamp') }#
+        #| Uses "kubernetes" client for API Server OIDC authentication #|
+        #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md #|
+        clientID: #{ kubernetes_oidc_client_id | default('kubernetes') }#
 
         #| Client secret - value from cluster.yaml (SOPS encrypted) #|
-        clientSecret: "#{ headlamp_oidc_client_secret }#"
+        clientSecret: "#{ kubernetes_oidc_client_secret }#"
 
         #| Keycloak issuer URL #|
         issuerURL: https://#{ keycloak_subdomain | default('sso') }#.${SECRET_DOMAIN}/realms/#{ keycloak_realm | default('matherlynet') }#
 
         #| Scopes to request during authentication #|
-        scopes: "openid,profile,email"
+        #| Includes "groups" scope for Kubernetes RBAC integration #|
+        scopes: "openid,profile,email,groups"
 
         #| Let the chart create the secret from config.oidc values #|
         secret:

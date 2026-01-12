@@ -1,0 +1,114 @@
+#% if headlamp_enabled | default(false) and kubernetes_oidc_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| OIDC ClusterRoleBinding - Cluster Admins                                     #|
+#| Maps Keycloak "admin" group to cluster-admin ClusterRole                     #|
+#| Users in Keycloak admin group get full cluster access                        #|
+#| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md     #|
+#| REF: docs/OIDC-IMPLEMENTATION-VALIDATION-JAN-2026.md                         #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-admins
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
+    apiGroup: rbac.authorization.k8s.io
+---
+#| ============================================================================= #|
+#| OIDC ClusterRoleBinding - Cluster Operators                                  #|
+#| Maps Keycloak "operator" group to edit ClusterRole                           #|
+#| Users in Keycloak operator group can manage most resources                   #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-operators
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: Group
+    name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#operator
+    apiGroup: rbac.authorization.k8s.io
+---
+#| ============================================================================= #|
+#| OIDC ClusterRoleBinding - Cluster Developers                                 #|
+#| Maps Keycloak "developer" group to edit ClusterRole                          #|
+#| Users in Keycloak developer group can manage most resources                  #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-developers
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: Group
+    name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#developer
+    apiGroup: rbac.authorization.k8s.io
+---
+#| ============================================================================= #|
+#| OIDC ClusterRoleBinding - Cluster Viewers                                    #|
+#| Maps Keycloak "viewer" group to view ClusterRole                             #|
+#| Users in Keycloak viewer group get read-only access                          #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-viewers
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: Group
+    name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#viewer
+    apiGroup: rbac.authorization.k8s.io
+---
+#| ============================================================================= #|
+#| OIDC ClusterRoleBinding - Cluster Users                                      #|
+#| Maps Keycloak "user" group to view ClusterRole                               #|
+#| Users in Keycloak user group get read-only access                            #|
+#| ============================================================================= #|
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-cluster-users
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: Group
+    name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#user
+    apiGroup: rbac.authorization.k8s.io
+#% endif %#

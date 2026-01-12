@@ -714,6 +714,21 @@ import (
 	headlamp_replicas?:            *2 | int & >=1 & <=10
 	headlamp_oidc_client_id?:      *"headlamp" | string & !=""
 	headlamp_oidc_client_secret?:  string & !=""  // Generate with: openssl rand -hex 32
+
+	// Kubernetes API Server OIDC Authentication
+	// REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md
+	// Enables OIDC authentication on Kubernetes API Server for user authentication via Keycloak
+	// Creates dedicated "kubernetes" client in Keycloak for API Server token validation
+	// Used by: Headlamp, kubectl with oidc-login plugin, kubelogin, and future K8s tools
+	// Requires: keycloak_enabled: true
+	kubernetes_oidc_enabled?:       *false | bool
+	kubernetes_oidc_client_id?:     *"kubernetes" | string & !=""
+	kubernetes_oidc_client_secret?: string & !=""                    // Generate with: openssl rand -hex 32
+	kubernetes_oidc_username_claim?: *"email" | "preferred_username" | "sub" | string & !=""
+	kubernetes_oidc_username_prefix?: *"oidc:" | "-" | string        // "-" disables prefix
+	kubernetes_oidc_groups_claim?:   *"groups" | string & !=""
+	kubernetes_oidc_groups_prefix?:  *"oidc:" | string               // Prefix for RBAC groups
+	kubernetes_oidc_signing_algs?:   *"RS256" | string & !=""        // JWT signing algorithm
 }
 
 #Config

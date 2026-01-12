@@ -26,6 +26,7 @@ This file provides context and instructions for AI coding assistants working wit
 - `litellm.md` - LiteLLM proxy configuration & model management
 - `langfuse.md` - Langfuse LLM observability, tracing & evaluation
 - `obot.md` - Obot MCP gateway & AI agent platform
+- Research guides in `docs/research/` and `docs/guides/` for specific integrations
 
 ## Project Structure
 

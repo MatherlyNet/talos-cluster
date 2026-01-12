@@ -8,6 +8,17 @@ cluster:
       enable-aggregator-routing: true
       # Enable ImageVolume feature gate for CNPG managed extensions
       feature-gates: ImageVolume=true
+#% if kubernetes_oidc_enabled | default(false) %#
+      # OIDC Authentication Configuration
+      # REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md
+      oidc-issuer-url: "https://#{ keycloak_subdomain | default('sso') }#.#{ cloudflare_domain }#/realms/#{ keycloak_realm | default('matherlynet') }#"
+      oidc-client-id: "#{ kubernetes_oidc_client_id | default('kubernetes') }#"
+      oidc-username-claim: "#{ kubernetes_oidc_username_claim | default('email') }#"
+      oidc-username-prefix: "#{ kubernetes_oidc_username_prefix | default('oidc:') }#"
+      oidc-groups-claim: "#{ kubernetes_oidc_groups_claim | default('groups') }#"
+      oidc-groups-prefix: "#{ kubernetes_oidc_groups_prefix | default('oidc:') }#"
+      oidc-signing-algs: "#{ kubernetes_oidc_signing_algs | default('RS256') }#"
+#% endif %#
   controllerManager:
     extraArgs:
       bind-address: 0.0.0.0
