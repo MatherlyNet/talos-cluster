@@ -150,12 +150,16 @@ spec:
     persistentVolumeClaim:
       enabled: false
 
-    #| Use emptyDir for tmp directory #|
+    #| Use emptyDir for tmp and config directories #|
     volumeMounts:
       - name: tmp
         mountPath: /tmp
+      - name: config
+        mountPath: /home/headlamp/.config
     volumes:
       - name: tmp
+        emptyDir: {}
+      - name: config
         emptyDir: {}
 
 #% if network_policies_enabled | default(false) %#
