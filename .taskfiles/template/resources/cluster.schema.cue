@@ -693,6 +693,18 @@ import (
 
 	// Obot LiteLLM Integration (uses internal LiteLLM as model gateway)
 	obot_litellm_enabled?: *false | bool
+
+	// Headlamp - Kubernetes Web UI
+	// REF: https://headlamp.dev/
+	// REF: docs/ai-context/configuration-variables.md
+	// Provides modern web interface for Kubernetes cluster management with OIDC authentication
+	headlamp_enabled?:             *false | bool
+	headlamp_hostname?:            *"headlamp" | string & !=""
+	headlamp_version?:             *"0.30.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
+	headlamp_chart_version?:       *"0.30.0" | string & !=""
+	headlamp_replicas?:            *2 | int & >=1 & <=10
+	headlamp_oidc_client_id?:      *"headlamp" | string & !=""
+	headlamp_oidc_client_secret?:  string & !=""  // Generate with: openssl rand -hex 32
 }
 
 #Config

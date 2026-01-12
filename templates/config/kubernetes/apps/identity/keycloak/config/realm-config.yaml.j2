@@ -133,7 +133,7 @@ data:
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
-#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) or langfuse_scim_sync_enabled | default(false) %#
+#% if keycloak_bootstrap_oidc_client | default(false) or grafana_oidc_enabled | default(false) or litellm_oidc_enabled | default(false) or obot_keycloak_enabled | default(false) or headlamp_enabled | default(false) or langfuse_scim_sync_enabled | default(false) %#
     clients:
 #% if keycloak_bootstrap_oidc_client | default(false) %#
       #| Envoy Gateway SSO Client #|
@@ -432,6 +432,70 @@ data:
               access.token.claim: "true"
               userinfo.token.claim: "true"
           #| Map groups to 'groups' claim for Obot group-based access control #|
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+#% endif %#
+#% if headlamp_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| HEADLAMP OIDC CLIENT - Kubernetes Web UI with RBAC                         #|
+      #| Auto-created when headlamp_enabled + headlamp_oidc_client_secret set       #|
+      #| Provides native OIDC for user identity and RBAC support                    #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/    #|
+      #| =========================================================================== #|
+      - clientId: "$(env:HEADLAMP_CLIENT_ID)"
+        name: "Headlamp"
+        description: "OIDC client for Headlamp Kubernetes Web UI - provides user identity and RBAC capabilities"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:HEADLAMP_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/oidc-callback"
+        webOrigins:
+          - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| groups scope provides OIDC-compliant group membership claims for RBAC #|
+        defaultClientScopes:
+          - "profile"
+          - "email"
+          - "offline_access"
+          - "groups"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+        #| Protocol mappers for role and group claims (used for Headlamp RBAC) #|
+        protocolMappers:
+          #| Map realm roles to 'roles' claim for role-based access control #|
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          #| Map groups to 'groups' claim for group-based access control #|
           - name: "groups"
             protocol: "openid-connect"
             protocolMapper: "oidc-group-membership-mapper"

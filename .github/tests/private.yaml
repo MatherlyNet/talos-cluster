@@ -164,5 +164,11 @@ kubernetes_version: "1.35.0"
 # obot_monitoring_enabled: false
 # obot_tracing_enabled: false
 
+# Headlamp - Kubernetes Web UI (optional - uncomment to test)
+# REF: https://headlamp.dev/
+# NOTE: Requires keycloak_enabled: true for OIDC authentication
+# headlamp_enabled: false
+# headlamp_oidc_client_secret: "test-headlamp-oidc-secret-hex-32-chars"
+
 # Talos Backup S3 region (required by AWS SDK for S3-compatible storage)
 # backup_s3_region: "us-east-1"

@@ -1,0 +1,175 @@
+#% if headlamp_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| HEADLAMP - Kubernetes Web UI with OIDC Authentication                         #|
+#| Modern web interface for Kubernetes cluster management                        #|
+#| REF: https://headlamp.dev/                                                     #|
+#| REF: https://headlamp.dev/docs/latest/installation/in-cluster/oidc/           #|
+#| REF: https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/       #|
+#| ============================================================================= #|
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headlamp
+  namespace: kube-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: headlamp
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    #| ========================================================================= #|
+    #| Image Configuration                                                        #|
+    #| ========================================================================= #|
+    image:
+      registry: ghcr.io
+      repository: headlamp-k8s/headlamp
+      tag: v#{ headlamp_version | default('0.30.0') }#
+      pullPolicy: IfNotPresent
+
+    #| ========================================================================= #|
+    #| Deployment Configuration                                                   #|
+    #| ========================================================================= #|
+    replicaCount: #{ headlamp_replicas | default(2) }#
+
+    #| ========================================================================= #|
+    #| OIDC Configuration - Keycloak Authentication                               #|
+    #| Uses external secret for client credentials                               #|
+    #| ========================================================================= #|
+    config:
+      oidc:
+        #| Client ID registered in Keycloak #|
+        clientID: #{ headlamp_oidc_client_id | default('headlamp') }#
+
+        #| Client secret from external secret (mounted as env var) #|
+        clientSecret: ${HEADLAMP_OIDC_CLIENT_SECRET}
+
+        #| Keycloak issuer URL #|
+        issuerURL: https://#{ keycloak_subdomain | default('sso') }#.${SECRET_DOMAIN}/realms/#{ keycloak_realm | default('matherlynet') }#
+
+        #| Scopes to request during authentication #|
+        scopes: "openid,profile,email"
+
+    #| ========================================================================= #|
+    #| Extra Environment Variables from Secret                                    #|
+    #| Provides OIDC client secret and other sensitive values                    #|
+    #| ========================================================================= #|
+    env:
+      - name: HEADLAMP_OIDC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-secret
+            key: oidc-client-secret
+
+    #| ========================================================================= #|
+    #| Service Configuration                                                      #|
+    #| ========================================================================= #|
+    service:
+      type: ClusterIP
+      port: 80
+
+    #| Disable built-in ingress - use Gateway API HTTPRoute instead #|
+    ingress:
+      enabled: false
+
+    #| ========================================================================= #|
+    #| Service Account and RBAC                                                   #|
+    #| Headlamp needs cluster-wide read access to display resources              #|
+    #| ========================================================================= #|
+    serviceAccount:
+      create: true
+      name: headlamp
+
+    #| ClusterRole with read-only access to cluster resources #|
+    clusterRoleBinding:
+      create: true
+
+    #| ========================================================================= #|
+    #| Resource Configuration                                                     #|
+    #| ========================================================================= #|
+    resources:
+      requests:
+        cpu: #{ headlamp_cpu_request | default('50m') }#
+        memory: #{ headlamp_memory_request | default('128Mi') }#
+      limits:
+        cpu: #{ headlamp_cpu_limit | default('500m') }#
+        memory: #{ headlamp_memory_limit | default('512Mi') }#
+
+    #| ========================================================================= #|
+    #| Security Context                                                           #|
+    #| ========================================================================= #|
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 100
+      runAsGroup: 101
+      fsGroup: 101
+      seccompProfile:
+        type: RuntimeDefault
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+
+    #| ========================================================================= #|
+    #| Health Probes                                                              #|
+    #| ========================================================================= #|
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 4466
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 4466
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 3
+      timeoutSeconds: 3
+
+    #| ========================================================================= #|
+    #| Persistence - Temporary directory for writable filesystem                 #|
+    #| Required because readOnlyRootFilesystem: true                             #|
+    #| ========================================================================= #|
+    persistentVolumeClaim:
+      enabled: false
+
+    #| Use emptyDir for tmp directory #|
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+    volumes:
+      - name: tmp
+        emptyDir: {}
+
+#% if network_policies_enabled | default(false) %#
+    #| ========================================================================= #|
+    #| Network Policy Labels                                                      #|
+    #| ========================================================================= #|
+    podLabels:
+      network.cilium.io/api-access: "true"
+#% endif %#
+
+    #| ========================================================================= #|
+    #| Pod Annotations - Reloader for automatic restarts on secret changes       #|
+    #| ========================================================================= #|
+    podAnnotations:
+      secret.reloader.stakater.com/reload: "headlamp-secret"
+#% endif %#

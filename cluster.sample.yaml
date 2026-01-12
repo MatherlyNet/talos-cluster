@@ -2226,6 +2226,45 @@ cloudflare_gateway_addr: ""
 # obot_litellm_enabled: false
 
 # =============================================================================
+# HEADLAMP - Kubernetes Web UI
+# =============================================================================
+# Headlamp provides a modern, user-friendly web interface for Kubernetes cluster
+# management with OIDC authentication and RBAC support.
+# REF: https://headlamp.dev/
+# REF: https://headlamp.dev/docs/latest/installation/in-cluster/oidc/
+# REQUIRES: keycloak_enabled: true (for OIDC authentication)
+# -----------------------------------------------------------------------------
+
+# -- Enable Headlamp deployment
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: keycloak_enabled: true)
+# headlamp_enabled: false
+
+# -- Headlamp subdomain (creates headlamp.${cloudflare_domain})
+#    (OPTIONAL) / (DEFAULT: "headlamp")
+# headlamp_hostname: "headlamp"
+
+# -- Headlamp version (image tag)
+#    (OPTIONAL) / (DEFAULT: "0.30.0")
+# headlamp_version: "0.30.0"
+
+# -- Headlamp Helm chart version
+#    (OPTIONAL) / (DEFAULT: "0.30.0")
+# headlamp_chart_version: "0.30.0"
+
+# -- Number of Headlamp replicas
+#    (OPTIONAL) / (DEFAULT: 2)
+# headlamp_replicas: 2
+
+# -- OIDC client ID (registered in Keycloak)
+#    (OPTIONAL) / (DEFAULT: "headlamp")
+# headlamp_oidc_client_id: "headlamp"
+
+# -- OIDC client secret (SOPS-encrypted)
+#    Generate with: openssl rand -hex 32
+#    (REQUIRED when headlamp_enabled: true)
+# headlamp_oidc_client_secret: ""
+
+# =============================================================================
 # VOLSYNC PVC BACKUP - Automated PVC backups with restic to S3
 # =============================================================================
 # VolSync provides restic-based PVC backups to S3-compatible storage.

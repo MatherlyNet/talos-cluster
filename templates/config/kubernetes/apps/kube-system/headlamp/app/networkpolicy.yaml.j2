@@ -1,0 +1,148 @@
+#% if headlamp_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| CiliumNetworkPolicy - Headlamp Kubernetes Web UI                             #|
+#| Zero-trust networking for Headlamp with OIDC authentication                  #|
+#| REF: https://headlamp.dev/docs/latest/installation/in-cluster/oidc/          #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: headlamp
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: network-policy
+spec:
+  description: "Headlamp: Web UI access controls with OIDC to Keycloak"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: headlamp
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+    ingress: #{ enforce | lower }#
+  ingress:
+    #| ======================================================================= #|
+    #| Gateway API ingress (Envoy Gateway - internal gateway)                 #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+#% if monitoring_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| Prometheus scraping                                                    #|
+    #| ======================================================================= #|
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+#% endif %#
+  egress:
+    #| ======================================================================= #|
+    #| DNS resolution                                                         #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| ======================================================================= #|
+    #| Kubernetes API (required for cluster management)                       #|
+    #| ======================================================================= #|
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+#% if keycloak_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| Keycloak (OIDC SSO) - External access via Cloudflare Tunnel            #|
+    #| All Keycloak traffic routes through Cloudflare to avoid hairpin NAT    #|
+    #| and ensure OIDC issuer consistency (Keycloak returns external issuer)  #|
+    #| ======================================================================= #|
+    - toFQDNs:
+        - matchName: "#{ keycloak_subdomain | default('sso') }#.#{ cloudflare_domain }#"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+#% endif %#
+#% if not enforce %#
+    #| ======================================================================= #|
+    #| AUDIT MODE: Allow all other egress for traffic observation             #|
+    #| In enforce mode, only explicitly allowed destinations are permitted    #|
+    #| This rule ensures audit mode truly observes without blocking           #|
+    #| ======================================================================= #|
+    - toEntities:
+        - world
+#% endif %#
+---
+#| ============================================================================= #|
+#| NetworkPolicy - Headlamp (Standard K8s)                                      #|
+#| Provides baseline network security for environments without Cilium           #|
+#| ============================================================================= #|
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: headlamp
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: headlamp
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    #| Allow from Envoy Gateway (internal network access) #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: network
+      ports:
+        - protocol: TCP
+          port: 80
+#% if monitoring_enabled | default(false) %#
+    #| Allow Prometheus scraping #|
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 80
+#% endif %#
+  egress:
+    #| Allow DNS queries #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    #| Keycloak OIDC - External via Cloudflare Tunnel #|
+    #| Standard K8s NetworkPolicy allows all external egress by default #|
+    #| CiliumNetworkPolicy enforces FQDN-based Keycloak access above #|
+    - {}
+#% endif %#

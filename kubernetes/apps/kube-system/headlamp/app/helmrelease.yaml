@@ -1,0 +1,117 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headlamp
+  namespace: kube-system
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: headlamp
+  interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+
+  values:
+    image:
+      registry: ghcr.io
+      repository: headlamp-k8s/headlamp
+      tag: v0.30.0
+      pullPolicy: IfNotPresent
+
+    replicaCount: 2
+
+    config:
+      oidc:
+        clientID: headlamp
+
+        clientSecret: ${HEADLAMP_OIDC_CLIENT_SECRET}
+
+        issuerURL: https://sso.${SECRET_DOMAIN}/realms/matherlynet
+
+        scopes: "openid,profile,email"
+
+    env:
+      - name: HEADLAMP_OIDC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-secret
+            key: oidc-client-secret
+
+    service:
+      type: ClusterIP
+      port: 80
+
+    ingress:
+      enabled: false
+
+    serviceAccount:
+      create: true
+      name: headlamp
+
+    clusterRoleBinding:
+      create: true
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 100
+      runAsGroup: 101
+      fsGroup: 101
+      seccompProfile:
+        type: RuntimeDefault
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 4466
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 4466
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 3
+      timeoutSeconds: 3
+
+    persistentVolumeClaim:
+      enabled: false
+
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+    volumes:
+      - name: tmp
+        emptyDir: {}
+
+    podLabels:
+      network.cilium.io/api-access: "true"
+
+    podAnnotations:
+      secret.reloader.stakater.com/reload: "headlamp-secret"

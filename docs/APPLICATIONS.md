@@ -13,6 +13,7 @@
 | `kube-system` | [Reloader](#reloader) | ConfigMap/Secret Reload | Cilium |
 | `kube-system` | [Talos CCM](#talos-ccm) | Node Lifecycle Management | Cilium |
 | `kube-system` | [Talos Backup](#talos-backup) | Automated etcd Backups | Cilium (optional) |
+| `kube-system` | [Headlamp](#headlamp) | Kubernetes Web UI | Envoy Gateway, Keycloak (optional) |
 | `system-upgrade` | [tuppr](#tuppr) | Automated Talos/K8s Upgrades | Flux |
 | `flux-system` | [Flux Operator](#flux-operator) | Flux Installation | Cilium, CoreDNS |
 | `flux-system` | [Flux Instance](#flux-instance) | GitOps Configuration | Flux Operator |
@@ -209,6 +210,106 @@ kubectl get nodes --show-labels | grep talos
 ```bash
 kubectl -n kube-system get cronjob talos-backup
 kubectl -n kube-system logs job/talos-backup-<timestamp>
+```
+
+---
+
+### Headlamp
+
+**Purpose:** Modern Kubernetes Web UI with OIDC authentication and RBAC support.
+
+**Template:** `templates/config/kubernetes/apps/kube-system/headlamp/`
+
+**Condition:** Only enabled when `headlamp_enabled: true` in `cluster.yaml`
+
+**Requirements:**
+- Envoy Gateway (for HTTPRoute)
+- Keycloak (for OIDC authentication)
+
+**Configuration Variables:**
+
+| Variable | Usage | Required |
+| ---------- | ------- | -------- |
+| `headlamp_enabled` | Enable Headlamp | No (default: false) |
+| `headlamp_hostname` | Subdomain | No (default: "headlamp") |
+| `headlamp_oidc_client_secret` | Keycloak client secret | Yes (when enabled) |
+| `headlamp_replicas` | Pod replicas | No (default: 2) |
+
+**Authentication Architecture:**
+
+Headlamp uses **Native OIDC** (application-level) authentication instead of Gateway OIDC to provide:
+- User identity claims (sub, email, name) for proper RBAC
+- Roles and groups claims for authorization
+- Kubernetes RBAC integration via OIDC identity
+
+**Network Access:**
+- **Internal Only**: Accessible via `envoy-internal` gateway (LAN/VPN access)
+- **HTTPRoute**: Centralized in `network` namespace
+- **ReferenceGrant**: Allows cross-namespace service access
+
+**RBAC Configuration:**
+
+After deployment, configure Kubernetes RBAC to map OIDC users to roles:
+
+```yaml
+# Example 1: Cluster Admin Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: User
+  name: "https://sso.example.com/realms/matherlynet#admin@example.com"
+  apiGroup: rbac.authorization.k8s.io
+
+# Example 2: Namespace Viewer Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: headlamp-viewer-user
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: User
+  name: "https://sso.example.com/realms/matherlynet#user@example.com"
+  apiGroup: rbac.authorization.k8s.io
+
+# Example 3: Group-based RBAC
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-admins-group
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: Group
+  name: "https://sso.example.com/realms/matherlynet#admins"
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**Troubleshooting:**
+```bash
+flux get hr -n kube-system headlamp
+kubectl -n kube-system get pods -l app.kubernetes.io/name=headlamp
+kubectl -n kube-system logs -l app.kubernetes.io/name=headlamp
+
+# Verify HTTPRoute
+kubectl get httproute headlamp -n network -o yaml
+
+# Verify ReferenceGrant
+kubectl get referencegrant headlamp-network-access -n kube-system
+
+# Verify Keycloak client
+kubectl logs -n identity -l app.kubernetes.io/name=keycloak-config-cli --tail=50
 ```
 
 ---

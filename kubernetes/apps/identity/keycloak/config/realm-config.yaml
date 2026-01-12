@@ -220,6 +220,55 @@ data:
               id.token.claim: "true"
               access.token.claim: "true"
               userinfo.token.claim: "true"
+      - clientId: "$(env:HEADLAMP_CLIENT_ID)"
+        name: "Headlamp"
+        description: "OIDC client for Headlamp Kubernetes Web UI - provides user identity and RBAC capabilities"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:HEADLAMP_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://headlamp.matherly.net/oidc-callback"
+        webOrigins:
+          - "https://headlamp.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://headlamp.matherly.net/*"
+        defaultClientScopes:
+          - "profile"
+          - "email"
+          - "offline_access"
+          - "groups"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+        protocolMappers:
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
 
     identityProviders:
       - alias: "google"

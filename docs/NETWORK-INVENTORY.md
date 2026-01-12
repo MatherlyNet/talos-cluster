@@ -63,6 +63,7 @@ These endpoints are only accessible from internal network or VPN:
 | Hostname | Service | Namespace | Port | Authentication | Purpose |
 | ---------- | --------- | ----------- | ------ | ---------------- | --------- |
 | `grafana.matherly.net` | kube-prometheus-stack-grafana | monitoring | 80 | OIDC SSO | Metrics/dashboards |
+| `headlamp.matherly.net` | headlamp | kube-system | 80 | Keycloak SSO | Kubernetes Web UI |
 | `hubble.matherly.net` | hubble-ui | kube-system | 80 | OIDC SSO | Network observability |
 | `rustfs.matherly.net` | rustfs-svc | storage | 9001 | None (Console UI) | S3 management |
 
@@ -197,7 +198,8 @@ ReferenceGrants enable cross-namespace service references:
 | ai-system | `network-litellm-access` | Allow network namespace to reference LiteLLM services |
 | ai-system | `network-obot-access` | Allow network namespace to reference Obot services |
 | identity | `allow-oidc-from-network` | Allow OIDC SecurityPolicy to reference Keycloak backend |
-| kube-system | `allow-network-httproutes` | Allow network namespace HTTPRoutes |
+| kube-system | `allow-network-httproutes` | Allow network namespace HTTPRoutes (Hubble UI) |
+| kube-system | `headlamp-network-access` | Allow network namespace to reference Headlamp service |
 | monitoring | `allow-network-httproutes` | Allow network namespace HTTPRoutes |
 | storage | `allow-network-httproutes` | Allow network namespace HTTPRoutes |
 
@@ -369,4 +371,5 @@ kubectl get securitypolicy -n network -o yaml
 
 | Date       | Change                      |
 | ---------- | --------------------------- |
+| 2026-01-12 | Add Headlamp Kubernetes Web UI endpoint and ReferenceGrant |
 | 2026-01-10 | Initial inventory creation  |

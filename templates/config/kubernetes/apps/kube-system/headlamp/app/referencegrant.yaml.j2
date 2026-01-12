@@ -1,0 +1,22 @@
+#% if headlamp_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| REFERENCEGRANT - Allow network namespace to reference kube-system services   #|
+#| Required for HTTPRoute in network namespace to route to Headlamp service     #|
+#| REF: https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1beta1.ReferenceGrant #|
+#| ============================================================================= #|
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: headlamp-network-access
+  namespace: kube-system
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: headlamp
+#% endif %#
