@@ -13,8 +13,23 @@
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard :robot:",
   schedule: ["every weekend"],
+  timezone: "America/New_York",
   rebaseWhen: "conflicted",
   ignorePaths: ["**/*.sops.*"],
+  // Enable OSV vulnerability alerts for security scanning
+  osvVulnerabilityAlerts: true,
+  vulnerabilityAlerts: {
+    enabled: true,
+    labels: ["security"],
+    schedule: ["at any time"],
+  },
+  // Enable lock file maintenance
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ["before 5am on monday"],
+    automerge: true,
+    automergeType: "branch",
+  },
   flux: {
     managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/"],
   },
@@ -211,6 +226,21 @@
         "oci://(?<depName>[^:]+):(?<currentValue>\\S+)",
       ],
       datasourceTemplate: "docker",
+    },
+    {
+      customType: "regex",
+      description: "Process Grafana dashboard versions",
+      managerFilePatterns: [
+        "/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/",
+      ],
+      matchStrings: [
+        // Matches both commented and uncommented formats:
+        // # renovate: depName="Dashboard Name"   OR   renovate: depName="Dashboard Name"
+        // # gnetId: 1234                          OR   gnetId: 1234
+        // # revision: 5                           OR   revision: 5
+        "(?:#\\s*)?renovate:\\s*depName=\"(?<depName>[^\"]+)\"\\s*\\n\\s*(?:#\\s*)?gnetId:\\s*(?<packageName>\\d+)\\s*\\n\\s*(?:#\\s*)?revision:\\s*(?<currentValue>\\d+)",
+      ],
+      datasourceTemplate: "grafana-dashboards",
     },
   ],
 }

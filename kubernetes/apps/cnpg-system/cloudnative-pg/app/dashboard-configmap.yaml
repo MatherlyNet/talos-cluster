@@ -1,4 +1,7 @@
 ---
+# renovate: depName="CloudNativePG"
+# gnetId: 20417
+# revision: 1
 apiVersion: v1
 kind: ConfigMap
 metadata:

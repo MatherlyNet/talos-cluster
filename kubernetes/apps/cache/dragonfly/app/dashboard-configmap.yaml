@@ -1,4 +1,7 @@
 ---
+# renovate: depName="Dragonfly Dashboard"
+# gnetId: 21444
+# revision: 1
 apiVersion: v1
 kind: ConfigMap
 metadata:

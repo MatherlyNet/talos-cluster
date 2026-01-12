@@ -177,6 +177,7 @@ spec:
       dashboards:
         custom:
           #| cert-manager - certificate monitoring (not included in kube-prometheus-stack) #|
+          # renovate: depName="cert-manager"
           cert-manager:
             gnetId: 20842
             revision: 3
@@ -184,6 +185,7 @@ spec:
               - name: DS_PROMETHEUS
                 value: Prometheus
           #| Flux CD - GitOps reconciliation monitoring #|
+          # renovate: depName="Flux Cluster Stats"
           flux-cluster:
             gnetId: 16714
             revision: 1
@@ -191,6 +193,7 @@ spec:
               - name: DS_PROMETHEUS
                 value: Prometheus
           #| Envoy Gateway - gateway metrics (not included in kube-prometheus-stack) #|
+          # renovate: depName="Envoy Gateway Global"
           envoy-gateway:
             gnetId: 24460
             revision: 1
