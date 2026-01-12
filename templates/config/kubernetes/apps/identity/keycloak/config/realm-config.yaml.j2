@@ -468,10 +468,10 @@ data:
         webOrigins:
           - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#"
         attributes:
-          #| PKCE disabled - Headlamp v0.39.0 does not support PKCE in OIDC flow #|
+          #| PKCE configuration - controlled by headlamp_pkce_method in cluster.yaml #|
+          #| Headlamp v0.39.0 does not support PKCE - keep disabled (empty string) #|
           #| Since this is a confidential client with client_secret, PKCE is not required #|
-          #| Setting to empty string explicitly removes PKCE requirement #|
-          pkce.code.challenge.method: ""
+          pkce.code.challenge.method: "#{ headlamp_pkce_method | default('') }#"
           post.logout.redirect.uris: "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         #| offline_access in default scopes enables refresh tokens for session persistence #|

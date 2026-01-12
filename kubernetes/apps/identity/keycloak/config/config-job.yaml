@@ -10,6 +10,7 @@ metadata:
   annotations:
     kustomize.toolkit.fluxcd.io/force: "enabled"
     config.keycloak.io/client-version: "grafana=7a4b9c2d1e8f3a6b5c0d9e2f1a4b7c8d3e6f9a0b1c2d3e4f5a6b7c8d9e0f1a2b,litellm=False,obot=True,langfuse=60c36ed902c78fe0d20632cc2bbc4de91bdcc54973d7e95aabc84cdd2ca90f2b,google=True,github=False,microsoft=False"
+    config.keycloak.io/config-hash: "v1-headlamp-pkce="
 spec:
   backoffLimit: 3
   ttlSecondsAfterFinished: 86400

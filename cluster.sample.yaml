@@ -991,6 +991,30 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "6.4.0-26.1.0")
 # keycloak_config_cli_version: "6.4.0-26.1.0"
 
+# =============================================================================
+# KEYCLOAK CLIENT CONFIGURATION TRACKING
+# =============================================================================
+# These variables track important client configuration settings. When changed,
+# they trigger automatic recreation of the keycloak-config-cli Job via Flux.
+# This ensures configuration changes are applied without manual intervention.
+#
+# FLOW: Change variable → task configure → Git commit → Flux detects change →
+#       Job annotation changes → Flux recreates Job → Config applied
+# -----------------------------------------------------------------------------
+
+# -- Headlamp PKCE method (Proof Key for Code Exchange)
+#    Options: "" (disabled), "S256" (enabled with SHA256), "plain" (not recommended)
+#    Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)
+#    As a confidential client with client_secret, PKCE is not required
+#    (OPTIONAL) / (DEFAULT: "")
+# headlamp_pkce_method: ""
+
+# -- Configuration change trigger (bump to force Job recreation)
+#    Increment this value when making changes to realm configuration that
+#    don't affect other tracked variables (e.g., role mappings, IdP settings)
+#    (OPTIONAL) / (DEFAULT: 1)
+# keycloak_config_version: 1
+
 # -- Keycloak realm roles (RBAC role hierarchy)
 #    Define custom roles for your realm following Kubernetes RBAC patterns.
 #    These roles are used by IdP mappers and can be included in JWT tokens.

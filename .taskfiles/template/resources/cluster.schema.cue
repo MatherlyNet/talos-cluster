@@ -310,6 +310,15 @@ import (
 	// REF: docs/research/keycloak-configuration-as-code-gitops-jan-2026.md
 	keycloak_config_cli_version?:  *"6.4.0-26.1.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
 
+	// Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client
+	// Options: "" (disabled), "S256" (SHA256), "plain" (not recommended)
+	// Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)
+	headlamp_pkce_method?: *"" | "" | "S256" | "plain"
+
+	// Keycloak Configuration Version - Increment to force Job recreation
+	// Used in Job annotation to trigger Flux reconciliation on config changes
+	keycloak_config_version?: *1 | int & >=1
+
 	// Keycloak Realm Roles - RBAC role hierarchy following Kubernetes patterns
 	// Roles are created during realm import and used by IdP mappers/JWT claims
 	// REF: https://kubernetes.io/docs/concepts/security/rbac-good-practices/

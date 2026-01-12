@@ -21,6 +21,10 @@ metadata:
     #| Config version tracks which OIDC clients are enabled - changes trigger Job recreation #|
     #| Format: grafana=<bool>,litellm=<bool>,obot=<bool>,langfuse=<bool>,google=<bool>,github=<bool>,microsoft=<bool> #|
     config.keycloak.io/client-version: "grafana=#{ grafana_oidc_enabled | default(false) }#,litellm=#{ litellm_oidc_enabled | default(false) }#,obot=#{ obot_keycloak_enabled | default(false) }#,langfuse=#{ langfuse_sso_enabled | default(false) }#,google=#{ google_idp_enabled | default(false) }#,github=#{ github_idp_enabled | default(false) }#,microsoft=#{ microsoft_idp_enabled | default(false) }#"
+    #| Config hash tracks actual configuration changes (PKCE, roles, IdPs, etc.) #|
+    #| When cluster.yaml configuration changes, this annotation changes, triggering Job recreation #|
+    #| Bump keycloak_config_version in cluster.yaml for manual trigger #|
+    config.keycloak.io/config-hash: "v#{ keycloak_config_version | default(1) }#-headlamp-pkce=#{ headlamp_pkce_method | default('') }#"
 spec:
   #| Retry up to 3 times on failure before marking as failed #|
   backoffLimit: 3
