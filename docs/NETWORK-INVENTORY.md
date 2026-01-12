@@ -369,7 +369,7 @@ kubectl get securitypolicy -n network -o yaml
 
 ## Document History
 
-| Date       | Change                      |
-| ---------- | --------------------------- |
+| Date       | Change                                                     |
+| ---------- | ---------------------------------------------------------- |
 | 2026-01-12 | Add Headlamp Kubernetes Web UI endpoint and ReferenceGrant |
-| 2026-01-10 | Initial inventory creation  |
+| 2026-01-10 | Initial inventory creation                                 |
