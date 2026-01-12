@@ -23,9 +23,9 @@
     labels: ["security"],
     schedule: ["at any time"],
   },
-  // Enable lock file maintenance
+  // Lock file maintenance disabled - no traditional lock files in this GitOps repo
   lockFileMaintenance: {
-    enabled: true,
+    enabled: false,
     schedule: ["before 5am on monday"],
     automerge: true,
     automergeType: "branch",
