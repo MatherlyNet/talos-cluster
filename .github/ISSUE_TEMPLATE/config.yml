@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/MatherlyNet/talos-cluster/tree/main/docs
+    about: Check the documentation before opening an issue
+  - name: Upstream Template
+    url: https://github.com/onedr0p/cluster-template
+    about: For issues with the upstream template

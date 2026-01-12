@@ -1,0 +1,20 @@
+# CODEOWNERS - Defines code ownership for review requirements
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @jrmatherly
+
+# Critical infrastructure - require review
+/.github/workflows/ @jrmatherly
+/infrastructure/ @jrmatherly
+/talos/ @jrmatherly
+
+# Security-sensitive files
+*.sops.yaml @jrmatherly
+/.sops.yaml @jrmatherly
+/age.key @jrmatherly
+
+# Configuration
+/cluster.yaml @jrmatherly
+/nodes.yaml @jrmatherly
+/.renovaterc.json5 @jrmatherly
