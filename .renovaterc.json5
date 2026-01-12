@@ -76,6 +76,23 @@
       automergeType: "branch",
     },
     {
+      description: "Auto-merge container patch updates",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["patch"],
+      automerge: true,
+      automergeType: "branch",
+      minimumReleaseAge: "3 days",
+    },
+    {
+      description: "Group Siderolabs/Talos updates",
+      groupName: "siderolabs",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/siderolabs/"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+    },
+    {
       description: "Restrict Helm to v3.x",
       matchManagers: ["mise"],
       matchPackageNames: ["aqua:helm/helm"],
