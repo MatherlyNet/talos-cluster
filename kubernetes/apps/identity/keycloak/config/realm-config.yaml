@@ -237,7 +237,7 @@ data:
         webOrigins:
           - "https://headlamp.matherly.net"
         attributes:
-          pkce.code.challenge.method: "S256"
+          # pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://headlamp.matherly.net/*"
         defaultClientScopes:
           - "profile"
