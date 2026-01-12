@@ -2029,8 +2029,8 @@ cloudflare_gateway_addr: ""
 
 # -- Obot image version tag
 #    Uses jrmatherly/obot-entraid fork with Keycloak auth provider
-#    (OPTIONAL) / (DEFAULT: "0.2.31")
-# obot_version: "0.2.31"
+#    (OPTIONAL) / (DEFAULT: "0.2.32")
+# obot_version: "0.2.32"
 
 # -- Number of Obot pod replicas
 #    (OPTIONAL) / (DEFAULT: 1)

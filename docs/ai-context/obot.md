@@ -53,7 +53,7 @@ Obot is an AI agent platform with Model Context Protocol (MCP) server hosting ca
 ```yaml
 obot_enabled: true           # Enable Obot deployment
 obot_subdomain: "obot"       # Creates obot.${cloudflare_domain}
-obot_version: "0.2.31"       # jrmatherly/obot-entraid image tag
+obot_version: "0.2.32"       # jrmatherly/obot-entraid image tag
 obot_replicas: 1             # Pod replicas
 ```
 

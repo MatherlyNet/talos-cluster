@@ -605,7 +605,7 @@ class Plugin(makejinja.plugin.Plugin):
             data["obot_hostname"] = obot_hostname
 
             # Default settings
-            data.setdefault("obot_version", "0.2.31")
+            data.setdefault("obot_version", "0.2.32")
             data.setdefault("obot_replicas", 1)
             data.setdefault("obot_mcp_namespace", "obot-mcp")
             data.setdefault("obot_postgres_user", "obot")

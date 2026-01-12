@@ -407,7 +407,7 @@ kubernetes_version: "1.35.0"
 # NOTE: Requires cnpg_enabled: true for PostgreSQL with pgvector
 # obot_enabled: true
 # obot_subdomain: "obot"
-# obot_version: "0.2.31"
+# obot_version: "0.2.32"
 # obot_replicas: 1
 # obot_db_password: "test-obot-db-password"
 # obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
