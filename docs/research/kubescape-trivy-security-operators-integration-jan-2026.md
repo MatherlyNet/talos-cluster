@@ -680,7 +680,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: trivy-operator
-  namespace: trivy-system
+  namespace: security
 spec:
   chart:
     spec:
@@ -689,7 +689,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: trivy
-        namespace: trivy-system
+        namespace: security
   interval: 1h
   timeout: 15m
   install:
@@ -802,7 +802,7 @@ spec:
 
 ### Step 4: Network Policies
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/app/networkpolicy.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/app/networkpolicy.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) and network_policies_enabled | default(false) %#
@@ -815,7 +815,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: trivy-operator
-  namespace: trivy-system
+  namespace: security
   labels:
     app.kubernetes.io/name: trivy-operator
     app.kubernetes.io/component: network-policy
@@ -882,7 +882,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: trivy
-  namespace: trivy-system
+  namespace: security
   labels:
     app.kubernetes.io/name: trivy-operator
     app.kubernetes.io/component: network-policy
@@ -974,13 +974,13 @@ task configure
 task reconcile
 
 # 4. Monitor deployment
-kubectl get helmrelease -n trivy-system trivy-operator -w
+kubectl get helmrelease -n security trivy-operator -w
 
 # 5. Verify pods
-kubectl get pods -n trivy-system
+kubectl get pods -n security
 
 # 6. Check operator logs
-kubectl logs -n trivy-system -l app.kubernetes.io/name=trivy-operator --tail=100
+kubectl logs -n security -l app.kubernetes.io/name=trivy-operator --tail=100
 ```
 
 ### Step 7: Verify Scanning
@@ -1118,14 +1118,13 @@ Create custom dashboards for security scanning metrics:
 
 ```bash
 # 1. Verify operators are running
-kubectl get pods -n kubescape
-kubectl get pods -n trivy-system
+kubectl get pods -n security
 
 # 2. Check CRDs are installed
 kubectl get crd | grep -E 'kubescape|trivy'
 
 # 3. Trigger test scans
-kubectl create job -n kubescape test-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
+kubectl create job -n security test-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
 
 # 4. View scan results
 kubectl get configurationscansummaries -A
@@ -1146,10 +1145,10 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50 | grep 
 cilium hubble ui
 
 # Test Kubescape operator can reach API server
-kubectl exec -n kubescape -it deployment/kubescape-operator -- curl -k https://kubernetes.default.svc.cluster.local:443
+kubectl exec -n security -it deployment/kubescape-operator -- curl -k https://kubernetes.default.svc.cluster.local:443
 
 # Test Trivy operator can fetch DB updates
-kubectl exec -n trivy-system -it deployment/trivy-operator -- curl -I https://ghcr.io
+kubectl exec -n security -it deployment/trivy-operator -- curl -I https://ghcr.io
 
 # Verify no unexpected denied connections
 hubble observe --namespace kubescape --verdict DROPPED
@@ -1167,7 +1166,7 @@ hubble observe --namespace trivy-system --verdict DROPPED
 **Problem:** Operator pods CrashLoopBackOff
 ```bash
 # Check logs
-kubectl logs -n kubescape -l app.kubernetes.io/name=kubescape-operator --tail=100
+kubectl logs -n security -l app.kubernetes.io/name=kubescape-operator --tail=100
 
 # Common causes:
 # 1. Insufficient memory (increase kubescape_memory_limit)
@@ -1182,13 +1181,13 @@ kubescape_memory_limit: "2Gi"
 **Problem:** Scans not running
 ```bash
 # Check CronJobs
-kubectl get cronjobs -n kubescape
+kubectl get cronjobs -n security
 
 # Manually trigger scan
-kubectl create job -n kubescape manual-scan --from=cronjob/kubescape-scan-cron
+kubectl create job -n security manual-scan --from=cronjob/kubescape-scan-cron
 
 # Check job logs
-kubectl logs -n kubescape job/manual-scan
+kubectl logs -n security job/manual-scan
 ```
 
 #### Trivy Operator Issues
@@ -1196,29 +1195,29 @@ kubectl logs -n kubescape job/manual-scan
 **Problem:** Vulnerability reports not generating
 ```bash
 # Check operator status
-kubectl get pods -n trivy-system
+kubectl get pods -n security
 
 # Check operator logs
-kubectl logs -n trivy-system -l app.kubernetes.io/name=trivy-operator --tail=200
+kubectl logs -n security -l app.kubernetes.io/name=trivy-operator --tail=200
 
 # Common causes:
 # 1. Database not downloaded (check ghcr.io access)
 # 2. Scan jobs failing (check job pods)
 
 # Force database update
-kubectl delete pod -n trivy-system -l app.kubernetes.io/name=trivy-operator
+kubectl delete pod -n security -l app.kubernetes.io/name=trivy-operator
 ```
 
 **Problem:** Network policy blocking DB updates
 ```bash
 # Temporarily allow all egress for testing
-kubectl label namespace trivy-system network-policies-audit=true
+kubectl label namespace security network-policies-audit=true
 
 # Test ghcr.io access
-kubectl run -it --rm debug --image=curlimages/curl --restart=Never -n trivy-system -- curl -I https://ghcr.io
+kubectl run -it --rm debug --image=curlimages/curl --restart=Never -n security -- curl -I https://ghcr.io
 
 # If successful, check CiliumNetworkPolicy toFQDNs rules
-kubectl get ciliumnetworkpolicies -n trivy-system trivy-operator -o yaml
+kubectl get ciliumnetworkpolicies -n security trivy-operator -o yaml
 ```
 
 #### Headlamp Plugin Issues
@@ -1241,7 +1240,7 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=500 | grep
 kubectl get configurationscansummaries -A
 
 # If no results, trigger manual scan
-kubectl create job -n kubescape test-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
+kubectl create job -n security test-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
 
 # Wait a few minutes and refresh Headlamp
 ```
@@ -1309,15 +1308,11 @@ After creating the namespace directories, update the parent kustomization to inc
 
 Edit: `templates/config/kubernetes/apps/kustomization.yaml.j2`
 
-Add the following conditional includes:
+Add the following conditional include for the security namespace:
 
 ```yaml
-#% if kubescape_enabled | default(false) %#
-- ./kubescape
-#% endif %#
-
-#% if trivy_enabled | default(false) %#
-- ./trivy-system
+#% if kubescape_enabled | default(false) or trivy_enabled | default(false) %#
+- ./security
 #% endif %#
 ```
 
@@ -1334,21 +1329,20 @@ resources:
   - ./identity
 #% endif %#
   
-#% if kubescape_enabled | default(false) %#
-  - ./kubescape
-#% endif %#
-  
   - ./kube-system
   - ./monitoring
   - ./network
-  - ./storage
   
-#% if trivy_enabled | default(false) %#
-  - ./trivy-system
+#% if kubescape_enabled | default(false) or trivy_enabled | default(false) %#
+  - ./security
 #% endif %#
+  
+  - ./storage
   
   # ... remaining namespaces ...
 ```
+
+**Note:** The `security` namespace is included when either Kubescape or Trivy is enabled, following the project pattern of grouping related applications in category-based namespaces (like `ai-system` for LiteLLM/Langfuse/Obot, or `monitoring` for Prometheus/Loki/Tempo).
 
 ### Regenerate and Validate
 
@@ -1359,20 +1353,17 @@ After updating the parent kustomization:
 task configure
 
 # 2. Verify generated directory structure
-tree kubernetes/apps/kubescape/
-tree kubernetes/apps/trivy-system/
+tree kubernetes/apps/security/
 
 # 3. Validate Kustomize builds successfully
-kubectl kustomize kubernetes/apps/kubescape/
-kubectl kustomize kubernetes/apps/trivy-system/
+kubectl kustomize kubernetes/apps/security/
 
 # 4. Check Git status for new files
 git status kubernetes/apps/
 
 # 5. Review generated manifests before committing
 git diff kubernetes/apps/kustomization.yaml
-git diff kubernetes/apps/kubescape/
-git diff kubernetes/apps/trivy-system/
+git diff kubernetes/apps/security/
 ```
 
 ---
