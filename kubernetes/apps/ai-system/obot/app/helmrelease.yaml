@@ -20,6 +20,8 @@ spec:
       remediateLastFailure: true
 
   values:
+    fullnameOverride: "obot"
+
     image:
       repository: ghcr.io/jrmatherly/obot-entraid
       tag: v0.2.32
