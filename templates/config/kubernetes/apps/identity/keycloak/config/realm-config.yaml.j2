@@ -19,11 +19,21 @@ data:
 
     #| =========================================================================== #|
     #| SESSION SETTINGS                                                            #|
+    #| Online sessions - active browser sessions                                  #|
     #| =========================================================================== #|
     ssoSessionIdleTimeout: 1800
     ssoSessionMaxLifespan: 36000
     accessTokenLifespan: 300
     accessTokenLifespanForImplicitFlow: 900
+
+    #| =========================================================================== #|
+    #| OFFLINE SESSION SETTINGS                                                    #|
+    #| Offline sessions - "Remember Me" functionality and refresh tokens          #|
+    #| offlineSessionIdleTimeout: Maximum idle time before offline session expires #|
+    #| offlineSessionMaxLifespan: Absolute maximum lifetime for offline sessions   #|
+    #| =========================================================================== #|
+    offlineSessionIdleTimeout: 604800  # 7 days in seconds (7 * 24 * 60 * 60)
+    offlineSessionMaxLifespan: 2592000  # 30 days in seconds (30 * 24 * 60 * 60)
 
     #| =========================================================================== #|
     #| LOGIN SETTINGS                                                              #|
@@ -33,6 +43,46 @@ data:
     rememberMe: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
+
+#% if keycloak_smtp_host is defined and keycloak_smtp_host %#
+    #| =========================================================================== #|
+    #| EMAIL CONFIGURATION - SMTP Settings                                         #|
+    #| Enables password reset, email verification, and admin notifications         #|
+    #| Configured conditionally based on cluster.yaml SMTP variables               #|
+    #| REF: https://www.keycloak.org/server/outgoing-email                         #|
+    #| =========================================================================== #|
+    smtpServer:
+      host: "#{ keycloak_smtp_host }#"
+#%   if keycloak_smtp_port is defined and keycloak_smtp_port %#
+      port: "#{ keycloak_smtp_port }#"
+#%   endif %#
+#%   if keycloak_smtp_from is defined and keycloak_smtp_from %#
+      from: "#{ keycloak_smtp_from }#"
+#%   endif %#
+#%   if keycloak_smtp_from_display_name is defined and keycloak_smtp_from_display_name %#
+      fromDisplayName: "#{ keycloak_smtp_from_display_name }#"
+#%   endif %#
+#%   if keycloak_smtp_reply_to is defined and keycloak_smtp_reply_to %#
+      replyTo: "#{ keycloak_smtp_reply_to }#"
+#%   endif %#
+#%   if keycloak_smtp_reply_to_display_name is defined and keycloak_smtp_reply_to_display_name %#
+      replyToDisplayName: "#{ keycloak_smtp_reply_to_display_name }#"
+#%   endif %#
+#%   if keycloak_smtp_envelope_from is defined and keycloak_smtp_envelope_from %#
+      envelopeFrom: "#{ keycloak_smtp_envelope_from }#"
+#%   endif %#
+#%   if keycloak_smtp_starttls is defined %#
+      starttls: #{ keycloak_smtp_starttls | lower }#
+#%   endif %#
+#%   if keycloak_smtp_ssl is defined %#
+      ssl: #{ keycloak_smtp_ssl | lower }#
+#%   endif %#
+#%   if keycloak_smtp_auth is defined and keycloak_smtp_auth %#
+      auth: true
+      user: "$(env:KEYCLOAK_SMTP_USER)"
+      password: "$(env:KEYCLOAK_SMTP_PASSWORD)"
+#%   endif %#
+#% endif %#
 
     #| =========================================================================== #|
     #| BRUTE FORCE PROTECTION                                                      #|

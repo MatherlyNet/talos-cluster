@@ -207,6 +207,16 @@ kubernetes_version: "1.35.0"
 # Keycloak OpenTelemetry Tracing (requires tracing_enabled: true)
 # keycloak_tracing_enabled: true
 # keycloak_tracing_sample_rate: "0.1"
+# Keycloak Email/SMTP Configuration (optional)
+# keycloak_smtp_host: "smtp.example.com"
+# keycloak_smtp_port: "587"
+# keycloak_smtp_from: "noreply@example.com"
+# keycloak_smtp_from_display_name: "Keycloak"
+# keycloak_smtp_starttls: true
+# keycloak_smtp_ssl: false
+# keycloak_smtp_auth: true
+# keycloak_smtp_user: "smtp-user@example.com"
+# keycloak_smtp_password: "test-smtp-password"
 
 # Social Identity Providers (optional - uncomment to test IdP federation)
 # REF: docs/research/keycloak-social-identity-providers-integration-jan-2026.md

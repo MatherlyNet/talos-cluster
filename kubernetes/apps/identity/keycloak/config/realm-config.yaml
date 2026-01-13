@@ -15,11 +15,15 @@ data:
     accessTokenLifespan: 300
     accessTokenLifespanForImplicitFlow: 900
 
+    offlineSessionIdleTimeout: 604800  # 7 days in seconds (7 * 24 * 60 * 60)
+    offlineSessionMaxLifespan: 2592000  # 30 days in seconds (30 * 24 * 60 * 60)
+
     registrationAllowed: false
     resetPasswordAllowed: true
     rememberMe: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
+
 
     bruteForceProtected: true
     permanentLockout: false

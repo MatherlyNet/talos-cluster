@@ -948,6 +948,48 @@
       "type": "string",
       "pattern": "^[01](\\.\\d+)?$"
     },
+    "keycloak_smtp_host": {
+      "type": "string",
+      "description": "Keycloak SMTP Email Configuration When keycloak_smtp_host is set, enables password reset, email verification, and notifications"
+    },
+    "keycloak_smtp_port": {
+      "default": "587",
+      "type": "string",
+      "pattern": "^[0-9]{1,5}$"
+    },
+    "keycloak_smtp_from": {
+      "type": "string"
+    },
+    "keycloak_smtp_from_display_name": {
+      "type": "string"
+    },
+    "keycloak_smtp_reply_to": {
+      "type": "string"
+    },
+    "keycloak_smtp_reply_to_display_name": {
+      "type": "string"
+    },
+    "keycloak_smtp_envelope_from": {
+      "type": "string"
+    },
+    "keycloak_smtp_starttls": {
+      "default": true,
+      "type": "boolean"
+    },
+    "keycloak_smtp_ssl": {
+      "default": false,
+      "type": "boolean"
+    },
+    "keycloak_smtp_auth": {
+      "default": false,
+      "type": "boolean"
+    },
+    "keycloak_smtp_user": {
+      "type": "string"
+    },
+    "keycloak_smtp_password": {
+      "type": "string"
+    },
     "keycloak_config_cli_version": {
       "default": "6.4.0-26.1.0",
       "type": "string",

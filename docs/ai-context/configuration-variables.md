@@ -218,6 +218,37 @@ See: `docs/guides/keycloak-implementation.md`
 | `keycloak_tracing_enabled` | Enable Tempo tracing | false |
 | `keycloak_tracing_sample_rate` | Sample rate 0.0-1.0 | "0.1" |
 
+#### Keycloak Email/SMTP Configuration
+
+Enables password reset, email verification, and admin notifications. All variables are optional - when `keycloak_smtp_host` is not set, email functionality is disabled.
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `keycloak_smtp_host` | SMTP server hostname | not configured |
+| `keycloak_smtp_port` | SMTP port (25, 587, 465) | "587" |
+| `keycloak_smtp_from` | From email address | "noreply@${domain}" |
+| `keycloak_smtp_from_display_name` | From display name | "Keycloak" |
+| `keycloak_smtp_reply_to` | Reply-to address | not set |
+| `keycloak_smtp_reply_to_display_name` | Reply-to display name | not set |
+| `keycloak_smtp_envelope_from` | SMTP envelope sender | not set |
+| `keycloak_smtp_starttls` | Enable STARTTLS (port 587) | true |
+| `keycloak_smtp_ssl` | Enable SSL/TLS (port 465) | false |
+| `keycloak_smtp_auth` | Enable SMTP authentication | false |
+| `keycloak_smtp_user` | SMTP username (SOPS) | required if auth=true |
+| `keycloak_smtp_password` | SMTP password (SOPS) | required if auth=true |
+
+**Configuration Flow:**
+1. Set `keycloak_smtp_host` to enable email functionality
+2. Configure `keycloak_smtp_auth: true` if your SMTP server requires authentication
+3. Add `keycloak_smtp_user` and `keycloak_smtp_password` to cluster.yaml (SOPS-encrypted)
+4. Run `task configure -y` to generate templates and encrypt secrets
+
+**Common Configurations:**
+- **Gmail**: `smtp.gmail.com:587` with STARTTLS and authentication
+- **SendGrid**: `smtp.sendgrid.net:587` with STARTTLS and authentication
+- **AWS SES**: `email-smtp.region.amazonaws.com:587` with STARTTLS and authentication
+- **Mailgun**: `smtp.mailgun.org:587` with STARTTLS and authentication
+
 #### Keycloak Config-CLI (GitOps Realm Management)
 
 | Variable | Description | Default |

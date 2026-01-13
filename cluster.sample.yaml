@@ -982,6 +982,71 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "0.1")
 # keycloak_tracing_sample_rate: "0.1"
 
+# -- Keycloak SMTP host for email functionality
+#    When configured, enables password reset, email verification, and admin notifications
+#    Leave undefined to disable email functionality
+#    (OPTIONAL) / (DEFAULT: not configured)
+# keycloak_smtp_host: "smtp.example.com"
+
+# -- Keycloak SMTP port
+#    Common ports: 25 (plain), 587 (STARTTLS), 465 (SSL/TLS)
+#    (OPTIONAL) / (DEFAULT: "587")
+# keycloak_smtp_port: "587"
+
+# -- Keycloak SMTP from address
+#    Email address used as sender for all Keycloak emails
+#    (OPTIONAL) / (DEFAULT: "noreply@${cloudflare_domain}")
+# keycloak_smtp_from: "noreply@example.com"
+
+# -- Keycloak SMTP from display name
+#    Human-readable name shown as sender
+#    (OPTIONAL) / (DEFAULT: "Keycloak")
+# keycloak_smtp_from_display_name: "Keycloak Authentication"
+
+# -- Keycloak SMTP reply-to address
+#    Email address for replies (if different from from address)
+#    (OPTIONAL) / (DEFAULT: not set)
+# keycloak_smtp_reply_to: "support@example.com"
+
+# -- Keycloak SMTP reply-to display name
+#    Human-readable name for reply-to address
+#    (OPTIONAL) / (DEFAULT: not set)
+# keycloak_smtp_reply_to_display_name: "Support Team"
+
+# -- Keycloak SMTP envelope from address
+#    SMTP envelope sender (MAIL FROM) - used for bounce handling
+#    When not set, uses keycloak_smtp_from
+#    (OPTIONAL) / (DEFAULT: not set)
+# keycloak_smtp_envelope_from: "bounces@example.com"
+
+# -- Keycloak SMTP STARTTLS enable
+#    Enable STARTTLS for upgrading plain connection to TLS
+#    Use with port 587
+#    (OPTIONAL) / (DEFAULT: true when keycloak_smtp_ssl is false)
+# keycloak_smtp_starttls: true
+
+# -- Keycloak SMTP SSL/TLS enable
+#    Enable SSL/TLS from connection start
+#    Use with port 465
+#    (OPTIONAL) / (DEFAULT: false)
+# keycloak_smtp_ssl: false
+
+# -- Keycloak SMTP authentication enable
+#    Enable SMTP authentication (requires username/password in secrets)
+#    When true, keycloak_smtp_user and keycloak_smtp_password must be set
+#    (OPTIONAL) / (DEFAULT: false)
+# keycloak_smtp_auth: false
+
+# -- Keycloak SMTP username (SOPS-encrypted)
+#    Username for SMTP authentication
+#    (REQUIRED when keycloak_smtp_auth: true)
+# keycloak_smtp_user: "smtp-user@example.com"
+
+# -- Keycloak SMTP password (SOPS-encrypted)
+#    Password for SMTP authentication
+#    (REQUIRED when keycloak_smtp_auth: true)
+# keycloak_smtp_password: ""
+
 # -- keycloak-config-cli version for realm configuration management
 #    Format: <cli-version>-<keycloak-version> (e.g., "6.4.0-26.1.0")
 #    Used by keycloak-config-cli Job to apply realm configuration via Admin API

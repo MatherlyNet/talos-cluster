@@ -304,6 +304,20 @@ import (
 	// REF: https://www.keycloak.org/observability/tracing
 	keycloak_tracing_enabled?:     *false | bool
 	keycloak_tracing_sample_rate?: *"0.1" | string & =~"^[01](\\.\\d+)?$"
+	// Keycloak SMTP Email Configuration
+	// When keycloak_smtp_host is set, enables password reset, email verification, and notifications
+	keycloak_smtp_host?:                string
+	keycloak_smtp_port?:                *"587" | string & =~"^[0-9]{1,5}$"
+	keycloak_smtp_from?:                string
+	keycloak_smtp_from_display_name?:   string
+	keycloak_smtp_reply_to?:            string
+	keycloak_smtp_reply_to_display_name?: string
+	keycloak_smtp_envelope_from?:       string
+	keycloak_smtp_starttls?:            *true | bool
+	keycloak_smtp_ssl?:                 *false | bool
+	keycloak_smtp_auth?:                *false | bool
+	keycloak_smtp_user?:                string
+	keycloak_smtp_password?:            string
 	// Keycloak Config-CLI - GitOps realm management via keycloak-config-cli
 	// Replaces KeycloakRealmImport CRD which only supports one-time imports
 	// REF: https://github.com/adorsys/keycloak-config-cli
