@@ -487,16 +487,16 @@ openssl rand -base64 32
 kubectl logs -n ai-system -l app.kubernetes.io/name=obot | grep -i "keycloak\|auth\|oidc"
 
 # Verify environment variables are set correctly
-kubectl exec -n ai-system deploy/obot-obot -- env | grep OBOT_KEYCLOAK
+kubectl exec -n ai-system deploy/obot -- env | grep OBOT_KEYCLOAK
 
 # Test Keycloak connectivity from Obot pod
-kubectl exec -n ai-system deploy/obot-obot -- curl -s https://auth.example.com/realms/matherlynet/.well-known/openid-configuration | jq .issuer
+kubectl exec -n ai-system deploy/obot -- curl -s https://auth.example.com/realms/matherlynet/.well-known/openid-configuration | jq .issuer
 
 # Verify client secret is accessible
 kubectl get secret -n ai-system obot-secret -o jsonpath='{.data.OBOT_KEYCLOAK_AUTH_PROVIDER_CLIENT_SECRET}' | base64 -d
 
 # Check network policy allows Keycloak access
-kubectl exec -n ai-system deploy/obot-obot -- curl -v https://auth.example.com/realms/matherlynet/
+kubectl exec -n ai-system deploy/obot -- curl -v https://auth.example.com/realms/matherlynet/
 ```
 
 ## Recommended Remediation

@@ -133,7 +133,7 @@ spec:
       sectionName: https
   rules:
     - backendRefs:
-        - name: obot-obot
+        - name: obot
           namespace: ai-system
           port: 80
       matches:

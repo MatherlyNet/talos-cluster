@@ -206,8 +206,8 @@ After applying the critical fixes, verify authentication with:
 
 ```bash
 # Check environment variables are set correctly
-kubectl exec -n ai-system deploy/obot-obot -- env | grep OBOT_KEYCLOAK
-kubectl exec -n ai-system deploy/obot-obot -- env | grep OBOT_AUTH_PROVIDER
+kubectl exec -n ai-system deploy/obot -- env | grep OBOT_KEYCLOAK
+kubectl exec -n ai-system deploy/obot -- env | grep OBOT_AUTH_PROVIDER
 
 # Expected output should include:
 # OBOT_KEYCLOAK_AUTH_PROVIDER_URL=https://auth.example.com
@@ -217,7 +217,7 @@ kubectl exec -n ai-system deploy/obot-obot -- env | grep OBOT_AUTH_PROVIDER
 # OBOT_AUTH_PROVIDER_EMAIL_DOMAINS=*
 
 # Test Keycloak connectivity
-kubectl exec -n ai-system deploy/obot-obot -- curl -s https://auth.example.com/realms/matherlynet/.well-known/openid-configuration | jq .issuer
+kubectl exec -n ai-system deploy/obot -- curl -s https://auth.example.com/realms/matherlynet/.well-known/openid-configuration | jq .issuer
 
 # Check Obot logs for auth errors
 kubectl logs -n ai-system -l app.kubernetes.io/name=obot | grep -i "keycloak\|auth\|oidc"

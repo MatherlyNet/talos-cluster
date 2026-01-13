@@ -403,7 +403,7 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: obot-obot
+      name: obot
       namespace: ai-system
   interval: 1h
   retryInterval: 30s

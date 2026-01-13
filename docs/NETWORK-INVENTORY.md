@@ -54,7 +54,7 @@ These endpoints are accessible from the public internet through Cloudflare Tunne
 | `sso.matherly.net` | keycloak-service | identity | 8080 | Native | Identity provider |
 | `langfuse.matherly.net` | langfuse-web | ai-system | 3000 | Keycloak SSO | LLM observability |
 | `llms.matherly.net` | litellm | ai-system | 4000 | JWT/API Key | LLM proxy gateway |
-| `obot.matherly.net` | obot-obot | ai-system | 80 | Keycloak SSO | MCP agent platform |
+| `obot.matherly.net` | obot | ai-system | 80 | Keycloak SSO | MCP agent platform |
 
 ### Internal Endpoints (VPN/LAN Only)
 
