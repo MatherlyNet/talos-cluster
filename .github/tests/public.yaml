@@ -457,6 +457,7 @@ kubernetes_version: "1.35.0"
 # headlamp_replicas: 2
 # headlamp_oidc_client_id: "headlamp"
 # headlamp_oidc_client_secret: "test-headlamp-oidc-secret-hex-32-chars"
+# headlamp_ai_assistant_api_key: "test-ai-assistant-api-key-hex-32-chars"
 
 # Kubernetes API Server OIDC Authentication
 # REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md

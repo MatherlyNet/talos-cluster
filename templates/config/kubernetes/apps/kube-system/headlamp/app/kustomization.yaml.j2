@@ -10,4 +10,7 @@ resources:
 #% if kubernetes_oidc_enabled | default(false) %#
   - ./oidc-rbac.yaml
 #% endif %#
+#% if headlamp_ai_assistant_enabled | default(false) %#
+  - ./ai-assistant-configmap.yaml
+#% endif %#
 #% endif %#
