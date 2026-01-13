@@ -109,11 +109,18 @@ spec:
           parallel: true
           maxConcurrent: 2
 
-      #| Mount tmp volume for npm cache with readOnlyRootFilesystem: true #|
+      #| Override security context to allow writable filesystem for npm cache #|
+      #| Main Headlamp container remains with readOnlyRootFilesystem: true #|
       #| REF: https://github.com/kubernetes-sigs/headlamp/issues/3999 #|
-      volumeMounts:
-        - name: tmp
-          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop:
+            - ALL
 
     #| ========================================================================= #|
     #| Environment Configuration                                                  #|

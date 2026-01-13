@@ -72,9 +72,15 @@ spec:
           parallel: true
           maxConcurrent: 2
 
-      volumeMounts:
-        - name: tmp
-          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: false
+        capabilities:
+          drop:
+            - ALL
 
     env:
       - name: HEADLAMP_LOG_LEVEL
