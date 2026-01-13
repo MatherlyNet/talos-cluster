@@ -174,11 +174,46 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
         prop["items"] = get_simple_type(inner_type)
         return prop
 
-    # Handle default values with alternation: *"value" | type
-    default_match = re.match(r'\*"?([^"|]+)"?\s*\|\s*(.+)', type_def)
-    if default_match:
-        default_val = default_match.group(1).strip()
-        rest_type = default_match.group(2)
+    # Handle default values with alternation: *"value" | type OR *value | type
+    # Try quoted default first: *"value" | rest
+    quoted_default = re.match(r'\*"([^"]*)"\s*\|\s*(.+)', type_def)
+    if quoted_default:
+        default_val = quoted_default.group(1)
+        rest_type = quoted_default.group(2)
+        prop["default"] = default_val
+
+        # Check if rest_type contains type keywords (type union, not enum)
+        # Pattern: *"value" | string OR *"value" | "-" | string
+        # Type keywords: string, int, bool, net.IPv4, net.FQDN, net.IPCIDR
+        type_keywords = r'\b(string|int|bool|net\.IPv4|net\.FQDN|net\.IPCIDR)\b'
+        if re.search(type_keywords, rest_type):
+            # This is a type union (e.g., "oidc:" | "-" | string), not an enum
+            # Just parse the type and keep the default value
+            type_props = parse_type_constraints(rest_type)
+            prop.update(type_props)
+            return prop
+
+        # Check if rest_type contains enum values: "value1" | "value2"
+        enum_match = re.findall(r'"([^"]*)"', rest_type)
+        if enum_match and "|" in rest_type:
+            prop["type"] = "string"
+            # Build enum list from rest_type only (not from full type_def)
+            prop["enum"] = enum_match
+            # Add default value to enum if not already present
+            if default_val not in enum_match:
+                prop["enum"].insert(0, default_val)
+            return prop
+
+        # Parse remaining type constraints
+        type_props = parse_type_constraints(rest_type)
+        prop.update(type_props)
+        return prop
+
+    # Try unquoted default: *value | rest
+    unquoted_default = re.match(r'\*([^\s|]+)\s*\|\s*(.+)', type_def)
+    if unquoted_default:
+        default_val = unquoted_default.group(1).strip()
+        rest_type = unquoted_default.group(2)
 
         # Try to parse the default value
         if default_val.lower() == "true":

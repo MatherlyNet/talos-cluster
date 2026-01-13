@@ -30,6 +30,32 @@ data:
     maxDeltaTimeSeconds: 43200
     failureFactor: 5
 
+    eventsEnabled: true
+    eventsListeners:
+      - "jboss-logging"
+    adminEventsEnabled: true
+    adminEventsDetailsEnabled: true
+
+    enabledEventTypes:
+      - "LOGIN"
+      - "LOGIN_ERROR"
+      - "LOGOUT"
+      - "LOGOUT_ERROR"
+      - "CODE_TO_TOKEN"
+      - "CODE_TO_TOKEN_ERROR"
+      - "REFRESH_TOKEN"
+      - "REFRESH_TOKEN_ERROR"
+      - "UPDATE_PASSWORD"
+      - "UPDATE_PASSWORD_ERROR"
+      - "REGISTER"
+      - "REGISTER_ERROR"
+      - "IDENTITY_PROVIDER_LOGIN"
+      - "IDENTITY_PROVIDER_LOGIN_ERROR"
+      - "UPDATE_PROFILE"
+      - "UPDATE_PROFILE_ERROR"
+
+    eventsExpiration: 604800  # days converted to seconds
+
     roles:
       realm:
         - name: "admin"
@@ -42,6 +68,32 @@ data:
           description: "Read-only access to dashboards and status pages"
         - name: "user"
           description: "Basic authenticated user access to standard applications"
+
+    groups:
+      - name: "admins"
+        path: "/admins"
+        attributes:
+          description: ["Platform administrators with full access"]
+        realmRoles:
+          - "admin"
+      - name: "developers"
+        path: "/developers"
+        attributes:
+          description: ["Development team with edit access"]
+        realmRoles:
+          - "developer"
+      - name: "operators"
+        path: "/operators"
+        attributes:
+          description: ["Operations/SRE team with operational access"]
+        realmRoles:
+          - "operator"
+      - name: "viewers"
+        path: "/viewers"
+        attributes:
+          description: ["Read-only access to dashboards and metrics"]
+        realmRoles:
+          - "viewer"
 
     clientScopes:
       - name: "groups"
@@ -284,6 +336,7 @@ data:
         redirectUris:
           - "http://localhost:8000/*"
           - "http://localhost:18000/*"
+          - "https://headlamp.matherly.net/oidc-callback"
         webOrigins:
           - "+"
         attributes:

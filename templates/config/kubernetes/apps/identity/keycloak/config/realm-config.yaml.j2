@@ -47,6 +47,41 @@ data:
     failureFactor: 5
 
     #| =========================================================================== #|
+    #| EVENTS CONFIGURATION - Security Auditing                                   #|
+    #| Logs authentication events for compliance and troubleshooting               #|
+    #| Events are written to Keycloak server logs and available via Admin API      #|
+    #| =========================================================================== #|
+    eventsEnabled: true
+    eventsListeners:
+      - "jboss-logging"
+    adminEventsEnabled: true
+    adminEventsDetailsEnabled: true
+
+    #| Event types to capture (authentication and token lifecycle) #|
+    enabledEventTypes:
+      - "LOGIN"
+      - "LOGIN_ERROR"
+      - "LOGOUT"
+      - "LOGOUT_ERROR"
+      - "CODE_TO_TOKEN"
+      - "CODE_TO_TOKEN_ERROR"
+      - "REFRESH_TOKEN"
+      - "REFRESH_TOKEN_ERROR"
+      - "UPDATE_PASSWORD"
+      - "UPDATE_PASSWORD_ERROR"
+      - "REGISTER"
+      - "REGISTER_ERROR"
+      - "IDENTITY_PROVIDER_LOGIN"
+      - "IDENTITY_PROVIDER_LOGIN_ERROR"
+      - "UPDATE_PROFILE"
+      - "UPDATE_PROFILE_ERROR"
+
+#% if keycloak_events_retention_days is defined and keycloak_events_retention_days %#
+    #| Event retention policy - automatic cleanup after configured days #|
+    eventsExpiration: #{ keycloak_events_retention_days * 86400 }#  # days converted to seconds
+#% endif %#
+
+    #| =========================================================================== #|
     #| REALM ROLES - Including auto-added IdP mapper roles                         #|
     #| =========================================================================== #|
 #% set configured_role_names = [] %#
@@ -101,6 +136,43 @@ data:
 #%   for role in idp_mapper_roles %#
         - name: "#{ role }#"
           description: "IdP mapper role (auto-added from *_default_role/*_role_mapping)"
+#%   endfor %#
+#% endif %#
+
+    #| =========================================================================== #|
+    #| REALM GROUPS - Organizational Structure                                     #|
+    #| Groups provide organizational hierarchy and default role assignment         #|
+    #| Users inherit roles from their group membership                             #|
+    #| REF: https://www.keycloak.org/docs/latest/server_admin/#groups              #|
+    #| =========================================================================== #|
+#% if keycloak_realm_groups is defined and keycloak_realm_groups %#
+    groups:
+#%   for group in keycloak_realm_groups %#
+      - name: "#{ group.name }#"
+        path: "/#{ group.name }#"
+#%     if group.description is defined %#
+        attributes:
+          description: ["#{ group.description }#"]
+#%     endif %#
+#%     if group.realm_roles is defined and group.realm_roles %#
+        realmRoles:
+#%       for role in group.realm_roles %#
+          - "#{ role }#"
+#%       endfor %#
+#%     endif %#
+#%     if group.subgroups is defined and group.subgroups %#
+        subGroups:
+#%       for subgroup in group.subgroups %#
+          - name: "#{ subgroup.name }#"
+            path: "/#{ group.name }#/#{ subgroup.name }#"
+#%         if subgroup.realm_roles is defined and subgroup.realm_roles %#
+            realmRoles:
+#%           for role in subgroup.realm_roles %#
+              - "#{ role }#"
+#%           endfor %#
+#%         endif %#
+#%       endfor %#
+#%     endif %#
 #%   endfor %#
 #% endif %#
 
@@ -531,10 +603,11 @@ data:
         serviceAccountsEnabled: false
         implicitFlowEnabled: false
         protocol: "openid-connect"
-        #| Redirect URIs for kubectl oidc-login and kubelogin plugins #|
+        #| Redirect URIs for kubectl oidc-login, kubelogin, and Headlamp web UI #|
         redirectUris:
           - "http://localhost:8000/*"
           - "http://localhost:18000/*"
+          - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/oidc-callback"
         #| Web origins not critical for API server validation #|
         webOrigins:
           - "+"

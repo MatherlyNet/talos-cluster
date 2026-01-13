@@ -54,13 +54,14 @@ spec:
     config:
       oidc:
         #| Client ID registered in Keycloak #|
-        #| Uses dedicated "headlamp" client for browser-based OAuth flow #|
-        #| Separate from "kubernetes" client used for API Server token validation #|
-        #| REF: https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/ #|
-        clientID: #{ headlamp_oidc_client_id | default('headlamp') }#
+        #| Uses "kubernetes" client for API Server OIDC authentication #|
+        #| Shared with kubectl oidc-login for consistent audience claims #|
+        #| Ensures tokens have aud=kubernetes to match API Server validation #|
+        #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md #|
+        clientID: #{ kubernetes_oidc_client_id | default('kubernetes') }#
 
         #| Client secret - value from cluster.yaml (SOPS encrypted) #|
-        clientSecret: "#{ headlamp_oidc_client_secret }#"
+        clientSecret: "#{ kubernetes_oidc_client_secret }#"
 
         #| Keycloak issuer URL #|
         issuerURL: https://#{ keycloak_subdomain | default('sso') }#.${SECRET_DOMAIN}/realms/#{ keycloak_realm | default('matherlynet') }#

@@ -9,4 +9,5 @@ resources:
   - ./referencegrant.yaml
   - ./dashboard-troubleshooting.yaml
   - ./dashboard-capacity-planning.yaml
+  - ./networkpolicy.yaml
   - ./networkpolicy-postgres.yaml

@@ -228,6 +228,23 @@ Replaces KeycloakRealmImport CRD. Supports incremental updates.
 
 See: `docs/research/keycloak-configuration-as-code-gitops-jan-2026.md`
 
+#### Keycloak Events Retention
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `keycloak_events_retention_days` | Automatically delete events older than N days | - (indefinite) |
+
+**Purpose:** Compliance and storage management by automatically cleaning up old authentication events.
+
+**Example:**
+```yaml
+keycloak_events_retention_days: 7  # Retain events for 7 days
+```
+
+Converted to seconds internally (`days * 86400`). Valid range: 1-365 days. If not set, events are retained indefinitely.
+
+See: `docs/guides/keycloak-security-hardening-jan-2026.md`
+
 #### Social Identity Providers
 
 | Variable | Description |
@@ -248,6 +265,45 @@ See: `docs/research/keycloak-social-identity-providers-integration-jan-2026.md`
 | `github_org_role_mapping` | Map GitHub org to role |
 | `microsoft_default_role` | Hardcoded role for Microsoft users |
 | `microsoft_group_role_mappings` | Map Entra ID groups to roles |
+
+#### Realm Roles and Groups (RBAC)
+
+| Variable | Description |
+| -------- | ----------- |
+| `keycloak_realm_roles` | List of realm roles with name and description |
+| `keycloak_realm_groups` | List of groups with name, description, realm_roles, and optional subgroups |
+
+**Purpose:** Defines RBAC structure for user access control across all OIDC-protected applications.
+
+**keycloak_realm_roles** - Individual permissions:
+```yaml
+keycloak_realm_roles:
+  - name: "admin"
+    description: "Full administrative access"
+  - name: "developer"
+    description: "Development team access"
+```
+
+**keycloak_realm_groups** - Organizational structure with role inheritance:
+```yaml
+keycloak_realm_groups:
+  - name: "admins"
+    description: "Platform administrators"
+    realm_roles:
+      - "admin"
+  - name: "developers"
+    description: "Development team"
+    realm_roles:
+      - "developer"
+    subgroups:  # Optional nested groups
+      - name: "frontend"
+        realm_roles:
+          - "frontend-developer"
+```
+
+Users inherit all roles from their group membership. Groups are optional and provide enterprise-grade RBAC when teams scale beyond individual role assignment.
+
+See: `docs/guides/keycloak-security-hardening-jan-2026.md`
 
 #### Kubernetes API Server OIDC Authentication
 

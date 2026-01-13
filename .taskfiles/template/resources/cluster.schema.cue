@@ -313,7 +313,7 @@ import (
 	// Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client
 	// Options: "" (disabled), "S256" (SHA256), "plain" (not recommended)
 	// Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)
-	headlamp_pkce_method?: *"" | "" | "S256" | "plain"
+	headlamp_pkce_method?: *"" | "S256" | "plain"
 
 	// Keycloak Configuration Version - Increment to force Job recreation
 	// Used in Job annotation to trigger Flux reconciliation on config changes
@@ -326,6 +326,26 @@ import (
 		name:        string & !="" & =~"^[a-z][a-z0-9-]*$"  // lowercase, alphanumeric, hyphens
 		description: string & !=""
 	}]
+
+	// Keycloak Realm Groups - Organizational structure for group-based RBAC
+	// Groups provide hierarchical organization with automatic role assignment
+	// Users inherit all roles from their group membership
+	// REF: https://www.keycloak.org/docs/latest/server_admin/#groups
+	keycloak_realm_groups?: [...{
+		name:        string & !="" & =~"^[a-z][a-z0-9-]*$"  // lowercase, alphanumeric, hyphens
+		description?: string & !=""
+		realm_roles?: [...string]  // List of role names to assign to group members
+		subgroups?: [...{
+			name:        string & !="" & =~"^[a-z][a-z0-9-]*$"
+			realm_roles?: [...string]
+		}]
+	}]
+
+	// Keycloak Events Retention - Automatic cleanup of old events
+	// Automatically deletes events older than specified days for compliance and storage management
+	// If not set, events are retained indefinitely
+	// REF: docs/guides/keycloak-security-hardening-jan-2026.md
+	keycloak_events_retention_days?: int & >=1 & <=365
 
 	// Grafana Dashboard Monitoring - Component-specific dashboard toggles
 	// Each requires monitoring_enabled: true as a prerequisite

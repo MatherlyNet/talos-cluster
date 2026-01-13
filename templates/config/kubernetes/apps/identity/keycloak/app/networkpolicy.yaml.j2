@@ -1,0 +1,127 @@
+#% if keycloak_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| CILIUM NETWORK POLICY - Keycloak Application                                  #|
+#| Controls egress for Keycloak pods to database, external IdPs, and services    #|
+#| REF: docs/guides/keycloak-security-hardening-jan-2026.md                      #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: keycloak
+  namespace: identity
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: idp
+spec:
+  description: "Keycloak Application: Database access, external IdP federation, internal services"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: keycloak
+  enableDefaultDeny:
+    egress: #{ enforce | lower }#
+  egress:
+    #| =========================================================================== #|
+    #| DNS RESOLUTION                                                              #|
+    #| =========================================================================== #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+
+    #| =========================================================================== #|
+    #| POSTGRESQL DATABASE ACCESS                                                  #|
+    #| =========================================================================== #|
+#% if (keycloak_db_mode | default('embedded')) == 'cnpg' %#
+    #| CloudNativePG cluster access #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: keycloak-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% else %#
+    #| Embedded PostgreSQL StatefulSet access #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: keycloak-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+#% endif %#
+
+    #| =========================================================================== #|
+    #| KEYCLOAK CLUSTER REPLICATION (HA mode with Infinispan)                     #|
+    #| =========================================================================== #|
+#% if (keycloak_replicas | default(1)) > 1 %#
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/instance: keycloak
+      toPorts:
+        - ports:
+            - port: "7800"
+              protocol: TCP
+#% endif %#
+
+    #| =========================================================================== #|
+    #| EXTERNAL IDENTITY PROVIDER FEDERATION                                       #|
+    #| Required when google_idp_enabled, github_idp_enabled, or                   #|
+    #| microsoft_idp_enabled are true                                              #|
+    #| =========================================================================== #|
+#% if google_idp_enabled | default(false) %#
+    #| Google OAuth/OIDC endpoints #|
+    - toFQDNs:
+        - matchPattern: "*.googleapis.com"
+        - matchName: "accounts.google.com"
+        - matchName: "oauth2.googleapis.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+#% endif %#
+#% if github_idp_enabled | default(false) %#
+    #| GitHub OAuth endpoints #|
+    - toFQDNs:
+        - matchPattern: "*.github.com"
+        - matchName: "github.com"
+        - matchName: "api.github.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+#% endif %#
+#% if microsoft_idp_enabled | default(false) %#
+    #| Microsoft Entra ID (Azure AD) endpoints #|
+    - toFQDNs:
+        - matchName: "login.microsoftonline.com"
+        - matchName: "graph.microsoft.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+#% endif %#
+
+    #| =========================================================================== #|
+    #| OBSERVABILITY - Metrics and Tracing                                         #|
+    #| =========================================================================== #|
+#% if tracing_enabled | default(false) and keycloak_tracing_enabled | default(false) %#
+    #| OpenTelemetry tracing to Tempo #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: tempo
+            io.kubernetes.pod.namespace: #{ observability_namespace | default('monitoring') }#
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+#% endif %#
+#% endif %#

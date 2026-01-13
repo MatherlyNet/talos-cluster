@@ -1035,6 +1035,37 @@ cloudflare_gateway_addr: ""
 #     description: "Basic authenticated user access to standard applications"
 
 # =============================================================================
+# KEYCLOAK REALM GROUPS - Optional organizational structure
+# =============================================================================
+# Groups provide organizational hierarchy with default role assignments.
+# Users inherit roles from group membership for easier access management.
+# (OPTIONAL) / Only needed when using groups-based RBAC
+# keycloak_realm_groups:
+#   - name: "admins"
+#     description: "Platform administrators with full access"
+#     realm_roles:
+#       - "admin"
+#   - name: "developers"
+#     description: "Development team with edit access"
+#     realm_roles:
+#       - "developer"
+#   - name: "operators"
+#     description: "Operations/SRE team with operational access"
+#     realm_roles:
+#       - "operator"
+#   - name: "viewers"
+#     description: "Read-only access to dashboards and metrics"
+#     realm_roles:
+#       - "viewer"
+
+# =============================================================================
+# KEYCLOAK EVENTS RETENTION - Optional automatic cleanup
+# =============================================================================
+# Automatically delete events older than specified days for compliance and storage management.
+# (OPTIONAL) / If not set, events are retained indefinitely
+# keycloak_events_retention_days: 7
+
+# =============================================================================
 # OIDC/JWT CONFIGURATION - Optional for API authentication via SecurityPolicy
 # =============================================================================
 # JWT-based authentication for API endpoints, validating tokens against JWKS.
