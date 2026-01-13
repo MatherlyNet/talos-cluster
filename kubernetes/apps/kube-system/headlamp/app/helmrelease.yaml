@@ -72,6 +72,10 @@ spec:
           parallel: true
           maxConcurrent: 2
 
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+
     env:
       - name: HEADLAMP_LOG_LEVEL
         value: "warn"

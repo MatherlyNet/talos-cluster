@@ -109,6 +109,12 @@ spec:
           parallel: true
           maxConcurrent: 2
 
+      #| Mount tmp volume for npm cache with readOnlyRootFilesystem: true #|
+      #| REF: https://github.com/kubernetes-sigs/headlamp/issues/3999 #|
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+
     #| ========================================================================= #|
     #| Environment Configuration                                                  #|
     #| Suppress informational kubeconfig loading errors (expected in-cluster)    #|
