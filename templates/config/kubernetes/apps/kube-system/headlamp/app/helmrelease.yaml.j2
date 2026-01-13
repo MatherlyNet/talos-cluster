@@ -53,10 +53,12 @@ spec:
     #| ========================================================================= #|
     config:
       oidc:
-        #| Client ID registered in Keycloak #|
-        #| Uses "kubernetes" client for API Server OIDC authentication #|
-        #| Shared with kubectl oidc-login for consistent audience claims #|
-        #| Ensures tokens have aud=kubernetes to match API Server validation #|
+        #| SHARED CLIENT ARCHITECTURE #|
+        #| Uses "kubernetes" client (shared with kubectl/kubelogin) #|
+        #| CRITICAL: Headlamp MUST use kubernetes client because: #|
+        #|   - Headlamp passes OIDC tokens to Kubernetes API Server #|
+        #|   - API Server only accepts tokens with aud: ["kubernetes"] #|
+        #|   - Separate client would cause 401 Unauthorized errors #|
         #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md #|
         clientID: #{ kubernetes_oidc_client_id | default('kubernetes') }#
 

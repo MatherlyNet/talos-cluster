@@ -6,14 +6,14 @@
 **Keycloak Version:** 26.5.0
 **Effort:** 1-2 hours
 
-> **UPDATE (January 12, 2026):** This guide has been updated to reflect the new Kubernetes API Server OIDC authentication architecture introduced in commits `f6212919` and `08767d2f`. The following architectural changes were implemented:
+> **UPDATE (January 13, 2026):** This guide has been corrected to reflect the actual SHARED CLIENT architecture for Headlamp and Kubernetes API Server OIDC authentication. Previous documentation incorrectly described a separate `headlamp` client that caused authentication failures. The following architectural changes were implemented:
 >
-> 1. **New dedicated `kubernetes` OIDC client** for Kubernetes API Server authentication
-> 2. **Headlamp now uses dedicated `headlamp` client** instead of sharing the `kubernetes` client
-> 3. **Configurable PKCE support** with `headlamp_pkce_method` variable (defaults to empty/disabled for Headlamp v0.39.0)
-> 4. **Kubernetes API Server OIDC client** includes Headlamp's redirect URI for web-based kubectl token retrieval
+> 1. **Single shared `kubernetes` OIDC client** for ALL Kubernetes API Server authentication
+> 2. **Headlamp uses the shared `kubernetes` client** (NOT a separate client) to ensure tokens have correct audience claims
+> 3. **Architecture rationale:** Headlamp passes OIDC tokens to the Kubernetes API Server, which only accepts tokens with `aud: ["kubernetes"]`
+> 4. **Multiple redirect URIs** in the single `kubernetes` client support both CLI (localhost) and web UI (Headlamp) OAuth flows
 >
-> The security analysis and implementation steps remain valid but have been updated to reflect the current architecture.
+> The security analysis and implementation steps remain valid and have been updated to reflect the correct shared-client architecture.
 
 ---
 
@@ -39,39 +39,50 @@ All changes follow GitOps principles and are implemented via Jinja2 templates.
 
 ---
 
-## Architecture Changes (January 2026)
+## Architecture (January 2026)
 
-### Before: Shared Client Architecture
-
-```
-Headlamp → kubernetes client (shared with kubectl)
-kubectl  → kubernetes client (shared with Headlamp)
-```
-
-**Issue:** Conflicting redirect URIs (web vs localhost), token audience confusion
-
-### After: Dedicated Client Architecture
+### Shared Client Architecture (Current Implementation)
 
 ```
-Headlamp → kubernetes client (browser OAuth → API Server validation)
-         → headlamp client (Headlamp web UI OAuth)
-
-kubectl  → kubernetes client (localhost OAuth → API Server validation)
+┌─────────────────────────────────────────────────────────────────┐
+│                    SINGLE KEYCLOAK CLIENT                        │
+│                    clientId: "kubernetes"                        │
+│                    aud: ["kubernetes"]                           │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+        ┌───────▼────────┐            ┌────────▼─────────┐
+        │   Headlamp     │            │     kubectl      │
+        │   (Web UI)     │            │  (CLI + oidc)    │
+        └───────┬────────┘            └────────┬─────────┘
+                │                               │
+                └───────────────┬───────────────┘
+                                │
+                    ┌───────────▼────────────┐
+                    │  Kubernetes API Server │
+                    │  Validates aud claim:  │
+                    │  aud == "kubernetes"   │
+                    └────────────────────────┘
 ```
+
+**Why Shared Client:**
+1. ✅ **Token validation requirement:** API Server only accepts tokens with `aud: ["kubernetes"]`
+2. ✅ **Headlamp architecture:** Headlamp passes OIDC tokens directly to Kubernetes API for all operations
+3. ✅ **Audience claim consistency:** All users (web + CLI) use same client, ensuring consistent token validation
+4. ✅ **Multiple redirect URIs:** Single client supports both localhost (CLI) and Headlamp web (browser) flows
 
 **Benefits:**
-- ✅ Clean separation of browser vs CLI OAuth flows
-- ✅ Headlamp uses `headlamp` client for web UI authentication
-- ✅ `kubernetes` client dedicated to API Server token validation
-- ✅ Both clients share redirect URIs for flexibility
-- ✅ Configurable PKCE support via `headlamp_pkce_method`
+- ✅ All tokens have correct `aud: ["kubernetes"]` claim for API Server validation
+- ✅ No 401 Unauthorized errors from audience claim mismatches
+- ✅ Simplified configuration with single client for all K8s access
+- ✅ Standard OIDC pattern (multiple redirect URIs in one client)
 
 ### OIDC Client Matrix
 
 | Client | Used By | Redirect URIs | PKCE | Audience |
 | ------ | ------- | ------------- | ---- | -------- |
-| **kubernetes** | kubectl, kubelogin, API Server | `http://localhost:8000/*`, `http://localhost:18000/*`, Headlamp web | Disabled | `kubernetes` |
-| **headlamp** | Headlamp web UI only | `https://headlamp.domain/oidc-callback` | Configurable (default: disabled) | `headlamp` |
+| **kubernetes** | Headlamp (web), kubectl (CLI), kubelogin, oidc-login | `http://localhost:8000/*`, `http://localhost:18000/*`, `https://headlamp.domain/oidc-callback` | Disabled | `kubernetes` |
 
 ---
 
@@ -952,30 +963,32 @@ task reconcile
 | **LiteLLM** | `litellm_oidc_client_id` | LiteLLM Proxy UI | `/sso/callback` | S256 | Admin UI SSO |
 | **Langfuse** | `langfuse_keycloak_client_id` | Langfuse UI | `/api/auth/callback/keycloak` | S256 | LLM observability SSO |
 | **Obot** | `obot_keycloak_client_id` | Obot MCP Gateway | `/oauth2/callback` | S256 | AI agent platform SSO |
-| **Headlamp** | `headlamp_oidc_client_id` | Headlamp Web UI | `/oidc-callback` | Configurable (default: disabled) | **NEW:** Dedicated client for browser OAuth |
-| **Kubernetes API Server** | `kubernetes_oidc_client_id` | kubectl, kubelogin, API Server validation | `localhost:8000/*`, `localhost:18000/*`, Headlamp web | Disabled | **NEW:** Dedicated for API token validation |
+| **Kubernetes API Server** | `kubernetes_oidc_client_id` | **Headlamp (web), kubectl (CLI), kubelogin, oidc-login** | `localhost:8000/*`, `localhost:18000/*`, `https://headlamp.domain/oidc-callback` | Disabled | **SHARED client** - All K8s API authentication |
 | **Langfuse Sync** | `langfuse_sync_keycloak_client_id` | SCIM sync CronJob | None (service account) | N/A | Service account for role sync |
 
-### Key Changes (Commit `f6212919`)
+### Architecture Correction (January 13, 2026)
 
-**Before:**
+**Previous (INCORRECT) Documentation:**
 ```yaml
-# Headlamp used shared kubernetes client
-clientID: kubernetes_oidc_client_id
-clientSecret: kubernetes_oidc_client_secret
-```
-
-**After:**
-```yaml
-# Headlamp uses dedicated client
+# Headlamp uses separate dedicated client (WRONG)
 clientID: headlamp_oidc_client_id
 clientSecret: headlamp_oidc_client_secret
-
-# New kubernetes client in realm-config.yaml.j2 (lines 514-600)
-# - Used by: kubectl, kubelogin, API Server
-# - Includes Headlamp redirect URI for web-based token retrieval
-# - Separate audience claim for API Server validation
 ```
+
+**Current (CORRECT) Implementation:**
+```yaml
+# Headlamp uses SHARED kubernetes client (CORRECT)
+clientID: kubernetes_oidc_client_id
+clientSecret: kubernetes_oidc_client_secret
+
+# RATIONALE:
+# - Headlamp passes OIDC tokens to Kubernetes API Server
+# - API Server validates tokens with aud: ["kubernetes"]
+# - Separate client would cause 401 Unauthorized errors
+# - Single kubernetes client supports multiple redirect URIs
+```
+
+**Key Point:** The `kubernetes` client definition in `realm-config.yaml.j2` includes ALL redirect URIs (localhost for CLI + Headlamp web URL) to support both authentication flows with a single client.
 
 ---
 
@@ -1006,7 +1019,8 @@ clientSecret: headlamp_oidc_client_secret
 | Date | Change | Author |
 | ---- | ------ | ------ |
 | 2026-01-12 | Initial implementation guide created | Security Analysis |
-| 2026-01-12 | **UPDATED:** Added Kubernetes API Server OIDC architecture changes, dedicated Headlamp client, PKCE configuration, and OIDC client reference matrix | Architecture Update |
+| 2026-01-12 | ~~UPDATED: Added Kubernetes API Server OIDC architecture changes, dedicated Headlamp client~~ (INCORRECT) | Architecture Update |
+| 2026-01-13 | **CORRECTED:** Fixed architecture to reflect SHARED client design - Headlamp uses `kubernetes` client (NOT separate client). Updated all documentation to match actual implementation. | Architecture Correction |
 
 ---
 

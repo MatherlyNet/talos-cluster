@@ -311,6 +311,8 @@ import (
 	keycloak_config_cli_version?:  *"6.4.0-26.1.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
 
 	// Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client
+	// DEPRECATED: Headlamp uses shared "kubernetes" client (no separate PKCE config needed)
+	// This variable is no longer used and will be removed in future versions
 	// Options: "" (disabled), "S256" (SHA256), "plain" (not recommended)
 	// Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)
 	headlamp_pkce_method?: *"" | "S256" | "plain"
@@ -732,7 +734,11 @@ import (
 	headlamp_version?:             *"0.39.0" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 	headlamp_chart_version?:       *"0.39.0" | string & !=""
 	headlamp_replicas?:            *2 | int & >=1 & <=10
+	// DEPRECATED: Headlamp OIDC Client ID - No longer used (uses shared kubernetes_oidc_client_id)
+	// Configure kubernetes_oidc_client_id/secret instead (see Kubernetes API Server OIDC section)
 	headlamp_oidc_client_id?:      *"headlamp" | string & !=""
+	// DEPRECATED: Headlamp OIDC Client Secret - No longer used (uses shared kubernetes_oidc_client_secret)
+	// Configure kubernetes_oidc_client_secret instead (see Kubernetes API Server OIDC section)
 	headlamp_oidc_client_secret?:  string & !=""  // Generate with: openssl rand -hex 32
 
 	// Kubernetes API Server OIDC Authentication

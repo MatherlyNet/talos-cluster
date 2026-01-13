@@ -1003,10 +1003,9 @@ cloudflare_gateway_addr: ""
 # -----------------------------------------------------------------------------
 
 # -- Headlamp PKCE method (Proof Key for Code Exchange)
-#    Options: "" (disabled), "S256" (enabled with SHA256), "plain" (not recommended)
-#    Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)
-#    As a confidential client with client_secret, PKCE is not required
-#    (OPTIONAL) / (DEFAULT: "")
+#    DEPRECATED: Headlamp uses shared "kubernetes" client (no separate config needed)
+#    This variable is no longer used and will be removed in future versions
+#    (DEPRECATED) / (DEFAULT: "")
 # headlamp_pkce_method: ""
 
 # -- Configuration change trigger (bump to force Job recreation)
@@ -2310,13 +2309,18 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: 2)
 # headlamp_replicas: 2
 
-# -- OIDC client ID (registered in Keycloak)
-#    (OPTIONAL) / (DEFAULT: "headlamp")
+# -- OIDC client ID (DEPRECATED - uses shared kubernetes client)
+#    DEPRECATED: Headlamp now uses the shared "kubernetes" OIDC client
+#    Reason: Tokens must have aud: ["kubernetes"] to pass API Server validation
+#    Configure kubernetes_oidc_client_id/secret instead (see below)
+#    This variable is no longer used and will be removed in future versions
+#    (DEPRECATED)
 # headlamp_oidc_client_id: "headlamp"
 
-# -- OIDC client secret (SOPS-encrypted)
-#    Generate with: openssl rand -hex 32
-#    (REQUIRED when headlamp_enabled: true)
+# -- OIDC client secret (DEPRECATED - uses shared kubernetes client)
+#    DEPRECATED: Use kubernetes_oidc_client_secret instead (see below)
+#    This variable is no longer used and will be removed in future versions
+#    (DEPRECATED)
 # headlamp_oidc_client_secret: ""
 
 # =============================================================================

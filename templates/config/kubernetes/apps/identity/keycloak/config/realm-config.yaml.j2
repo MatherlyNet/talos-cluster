@@ -515,79 +515,19 @@ data:
               access.token.claim: "true"
               userinfo.token.claim: "true"
 #% endif %#
-#% if headlamp_enabled | default(false) %#
-      #| =========================================================================== #|
-      #| HEADLAMP OIDC CLIENT - Kubernetes Web UI with RBAC                         #|
-      #| Auto-created when headlamp_enabled + headlamp_oidc_client_secret set       #|
-      #| Provides native OIDC for user identity and RBAC support                    #|
-      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
-      #| REF: https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/    #|
-      #| =========================================================================== #|
-      - clientId: "$(env:HEADLAMP_CLIENT_ID)"
-        name: "Headlamp"
-        description: "OIDC client for Headlamp Kubernetes Web UI - provides user identity and RBAC capabilities"
-        enabled: true
-        publicClient: false
-        clientAuthenticatorType: "client-secret"
-        secret: "$(env:HEADLAMP_CLIENT_SECRET)"
-        standardFlowEnabled: true
-        directAccessGrantsEnabled: false
-        serviceAccountsEnabled: false
-        implicitFlowEnabled: false
-        protocol: "openid-connect"
-        redirectUris:
-          - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/oidc-callback"
-        webOrigins:
-          - "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#"
-        attributes:
-          #| PKCE configuration - controlled by headlamp_pkce_method in cluster.yaml #|
-          #| Headlamp v0.39.0 does not support PKCE - keep disabled (empty string) #|
-          #| Since this is a confidential client with client_secret, PKCE is not required #|
-          pkce.code.challenge.method: "#{ headlamp_pkce_method | default('') }#"
-          post.logout.redirect.uris: "https://#{ headlamp_hostname | default('headlamp') }#.#{ cloudflare_domain }#/*"
-        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
-        #| offline_access in default scopes enables refresh tokens for session persistence #|
-        #| groups scope provides OIDC-compliant group membership claims for RBAC #|
-        defaultClientScopes:
-          - "profile"
-          - "email"
-          - "offline_access"
-          - "groups"
-        optionalClientScopes:
-          - "address"
-          - "phone"
-        #| Protocol mappers for role and group claims (used for Headlamp RBAC) #|
-        protocolMappers:
-          #| Map realm roles to 'roles' claim for role-based access control #|
-          - name: "realm-roles"
-            protocol: "openid-connect"
-            protocolMapper: "oidc-usermodel-realm-role-mapper"
-            consentRequired: false
-            config:
-              claim.name: "roles"
-              jsonType.label: "String"
-              multivalued: "true"
-              id.token.claim: "true"
-              access.token.claim: "true"
-              userinfo.token.claim: "true"
-          #| Map groups to 'groups' claim for group-based access control #|
-          - name: "groups"
-            protocol: "openid-connect"
-            protocolMapper: "oidc-group-membership-mapper"
-            consentRequired: false
-            config:
-              claim.name: "groups"
-              full.path: "false"
-              id.token.claim: "true"
-              access.token.claim: "true"
-              userinfo.token.claim: "true"
-#% endif %#
 #% endif %#
 #% if kubernetes_oidc_enabled | default(false) %#
       #| =========================================================================== #|
-      #| KUBERNETES API SERVER OIDC CLIENT                                           #|
-      #| Dedicated client for Kubernetes API Server OIDC authentication              #|
-      #| Used by: Headlamp, kubectl with oidc-login, kubelogin, and future tools    #|
+      #| KUBERNETES API SERVER OIDC CLIENT - Shared Client Architecture             #|
+      #| SHARED client for Kubernetes API Server OIDC authentication                #|
+      #| Used by: Headlamp (web UI), kubectl (CLI), kubelogin, oidc-login plugin    #|
+      #|                                                                              #|
+      #| ARCHITECTURE RATIONALE:                                                      #|
+      #| - All tokens MUST have aud: ["kubernetes"] to be accepted by API Server     #|
+      #| - Headlamp passes OIDC tokens directly to K8s API for authentication        #|
+      #| - Therefore, Headlamp MUST use this client (not a separate client)          #|
+      #| - Multiple redirect URIs support both CLI (localhost) and web (Headlamp)    #|
+      #|                                                                              #|
       #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
       #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md    #|
       #| =========================================================================== #|

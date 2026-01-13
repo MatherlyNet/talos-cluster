@@ -962,7 +962,7 @@
         "S256",
         "plain"
       ],
-      "description": "Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client Options: \"\" (disabled), \"S256\" (SHA256), \"plain\" (not recommended) Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)"
+      "description": "Headlamp PKCE Method - PKCE configuration for Headlamp OIDC client DEPRECATED: Headlamp uses shared \"kubernetes\" client (no separate PKCE config needed) This variable is no longer used and will be removed in future versions Options: \"\" (disabled), \"S256\" (SHA256), \"plain\" (not recommended) Headlamp v0.39.0 does not support PKCE - keep disabled (empty string)"
     },
     "keycloak_config_version": {
       "default": 1,
@@ -1997,11 +1997,13 @@
     "headlamp_oidc_client_id": {
       "default": "headlamp",
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "DEPRECATED: Headlamp OIDC Client ID - No longer used (uses shared kubernetes_oidc_client_id) Configure kubernetes_oidc_client_id/secret instead (see Kubernetes API Server OIDC section)"
     },
     "headlamp_oidc_client_secret": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "DEPRECATED: Headlamp OIDC Client Secret - No longer used (uses shared kubernetes_oidc_client_secret) Configure kubernetes_oidc_client_secret instead (see Kubernetes API Server OIDC section)"
     },
     "kubernetes_oidc_enabled": {
       "default": false,
