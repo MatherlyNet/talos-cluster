@@ -7,4 +7,3 @@ resources:
   - ./networkpolicy.yaml
   - ./referencegrant.yaml
   - ./oidc-rbac.yaml
-  - ./ai-assistant-configmap.yaml

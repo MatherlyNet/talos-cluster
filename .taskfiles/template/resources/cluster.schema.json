@@ -2047,11 +2047,6 @@
       "minLength": 1,
       "description": "DEPRECATED: Headlamp OIDC Client Secret - No longer used (uses shared kubernetes_oidc_client_secret) Configure kubernetes_oidc_client_secret instead (see Kubernetes API Server OIDC section)"
     },
-    "headlamp_ai_assistant_api_key": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Headlamp AI Assistant API key for LiteLLM proxy (SOPS-encrypted) Used when both headlamp_enabled and litellm_enabled are true"
-    },
     "kubernetes_oidc_enabled": {
       "default": false,
       "type": "boolean",

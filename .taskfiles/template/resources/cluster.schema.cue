@@ -754,9 +754,6 @@ import (
 	// DEPRECATED: Headlamp OIDC Client Secret - No longer used (uses shared kubernetes_oidc_client_secret)
 	// Configure kubernetes_oidc_client_secret instead (see Kubernetes API Server OIDC section)
 	headlamp_oidc_client_secret?:  string & !=""  // Generate with: openssl rand -hex 32
-	// Headlamp AI Assistant API key for LiteLLM proxy (SOPS-encrypted)
-	// Used when both headlamp_enabled and litellm_enabled are true
-	headlamp_ai_assistant_api_key?: string & !=""  // Generate within LiteLLM Admin UI
 
 	// Kubernetes API Server OIDC Authentication
 	// REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md

@@ -592,26 +592,6 @@ class Plugin(makejinja.plugin.Plugin):
             data["litellm_presidio_enabled"] = False
             data["litellm_prompt_injection_check"] = False
 
-        # Headlamp AI Assistant - Redirect AI Assistant plugin to LiteLLM proxy
-        # Enabled when both headlamp_enabled and litellm_enabled are true AND API key is provided
-        headlamp_ai_assistant_enabled = (
-            data.get("headlamp_enabled", False)
-            and data.get("litellm_enabled", False)
-            and data.get("headlamp_ai_assistant_api_key")
-        )
-        data["headlamp_ai_assistant_enabled"] = headlamp_ai_assistant_enabled
-
-        if headlamp_ai_assistant_enabled:
-            # LiteLLM internal service URL (OpenAI-compatible endpoint)
-            data.setdefault(
-                "headlamp_ai_assistant_base_url",
-                "http://litellm.ai-system.svc.cluster.local:4000/v1"
-            )
-            # Provider type (OpenAI-compatible)
-            data.setdefault("headlamp_ai_assistant_provider", "openai")
-        else:
-            data["headlamp_ai_assistant_enabled"] = False
-
         # Obot MCP Gateway - AI agent platform with MCP server hosting
         # Enabled when obot_enabled is true
         obot_enabled = data.get("obot_enabled", False)

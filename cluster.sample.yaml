@@ -2388,13 +2388,6 @@ cloudflare_gateway_addr: ""
 #    (DEPRECATED)
 # headlamp_oidc_client_secret: ""
 
-# -- Headlamp AI Assistant API key for LiteLLM proxy
-#    (OPTIONAL) / Used when headlamp_enabled and litellm_enabled are both true
-#    This key authenticates the AI Assistant plugin to your LiteLLM proxy
-#    SECURITY: This value should be generated within LiteLLM Admin UI
-#    The AI Assistant will connect to LiteLLM at: http://litellm.ai-system.svc.cluster.local:4000/v1
-# headlamp_ai_assistant_api_key: ""
-
 # =============================================================================
 # KUBERNETES API SERVER OIDC AUTHENTICATION
 # =============================================================================
