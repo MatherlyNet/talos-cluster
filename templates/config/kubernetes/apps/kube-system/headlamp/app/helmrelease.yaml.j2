@@ -90,20 +90,16 @@ spec:
       enabled: true
       configContent: |
         plugins:
-          - name: prometheus
-            source: https://github.com/headlamp-k8s/plugins/releases/download/prometheus-0.8.1/prometheus-0.8.1.tar.gz
-            version: 0.8.1
-
           - name: flux
-            source: https://github.com/headlamp-k8s/plugins/releases/download/flux-0.5.0/headlamp-k8s-flux-0.5.0.tar.gz
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux
             version: 0.5.0
 
           - name: cert-manager
-            source: https://github.com/headlamp-k8s/plugins/releases/download/cert-manager-0.1.0/headlamp-k8s-cert-manager-0.1.0.tar.gz
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_cert-manager
             version: 0.1.0
 
           - name: ai-assistant
-            source: https://github.com/headlamp-k8s/plugins/releases/download/ai-assistant-0.1.0-alpha/headlamp-k8s-ai-assistant-0.1.0-alpha.tar.gz
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_ai_assistant
             version: 0.1.0-alpha
         installOptions:
           parallel: true
