@@ -17,7 +17,7 @@ metadata:
   annotations:
     # Headlamp distributed settings annotation for plugin configuration
     # REF: https://github.com/kubernetes-sigs/headlamp/issues/3979
-    _headlamp.dev.settings-plugin/headlamp-ai-assistant: "configmap:headlamp-ai-assistant-settings"
+    headlamp.dev/settings-plugin: "headlamp-ai-assistant"
 data:
   #| AI Provider Configuration #|
   provider: "#{ headlamp_ai_assistant_provider }#"
