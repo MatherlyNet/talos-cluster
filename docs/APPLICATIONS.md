@@ -292,7 +292,7 @@ roleRef:
   name: cluster-admin
 subjects:
 - kind: Group
-  name: "https://sso.example.com/realms/matherlynet#admins"
+  name: "https://sso.example.com/realms/matherlynet#admin"
   apiGroup: rbac.authorization.k8s.io
 ```
 

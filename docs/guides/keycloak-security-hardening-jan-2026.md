@@ -282,16 +282,16 @@ By default, Keycloak retains events indefinitely. To configure retention:
 
 ```yaml
 groups:
-  - name: "admins"
-    path: "/admins"
+  - name: "admin"
+    path: "/admin"
     attributes:
       description: ["Platform administrators with full access"]
     realmRoles:
       - "platform-admin"
       - "grafana-admin"
 
-  - name: "developers"
-    path: "/developers"
+  - name: "developer"
+    path: "/developer"
     attributes:
       description: ["Development team with edit access"]
     realmRoles:
@@ -373,23 +373,23 @@ groups:
 # Users inherit roles from group membership for easier access management.
 # (OPTIONAL) / Only needed when using groups-based RBAC
 keycloak_realm_groups:
-  - name: "admins"
+  - name: "admin"
     description: "Platform administrators with full access"
     realm_roles:
       - "platform-admin"
       - "grafana-admin"
 
-  - name: "developers"
+  - name: "developer"
     description: "Development team with edit access"
     realm_roles:
       - "grafana-editor"
 
-  - name: "operators"
+  - name: "operator"
     description: "Operations/SRE team with operational access"
     realm_roles:
       - "grafana-editor"
 
-  - name: "viewers"
+  - name: "viewer"
     description: "Read-only access to dashboards and metrics"
     realm_roles:
       - "grafana-viewer"
@@ -487,8 +487,8 @@ kubectl exec -n identity keycloak-0 -- \
 # [
 #   {
 #     "id": "...",
-#     "name": "admins",
-#     "path": "/admins",
+#     "name": "admin",
+#     "path": "/admin",
 #     "realmRoles": ["platform-admin", "grafana-admin"]
 #   },
 #   ...
@@ -502,7 +502,7 @@ kubectl exec -n identity keycloak-0 -- \
 1. Navigate to: `https://sso.matherly.net/admin/master/console/#/matherlynet/users`
 2. Select user → **Groups** tab
 3. Click **Join Group**
-4. Select group (`admins`, `developers`, etc.)
+4. Select group (`admin`, `developer`, etc.)
 5. User now inherits all roles from that group
 
 **Via Admin API:**
@@ -528,7 +528,7 @@ GROUP_ID=$(kubectl exec -n identity keycloak-0 -- \
   --realm master \
   --user admin \
   --password $(kubectl get secret keycloak-admin-credentials -n identity -o jsonpath='{.data.password}' | base64 -d) \
-  -q name=admins \
+  -q name=admin \
   --fields id \
   --format csv --noquotes | tail -1)
 

@@ -1105,19 +1105,19 @@ cloudflare_gateway_addr: ""
 # Users inherit roles from group membership for easier access management.
 # (OPTIONAL) / Only needed when using groups-based RBAC
 # keycloak_realm_groups:
-#   - name: "admins"
+#   - name: "admin"
 #     description: "Platform administrators with full access"
 #     realm_roles:
 #       - "admin"
-#   - name: "developers"
+#   - name: "developer"
 #     description: "Development team with edit access"
 #     realm_roles:
 #       - "developer"
-#   - name: "operators"
+#   - name: "operator"
 #     description: "Operations/SRE team with operational access"
 #     realm_roles:
 #       - "operator"
-#   - name: "viewers"
+#   - name: "viewer"
 #     description: "Read-only access to dashboards and metrics"
 #     realm_roles:
 #       - "viewer"

@@ -74,26 +74,26 @@ data:
           description: "Basic authenticated user access to standard applications"
 
     groups:
-      - name: "admins"
-        path: "/admins"
+      - name: "admin"
+        path: "/admin"
         attributes:
           description: ["Platform administrators with full access"]
         realmRoles:
           - "admin"
-      - name: "developers"
-        path: "/developers"
+      - name: "developer"
+        path: "/developer"
         attributes:
           description: ["Development team with edit access"]
         realmRoles:
           - "developer"
-      - name: "operators"
-        path: "/operators"
+      - name: "operator"
+        path: "/operator"
         attributes:
           description: ["Operations/SRE team with operational access"]
         realmRoles:
           - "operator"
-      - name: "viewers"
-        path: "/viewers"
+      - name: "viewer"
+        path: "/viewer"
         attributes:
           description: ["Read-only access to dashboards and metrics"]
         realmRoles:
