@@ -2,8 +2,9 @@
   "metadata": {
     "name": "matherlynet-talos-cluster",
     "type": "kubernetes-gitops",
-    "generated": "2026-01-03",
-    "version": "1.3.0",
+    "generated": "2026-01-13",
+    "version": "1.4.0",
+    "token_efficiency": "~3K tokens (vs 58K full codebase)",
     "ai_assistant_files": [
       "AGENTS.md",
       "CLAUDE.md",
@@ -332,7 +333,43 @@
       "comment": ["#|", "#|"]
     },
     "data_sources": ["cluster.yaml", "nodes.yaml"],
-    "template_count": 100
+    "template_count": 331
+  },
+  "statistics": {
+    "templates": 331,
+    "documentation_files": 100,
+    "applications": 26,
+    "namespaces": 15,
+    "ai_agents_commands": 26,
+    "configuration_variables": 100,
+    "network_endpoints": 40,
+    "generated_yaml_lines": 1253
+  },
+  "slash_commands": {
+    "expert-mode": "Efficient context loading (94% token reduction)",
+    "flux-status": "Quick GitOps health check",
+    "talos-status": "Quick node health check",
+    "infra-status": "Quick infrastructure health check",
+    "network-status": "Quick connectivity check",
+    "feature-advisor": "Explain feature effects and prerequisites",
+    "oidc-integration": "Configure OIDC/SSO for applications",
+    "helm-chart-lookup": "Find OCI repository URLs for Helm charts",
+    "scaffold-flux-app": "Scaffold new Flux CD application",
+    "node-config-helper": "Help configure nodes in nodes.yaml",
+    "network-policy-helper": "Generate CiliumNetworkPolicy",
+    "debug-context": "Auto-load debugging context based on error",
+    "cnpg-database": "Provision CloudNativePG PostgreSQL database"
+  },
+  "troubleshooting": {
+    "flux_not_syncing": "flux get ks -A, task reconcile",
+    "node_not_ready": "talosctl health -n <ip>",
+    "cni_issues": "cilium status, cilium connectivity test",
+    "network_policy_blocking": "hubble observe --verdict DROPPED",
+    "certificate_issues": "kubectl get certificates -A",
+    "oidc_oauth_flow_failed": "Check envoy logs; verify SecurityPolicy internal tokenEndpoint",
+    "oidc_api_server_auth": "Verify --oidc-* flags; check token aud claim",
+    "postgresql_issues": "kubectl cnpg status <cluster> -n <namespace>",
+    "template_errors": "task configure (check output)"
   },
   "bootstrap_sequence": [
     "mise trust && mise install",

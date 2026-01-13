@@ -2,8 +2,8 @@
 ---
 #| ============================================================================= #|
 #| OBOT OCI REPOSITORY - Custom Helm chart from jrmatherly/obot-entraid         #|
-#| NOTE: Chart version uses NO 'v' prefix (e.g., 0.2.32)                         #|
-#| NOTE: Image tag uses 'v' prefix (e.g., v0.2.32) - set in helmrelease.yaml.j2 #|
+#| NOTE: Chart version uses NO 'v' prefix (e.g., 0.2.33)                         #|
+#| NOTE: Image tag uses 'v' prefix (e.g., v0.2.33) - set in helmrelease.yaml.j2 #|
 #| REF: https://github.com/jrmatherly/obot-entraid                               #|
 #| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                   #|
 #| ============================================================================= #|
@@ -19,6 +19,6 @@ spec:
     operation: copy
   ref:
     #| Chart version (no 'v' prefix) - should match obot_version for consistency #|
-    tag: #{ obot_chart_version | default(obot_version) | default('0.2.32') }#
+    tag: #{ obot_chart_version | default(obot_version) | default('0.2.33') }#
   url: oci://ghcr.io/jrmatherly/charts/obot
 #% endif %#

@@ -1,8 +1,8 @@
 # Project Index: matherlynet-talos-cluster
 
-> Generated: 2026-01-03
-> Token-efficient repository index for AI-assisted development
-> **AI Assistant Files:** `AGENTS.md`, `CLAUDE.md`, `PROJECT_INDEX.md`, `PROJECT_INDEX.json`
+**Generated:** 2026-01-13
+**Type:** GitOps Kubernetes Infrastructure
+**Token Efficiency:** ~3K tokens (vs 58K full codebase read)
 
 ## Project Overview
 
@@ -277,3 +277,64 @@ The `docs/ai-context/` directory provides domain-specific deep-dive documentatio
 | `langfuse.md` | Langfuse | LLM observability, tracing, prompt management, evaluation |
 
 **Token Efficiency:** Each document focuses on one domain (~8-12KB each), more efficient than loading full documentation (~64KB).
+
+## Statistics
+
+- **Templates:** 331 Jinja2 files
+- **Documentation:** 100+ markdown files
+- **Applications:** 20+ Kubernetes apps across 15 namespaces
+- **AI Agents/Commands:** 26 specialized files (.claude/)
+- **Configuration Variables:** 100+ computed in plugin.py
+- **Network Endpoints:** 40+ (Gateway API, SecurityPolicy, OIDC)
+- **Generated Output:** ~1,253 lines of YAML (kubernetes/ + talos/ + bootstrap/)
+
+## Slash Commands (/.claude/)
+
+| Command | Purpose |
+| ------- | ------- |
+| `/expert-mode` | Efficient context loading (94% token reduction) |
+| `/flux-status` | Quick GitOps health check |
+| `/talos-status` | Quick node health check |
+| `/infra-status` | Quick infrastructure health check |
+| `/network-status` | Quick connectivity check |
+| `/feature-advisor` | Explain feature effects and prerequisites |
+| `/oidc-integration` | Configure OIDC/SSO for applications |
+| `/helm-chart-lookup` | Find OCI repository URLs for Helm charts |
+| `/scaffold-flux-app` | Scaffold new Flux CD application |
+| `/node-config-helper` | Help configure nodes in nodes.yaml |
+| `/network-policy-helper` | Generate CiliumNetworkPolicy |
+| `/debug-context` | Auto-load debugging context based on error |
+| `/cnpg-database` | Provision CloudNativePG PostgreSQL database |
+
+## Common Troubleshooting
+
+| Issue | Command |
+| ----- | ------- |
+| Flux not syncing | `flux get ks -A`, `task reconcile` |
+| Node not ready | `talosctl health -n <ip>` |
+| CNI issues | `cilium status`, `cilium connectivity test` |
+| Network policy blocking | `hubble observe --verdict DROPPED` |
+| Certificate issues | `kubectl get certificates -A` |
+| OIDC "OAuth flow failed" | Check envoy logs; verify SecurityPolicy internal tokenEndpoint |
+| OIDC API Server auth | Verify `--oidc-*` flags; check token aud claim |
+| PostgreSQL issues | `kubectl cnpg status <cluster> -n <namespace>` |
+| Template errors | `task configure` (check output) |
+
+## Version Information
+
+| Component | Version | Updated |
+| --------- | ------- | ------- |
+| Talos Linux | 1.12.0 | 2026-01 |
+| Kubernetes | 1.35.0 | 2026-01 |
+| Flux CD | 2.7.5 | 2026-01 |
+| Envoy Gateway | v0.0.0-latest | K8s 1.35 compat |
+| OpenTofu | 1.11.2 | 2026-01 |
+| Cilium CLI | 0.18.9 | 2026-01 |
+
+## Index Metadata
+
+- **Last Updated:** 2026-01-13
+- **Index Version:** 1.1.0
+- **Token Size:** ~4,500 tokens
+- **Upstream:** [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template)
+- **License:** MIT

@@ -641,7 +641,7 @@ See: `docs/research/langfuse-scim-role-sync-implementation-jan-2026.md`
 | -------- | ----------- | ------- |
 | `obot_enabled` | Enable Obot | false |
 | `obot_subdomain` | Subdomain | "obot" |
-| `obot_version` | Image version | "0.2.32" |
+| `obot_version` | Image version | "0.2.33" |
 | `obot_replicas` | Pod replicas | 1 |
 | `obot_db_password` | PostgreSQL password (SOPS) | - |
 | `obot_encryption_key` | Data encryption key (SOPS) | - |
