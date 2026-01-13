@@ -150,6 +150,19 @@ spec:
         - protocol: TCP
           port: 4000
 #% endif %#
+    #| Allow from Headlamp AI Assistant plugin (Kubernetes web UI) #|
+#% if headlamp_enabled | default(false) %#
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: headlamp
+      ports:
+        - protocol: TCP
+          port: 4000
+#% endif %#
   egress:
     #| Allow DNS queries #|
     - to:

@@ -88,6 +88,20 @@ spec:
             - port: "443"
               protocol: TCP
 #% endif %#
+#% if litellm_enabled | default(false) %#
+    #| ======================================================================= #|
+    #| LiteLLM AI Gateway (for AI Assistant plugin)                           #|
+    #| Allows Headlamp AI Assistant to query LLMs via LiteLLM proxy           #|
+    #| ======================================================================= #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: litellm
+            io.kubernetes.pod.namespace: ai-system
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
+#% endif %#
 #% if not enforce %#
     #| ======================================================================= #|
     #| AUDIT MODE: Allow all other egress for traffic observation             #|
@@ -148,6 +162,19 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+#% if litellm_enabled | default(false) %#
+    #| Allow LiteLLM AI Gateway (AI Assistant plugin) #|
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ai-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: litellm
+      ports:
+        - protocol: TCP
+          port: 4000
+#% endif %#
     #| Keycloak OIDC - External via Cloudflare Tunnel #|
     #| Standard K8s NetworkPolicy allows all external egress by default #|
     #| CiliumNetworkPolicy enforces FQDN-based Keycloak access above #|

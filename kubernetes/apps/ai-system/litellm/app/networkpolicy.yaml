@@ -110,6 +110,16 @@ spec:
       ports:
         - protocol: TCP
           port: 4000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: headlamp
+      ports:
+        - protocol: TCP
+          port: 4000
   egress:
     - to:
         - namespaceSelector:
