@@ -57,52 +57,57 @@ This guide provides step-by-step integration instructions for deploying **Kubesc
 
 ### Step 1: Create Directory Structure
 
-Following project conventions, operators are organized by their target namespace:
+Following project conventions, security tools are grouped in a shared `security` namespace:
 
 ```bash
 # Create directory structure
-mkdir -p templates/config/kubernetes/apps/kubescape/kubescape-operator/{app,repositories}
+mkdir -p templates/config/kubernetes/apps/security/{kubescape,trivy}/{app,repositories}
 ```
 
 ### Step 2: Create Parent Kustomization
 
-Create: `templates/config/kubernetes/apps/kubescape/kustomization.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kustomization.yaml.j2`
 
 ```yaml
-#% if kubescape_enabled | default(false) %#
+#% if kubescape_enabled | default(false) or trivy_enabled | default(false) %#
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./namespace.yaml
-  - ./kubescape-operator/ks.yaml
+#% if kubescape_enabled | default(false) %#
+  - ./kubescape/ks.yaml
+#% endif %#
+#% if trivy_enabled | default(false) %#
+  - ./trivy/ks.yaml
+#% endif %#
 #% endif %#
 ```
 
 ### Step 3: Create Namespace
 
-Create: `templates/config/kubernetes/apps/kubescape/namespace.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/namespace.yaml.j2`
 
 ```yaml
-#% if kubescape_enabled | default(false) %#
+#% if kubescape_enabled | default(false) or trivy_enabled | default(false) %#
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kubescape
+  name: security
   labels:
-    kubernetes.io/metadata.name: kubescape
+    kubernetes.io/metadata.name: security
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 #% endif %#
 ```
 
-**Note:** Kubescape requires `privileged` PSS profile for node-level scanning.
+**Note:** Both operators require `privileged` PSS profile for node-level scanning.
 
-### Step 4: Add Flux Kustomization
+### Step 4: Add Flux Kustomization (Kubescape)
 
-Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/ks.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kubescape/ks.yaml.j2`
 
 ```yaml
 #% if kubescape_enabled | default(false) %#
@@ -110,20 +115,20 @@ Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/ks.yaml.j
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app kubescape-operator
+  name: &app kubescape
   namespace: flux-system
 spec:
-  targetNamespace: kubescape
+  targetNamespace: security
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: kubescape-operator-repositories
-  path: ./kubernetes/apps/kubescape/kubescape-operator/app
+    - name: kubescape-repositories
+  path: ./kubernetes/apps/security/kubescape/app
   prune: true
   sourceRef:
     kind: GitRepository
-    name: matherlynet-cluster
+    name: flux-system
   wait: false
   interval: 30m
   retryInterval: 1m
@@ -131,9 +136,9 @@ spec:
 #% endif %#
 ```
 
-### Step 5: Create Repositories Kustomization
+### Step 5: Create Repositories Kustomization (Kubescape)
 
-Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/repositories/ks.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kubescape/repositories/ks.yaml.j2`
 
 ```yaml
 #% if kubescape_enabled | default(false) %#
@@ -141,18 +146,18 @@ Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/repositor
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app kubescape-operator-repositories
+  name: &app kubescape-repositories
   namespace: flux-system
 spec:
-  targetNamespace: kubescape
+  targetNamespace: security
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/kubescape/kubescape-operator/repositories
+  path: ./kubernetes/apps/security/kubescape/repositories
   prune: true
   sourceRef:
     kind: GitRepository
-    name: matherlynet-cluster
+    name: flux-system
   wait: true
   interval: 12h
   retryInterval: 1m
@@ -160,7 +165,7 @@ spec:
 #% endif %#
 ```
 
-Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/repositories/helmrepository.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kubescape/repositories/helmrepository.yaml.j2`
 
 ```yaml
 #% if kubescape_enabled | default(false) %#
@@ -169,14 +174,14 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: kubescape
-  namespace: kubescape
+  namespace: security
 spec:
   interval: 12h
   url: https://kubescape.github.io/helm-charts/
 #% endif %#
 ```
 
-Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/repositories/kustomization.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kubescape/repositories/kustomization.yaml.j2`
 
 ```yaml
 #% if kubescape_enabled | default(false) %#
@@ -190,7 +195,7 @@ resources:
 
 ### Step 6: Create HelmRelease
 
-Create: `templates/config/kubernetes/apps/kubescape/kubescape-operator/app/helmrelease.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/kubescape/app/helmrelease.yaml.j2`
 
 ```yaml
 #% if kubescape_enabled | default(false) %#
@@ -205,7 +210,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: kubescape
-  namespace: kubescape
+  namespace: security
 spec:
   chart:
     spec:
@@ -214,7 +219,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: kubescape
-        namespace: kubescape
+        namespace: security
   interval: 1h
   timeout: 15m
   install:
@@ -347,7 +352,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: kubescape-operator
-  namespace: kubescape
+  namespace: security
   labels:
     app.kubernetes.io/name: kubescape
     app.kubernetes.io/component: network-policy
@@ -411,7 +416,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: kubescape
-  namespace: kubescape
+  namespace: security
   labels:
     app.kubernetes.io/name: kubescape
     app.kubernetes.io/component: network-policy
@@ -497,19 +502,19 @@ kubescape_memory_limit: "1Gi"
 task configure
 
 # 3. Verify generated manifests
-ls -la kubernetes/apps/kubescape/
+ls -la kubernetes/apps/security/
 
 # 4. Apply via Flux
 task reconcile
 
 # 5. Monitor deployment
-kubectl get helmrelease -n kubescape kubescape -w
+kubectl get helmrelease -n security kubescape -w
 
 # 6. Verify pods are running
-kubectl get pods -n kubescape
+kubectl get pods -n security
 
 # 7. Check operator logs
-kubectl logs -n kubescape -l app.kubernetes.io/name=kubescape-operator --tail=100
+kubectl logs -n security -l app.kubernetes.io/name=kubescape-operator --tail=100
 ```
 
 ### Step 8: Verify Scanning
@@ -519,14 +524,14 @@ kubectl logs -n kubescape -l app.kubernetes.io/name=kubescape-operator --tail=10
 kubectl get crd | grep kubescape
 
 # Trigger manual scan
-kubectl create job -n kubescape manual-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
+kubectl create job -n security manual-scan --image=quay.io/kubescape/kubescape:latest -- scan framework nsa
 
 # View scan results
 kubectl get configurationscansummaries -A
 kubectl get vulnerabilityreports -A
 
 # Check scan schedules
-kubectl get cronjobs -n kubescape
+kubectl get cronjobs -n security
 ```
 
 ---
@@ -550,62 +555,13 @@ kubectl get cronjobs -n kubescape
 - Helm v3+ ✅
 - Network policies enabled ✅
 
-### Step 1: Create Directory Structure and Flux Resources
+### Step 1: Create Flux Kustomization (Trivy)
 
-#### Directory Structure
-```
-templates/config/kubernetes/apps/trivy-system/
-├── kustomization.yaml.j2           # Parent kustomization
-├── namespace.yaml.j2               # Namespace definition
-└── trivy-operator/
-    ├── ks.yaml.j2
-    ├── repositories/
-    │   ├── ks.yaml.j2
-    │   ├── kustomization.yaml.j2
-    │   └── helmrepository.yaml.j2
-    └── app/
-        ├── kustomization.yaml.j2
-        ├── helmrelease.yaml.j2
-        └── networkpolicy.yaml.j2
-```
-
-#### Parent Kustomization
-
-Create: `templates/config/kubernetes/apps/trivy-system/kustomization.yaml.j2`
-
-```yaml
-#% if trivy_enabled | default(false) %#
----
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - ./namespace.yaml.j2
-  - ./trivy-operator/ks.yaml.j2
-#% endif %#
-```
-
-#### Namespace Definition
-
-Create: `templates/config/kubernetes/apps/trivy-system/namespace.yaml.j2`
-
-```yaml
-#% if trivy_enabled | default(false) %#
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: trivy-system
-  labels:
-    kubernetes.io/metadata.name: trivy-system
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
-#% endif %#
-```
+**Note:** The parent kustomization and namespace were already created in the Kubescape section above.
 
 #### Flux Kustomization (Trivy Operator)
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/ks.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/ks.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) %#
@@ -616,14 +572,14 @@ Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/ks.yaml.j2
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: trivy-operator
+  name: &app trivy
   namespace: flux-system
 spec:
-  targetNamespace: trivy-system
+  targetNamespace: security
   commonMetadata:
     labels:
-      app.kubernetes.io/name: trivy-operator
-  path: ./kubernetes/apps/trivy-system/trivy-operator/app
+      app.kubernetes.io/name: *app
+  path: ./kubernetes/apps/security/trivy/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -633,13 +589,13 @@ spec:
   retryInterval: 1m
   timeout: 5m
   dependsOn:
-    - name: trivy-operator-repositories
+    - name: trivy-repositories
 #% endif %#
 ```
 
 #### Flux Kustomization (Repositories)
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/repositories/ks.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/repositories/ks.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) %#
@@ -647,19 +603,23 @@ Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/repositori
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: trivy-operator-repositories
+  name: &app trivy-repositories
   namespace: flux-system
 spec:
+  targetNamespace: security
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
   interval: 12h
   prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./kubernetes/apps/trivy-system/trivy-operator/repositories
+  path: ./kubernetes/apps/security/trivy/repositories
 #% endif %#
 ```
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/repositories/kustomization.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/repositories/kustomization.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) %#
@@ -667,11 +627,11 @@ Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/repositori
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./helmrepository.yaml.j2
+  - ./helmrepository.yaml
 #% endif %#
 ```
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/repositories/helmrepository.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/repositories/helmrepository.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) %#
@@ -680,7 +640,7 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: trivy
-  namespace: trivy-system
+  namespace: security
 spec:
   interval: 12h
   url: https://aquasecurity.github.io/helm-charts/
@@ -689,7 +649,7 @@ spec:
 
 ### Step 2: Create App Kustomization
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/app/kustomization.yaml.j2`
+Create: `templates/config/kubernetes/apps/security/trivy/app/kustomization.yaml.j2`
 
 ```yaml
 #% if trivy_enabled | default(false) %#
@@ -697,31 +657,14 @@ Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/app/kustom
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./helmrelease.yaml.j2
-  - ./networkpolicy.yaml.j2
+  - ./helmrelease.yaml
+  - ./networkpolicy.yaml
 #% endif %#
 ```
 
 ### Step 3: Create HelmRelease
 
-Create: `templates/config/kubernetes/apps/trivy-system/trivy-operator/app/helmrelease.yaml.j2`
-
-```yaml
-#% if trivy_enabled | default(false) %#
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: trivy-system
-  labels:
-    kubernetes.io/metadata.name: trivy-system
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
-#% endif %#
-```
-
-### Step 3: Create HelmRelease
+Create: `templates/config/kubernetes/apps/security/trivy/app/helmrelease.yaml.j2`
 
 Create: `templates/config/kubernetes/apps/security/trivy/app/helmrelease.yaml.j2`
 
