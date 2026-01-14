@@ -284,7 +284,7 @@ See [Proxmox API Token Permissions](#proxmox-api-token-permissions-critical) for
 
 ## References
 
-- [Implementation Guide](../docs/guides/opentofu-r2-state-backend.md)
-- [Research Document](../docs/research/cloudflare-r2-terraform-state.md)
+- [Implementation Guide](../../../docs/guides/opentofu-r2-state-backend.md)
+- [Research Document](../../../docs/research/cloudflare-r2-terraform-state.md)
 - [tfstate-worker](https://github.com/MatherlyNet/matherlynet-tfstate)
 - [OpenTofu HTTP Backend](https://opentofu.org/docs/language/settings/backends/http/)
