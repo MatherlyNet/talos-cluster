@@ -1,7 +1,7 @@
 # Envoy Gateway Observability & Security Implementation Guide
 
 > **Created:** 2026-01-03
-> **Based on:** [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md)
+> **Based on:** [Envoy Gateway Examples Analysis](../research/archive/completed/envoy-gateway-examples-analysis.md)
 > **Status:** Phases 1 & 3 DEPLOYED, Phase 2 templates complete (OIDC config pending)
 > **Version:** Envoy Gateway v0.0.0-latest (K8s 1.35 compatible)
 
@@ -35,7 +35,7 @@ This guide provides step-by-step implementation instructions for enhancing the E
 
 Enable structured JSON access logging for traffic analysis, debugging, and compliance. Logs are written to stdout and collected by the log aggregation system.
 
-> **Integration:** When the [observability stack](./observability-stack-implementation.md) is deployed, Alloy collects these JSON logs from pod stdout and forwards them to Loki. Query logs in Grafana using LogQL: `{namespace="network", app="envoy"}`
+> **Integration:** When the [observability stack](./archived/observability-stack-implementation-victoriametrics.md) is deployed, Alloy collects these JSON logs from pod stdout and forwards them to Loki. Query logs in Grafana using LogQL: `{namespace="network", app="envoy"}`
 
 ### Current State
 
@@ -363,9 +363,9 @@ Enable request tracing across services for latency analysis, dependency mapping,
 
 ### Prerequisites
 
-> **Note:** Distributed tracing is now fully documented in the [observability stack](./observability-stack-implementation.md#phase-5-tempo-for-distributed-tracing). Enable `tracing_enabled: true` in `cluster.yaml`.
+> **Note:** Distributed tracing is now fully documented in the [observability stack](./archived/observability-stack-implementation-victoriametrics.md#phase-5-tempo-for-distributed-tracing). Enable `tracing_enabled: true` in `cluster.yaml`.
 
-- [Observability stack](./observability-stack-implementation.md) deployed with `tracing_enabled: true`
+- [Observability stack](./archived/observability-stack-implementation-victoriametrics.md) deployed with `tracing_enabled: true`
 - Alloy deployed (receives OTLP traces, forwards to Tempo)
 - Tempo deployed (stores traces, queries from Grafana)
 - Grafana configured with Tempo datasource (automatic when stack deployed)
@@ -647,8 +647,8 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 
 ### Project Documentation
 - [Application Docs: kube-prometheus-stack](../APPLICATIONS.md#kube-prometheus-stack) - **Primary** - kube-prometheus-stack + Loki + Grafana platform
-- [Envoy Gateway Examples Analysis](../research/envoy-gateway-examples-analysis.md) - Source research document
-- [k8s-at-home Patterns Implementation](./k8s-at-home-patterns-implementation.md) - General k8s-at-home patterns
+- [Envoy Gateway Examples Analysis](../research/archive/completed/envoy-gateway-examples-analysis.md) - Source research document
+- [k8s-at-home Patterns Implementation](./archived/k8s-at-home-patterns-implementation.md) - General k8s-at-home patterns
 - [Bootstrap CRDs](../../templates/config/bootstrap/helmfile.d/00-crds.yaml.j2) - kube-prometheus-stack CRD installation
 
 ### External Documentation

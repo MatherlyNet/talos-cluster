@@ -1,6 +1,6 @@
 # OpenTofu State Backend with Cloudflare R2 + Worker Locking
 
-> **Implementation Guide** | Based on [cloudflare-r2-terraform-state.md](../research/cloudflare-r2-terraform-state.md)
+> **Implementation Guide** | Based on [cloudflare-r2-terraform-state.md](../research/archive/implemented/cloudflare-r2-terraform-state.md)
 > **Last Updated:** January 2026
 > **Status:** Implemented
 > **Approach:** Option B - R2 + Worker-based Locking (Recommended for Teams)
@@ -728,7 +728,7 @@ sops infrastructure/secrets.sops.yaml
 
 ## References
 
-- [Research Document](../research/cloudflare-r2-terraform-state.md) — Full analysis and alternatives
+- [Research Document](../research/archive/implemented/cloudflare-r2-terraform-state.md) — Full analysis and alternatives
 - [MatherlyNet tfstate Repository](https://github.com/MatherlyNet/matherlynet-tfstate) — Our tfstate-worker deployment
 - [tfstate-worker Upstream](https://github.com/cmackenzie1/tfstate-worker) — Original template
 - [Cloudflare R2 Documentation](https://developers.cloudflare.com/r2/)

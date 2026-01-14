@@ -14,13 +14,13 @@
 > **Implementation Guides:**
 > - [VolSync with RustFS](../guides/volsync-rustfs-implementation.md)
 > - [Talos Backup with RustFS](../guides/talos-backup-rustfs-implementation.md)
-> - [JWT SecurityPolicy](../guides/jwt-securitypolicy-implementation.md)
+> - [JWT SecurityPolicy](../guides/completed/jwt-securitypolicy-implementation.md)
 > - [tuppr Verification](../guides/tuppr-verification-guide.md)
-> - [Native OIDC SecurityPolicy](../guides/native-oidc-securitypolicy-implementation.md)
+> - [Native OIDC SecurityPolicy](../guides/completed/native-oidc-securitypolicy-implementation.md)
 > - [OAuth2-Proxy ext_authz](../guides/oauth2-proxy-ext-authz-implementation.md)
 > - [gRPC Routing](../guides/grpc-routing-implementation.md)
-> - [Keycloak OIDC Provider](../guides/keycloak-implementation.md)
-> - [CloudNativePG Operator](../guides/cnpg-implementation.md)
+> - [Keycloak OIDC Provider](../guides/completed/keycloak-implementation.md)
+> - [CloudNativePG Operator](../guides/completed/cnpg-implementation.md)
 >
 > **Shared Infrastructure (Deploy First):**
 > - CloudNativePG → Keycloak (database dependency)
@@ -109,7 +109,7 @@ This document tracks **remaining work only**. Completed components are documente
 ### 3. JWT SecurityPolicy (API Auth) - ✅ DEPLOYED AND OPERATIONAL
 
 > Source: [envoy-gateway-observability-security.md](../guides/envoy-gateway-observability-security.md#phase-2-jwt-securitypolicy)
-> **Implementation Guide:** [jwt-securitypolicy-implementation.md](../guides/jwt-securitypolicy-implementation.md)
+> **Implementation Guide:** [jwt-securitypolicy-implementation.md](../guides/completed/jwt-securitypolicy-implementation.md)
 
 **Status:** Fully deployed and operational (January 7, 2026). Using Keycloak as OIDC provider.
 
@@ -166,7 +166,7 @@ oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-conn
 
 ### 5. CloudNativePG Operator - ✅ DEPLOYED AND OPERATIONAL
 
-> **Implementation Guide:** [cnpg-implementation.md](../guides/cnpg-implementation.md)
+> **Implementation Guide:** [cnpg-implementation.md](../guides/completed/cnpg-implementation.md)
 
 **Status:** Fully deployed and operational (January 6, 2026). Shared infrastructure ready for Keycloak.
 
@@ -217,7 +217,7 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 
 ### 6. Keycloak OIDC Provider - ✅ DEPLOYED AND OPERATIONAL
 
-> **Implementation Guide:** [keycloak-implementation.md](../guides/keycloak-implementation.md)
+> **Implementation Guide:** [keycloak-implementation.md](../guides/completed/keycloak-implementation.md)
 
 **Status:** Fully deployed and operational (January 7, 2026). Using CNPG PostgreSQL backend with Google IdP enabled.
 
@@ -255,7 +255,7 @@ oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
 - Keycloak 26.5.0 has full OpenTelemetry support (graduated from preview)
 - Can export traces to existing Tempo deployment (`tempo.monitoring.svc:4317`)
 - New variables: `keycloak_tracing_enabled`, `keycloak_tracing_sample_rate`
-- See: [Keycloak Implementation Guide - Tracing Section](../guides/keycloak-implementation.md#opentelemetry-tracing-integration)
+- See: [Keycloak Implementation Guide - Tracing Section](../guides/completed/keycloak-implementation.md#opentelemetry-tracing-integration)
 
 **Effort:** Completed
 
@@ -358,7 +358,7 @@ These are optional enhancements documented in source guides:
 
 | Item | Source Guide | Implementation Guide | Notes |
 | ---- | ------------ | -------------------- | ----- |
-| **Native OIDC SecurityPolicy** | envoy-gateway-oidc-integration | [native-oidc-securitypolicy-implementation.md](../guides/native-oidc-securitypolicy-implementation.md) | Web SSO (session-based) - templates documented |
+| **Native OIDC SecurityPolicy** | envoy-gateway-oidc-integration | [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md) | Web SSO (session-based) - templates documented |
 | **OAuth2-Proxy ext_authz** | envoy-gateway-oidc-integration | [oauth2-proxy-ext-authz-implementation.md](../guides/oauth2-proxy-ext-authz-implementation.md) | Claims forwarding to backends |
 | **gRPC Routing** | envoy-gateway-examples-analysis | [grpc-routing-implementation.md](../guides/grpc-routing-implementation.md) | Adopt when gRPC services deployed |
 | Shared bjw-s Repository | k8s-at-home-remaining | - | Only for multiple bjw-s apps |
@@ -374,12 +374,12 @@ The project supports three OIDC authentication approaches:
 1. **JWT SecurityPolicy** (Item #3 above) - For API/service-to-service auth
    - Template exists: `securitypolicy-jwt.yaml.j2`
    - Validates Bearer tokens, extracts claims to headers
-   - **Guide:** [jwt-securitypolicy-implementation.md](../guides/jwt-securitypolicy-implementation.md)
+   - **Guide:** [jwt-securitypolicy-implementation.md](../guides/completed/jwt-securitypolicy-implementation.md)
 
 2. **Native OIDC SecurityPolicy** - For web browser SSO
    - Template patterns documented in implementation guide
    - Session-based auth with cookies, login redirect flow
-   - **Guide:** [native-oidc-securitypolicy-implementation.md](../guides/native-oidc-securitypolicy-implementation.md)
+   - **Guide:** [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
 
 3. **OAuth2-Proxy ext_authz** - For advanced claims forwarding
    - Deploys OAuth2-Proxy with ext_authz filter

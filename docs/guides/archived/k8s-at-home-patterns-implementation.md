@@ -3,7 +3,7 @@
 > **Guide Version:** 1.0.0
 > **Last Updated:** January 2026
 > **Status:** Partially Implemented (Phase 1 Complete, Phase 3A Enhanced)
-> **Source Research:** [k8s-at-home-patterns-research.md](../research/k8s-at-home-patterns-research.md)
+> **Source Research:** [k8s-at-home-patterns-research.md](../research/archive/k8s-at-home-patterns-research.md)
 > **Remaining Phases:** [k8s-at-home-remaining-implementation.md](../k8s-at-home-remaining-implementation.md)
 
 ---
@@ -1119,7 +1119,7 @@ templates/config/kubernetes/apps/
 
 ### Project Documentation
 
-- [Source Research](../research/k8s-at-home-patterns-research.md) - Community patterns analysis
+- [Source Research](../research/archive/k8s-at-home-patterns-research.md) - Community patterns analysis
 - [GitOps Components Guide](../gitops-components-implementation.md) - Phase 1 implementation
 - [Architecture](../ARCHITECTURE.md) - System design
 - [Configuration](../CONFIGURATION.md) - Schema reference

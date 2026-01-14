@@ -661,8 +661,8 @@ Consider creating a custom dashboard for:
 - [CoreDNS Metrics Plugin](https://coredns.io/plugins/metrics/)
 
 ### Project Documentation
-- [Keycloak Implementation Guide](./keycloak-implementation.md) - Keycloak deployment and tracing configuration
-- [CNPG Implementation Guide](./cnpg-implementation.md) - Dashboard ConfigMap pattern reference
+- [Keycloak Implementation Guide](./completed/keycloak-implementation.md) - Keycloak deployment and tracing configuration
+- [CNPG Implementation Guide](./completed/cnpg-implementation.md) - Dashboard ConfigMap pattern reference
 - [Envoy Gateway Observability](./envoy-gateway-observability-security.md) - Gateway metrics integration
 
 ---

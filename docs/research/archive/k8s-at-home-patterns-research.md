@@ -3,7 +3,7 @@
 > **Research Date:** January 2026 (Updated: January 3, 2026)
 > **Status:** Validated & Current
 > **Scope:** Analysis of k8s-at-home community repositories for adoption opportunities
-> **Related:** [gitops-examples-integration.md](./archive/implemented/gitops-examples-integration.md) (Proxmox/Talos-specific components)
+> **Related:** [gitops-examples-integration.md](./implemented/gitops-examples-integration.md) (Proxmox/Talos-specific components)
 
 ## Executive Summary
 
@@ -967,9 +967,9 @@ templates/config/kubernetes/flux/cluster/repositories/
 
 ## Cross-References
 
-- **Proxmox/Talos Components:** See [gitops-examples-integration.md](./archive/implemented/gitops-examples-integration.md)
-- **Proxmox VM Automation:** See [proxmox-vm-automation.md](./archive/implemented/proxmox-vm-automation.md)
-- **Ansible Integration:** See [ansible-proxmox-automation.md](./archive/ansible-proxmox-automation.md)
+- **Proxmox/Talos Components:** See [gitops-examples-integration.md](./implemented/gitops-examples-integration.md)
+- **Proxmox VM Automation:** See [proxmox-vm-automation.md](./implemented/proxmox-vm-automation.md)
+- **Ansible Integration:** See [ansible-proxmox-automation.md](./ansible-proxmox-automation.md)
 
 ---
 
