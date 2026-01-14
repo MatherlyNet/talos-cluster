@@ -654,7 +654,7 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 ### External Documentation
 - [Proxy Access Logs](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-accesslog/) - Official docs
 - [SecurityPolicy Reference](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/) - JWT/OIDC patterns
-- [Observability Tracing](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-tracing/) - Tracing setup
+- [Observability Tracing](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-trace/) - Tracing setup
 - [Compatibility Matrix](https://gateway.envoyproxy.io/news/releases/matrix/) - Version compatibility
 
 ---

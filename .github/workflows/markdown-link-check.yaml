@@ -39,6 +39,9 @@ jobs:
           file-path: "./README.md, ./CLAUDE.md, ./PROJECT_INDEX.md"
           max-depth: -1
           check-modified-files-only: "no"
+          # Exclude archived content from link validation
+          # Archived docs represent frozen snapshots and don't require ongoing link maintenance
+          file-exclude-pattern: "**/archived/**,**/archive/**,**/serena-archive/**"
 
       - name: Report results
         if: failure()

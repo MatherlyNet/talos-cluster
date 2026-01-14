@@ -1380,7 +1380,7 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 ### Project Documentation
 - [Keycloak Implementation](./keycloak-implementation.md) - Primary CNPG consumer
 - [RustFS Implementation](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md) - Backup storage
-- [Talos Backup with RustFS](./talos-backup-rustfs-implementation.md) - IAM pattern reference
+- [Talos Backup with RustFS](../talos-backup-rustfs-implementation.md) - IAM pattern reference
 - [Cilium Network Policies](../research/archive/cilium-network-policies-jan-2026.md) - Network isolation
 
 ---

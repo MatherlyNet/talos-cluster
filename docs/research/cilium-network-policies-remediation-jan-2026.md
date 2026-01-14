@@ -560,7 +560,7 @@ Both components use the dual policy pattern where applicable:
 - [Cilium Network Policy Documentation](https://docs.cilium.io/en/stable/security/policy/)
 - [NIST SP 800-207 Zero Trust Architecture](https://csrc.nist.gov/publications/detail/sp/800-207/final)
 - [Kubernetes Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
-- [MinIO Security Best Practices](https://min.io/docs/minio/kubernetes/upstream/administration/security.html)
+- [MinIO Security Best Practices](https://min.io/docs/minio/kubernetes/upstream/administration/identity-access-management.html)
 - Existing codebase patterns: `dragonfly/app/networkpolicy.yaml.j2`, `litellm/app/networkpolicy.yaml.j2`
 
 ---

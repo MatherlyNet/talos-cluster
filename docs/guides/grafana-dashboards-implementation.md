@@ -637,7 +637,7 @@ Consider creating a custom dashboard for:
 ## References
 
 ### Keycloak
-- [Keycloak Metrics Documentation](https://www.keycloak.org/observability/metrics)
+- [Keycloak Metrics Documentation](https://www.keycloak.org/observability/configuration-metrics)
 - [Keycloak Grafana Dashboards](https://www.keycloak.org/observability/grafana-dashboards)
 - [keycloak-grafana-dashboard Repository](https://github.com/keycloak/keycloak-grafana-dashboard)
 

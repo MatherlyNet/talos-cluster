@@ -927,7 +927,7 @@ resources:
 ### Project Documentation
 
 - [Parent Implementation Guide](./archived/k8s-at-home-patterns-implementation.md) - Full patterns overview
-- [Source Research](../research/k8s-at-home-patterns-research.md) - Community patterns analysis
+- [Source Research](../research/archive/k8s-at-home-patterns-research.md) - Community patterns analysis
 - [GitOps Components Guide](./gitops-components-implementation.md) - Phase 1 implementation
 - [Configuration](../CONFIGURATION.md) - Schema reference
 

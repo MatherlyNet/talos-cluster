@@ -998,7 +998,7 @@ clientSecret: kubernetes_oidc_client_secret
 - [Keycloak Events Documentation](https://www.keycloak.org/docs/latest/server_admin/#auditing-and-events)
 - [Keycloak Groups and Roles](https://www.keycloak.org/docs/latest/server_admin/#groups)
 - [Cilium Network Policy](https://docs.cilium.io/en/stable/security/policy/)
-- **NEW:** [Kubernetes API Server OIDC](docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md)
+- **NEW:** [Kubernetes API Server OIDC](../research/kubernetes-api-server-oidc-authentication-jan-2026.md)
 - **NEW:** [Headlamp OIDC Configuration](https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/)
 
 ### Project Files
