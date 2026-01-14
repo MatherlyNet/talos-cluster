@@ -1,0 +1,262 @@
+---
+# ============================================================================
+# Renovate Manifest Regeneration Workflow (DISABLED)
+# ============================================================================
+#
+# PURPOSE:
+#   Automatically regenerate infrastructure manifests when Renovate updates
+#   template files in templates/config/infrastructure/. This implements the
+#   "Rendered Manifests Pattern" for GitOps by ensuring generated files stay
+#   in sync with template changes.
+#
+# STATUS: DISABLED
+#   This workflow is currently set to manual trigger only (workflow_dispatch).
+#   See "ACTIVATION GUIDE" section below for instructions on enabling.
+#
+# WORKFLOW BEHAVIOR:
+#   1. Detects changes to templates/config/ files in Renovate PRs
+#   2. Runs `task configure -y` to regenerate manifests
+#   3. Commits generated files back to the PR branch
+#   4. Skips if no template changes or no generated file changes
+#
+# SAFETY FEATURES:
+#   - Only runs on Renovate bot PRs (github.actor == 'renovate[bot]')
+#   - Only runs if templates/config/ files changed
+#   - Uses [skip ci] in commit message to prevent workflow loops
+#   - Concurrency control prevents multiple runs on same PR
+#   - Timeout limits prevent runaway processes
+#   - Explicit permission grants (contents: write)
+#
+# ACTIVATION GUIDE:
+#   To enable this workflow:
+#   1. Test manually first (see "TESTING BEFORE ENABLING" below)
+#   2. Uncomment the "pull_request:" trigger block below (lines 57-61)
+#   3. Remove "(DISABLED)" from the workflow name (line 28)
+#   4. Commit and push the changes
+#   5. Monitor the first few automatic runs
+#
+#   For detailed activation instructions, see:
+#   docs/workflows/RENOVATE_MANIFEST_REGENERATION.md
+#
+# TESTING BEFORE ENABLING:
+#   1. Create or find a Renovate PR that modifies templates/config/
+#   2. Go to Actions tab → "Renovate Manifest Regeneration (DISABLED)"
+#   3. Click "Run workflow" → Enter the PR number → Run
+#   4. Verify task configure runs successfully
+#   5. Verify generated files are committed to the PR
+#   6. Verify no workflow loops or errors
+#
+# TROUBLESHOOTING:
+#   - If workflow fails: Check mise installation, task availability
+#   - If no changes detected: Verify templates/config/ files were modified
+#   - If workflow loops: Ensure [skip ci] tag is present in commit message
+#   - If permission errors: Verify GITHUB_TOKEN has contents: write
+#
+# RELATED DOCUMENTATION:
+#   - Research: claudedocs/research_renovate_opentofu_best_practices_2026-01-14.md
+#   - Validation: claudedocs/implementation_validation_report_2026-01-14.md
+#   - Rendered Manifests Pattern: https://akuity.io/blog/the-rendered-manifests-pattern
+#
+# ============================================================================
+
+name: Renovate Manifest Regeneration (DISABLED)
+
+# DISABLED: Manual trigger only for testing
+# To enable automatic execution, uncomment the "pull_request" block below
+on:
+  # Manual trigger for testing before enabling automatic execution
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number to process (for testing)"
+        required: true
+        type: number
+
+  # DISABLED: Uncomment this block to enable automatic execution on Renovate PRs
+  # pull_request:
+  #   types: [opened, synchronize]
+  #   paths:
+  #     - 'templates/config/**'
+  #     - 'cluster.yaml'
+  #     - 'nodes.yaml'
+
+# Prevent concurrent runs on the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write # Required to commit and push generated files
+  pull-requests: write # Required to comment on PRs (optional)
+
+jobs:
+  # ============================================================================
+  # Job 1: Pre-Check - Detect Template Changes
+  # ============================================================================
+  # Determines if templates/config/ files were modified in this PR.
+  # Outputs: templates_changed (true/false)
+  # ============================================================================
+  check-templates:
+    name: Check Template Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      templates_changed: ${{ steps.changed-files.outputs.any_changed }}
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # For workflow_dispatch: fetch PR by number
+          # For pull_request: fetch PR head ref
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.head_ref }}
+          fetch-depth: 0 # Need full history for change detection
+
+      - name: Detect changed template files
+        id: changed-files
+        uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
+        with:
+          files: |
+            templates/config/**
+            cluster.yaml
+            nodes.yaml
+
+      - name: Log detected changes
+        run: |
+          echo "Template files changed: ${{ steps.changed-files.outputs.any_changed }}"
+          if [[ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]]; then
+            echo "Changed files:"
+            echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          else
+            echo "No template files were modified in this PR."
+          fi
+
+  # ============================================================================
+  # Job 2: Regenerate Manifests
+  # ============================================================================
+  # Runs `task configure -y` to regenerate infrastructure/talos/bootstrap/ files
+  # from updated templates. Commits and pushes changes back to PR branch.
+  # ============================================================================
+  regenerate-manifests:
+    name: Regenerate Manifests
+    needs: check-templates
+    # Only run if:
+    # 1. Template files changed AND
+    # 2. PR author is Renovate bot
+    if: |
+      needs.check-templates.outputs.templates_changed == 'true' &&
+      (github.actor == 'renovate[bot]' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ------------------------------------------------------------------------
+      # Step 1: Checkout PR Branch
+      # ------------------------------------------------------------------------
+      - name: Checkout PR branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # For workflow_dispatch: fetch PR by number
+          # For pull_request: fetch PR head ref
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.head_ref }}
+          fetch-depth: 1
+          # Use GITHUB_TOKEN for authentication (has write permissions)
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ------------------------------------------------------------------------
+      # Step 2: Setup mise (tool version manager)
+      # ------------------------------------------------------------------------
+      # mise provides task runner and all required tools (opentofu, talosctl, etc.)
+      - name: Setup mise
+        uses: jdx/mise-action@d6e32c1796099e0f1f3ac741c220a8b7eae9e5dd # v2.1.0
+        with:
+          install: true
+          cache: true
+          experimental: true
+
+      # ------------------------------------------------------------------------
+      # Step 3: Configure Git Identity
+      # ------------------------------------------------------------------------
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # ------------------------------------------------------------------------
+      # Step 4: Run Task Configure
+      # ------------------------------------------------------------------------
+      # Regenerates all manifests from templates using makejinja
+      # Flags:
+      #   -y : Auto-confirm prompts (non-interactive mode)
+      - name: Run task configure
+        id: configure
+        run: |
+          echo "::group::Running task configure -y"
+          task configure -y
+          echo "::endgroup::"
+
+          # Check if any files were modified
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No generated files were modified by task configure"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Generated files were modified by task configure"
+            echo "::group::Modified files"
+            git status --short
+            echo "::endgroup::"
+          fi
+
+      # ------------------------------------------------------------------------
+      # Step 5: Commit and Push Generated Files
+      # ------------------------------------------------------------------------
+      # Only commits if files actually changed
+      - name: Commit generated files
+        if: steps.configure.outputs.changed == 'true'
+        run: |
+          # Stage all generated directories
+          git add infrastructure/ talos/ bootstrap/ kubernetes/ || true
+
+          # Create commit with [skip ci] to prevent workflow loops
+          git commit -m "chore(infra): regenerate manifests from Renovate template updates [skip ci]
+
+          Automatically regenerated by renovate-manifest-regen workflow.
+
+          This commit updates generated infrastructure/talos/bootstrap/kubernetes/
+          files to reflect changes made by Renovate to template files.
+
+          Triggered by: ${{ github.event_name == 'workflow_dispatch' && format('Manual workflow_dispatch (PR #{0})', github.event.inputs.pr_number) || format('PR #{0}', github.event.pull_request.number) }}
+          Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Push to PR branch
+          git push
+
+      # ------------------------------------------------------------------------
+      # Step 6: Summary
+      # ------------------------------------------------------------------------
+      - name: Workflow summary
+        run: |
+          echo "## Manifest Regeneration Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.configure.outputs.changed }}" == "true" ]]; then
+            echo "✅ **Generated files updated and committed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Regenerated manifests have been committed to this PR branch." >> $GITHUB_STEP_SUMMARY
+            echo "Review the changes in the 'Files changed' tab." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **No changes needed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Template changes did not result in modifications to generated files." >> $GITHUB_STEP_SUMMARY
+            echo "This is normal for certain types of template updates." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Triggered By" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "- **PR Number:** #${{ github.event.inputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **PR Number:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          fi
