@@ -469,7 +469,7 @@ kubectl logs -n dragonfly-operator-system deploy/dragonfly-operator-controller-m
 - **Dragonfly Configuration**: `docs/ai-context/dragonfly.md`
 - **LiteLLM Caching**: `docs/ai-context/litellm.md#dragonfly-cache`
 - **Langfuse Caching**: `docs/ai-context/langfuse.md#redis-cache`
-- **Redis ACL Documentation**: https://redis.io/docs/management/security/acl/
+- **Redis ACL Documentation**: https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/
 
 ---
 

@@ -365,7 +365,7 @@ kubectl exec -n <namespace> <component>-postgresql-1 -c postgres -- \
 ## Related Documentation
 
 - **Research**: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
-- **CloudNativePG Docs**: https://cloudnative-pg.io/documentation/
+- **CloudNativePG Docs**: https://cloudnative-pg.io/documentation/current/
 - **Reloader**: https://github.com/stakater/Reloader
 - **SOPS**: https://github.com/getsops/sops
 

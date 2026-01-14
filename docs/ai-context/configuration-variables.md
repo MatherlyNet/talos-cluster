@@ -152,7 +152,7 @@ All CNPG clusters use **declarative role management** via `spec.managed.roles` f
 | `cnpg_barman_plugin_version` | Plugin version | 0.10.0 |
 | `cnpg_barman_plugin_log_level` | Log level | info |
 
-Requires cert-manager for mTLS. REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/
+Requires cert-manager for mTLS. REF: https://cloudnative-pg.io/documentation/current/backup_recovery/
 
 #### CloudNativePG Backups (requires RustFS + Barman)
 

@@ -1060,11 +1060,11 @@ Use this checklist to track implementation progress:
 ## Sources - Reflection Analysis
 
 ### Methodology
-- [Serena MCP Reflection Tools](https://serena-mcp.io) - Task adherence and completion validation
-- [Sequential Thinking MCP](https://github.com/tavily-ai/sequential-thinking-mcp) - Multi-hop reasoning and analysis
+- Serena MCP Reflection Tools - Task adherence and completion validation
+- Sequential Thinking MCP - Multi-hop reasoning and analysis
 
 ### Original Research Documents
-- [Keycloak Configuration as Code - GitOps Integration (January 2026)](../../../docs/research/archive/completed/keycloak-configuration-as-code-gitops-jan-2026.md) - Lines 1-1164
+- [Keycloak Configuration as Code - GitOps Integration (January 2026)](../../research/archive/completed/keycloak-configuration-as-code-gitops-jan-2026.md) - Lines 1-1164
 
 ---
 

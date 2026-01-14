@@ -244,9 +244,9 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | [OpenTofu R2 State Backend](./guides/opentofu-r2-state-backend.md) | R2 + Worker-based state locking | Implementing IaC with OpenTofu |
 | [BGP UniFi Cilium Implementation](./guides/bgp-unifi-cilium-implementation.md) | BGP peering between UniFi gateway and Cilium | Enabling BGP routing |
 | [GitOps Components Implementation](./guides/gitops-components-implementation.md) | tuppr, Talos CCM, Talos Backup, Proxmox CSI/CCM | Adding cloud-native components |
-| [Observability Stack Implementation](./guides/observability-stack-implementation.md) | kube-prometheus-stack, Loki, Tempo, PrometheusRule alerts | Enabling monitoring/alerting |
+| [Observability Stack Implementation](./guides/archived/observability-stack-implementation-victoriametrics.md) | VictoriaMetrics (archived), kube-prometheus-stack, Loki, Tempo | Enabling monitoring/alerting |
 | [Envoy Gateway Observability & Security](./guides/envoy-gateway-observability-security.md) | Tracing, metrics, JWT authentication | Gateway observability/security |
-| [k8s-at-home Patterns Implementation](./guides/k8s-at-home-patterns-implementation.md) | Community patterns (Phase 1 + 3A) | Adopting k8s-at-home patterns |
+| [k8s-at-home Patterns Implementation](./guides/archived/k8s-at-home-patterns-implementation.md) | Community patterns (Phase 1 + 3A) | Adopting k8s-at-home patterns |
 | [k8s-at-home Remaining Implementation](./guides/k8s-at-home-remaining-implementation.md) | VolSync, External Secrets, Descheduler | Future enhancements |
 
 ## Research Documents
@@ -255,9 +255,9 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 
 | Document | Description | Status |
 | -------- | ----------- | ------ |
-| [Envoy Gateway Examples Analysis](./research/envoy-gateway-examples-analysis.md) | Examples analysis, v0.0.0-latest adoption for K8s 1.35 | Validated Jan 2026 |
-| [Envoy Gateway OIDC Integration](./research/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Validated Jan 2026 |
-| [k8s-at-home Patterns](./research/k8s-at-home-patterns-research.md) | Community patterns and practices | Complete |
+| [Envoy Gateway Examples Analysis](./research/archive/completed/envoy-gateway-examples-analysis.md) | Examples analysis, v0.0.0-latest adoption for K8s 1.35 | Validated Jan 2026 |
+| [Envoy Gateway OIDC Integration](./research/archive/completed/envoy-gateway-oidc-integration.md) | OIDC/OAuth2 authentication patterns | Validated Jan 2026 |
+| [k8s-at-home Patterns](./research/archive/k8s-at-home-patterns-research.md) | Community patterns and practices | Complete |
 
 ### Archived (Implemented)
 
