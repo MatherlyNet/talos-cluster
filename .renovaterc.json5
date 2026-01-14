@@ -15,7 +15,12 @@
   schedule: ["every weekend"],
   timezone: "America/New_York",
   rebaseWhen: "conflicted",
-  ignorePaths: ["**/*.sops.*"],
+  ignorePaths: [
+    "**/*.sops.*",
+    "**/infrastructure/**",
+    "**/talos/**",
+    "**/bootstrap/**",
+  ],
   // Enable OSV vulnerability alerts for security scanning
   osvVulnerabilityAlerts: true,
   vulnerabilityAlerts: {
@@ -45,7 +50,68 @@
   kustomize: {
     managerFilePatterns: ["/^kustomization\\.ya?ml(?:\\.j2)?$/"],
   },
+  terraform: {
+    managerFilePatterns: [
+      "/(^|/)templates/config/infrastructure/.+\\.tf(?:\\.j2)?$/",
+    ],
+  },
   packageRules: [
+    // ========================================
+    // OpenTofu/Terraform Infrastructure
+    // ========================================
+    {
+      description: "Use OpenTofu registry for providers/modules",
+      matchDatasources: ["terraform-provider", "terraform-module"],
+      registryUrls: ["https://registry.opentofu.org"],
+    },
+    {
+      description: "Group Terraform/OpenTofu provider updates",
+      matchDatasources: ["terraform-provider"],
+      groupName: "terraform-providers",
+      groupSlug: "terraform-providers",
+      addLabels: ["renovate/terraform-provider"],
+      semanticCommitScope: "infra",
+      commitMessageTopic: "provider {{depName}}",
+    },
+    {
+      description: "Auto-merge provider patch updates (conservative)",
+      matchDatasources: ["terraform-provider"],
+      matchUpdateTypes: ["patch"],
+      automerge: true,
+      automergeType: "branch",
+      minimumReleaseAge: "3 days",
+      ignoreTests: false,
+    },
+    {
+      description: "Manual review for provider minor/major updates",
+      matchDatasources: ["terraform-provider"],
+      matchUpdateTypes: ["minor", "major"],
+      automerge: false,
+      addLabels: ["requires-manual-review"],
+    },
+    {
+      description: "Restrict OpenTofu major version updates (manual review required)",
+      matchManagers: ["mise"],
+      matchPackageNames: ["aqua:opentofu/opentofu"],
+      matchUpdateTypes: ["major"],
+      automerge: false,
+      addLabels: ["type/major", "requires-manual-review"],
+      semanticCommitType: "feat",
+      commitMessagePrefix: "feat(infra)!:",
+      commitMessageExtra: "( {{currentVersion}} ➔ {{newVersion}} )",
+    },
+    {
+      description: "Auto-merge OpenTofu minor/patch updates",
+      matchManagers: ["mise"],
+      matchPackageNames: ["aqua:opentofu/opentofu"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "branch",
+      minimumReleaseAge: "7 days",
+    },
+    // ========================================
+    // Existing Rules
+    // ========================================
     {
       description: "Override Helmfile Dependency Name",
       matchDatasources: ["docker"],

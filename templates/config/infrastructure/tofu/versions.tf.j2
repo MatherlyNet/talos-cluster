@@ -6,14 +6,15 @@
 # The bpg/proxmox provider is pre-configured for future VM management.
 
 terraform {
-  required_version = ">= 1.11.0"
+  required_version = "~> 1.11.0"
 
   required_providers {
     # Proxmox provider for VM management
-    # https://registry.terraform.io/providers/bpg/proxmox/latest
+    # https://registry.opentofu.org/providers/bpg/proxmox/latest
+    # Using pessimistic constraint (~>) to allow patch updates while blocking breaking changes
     proxmox = {
       source  = "bpg/proxmox"
-      version = ">= 0.78.0"
+      version = "~> 0.78.0"
     }
   }
 }
