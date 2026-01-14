@@ -1,0 +1,46 @@
+---
+# yamllint disable rule:line-length
+name: Markdown Link Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Mondays at 00:00 UTC
+    - cron: "0 0 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**/*.md"
+      - "*.md"
+      - ".github/workflows/markdown-link-check.yaml"
+  pull_request:
+    paths:
+      - "docs/**/*.md"
+      - "*.md"
+      - ".github/workflows/markdown-link-check.yaml"
+
+jobs:
+  markdown-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check links in markdown files
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: "yes"
+          use-verbose-mode: "no"
+          config-file: ".github/workflows/markdown-link-check-config.json"
+          folder-path: "docs/"
+          file-path: "./README.md, ./CLAUDE.md, ./PROJECT_INDEX.md"
+          max-depth: -1
+          check-modified-files-only: "no"
+
+      - name: Report results
+        if: failure()
+        run: |
+          echo "::error::Broken links detected in markdown files"
+          echo "Please check the workflow logs for details"
+          exit 1

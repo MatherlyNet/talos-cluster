@@ -75,20 +75,25 @@ litellm_db_instances: 1         # 1 for dev, 3+ for HA
 litellm_db_storage_size: "20Gi"
 ```
 
-**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `litellm_db_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+**Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### Dragonfly Cache (Shared)
+
 LiteLLM uses the shared Dragonfly deployment in the `cache` namespace for caching.
-Requires the following configuration in the Dragonfly section:
+
+**Configuration Requirements:**
 ```yaml
 dragonfly_enabled: true           # Enable shared Dragonfly
 dragonfly_acl_enabled: true       # Enable ACL for multi-tenant access
 dragonfly_litellm_password: "..." # SOPS-encrypted, ACL user password
 ```
-LiteLLM connects to `dragonfly.cache.svc.cluster.local:6379` with:
-- **User:** `litellm` (ACL-authenticated)
-- **Key prefix:** `litellm:*` (namespace isolation via ACL)
-- **Namespace:** `litellm` (additional key prefixing by LiteLLM)
+
+**Connection Details:**
+- **Endpoint:** `dragonfly.cache.svc.cluster.local:6379`
+- **ACL User:** `litellm` (namespace isolation)
+- **Key Pattern:** `~litellm:*` (ACL-enforced)
+
+See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for complete multi-tenant setup.
 
 ### Azure OpenAI Backends
 ```yaml
@@ -144,79 +149,23 @@ litellm_s3_secret_key: ""          # SOPS-encrypted
 # Required bucket: litellm-backups (created by RustFS setup job)
 ```
 
-#### RustFS IAM Setup (Principle of Least Privilege)
+#### RustFS IAM Setup
 
-> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
-> The RustFS bucket setup job automatically creates the `litellm-backups` bucket.
+**Bucket:** `litellm-backups` (auto-created by RustFS setup job)
 
-**1. Create Custom Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
+- `s3:GetObject` - PITR restore
+- `s3:PutObject` - Base backups and WAL segments
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `litellm-storage`
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": [
-        "arn:aws:s3:::litellm-backups"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::litellm-backups/*"
-      ]
-    }
-  ]
-}
-```
-
-| Permission | Purpose |
-| ---------- | ------- |
-| `s3:ListBucket` | List backup files for WAL management |
-| `s3:GetObject` | Download backups for restore (PITR) |
-| `s3:PutObject` | Upload WAL segments and base backups |
-| `s3:DeleteObject` | Retention cleanup of old WAL files |
-| `s3:GetBucketLocation` | AWS SDK compatibility |
-
-**2. Create Group (or use existing `ai-system` group)**
-
-Navigate to **Identity** → **Groups** → **Create Group**
-
-- **Name:** `ai-system` (shared with Obot, Langfuse)
-- **Assign Policy:** `litellm-storage` (add to existing policies if group exists)
-- Click **Save**
-
-**3. Create LiteLLM Backup User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `ai-system`
-- Click **Save**
-
-**4. Update cluster.yaml**
-
-```yaml
-litellm_s3_access_key: "<paste-access-key>"
-litellm_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+1. Creating `litellm-storage` policy with scoped bucket access
+2. Creating service account user
+3. Updating `cluster.yaml` with SOPS-encrypted credentials
+4. Verifying S3 connectivity
 
 ## File Structure
 

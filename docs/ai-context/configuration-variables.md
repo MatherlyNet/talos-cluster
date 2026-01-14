@@ -136,26 +136,13 @@ See: `docs/guides/cnpg-implementation.md`
 
 All CNPG clusters use **declarative role management** via `spec.managed.roles` for automatic password synchronization. This enables password rotation without manual `ALTER USER` commands.
 
-**Requirements:**
-- Database credential secrets MUST have `cnpg.io/reload: "true"` label
-- Secret type MUST be `kubernetes.io/basic-auth`
-- Application pods require Reloader annotations for restart on secret change
-
 **Implemented clusters:** Obot, LiteLLM, Langfuse, Keycloak
 
-**Password rotation procedure:**
-```bash
-# 1. Update password in cluster.yaml (e.g., obot_db_password)
-# 2. Regenerate templates
-task configure
-# 3. Commit and push
-git add -A && git commit -m "chore: rotate database password"
-git push
-# 4. Force reconcile
-task reconcile
-```
-
-See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+**Complete Procedure:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for:
+- Prerequisites and architecture
+- Step-by-step rotation workflow
+- Troubleshooting authentication failures
+- Verification and testing procedures
 
 #### Barman Cloud Plugin (PostgreSQL Backups)
 
@@ -491,6 +478,11 @@ See: `docs/research/dragonfly-redis-alternative-integration-jan-2026.md`
 | `dragonfly_litellm_password` | LiteLLM cache password (SOPS) |
 | `dragonfly_langfuse_password` | Langfuse cache password (SOPS) |
 
+**Complete Configuration:** See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for:
+- ACL secret format and syntax
+- Key namespace isolation patterns
+- Testing and troubleshooting procedures
+
 ---
 
 ### Langfuse LLM Observability Platform
@@ -702,12 +694,10 @@ See: `docs/research/obot-keycloak-oidc-integration-jan-2026.md`
 
 Configure via Obot UI: Admin Settings → Audit Logs → Export Audit Logs
 
-RustFS IAM setup:
-- Bucket: `obot-audit-logs` (auto-created by RustFS setup job)
-- Policy: `obot-audit-storage` (scoped to obot-audit-logs bucket)
-- User: `obot-audit` in `ai-system` group
-
-See: `docs/ai-context/obot.md#audit-log-export`
+**RustFS IAM Setup:** See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for Console UI procedure:
+- Bucket: `obot-audit-logs` (auto-created)
+- Policy: `obot-audit-storage` scoped to bucket
+- Service account user with SOPS-encrypted credentials
 
 #### Obot OpenTelemetry Tracing
 

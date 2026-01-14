@@ -90,79 +90,23 @@ dragonfly_snapshot_cron: "0 */6 * * *"        # Every 6 hours
 # Required bucket: dragonfly-backups (created by RustFS setup job)
 ```
 
-#### RustFS IAM Setup (Principle of Least Privilege)
+#### RustFS IAM Setup
 
-> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
-> The RustFS bucket setup job automatically creates the `dragonfly-backups` bucket.
+**Bucket:** `dragonfly-backups` (auto-created by RustFS setup job)
 
-**1. Create Custom Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - Browse snapshots
+- `s3:GetObject` - Download snapshots for restore
+- `s3:PutObject` - Upload RDB snapshots
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `dragonfly-storage`
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": [
-        "arn:aws:s3:::dragonfly-backups"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::dragonfly-backups/*"
-      ]
-    }
-  ]
-}
-```
-
-| Permission | Purpose |
-| ---------- | ------- |
-| `s3:ListBucket` | List snapshot files for retention |
-| `s3:GetObject` | Download snapshots for restore |
-| `s3:PutObject` | Upload RDB snapshots |
-| `s3:DeleteObject` | Retention cleanup of old snapshots |
-| `s3:GetBucketLocation` | AWS SDK compatibility |
-
-**2. Create Group (or use existing `cache` group)**
-
-Navigate to **Identity** → **Groups** → **Create Group**
-
-- **Name:** `cache`
-- **Assign Policy:** `dragonfly-storage`
-- Click **Save**
-
-**3. Create Dragonfly Backup User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `cache`
-- Click **Save**
-
-**4. Update cluster.yaml**
-
-```yaml
-dragonfly_s3_access_key: "<paste-access-key>"
-dragonfly_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+1. Creating `dragonfly-storage` policy scoped to `dragonfly-backups`
+2. Creating service account user
+3. Updating `cluster.yaml` with `dragonfly_s3_access_key` and `dragonfly_s3_secret_key`
+4. Verifying S3 connectivity
 
 ### Monitoring (requires monitoring_enabled)
 ```yaml
@@ -177,6 +121,8 @@ dragonfly_appcache_password: "..."  # SOPS-encrypted, general app cache
 dragonfly_litellm_password: "..."   # SOPS-encrypted, LiteLLM cache
 dragonfly_langfuse_password: "..."  # SOPS-encrypted, Langfuse queues
 ```
+
+For complete ACL configuration with key namespace isolation and testing procedures, see [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md).
 
 ## Derived Variables
 

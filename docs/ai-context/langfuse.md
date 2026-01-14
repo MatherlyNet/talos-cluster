@@ -68,7 +68,7 @@ langfuse_postgres_instances: 1     # 1 for dev, 3+ for HA
 langfuse_postgres_storage: "10Gi"
 ```
 
-**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `langfuse_postgres_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+**Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### ClickHouse Analytics
 ```yaml
@@ -88,96 +88,41 @@ langfuse_s3_secret_key: ""      # SOPS-encrypted
 # - langfuse-postgres-backups (if backup enabled)
 ```
 
-#### RustFS IAM Setup (Principle of Least Privilege)
+#### RustFS IAM Setup
 
-> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
-> The RustFS bucket setup job automatically creates the required buckets.
+**Buckets:** `langfuse-events`, `langfuse-media`, `langfuse-exports` (auto-created by RustFS setup job)
 
-**1. Create Custom Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - Browse buckets
+- `s3:GetObject` - Download media files, exports
+- `s3:PutObject` - Upload events, media, exports
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `langfuse-storage`
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": [
-        "arn:aws:s3:::langfuse-events",
-        "arn:aws:s3:::langfuse-media",
-        "arn:aws:s3:::langfuse-exports"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::langfuse-events/*",
-        "arn:aws:s3:::langfuse-media/*",
-        "arn:aws:s3:::langfuse-exports/*"
-      ]
-    }
-  ]
-}
-```
-
-| Permission | Purpose |
-| ---------- | ------- |
-| `s3:ListBucket` | List events, media files, exports |
-| `s3:GetObject` | Download media files, exports |
-| `s3:PutObject` | Upload events, media, exports |
-| `s3:DeleteObject` | Retention cleanup |
-| `s3:GetBucketLocation` | AWS SDK compatibility |
-
-**2. Create Group (or use existing `ai-system` group)**
-
-Navigate to **Identity** → **Groups** → **Create Group**
-
-- **Name:** `ai-system` (shared with LiteLLM, Obot)
-- **Assign Policy:** `langfuse-storage` (add to existing policies if group exists)
-- Click **Save**
-
-**3. Create Langfuse S3 User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `ai-system`
-- Click **Save**
-
-**4. Update cluster.yaml**
-
-```yaml
-langfuse_s3_access_key: "<paste-access-key>"
-langfuse_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+1. Creating `langfuse-storage` policy with scoped bucket access
+2. Creating service account user
+3. Updating `cluster.yaml` with SOPS-encrypted credentials
+4. Verifying S3 connectivity
 
 ### Dragonfly Cache (Shared)
+
 Langfuse uses the shared Dragonfly deployment in the `cache` namespace.
 
+**Configuration Requirements:**
 ```yaml
 dragonfly_enabled: true            # Enable shared Dragonfly
 dragonfly_acl_enabled: true        # Enable ACL for multi-tenant access
 dragonfly_langfuse_password: "..." # SOPS-encrypted, ACL user password
 ```
 
-Connection: `dragonfly.cache.svc.cluster.local:6379`
-- **User:** `langfuse` (ACL-authenticated)
-- **Key prefix:** `langfuse:*` (namespace isolation via ACL)
+**Connection Details:**
+- **Endpoint:** `dragonfly.cache.svc.cluster.local:6379`
+- **ACL User:** `langfuse` (namespace isolation)
+- **Key Pattern:** `~langfuse:*` (ACL-enforced)
+
+See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for complete multi-tenant setup.
 
 ### SSO Authentication (requires keycloak_enabled)
 ```yaml
@@ -212,60 +157,20 @@ langfuse_backup_s3_secret_key: ""   # SOPS-encrypted
 
 #### RustFS IAM Setup for PostgreSQL Backups
 
-> Separate user for PostgreSQL backups provides better security isolation.
+**Bucket:** `langfuse-postgres-backups` (auto-created by RustFS setup job)
 
-**1. Create Backup Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
+- `s3:GetObject` - PITR restore
+- `s3:PutObject` - Base backups and WAL segments
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `langfuse-backup-storage`
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "Resource": [
-        "arn:aws:s3:::langfuse-postgres-backups"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::langfuse-postgres-backups/*"
-      ]
-    }
-  ]
-}
-```
-
-**2. Create Langfuse Backup User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `ai-system` (add `langfuse-backup-storage` policy to group)
-- Click **Save**
-
-**3. Update cluster.yaml**
-
-```yaml
-langfuse_backup_s3_access_key: "<paste-access-key>"
-langfuse_backup_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure. Use a separate service account for backup isolation (recommended):
+1. Create `langfuse-backup-storage` policy scoped to `langfuse-postgres-backups`
+2. Create dedicated backup service account user
+3. Update `cluster.yaml` with `langfuse_backup_s3_access_key` and `langfuse_backup_s3_secret_key`
 
 ### Headless Initialization (GitOps Bootstrap)
 Bootstrap an initial admin account for GitOps/non-interactive deployments.

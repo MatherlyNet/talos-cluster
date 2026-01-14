@@ -78,7 +78,7 @@ obot_storage_size: "20Gi"          # Workspace PVC size
 obot_storage_class: ""             # Optional override (defaults to global storage_class)
 ```
 
-**Password Rotation:** Uses CNPG managed roles with automatic sync. Update `obot_db_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
+**Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### Workspace Provider Configuration
 ```yaml
@@ -225,184 +225,53 @@ obot_audit_s3_secret_key: "..."    # SOPS-encrypted
 
 Audit log export allows you to automatically export Obot platform audit logs to S3-compatible storage for compliance, analysis, and long-term retention.
 
-#### RustFS IAM Setup (Principle of Least Privilege)
+#### RustFS IAM Setup
 
-> All user/policy operations must be performed via the **RustFS Console UI** (port 9001).
-> The RustFS bucket setup job automatically creates the `obot-postgres-backups` bucket.
+**Bucket:** `obot-postgres-backups` (auto-created by RustFS setup job)
 
-**1. Create Custom Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
+- `s3:GetObject` - PITR restore
+- `s3:PutObject` - Base backups and WAL segments
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `obot-storage`
-
-```json
-{
-  "ID": "",
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "NotAction": [],
-      "Resource": [
-        "arn:aws:s3:::obot-postgres-backups"
-      ],
-      "NotResource": [],
-      "Condition": {}
-    },
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Action": [
-        "s3:DeleteObject",
-        "s3:GetObject",
-        "s3:PutObject"
-      ],
-      "NotAction": [],
-      "Resource": [
-        "arn:aws:s3:::obot-postgres-backups/*"
-      ],
-      "NotResource": [],
-      "Condition": {}
-    }
-  ]
-}
-```
-
-| Permission | Purpose |
-| ---------- | ------- |
-| `s3:ListBucket` | List backup files for WAL management |
-| `s3:GetObject` | Download backups for restore (PITR) |
-| `s3:PutObject` | Upload WAL segments and base backups |
-| `s3:DeleteObject` | Retention cleanup of old WAL files |
-| `s3:GetBucketLocation` | AWS SDK compatibility |
-
-**2. Create Group (or use existing `ai-system` group)**
-
-Navigate to **Identity** → **Groups** → **Create Group**
-
-- **Name:** `ai-system` (shared with LiteLLM, Langfuse)
-- **Assign Policy:** `obot-storage` (add to existing policies if group exists)
-- Click **Save**
-
-**3. Create Obot Backup User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `ai-system`
-- Click **Save**
-
-**4. Update cluster.yaml**
-
-```yaml
-obot_s3_access_key: "<paste-access-key>"
-obot_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+1. Creating `obot-storage` policy scoped to `obot-postgres-backups`
+2. Creating service account user
+3. Updating `cluster.yaml` with `obot_s3_access_key` and `obot_s3_secret_key`
+4. Verifying S3 connectivity
 
 #### Audit Log Export RustFS IAM Setup
 
-> The RustFS bucket setup job automatically creates the `obot-audit-logs` bucket when `obot_audit_logs_enabled` is true.
+**Bucket:** `obot-audit-logs` (auto-created by RustFS setup job when `obot_audit_logs_enabled: true`)
 
-**1. Create Custom Policy**
+**Required S3 Permissions:**
+- `s3:ListBucket`, `s3:GetBucketLocation` - Browse audit logs
+- `s3:GetObject` - Download audit logs for analysis
+- `s3:PutObject` - Upload audit log exports
+- `s3:DeleteObject` - Retention cleanup
 
-Navigate to **Identity** → **Policies** → **Create Policy**
+**Setup Procedure:**
 
-**Policy Name:** `obot-audit-storage`
+See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+1. Creating `obot-audit-storage` policy scoped to `obot-audit-logs`
+2. Creating service account user
+3. Updating `cluster.yaml` with `obot_audit_s3_access_key` and `obot_audit_s3_secret_key`
 
-```json
-{
-  "ID": "",
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketLocation"
-      ],
-      "NotAction": [],
-      "Resource": [
-        "arn:aws:s3:::obot-audit-logs"
-      ],
-      "NotResource": [],
-      "Condition": {}
-    },
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Action": [
-        "s3:DeleteObject",
-        "s3:GetObject",
-        "s3:PutObject"
-      ],
-      "NotAction": [],
-      "Resource": [
-        "arn:aws:s3:::obot-audit-logs/*"
-      ],
-      "NotResource": [],
-      "Condition": {}
-    }
-  ]
-}
-```
+**Configure in Obot UI:**
 
-| Permission | Purpose |
-| ---------- | ------- |
-| `s3:ListBucket` | List audit log files |
-| `s3:GetObject` | Download audit logs for analysis |
-| `s3:PutObject` | Upload audit log exports |
-| `s3:DeleteObject` | Retention cleanup of old logs |
-| `s3:GetBucketLocation` | AWS SDK compatibility |
-
-**2. Create Group (or use existing `ai-system` group)**
-
-Navigate to **Identity** → **Groups**
-
-- If `ai-system` group exists: Edit and add `obot-audit-storage` policy
-- If creating new: **Name:** `ai-system`, **Assign Policies:** `obot-audit-storage` (+ others)
-- Click **Save**
-
-**3. Create Obot Audit User**
-
-Navigate to **Identity** → **Users** → **Create User**
-
-- **Access Key:** (auto-generated, copy this)
-- **Secret Key:** (auto-generated, copy this)
-- **Assign Group:** `ai-system`
-- Click **Save**
-
-**4. Update cluster.yaml**
-
-```yaml
-obot_audit_s3_access_key: "<paste-access-key>"
-obot_audit_s3_secret_key: "<paste-secret-key>"
-```
-
-Then run: `task configure && task reconcile`
-
-**5. Configure in Obot UI**
-
-After deployment, configure the audit log export in Obot:
-
+After deployment, enable audit log export in Obot:
 1. Navigate to **Admin Settings** → **Audit Logs** → **Export Audit Logs**
 2. Select **Custom S3 Compatible** as the storage provider
-3. Enter the following configuration:
+3. Configure:
    - **Endpoint:** `http://rustfs-svc.storage.svc.cluster.local:9000`
    - **Region:** `us-east-1` (or your configured region)
    - **Access Key ID:** `<obot_audit_s3_access_key>`
    - **Secret Access Key:** `<obot_audit_s3_secret_key>`
    - **Bucket:** `obot-audit-logs`
-4. Click **Save** to enable automatic audit log exports
+4. Click **Save**
 
 > **Note:** The endpoint uses the internal cluster DNS name for RustFS. If accessing from outside the cluster, use `https://rustfs.<cloudflare_domain>` instead.
 
