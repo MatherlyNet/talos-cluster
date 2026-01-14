@@ -107,22 +107,22 @@ spec:
           searchNamespace: ALL
           folderAnnotation: grafana_folder
           annotations:
-            grafana_folder: Monitoring
+            grafana_folder: Kubernetes
           provider:
             foldersFromFilesStructure: true
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
           providers:
-            - name: custom
-              folder: Custom
+            - name: kubernetes
+              folder: Kubernetes
               type: file
               disableDeletion: false
               editable: true
               options:
-                path: /var/lib/grafana/dashboards/custom
+                path: /var/lib/grafana/dashboards/kubernetes
       dashboards:
-        custom:
+        kubernetes:
           # renovate: depName="cert-manager"
           cert-manager:
             gnetId: 20842

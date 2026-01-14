@@ -152,10 +152,10 @@ spec:
           #| Enable folder organization via grafana_folder annotation #|
           folderAnnotation: grafana_folder
           #| Add grafana_folder annotation to ALL built-in dashboard ConfigMaps #|
-          #| This organizes AlertManager, CoreDNS, etcd, k8s resources, kubelet, #|
-          #| node exporter, Prometheus, scheduler, etc. into a single folder #|
+          #| This organizes CoreDNS, etcd, k8s resources (API Server, Controller #|
+          #| Manager, Kubelet, Scheduler, Compute Resources, Networking, etc.) #|
           annotations:
-            grafana_folder: Monitoring
+            grafana_folder: Kubernetes
           provider:
             foldersFromFilesStructure: true
       #| Dashboard provisioning - custom dashboards not included in kube-prometheus-stack #|
@@ -164,18 +164,18 @@ spec:
         dashboardproviders.yaml:
           apiVersion: 1
           providers:
-            - name: custom
-              folder: Custom
+            - name: kubernetes
+              folder: Kubernetes
               type: file
               disableDeletion: false
               editable: true
               options:
-                path: /var/lib/grafana/dashboards/custom
+                path: /var/lib/grafana/dashboards/kubernetes
       #| Only provision dashboards NOT provided by other Helm charts #|
       #| Cilium dashboards are now provided by Cilium HelmRelease with Network folder #|
       #| Loki dashboards are now provided by Loki HelmRelease with Logging folder #|
       dashboards:
-        custom:
+        kubernetes:
           #| cert-manager - certificate monitoring (not included in kube-prometheus-stack) #|
           # renovate: depName="cert-manager"
           cert-manager:
