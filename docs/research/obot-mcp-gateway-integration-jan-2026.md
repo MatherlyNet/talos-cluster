@@ -1274,7 +1274,7 @@ data:
 - [Obot GitHub Releases](https://github.com/obot-platform/obot/releases)
 - [Obot EntraID Fork](https://github.com/jrmatherly/obot-entraid)
 - [Keycloak Setup Guide](https://github.com/jrmatherly/obot-entraid/blob/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md)
-- [CloudNativePG Documentation](https://cloudnative-pg.io/documentation/)
+- [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 - [Gateway API HTTPRoute](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.HTTPRoute)
 
 ## Appendix A: Environment Variables Reference

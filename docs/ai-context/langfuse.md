@@ -207,7 +207,7 @@ langfuse_default_project_role: "VIEWER"  # OWNER|ADMIN|MEMBER|VIEWER
 - **NONE** = user must be explicitly invited to organizations
 - Other roles provide that level of access to the default organization
 
-REF: https://langfuse.com/self-hosting/automated-provisioning
+REF: https://langfuse.com/docs/administration/scim-and-org-api
 
 ### SCIM Role Sync (Keycloak → Langfuse)
 Synchronize Keycloak realm roles to Langfuse organization roles via CronJob.
@@ -257,7 +257,7 @@ langfuse_role_mapping:
 - `sync-secret.sops.yaml.j2` - SOPS-encrypted API credentials
 - `sync-configmap.yaml.j2` - Role mapping config + Python sync script
 
-REF: https://langfuse.com/docs/integrations/scim
+REF: https://langfuse.com/docs/administration/scim-and-org-api
 
 ## File Structure
 

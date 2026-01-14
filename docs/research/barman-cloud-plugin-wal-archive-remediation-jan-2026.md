@@ -266,7 +266,7 @@ spec:
     retentionPolicy: "#{ obot_backup_retention | default('7d') }#"
   instanceSidecarConfiguration:
     #| boto3 1.36+ S3 Data Integrity Protection workaround for RustFS/S3-compatible storage #|
-    #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/ #|
+    #| REF: https://cloudnative-pg.io/docs/1.28/backup_recovery#object-stores #|
     #| REF: docs/research/barman-cloud-plugin-wal-archive-remediation-jan-2026.md #|
     env:
       - name: AWS_REQUEST_CHECKSUM_CALCULATION
@@ -581,9 +581,9 @@ cnpg_barman_plugin_enabled: true
 ## References
 
 ### Official Documentation
-- [Barman Cloud Plugin Troubleshooting](https://cloudnative-pg.io/plugin-barman-cloud/docs/next/troubleshooting/)
-- [Barman Cloud Plugin Object Stores](https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/)
-- [CloudNativePG Documentation](https://cloudnative-pg.io/documentation/current/)
+- [Barman Cloud Plugin Troubleshooting](https://cloudnative-pg.io/docs/1.28/backup_recovery#troubleshooting)
+- [Barman Cloud Plugin Object Stores](https://cloudnative-pg.io/docs/1.28/backup_recovery#object-stores)
+- [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 - [Barman Cloud boto3 Compatibility](https://docs.pgbarman.org/release/3.16.1/user_guide/barman_cloud.html)
 
 ### GitHub Issues

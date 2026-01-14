@@ -490,6 +490,6 @@ export const getCookieName = (name: string) =>
 ## References
 
 - [Langfuse SSO Documentation](https://langfuse.com/self-hosting/authentication-and-sso)
-- [Langfuse Auto-Provisioning](https://langfuse.com/self-hosting/automated-provisioning)
+- [Langfuse SCIM and Org API](https://langfuse.com/docs/administration/scim-and-org-api)
 - [NextAuth.js Providers](https://next-auth.js.org/providers/)
 - [Keycloak OIDC Documentation](https://www.keycloak.org/docs/latest/server_admin/#_oidc-clients)

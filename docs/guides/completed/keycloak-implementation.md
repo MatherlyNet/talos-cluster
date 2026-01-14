@@ -1494,7 +1494,7 @@ Key features available in this version:
 - [Keycloak K8s Resources (GitHub)](https://github.com/keycloak/keycloak-k8s-resources)
 - [Envoy Gateway OIDC Authentication](https://gateway.envoyproxy.io/docs/tasks/security/oidc/)
 - [Envoy Gateway JWT Authentication](https://gateway.envoyproxy.io/latest/tasks/security/jwt-authentication/)
-- [CloudNativePG Documentation](https://cloudnative-pg.io/documentation/)
+- [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 
 ### Project Documentation
 - [CloudNativePG Implementation](./cnpg-implementation.md) - PostgreSQL operator for production

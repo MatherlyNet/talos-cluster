@@ -1059,7 +1059,7 @@ stringData:
 # =============================================================================
 # Automatically assign new users to default organization/project with roles.
 # When SSO users log in for the first time, they receive these permissions.
-# REF: https://langfuse.com/self-hosting/automated-provisioning
+# REF: https://langfuse.com/docs/administration/scim-and-org-api
 
 # -- Default organization role for new users via SSO
 #    Roles: OWNER, ADMIN, MEMBER, VIEWER, NONE (no org access)
@@ -2083,7 +2083,7 @@ langfuse:
 
 When using SSO (Keycloak), new users can be automatically provisioned with default access levels. This eliminates manual user management for common access patterns.
 
-**Reference:** https://langfuse.com/self-hosting/automated-provisioning
+**Reference:** https://langfuse.com/docs/administration/scim-and-org-api
 
 ### Auto-Provisioning Environment Variables
 

@@ -830,15 +830,15 @@ All four PostgreSQL clusters are now successfully archiving WAL files to their r
 
 ### Official Documentation
 - [Kubernetes OIDC Authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens)
-- [CloudNativePG Barman Cloud Plugin](https://cloudnative-pg.io/plugin-barman-cloud/docs/)
-- [Barman Cloud Object Store Providers](https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/)
+- [CloudNativePG Barman Cloud Plugin](https://cloudnative-pg.io/docs/1.28/backup_recovery#barman-cloud)
+- [Barman Cloud Object Store Providers](https://cloudnative-pg.io/docs/1.28/backup_recovery#object-stores)
 
 ### GitHub Issues
 - [[Docs]: boto3 version hint #8427](https://github.com/cloudnative-pg/cloudnative-pg/issues/8427)
 - [Exit status 2 WAL archive error #535](https://github.com/cloudnative-pg/plugin-barman-cloud/issues/535)
 
 ### Web Resources
-- [Object Store Providers | Barman Cloud CNPG-I plugin](https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/)
+- [Object Store Providers | Barman Cloud CNPG-I plugin](https://cloudnative-pg.io/docs/1.28/backup_recovery#object-stores)
 - [beyondwatts | Debugging Barman XAmzContentSHA256Mismatch error](https://www.beyondwatts.com/posts/debugging-barman-xamzcontentsha256mismatch-error-after-upgrading-to-postgresql175/)
 - [Barman for the cloud — Barman 3.16.1 documentation](https://docs.pgbarman.org/release/3.16.1/user_guide/barman_cloud.html)
 

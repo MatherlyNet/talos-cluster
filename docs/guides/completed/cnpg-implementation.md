@@ -73,7 +73,7 @@ future-app/               # Future application
 # =============================================================================
 # CloudNativePG provides production-grade PostgreSQL clusters with automated
 # failover, backups, and monitoring. Deployed as a shared cluster resource.
-# REF: https://cloudnative-pg.io/documentation/
+# REF: https://cloudnative-pg.io/docs/1.28/
 # REF: docs/guides/cnpg-implementation.md
 
 # -- Enable CloudNativePG operator deployment
@@ -1372,7 +1372,7 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 - [CloudNativePG GitHub](https://github.com/cloudnative-pg/cloudnative-pg)
 - [Helm Chart Repository](https://github.com/cloudnative-pg/charts)
 - [PostgreSQL 18 Release Notes](https://www.postgresql.org/docs/18/release-18.html)
-- [Barman Cloud Plugin](https://cloudnative-pg.io/plugin-barman-cloud/docs/)
+- [Barman Cloud Plugin](https://cloudnative-pg.io/docs/1.28/backup_recovery#barman-cloud)
 - [ImageVolume Extensions](https://cloudnative-pg.io/docs/1.28/imagevolume_extensions/) - Extension mounting via Kubernetes ImageVolume
 - [pgvector GitHub](https://github.com/pgvector/pgvector) - Open-source vector similarity search
 - [CNPG Recipe 23](https://www.gabrielebartolini.it/articles/2025/12/cnpg-recipe-23-managing-extensions-with-imagevolume-in-cloudnativepg/) - ImageVolume extension tutorial

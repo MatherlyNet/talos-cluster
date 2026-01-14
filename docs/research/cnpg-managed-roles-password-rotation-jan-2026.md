@@ -270,7 +270,7 @@ spec:
   #| =========================================================================== #|
   #| MANAGED ROLES - Declarative role management with password auto-rotation    #|
   #| CNPG syncs password changes from secret when cnpg.io/reload: "true" label  #|
-  #| REF: https://cloudnative-pg.io/docs/current/declarative_role_management/   #|
+  #| REF: https://cloudnative-pg.io/docs/1.28/declarative_role_management/   #|
   #| =========================================================================== #|
   managed:
     roles:
@@ -634,7 +634,7 @@ The following validation was performed against actual project templates:
 
 ### Official Documentation
 - [CloudNativePG Declarative Role Management](https://cloudnative-pg.io/docs/1.28/declarative_role_management/)
-- [CloudNativePG Security](https://cloudnative-pg.io/documentation/1.20/security/)
+- [CloudNativePG Security](https://cloudnative-pg.io/docs/1.28/security/)
 - [External Secrets with CNPG](https://cloudnative-pg.io/docs/1.28/cncf-projects/external-secrets/)
 
 ### GitHub Issues/Discussions

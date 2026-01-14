@@ -99,7 +99,7 @@ on:
 ```
 
 **Method 2: Check Actions Tab**
-- Navigate to: https://github.com/YOUR_ORG/matherlynet-talos-cluster/actions
+- Navigate to: https://github.com/MatherlyNet/talos-cluster/actions
 - Look for: "Renovate Manifest Regeneration (DISABLED)"
 - If name includes "(DISABLED)", it's not active
 
