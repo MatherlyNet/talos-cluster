@@ -373,7 +373,7 @@ flux trace helmrelease <name> -n <namespace>
 
 ## cilium Reference
 
-Cilium CLI. Full docs: https://docs.cilium.io/en/stable/cmdref/cilium/
+Cilium CLI. Full docs: https://docs.cilium.io/en/stable/cmdref/cilium-dbg/
 
 ### Status Commands
 

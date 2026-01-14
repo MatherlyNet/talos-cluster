@@ -1366,7 +1366,7 @@ kubectl delete prometheusrule -n monitoring network-infrastructure
 - [k8s-at-home Patterns](./k8s-at-home-patterns-implementation.md) - Monitoring stack deployment
 
 ### External Documentation
-- [Cilium Observability](https://docs.cilium.io/en/stable/observability/) - Official Cilium observability docs
+- [Cilium Observability](https://docs.cilium.io/en/stable/observability/metrics/) - Official Cilium observability docs
 - [Hubble Metrics](https://docs.cilium.io/en/stable/observability/metrics/#hubble-exported-metrics) - Hubble metric reference
 - [Envoy Statistics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics) - Envoy metrics reference
 - [CoreDNS Metrics](https://github.com/coredns/coredns/tree/master/plugin/metrics) - CoreDNS Prometheus plugin
@@ -1376,7 +1376,7 @@ kubectl delete prometheusrule -n monitoring network-infrastructure
 ### BGP Monitoring
 - [Cilium BGP Control Plane](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-v2/) - BGP configuration
 - [FRRouting](https://docs.frrouting.org/en/latest/bgp.html) - UniFi BGP backend
-- [Cilium CLI BGP Commands](https://docs.cilium.io/en/stable/cmdref/cilium_bgp_peers/) - BGP debugging
+- [Cilium CLI BGP Commands](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-operation/) - BGP debugging
 
 ---
 
