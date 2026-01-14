@@ -833,3 +833,10 @@ flux resume ks --all
 kubectl delete hr <name> -n <namespace>
 # Flux will recreate it
 ```
+
+---
+
+**Last Updated:** January 13, 2026
+**Coverage:** Nodes, Pods, Network (Cilium/BGP), Flux, Certificates, Talos
+**Tools:** kubectl, talosctl, cilium, flux, hubble
+**Related Docs:** OPERATIONS.md, CLI_REFERENCE.md

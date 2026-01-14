@@ -594,3 +594,10 @@ cilium status
 flux check
 flux logs
 ```
+
+---
+
+**Last Updated:** January 13, 2026
+**Tools Covered:** go-task, talosctl, kubectl, flux, cilium, sops, helm, cloudflared
+**Task Runner:** go-task v3.x (run `task --list` for all commands)
+**Related Docs:** OPERATIONS.md, TROUBLESHOOTING.md

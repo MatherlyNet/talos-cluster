@@ -57,6 +57,16 @@ obot_version: "0.2.33"       # jrmatherly/obot-entraid image tag
 obot_replicas: 1             # Pod replicas
 ```
 
+### Resource Configuration
+```yaml
+obot_cpu_request: "500m"     # Obot CPU request
+obot_cpu_limit: "2000m"      # Obot CPU limit
+obot_memory_request: "1Gi"   # Obot memory request
+obot_memory_limit: "4Gi"     # Obot memory limit
+```
+
+Configure resource requests and limits for the Obot pod. Defaults are suitable for development/small production deployments. Increase for high-concurrency production workloads.
+
 ### Database (CloudNativePG with pgvector)
 ```yaml
 obot_db_password: "..."            # SOPS-encrypted PostgreSQL password
@@ -65,17 +75,52 @@ obot_postgres_db: "obot"           # Database name
 obot_postgresql_replicas: 1        # PostgreSQL instances
 obot_postgresql_storage_size: "10Gi"
 obot_storage_size: "20Gi"          # Workspace PVC size
+obot_storage_class: ""             # Optional override (defaults to global storage_class)
 ```
 
 **Password Rotation:** Uses CNPG managed roles with automatic sync. Update `obot_db_password` in `cluster.yaml`, run `task configure && task reconcile`. Pods restart via Reloader annotation. See: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
 
-### Encryption & Bootstrap
+### Workspace Provider Configuration
 ```yaml
-obot_encryption_key: "..."     # Base64 32 bytes, generate: openssl rand -base64 32
-obot_bootstrap_token: "..."    # Optional, hex 32 bytes, generate: openssl rand -hex 32
+obot_workspace_provider: "directory"  # "directory" or "s3"
+obot_s3_bucket: "obot-workspaces"     # S3 bucket for workspace storage
+obot_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+obot_s3_region: "us-east-1"
+obot_workspace_s3_access_key: "..."   # SOPS-encrypted (required for S3 mode)
+obot_workspace_s3_secret_key: "..."   # SOPS-encrypted (required for S3 mode)
 ```
 
+**Workspace Provider Options:**
+- **`directory`** (default): Single PVC storage, requires `updateStrategy: Recreate` and `replicas: 1`
+- **`s3`**: S3-compatible storage, enables multi-replica deployments with `RollingUpdate` strategy
+
+**When to use S3 mode:**
+- Multi-replica deployments for high availability
+- Shared workspace state across pod restarts
+- Large-scale deployments with many concurrent users
+
+### Encryption & Bootstrap
+```yaml
+obot_encryption_provider: "custom"  # Options: custom, aws, gcp, azure
+obot_encryption_key: "..."          # Base64 32 bytes (for "custom" mode), generate: openssl rand -base64 32
+obot_bootstrap_token: "..."         # Optional, hex 32 bytes, generate: openssl rand -hex 32
+```
+
+**Encryption Provider:** Configures the encryption provider for data at rest. Use `custom` for self-managed encryption keys, or cloud provider options (`aws`, `gcp`, `azure`) for cloud-managed key services.
+
 The bootstrap token is used for initial API authentication before OIDC is configured.
+
+### Authentication & Access Control
+```yaml
+obot_admin_emails: "admin@example.com"     # Comma-separated admin email addresses
+obot_owner_emails: "owner@example.com"     # Comma-separated owner email addresses
+obot_allowed_email_domains: "*"            # Allowed domains or "*" for all
+```
+
+**Access Levels:**
+- **Admin**: Full platform access for administrative tasks
+- **Owner**: Highest privilege level with ownership capabilities
+- **Email Domains**: Restrict authentication to specific email domains (e.g., `"example.com,company.org"`)
 
 ### Keycloak SSO (requires keycloak_enabled)
 ```yaml
@@ -91,6 +136,58 @@ obot_allowed_email_domains: "*"       # Email domain restrictions (default: all)
 Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork with two env var patterns:
 - `OBOT_KEYCLOAK_AUTH_PROVIDER_*` - Keycloak-specific vars (URL, REALM, CLIENT_ID, CLIENT_SECRET)
 - `OBOT_AUTH_PROVIDER_*` - Shared auth provider vars (COOKIE_SECRET, EMAIL_DOMAINS)
+
+### Entra ID (Azure AD) SSO - Alternative to Keycloak
+```yaml
+obot_entra_tenant_id: "..."     # Azure AD tenant ID
+obot_entra_client_id: "..."     # OIDC client ID (SOPS-encrypted)
+obot_entra_client_secret: "..." # OIDC client secret (SOPS-encrypted)
+```
+
+**NOTE:** Use either Keycloak OR Entra ID authentication, not both. When `obot_entra_tenant_id` is set, `OBOT_SERVER_AUTH_PROVIDER` will be configured as `entra-id`.
+
+**Use Cases:**
+- Organizations already using Azure AD/Entra ID
+- Microsoft 365 integration scenarios
+- Enterprise deployments with Azure infrastructure
+
+### Tool Registry Configuration (Optional)
+```yaml
+obot_tool_registries:
+  - "github.com/obot-platform/tools"      # Official tools
+  - "/obot-tools/tools"                   # Entraid fork custom tools
+  - "github.com/yourorg/custom-tools"     # Organization-specific tools
+```
+
+Specify additional gptscript tool registries. Supports GitHub repos, HTTP URLs, or local paths.
+
+**Default:** `["/obot-tools/tools"]` (jrmatherly/obot-entraid fork embedded tools)
+
+**Use Cases:**
+- Add custom tool repositories (GitHub, GitLab, etc.)
+- Include organization-specific gptscript tools
+- Enable beta/experimental tool registries for testing
+
+**Security:** Only add registries from trusted sources - accessible to all authenticated users
+
+### MCP Catalog Configuration (Optional)
+```yaml
+obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
+# or use custom catalog:
+# obot_default_mcp_catalog: "https://github.com/yourorg/mcp-catalog"
+```
+
+Provides a default MCP server catalog accessible to all users for tool discovery.
+
+**Default:** `""` (no default catalog)
+
+**Use Cases:**
+- Pre-populate MCP server catalog for all users
+- Point to organization-specific MCP catalog repository
+- Enable curated tool discovery experience
+- Enterprise deployments with approved-tools-only policies
+
+**Supported Formats:** GitHub repo URL, HTTP(S) URL, or local path
 
 ### MCP Namespace Resource Quotas
 ```yaml
@@ -313,8 +410,13 @@ After deployment, configure the audit log export in Obot:
 ```yaml
 obot_monitoring_enabled: true   # ServiceMonitor + Grafana dashboard
 obot_tracing_enabled: true      # OTLP traces to Tempo
+obot_otel_sample_prob: "0.1"    # OpenTelemetry sampling probability (0.0-1.0)
 obot_litellm_enabled: true      # Use LiteLLM as model gateway
 ```
+
+**OpenTelemetry Sampling:** Controls what percentage of traces are exported to reduce overhead. Lower values (e.g., `0.1` = 10%) reduce data volume, higher values (e.g., `1.0` = 100%) provide complete trace coverage. Adjust based on traffic volume and observability requirements.
+
+**Note:** Tempo only supports traces, not metrics. The "failed to upload metrics" error in Obot logs is expected and non-fatal - traces still work correctly.
 
 ## File Structure
 
@@ -328,7 +430,9 @@ templates/config/kubernetes/apps/ai-system/obot/
     ├── postgresql.yaml.j2      # CloudNativePG Cluster + Database
     ├── secret.sops.yaml.j2     # Encrypted credentials
     ├── referencegrant.yaml.j2  # Gateway API cross-namespace
-    └── networkpolicy.yaml.j2   # CiliumNetworkPolicy
+    ├── networkpolicy.yaml.j2   # CiliumNetworkPolicy
+    ├── servicemonitor.yaml.j2  # Prometheus metrics
+    └── dashboard-configmap.yaml.j2  # Grafana dashboard (when monitoring enabled)
 
 templates/config/kubernetes/apps/ai-system/obot/mcp-namespace/
 └── app/
@@ -569,3 +673,11 @@ avoiding hairpin NAT issues with internal LoadBalancer IPs.
 - `obot_monitoring_enabled` - true when monitoring + obot_monitoring_enabled
 - `obot_tracing_enabled` - true when tracing + obot_tracing_enabled
 - `obot_litellm_enabled` - true when litellm + obot_litellm_enabled
+
+---
+
+**Last Updated:** January 13, 2026
+**Default Image:** jrmatherly/obot-entraid:0.2.33
+**Default Subdomain:** obot
+**Chart Template:** bjw-s/app-template (via OCI)
+**MCP Namespace:** obot-mcp (20 pods max, 4 CPU req / 8 CPU limit)

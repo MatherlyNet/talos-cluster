@@ -426,3 +426,10 @@ ssh-keygen -t ed25519 -C "deploy-key" -f github-deploy.key -q -P ""
 task configure
 git add -A && git commit -m "Rotate deploy key" && git push
 ```
+
+---
+
+**Last Updated:** January 13, 2026
+**Task Runner:** go-task (taskfile.dev)
+**Reference:** Run `task --list` for complete command listing
+**Related Docs:** TROUBLESHOOTING.md, CLI_REFERENCE.md

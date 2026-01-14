@@ -158,12 +158,34 @@ kubernetes_version: "1.35.0"
 # REF: docs/research/obot-mcp-gateway-integration-jan-2026.md
 # NOTE: Requires cnpg_enabled: true for PostgreSQL with pgvector
 # obot_enabled: false
+# obot_version: "0.2.33"
+# obot_replicas: 1
+# obot_cpu_request: "500m"
+# obot_cpu_limit: "2000m"
+# obot_memory_request: "1Gi"
+# obot_memory_limit: "4Gi"
 # obot_db_password: "test-obot-db-password"
+# obot_storage_class: ""
+# obot_workspace_provider: "directory"
+# obot_s3_bucket: "obot-workspaces"
+# obot_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+# obot_s3_region: "us-east-1"
+# obot_workspace_s3_access_key: "test-obot-workspace-access"
+# obot_workspace_s3_secret_key: "test-obot-workspace-secret"
+# obot_encryption_provider: "custom"
 # obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 # obot_bootstrap_token: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# obot_admin_emails: ""
+# obot_owner_emails: ""
+# obot_allowed_email_domains: "*"
 # obot_keycloak_enabled: false
 # obot_keycloak_client_secret: "test-obot-oidc-secret"
 # obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"
+# obot_keycloak_allowed_groups: ""
+# obot_keycloak_allowed_roles: ""
+# obot_entra_tenant_id: ""
+# obot_entra_client_id: ""
+# obot_entra_client_secret: ""
 # obot_s3_access_key: "test-obot-s3-access"
 # obot_s3_secret_key: "test-obot-s3-secret"
 # Obot Audit Log Export (requires rustfs_enabled: true)
@@ -171,6 +193,7 @@ kubernetes_version: "1.35.0"
 # obot_audit_s3_secret_key: "test-obot-audit-secret"
 # obot_monitoring_enabled: false
 # obot_tracing_enabled: false
+# obot_otel_sample_prob: "0.1"
 
 # Headlamp - Kubernetes Web UI (optional - uncomment to test)
 # REF: https://headlamp.dev/

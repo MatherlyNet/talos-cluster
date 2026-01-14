@@ -84,6 +84,7 @@ spec:
       OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
       OBOT_SERVER_DISABLE_UPDATE_CHECK: "true"
 
+
       OBOT_SERVER_LLM_BASE_URL: "http://litellm.ai-system.svc.cluster.local:4000/v1"
 
       OBOT_SERVER_OTEL_BASE_EXPORT_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4317"

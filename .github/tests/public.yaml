@@ -419,9 +419,24 @@ kubernetes_version: "1.35.0"
 # obot_subdomain: "obot"
 # obot_version: "0.2.33"
 # obot_replicas: 1
+# obot_cpu_request: "500m"
+# obot_cpu_limit: "2000m"
+# obot_memory_request: "1Gi"
+# obot_memory_limit: "4Gi"
 # obot_db_password: "test-obot-db-password"
+# obot_storage_class: ""
+# obot_workspace_provider: "directory"
+# obot_s3_bucket: "obot-workspaces"
+# obot_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+# obot_s3_region: "us-east-1"
+# obot_workspace_s3_access_key: "test-obot-workspace-access"
+# obot_workspace_s3_secret_key: "test-obot-workspace-secret"
+# obot_encryption_provider: "custom"
 # obot_encryption_key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 # obot_bootstrap_token: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+# obot_admin_emails: ""
+# obot_owner_emails: ""
+# obot_allowed_email_domains: "*"
 # Obot Keycloak SSO (requires keycloak_enabled: true)
 # obot_keycloak_enabled: true
 # obot_keycloak_client_id: "obot"
@@ -429,6 +444,10 @@ kubernetes_version: "1.35.0"
 # obot_keycloak_cookie_secret: "test-obot-cookie-secret-at-least-32-chars"
 # obot_keycloak_allowed_groups: ""
 # obot_keycloak_allowed_roles: ""
+# Obot Entra ID (alternative to Keycloak)
+# obot_entra_tenant_id: ""
+# obot_entra_client_id: ""
+# obot_entra_client_secret: ""
 # Obot MCP Namespace Configuration
 # obot_mcp_namespace: "obot-mcp"
 # obot_mcp_cpu_requests_quota: "4"
@@ -445,6 +464,7 @@ kubernetes_version: "1.35.0"
 # Obot Observability
 # obot_monitoring_enabled: true
 # obot_tracing_enabled: true
+# obot_otel_sample_prob: "0.1"
 # obot_litellm_enabled: true
 
 # Headlamp - Kubernetes Web UI (optional - uncomment to test)

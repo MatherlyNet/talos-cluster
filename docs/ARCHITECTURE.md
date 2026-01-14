@@ -372,3 +372,11 @@ task talos:upgrade-k8s
 │                     (default/echo, custom apps, etc.)                               │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+**Last Updated:** January 13, 2026
+**Talos Linux:** v1.12.1
+**Kubernetes:** v1.35.0
+**Flux CD:** v2.7.5 (via Flux Operator v0.38.1)
+**Cilium CNI:** Native routing mode, kube-proxy replacement enabled

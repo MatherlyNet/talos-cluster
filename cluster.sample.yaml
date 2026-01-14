@@ -2131,6 +2131,22 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: 1)
 # obot_replicas: 1
 
+# -- Obot CPU request
+#    (OPTIONAL) / (DEFAULT: "500m")
+# obot_cpu_request: "500m"
+
+# -- Obot CPU limit
+#    (OPTIONAL) / (DEFAULT: "2000m")
+# obot_cpu_limit: "2000m"
+
+# -- Obot memory request
+#    (OPTIONAL) / (DEFAULT: "1Gi")
+# obot_memory_request: "1Gi"
+
+# -- Obot memory limit
+#    (OPTIONAL) / (DEFAULT: "4Gi")
+# obot_memory_limit: "4Gi"
+
 # =============================================================================
 # OBOT POSTGRESQL DATABASE (CloudNativePG with pgvector)
 # =============================================================================
@@ -2162,14 +2178,62 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "20Gi")
 # obot_storage_size: "20Gi"
 
+# -- Storage class for Obot PVC
+#    Falls back to global storage_class if not set
+#    (OPTIONAL) / (DEFAULT: inherits from storage_class)
+# obot_storage_class: ""
+
+# =============================================================================
+# OBOT WORKSPACE PROVIDER
+# =============================================================================
+# Workspace storage backend for agent files and artifacts.
+# - "directory": Single PVC (requires updateStrategy: Recreate, replicas: 1)
+# - "s3": S3-compatible storage (enables multi-replica with RollingUpdate)
+# REQUIRES: rustfs_enabled: true (for S3 mode)
+# -----------------------------------------------------------------------------
+
+# -- Workspace provider type
+#    (OPTIONAL) / (DEFAULT: "directory")
+# obot_workspace_provider: "directory"
+
+# -- S3 bucket name for workspace storage
+#    REQUIRED when obot_workspace_provider: "s3"
+#    (OPTIONAL)
+# obot_s3_bucket: "obot-workspaces"
+
+# -- S3 endpoint URL
+#    (OPTIONAL) / (DEFAULT: "http://rustfs-svc.storage.svc.cluster.local:9000")
+# obot_s3_endpoint: "http://rustfs-svc.storage.svc.cluster.local:9000"
+
+# -- S3 region
+#    (OPTIONAL) / (DEFAULT: "us-east-1")
+# obot_s3_region: "us-east-1"
+
+# -- S3 workspace access key for workspace provider (SOPS-encrypted)
+#    Create policy 'obot-workspace-storage' scoped to obot-workspaces bucket
+#    Create 'obot-workspace' user in ai-system group
+#    REQUIRED when obot_workspace_provider: "s3"
+#    (OPTIONAL)
+# obot_workspace_s3_access_key: ""
+
+# -- S3 workspace secret key (SOPS-encrypted)
+#    REQUIRED when obot_workspace_provider: "s3"
+#    (OPTIONAL)
+# obot_workspace_s3_secret_key: ""
+
 # =============================================================================
 # OBOT ENCRYPTION
 # =============================================================================
 # Obot uses encryption for data at rest. This key must be base64-encoded 32 bytes.
 
+# -- Encryption provider type
+#    Options: custom, aws, gcp, azure
+#    (OPTIONAL) / (DEFAULT: "custom")
+# obot_encryption_provider: "custom"
+
 # -- Data at rest encryption key (SOPS-encrypted)
 #    Generate with: openssl rand -base64 32
-#    (REQUIRED when obot_enabled: true)
+#    (REQUIRED when obot_enabled: true and obot_encryption_provider: "custom")
 # obot_encryption_key: ""
 
 # -- Bootstrap token for initial platform setup (SOPS-encrypted)
@@ -2177,6 +2241,27 @@ cloudflare_gateway_addr: ""
 #    Generate with: openssl rand -hex 32
 #    (OPTIONAL)
 # obot_bootstrap_token: ""
+
+# =============================================================================
+# OBOT AUTHENTICATION & ACCESS CONTROL
+# =============================================================================
+# Configure admin/owner access levels and email domain restrictions.
+# -----------------------------------------------------------------------------
+
+# -- Admin email addresses (full platform access)
+#    Comma-separated list of email addresses granted admin privileges
+#    (OPTIONAL)
+# obot_admin_emails: ""
+
+# -- Owner email addresses (highest privilege level)
+#    Comma-separated list of email addresses granted owner privileges
+#    (OPTIONAL)
+# obot_owner_emails: ""
+
+# -- Allowed email domains for authentication
+#    Comma-separated list of allowed domains or "*" for all domains
+#    (OPTIONAL) / (DEFAULT: "*")
+# obot_allowed_email_domains: "*"
 
 # =============================================================================
 # OBOT KEYCLOAK SSO (requires keycloak_enabled: true)
@@ -2218,6 +2303,56 @@ cloudflare_gateway_addr: ""
 #    Leave empty to allow all authenticated users
 #    (OPTIONAL) / (e.g. "obot-user,obot-admin")
 # obot_keycloak_allowed_roles: ""
+
+# =============================================================================
+# OBOT ENTRA ID (AZURE AD) SSO - Alternative to Keycloak
+# =============================================================================
+# NOTE: Use either Keycloak OR Entra ID authentication, not both.
+# When enabled, OBOT_SERVER_AUTH_PROVIDER will be set to "entra-id".
+# REF: https://github.com/jrmatherly/obot-entraid
+# -----------------------------------------------------------------------------
+
+# -- Entra ID (Azure AD) tenant ID
+#    (REQUIRED when using Entra ID authentication)
+# obot_entra_tenant_id: ""
+
+# -- Entra ID client ID (SOPS-encrypted)
+#    (REQUIRED when using Entra ID authentication)
+# obot_entra_client_id: ""
+
+# -- Entra ID client secret (SOPS-encrypted)
+#    (REQUIRED when using Entra ID authentication)
+# obot_entra_client_secret: ""
+
+# =============================================================================
+# OBOT TOOL REGISTRY CONFIGURATION (OPTIONAL)
+# =============================================================================
+# Specify additional gptscript tool registries for custom tools and auth providers.
+# Supports GitHub repos, HTTP URLs, or local paths. Only add trusted sources.
+# REF: https://github.com/obot-platform/tools
+# -----------------------------------------------------------------------------
+
+# -- GPTScript tool registries (comma-separated in env var)
+#    (OPTIONAL) / (DEFAULT: ["/obot-tools/tools"])
+#    Uses jrmatherly/obot-entraid fork's embedded tools by default
+# obot_tool_registries:
+#   - "github.com/obot-platform/tools"      # Official upstream tools
+#   - "/obot-tools/tools"                   # Entraid fork custom tools
+#   - "github.com/yourorg/custom-tools"     # Organization-specific tools
+
+# =============================================================================
+# OBOT MCP CATALOG CONFIGURATION (OPTIONAL)
+# =============================================================================
+# Pre-populated MCP server catalog accessible to all users for tool discovery.
+# Can be GitHub repo URL, HTTP(S) URL, or local path.
+# REF: https://github.com/obot-platform/mcp-catalog
+# -----------------------------------------------------------------------------
+
+# -- Default MCP catalog path
+#    (OPTIONAL) / (DEFAULT: "" - no default catalog)
+#    When set, users see pre-populated MCP servers immediately
+# obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
+# obot_default_mcp_catalog: "https://github.com/yourorg/mcp-catalog"  # Custom catalog
 
 # =============================================================================
 # OBOT MCP NAMESPACE CONFIGURATION
@@ -2332,6 +2467,12 @@ cloudflare_gateway_addr: ""
 #    REQUIRES: tracing_enabled: true
 #    (OPTIONAL) / (DEFAULT: false)
 # obot_tracing_enabled: false
+
+# -- OpenTelemetry trace sampling probability (0.0-1.0)
+#    Controls what percentage of traces are exported to reduce overhead
+#    Lower values = less data, higher values = more complete traces
+#    (OPTIONAL) / (DEFAULT: "0.1")
+# obot_otel_sample_prob: "0.1"
 
 # =============================================================================
 # OBOT LITELLM INTEGRATION

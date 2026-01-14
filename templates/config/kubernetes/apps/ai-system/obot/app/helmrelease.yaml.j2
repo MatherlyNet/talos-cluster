@@ -173,8 +173,15 @@ spec:
       #| ======================================================================= #|
       #| Tool Registry and Update Settings                                       #|
       #| ======================================================================= #|
-      OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
+      OBOT_SERVER_TOOL_REGISTRIES: "#{ ','.join(obot_tool_registries | default(['/obot-tools/tools'])) }#"
       OBOT_SERVER_DISABLE_UPDATE_CHECK: "true"
+
+#% if obot_default_mcp_catalog | default('') %#
+      #| ======================================================================= #|
+      #| Default MCP Catalog - Pre-populated catalog for all users              #|
+      #| ======================================================================= #|
+      OBOT_SERVER_DEFAULT_MCPCATALOG_PATH: "#{ obot_default_mcp_catalog }#"
+#% endif %#
 
 #% if litellm_enabled | default(false) %#
       #| ======================================================================= #|

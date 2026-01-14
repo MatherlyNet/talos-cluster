@@ -4,7 +4,14 @@
 
 ## Overview
 
-Talos Linux v1.12.0 is an immutable, API-driven Kubernetes OS. There is no SSH, no shell, and no package manager. All configuration is done via the Talos API using `talosctl`.
+**Talos Linux v1.12.1** is an immutable, API-driven Kubernetes OS. There is no SSH, no shell, and no package manager. All configuration is done via the Talos API using `talosctl`.
+
+**Key Facts:**
+- **Talos Version**: v1.12.1 (talenv.yaml)
+- **Kubernetes Version**: v1.35.0
+- **Config Generator**: talhelper v3.1.0
+- **Boot Method**: Talos Image Factory with schematic IDs
+- **Control Plane Scheduling**: Disabled by default (`allowSchedulingOnControlPlanes: false`)
 
 ## Architecture
 
@@ -26,6 +33,38 @@ Control plane nodes are configured with `allowSchedulingOnControlPlanes: false` 
 - Workloads will NOT be scheduled on control plane nodes
 - Dedicated worker nodes are required for running applications
 - Configurable via `templates/config/talos/patches/controller/cluster.yaml.j2`
+
+## Talos Platform Components
+
+The cluster includes platform components for Talos lifecycle management:
+
+| Component | Version | Purpose |
+| --------- | ------- | ------- |
+| **tuppr** | v0.0.51 | Talos Upgrade Controller - GitOps-driven OS and K8s upgrades |
+| **talos-ccm** | v0.5.4 | Talos Cloud Controller Manager - Node lifecycle management |
+| **talos-backup** | v0.1.2 | Automated etcd snapshots with S3 storage and Age encryption |
+
+### tuppr (Talos Upgrade Controller)
+
+Located in `kubernetes/apps/system-upgrade/tuppr/`:
+- Manages Talos OS upgrades via `TalosUpgrade` CRs
+- Manages Kubernetes upgrades via `KubernetesUpgrade` CRs
+- Enables GitOps-driven upgrades without manual talosctl commands
+
+### talos-ccm (Cloud Controller Manager)
+
+Located in `kubernetes/apps/kube-system/talos-ccm/`:
+- Manages node lifecycle (registration, status updates)
+- Integrates Talos nodes with Kubernetes control plane
+- Always deployed (no conditional flag)
+
+### talos-backup
+
+Located in `kubernetes/apps/kube-system/talos-backup/`:
+- Automated etcd snapshots to S3-compatible storage
+- Age encryption for backup data
+- Conditional: Enabled when `backup_s3_endpoint` and `backup_s3_bucket` configured
+- See "Automated Etcd Backup" section below for details
 
 ## Configuration Generation
 
@@ -74,7 +113,7 @@ nodes:
 Version pins:
 
 ```yaml
-talosVersion: v1.12.0
+talosVersion: v1.12.1
 kubernetesVersion: v1.35.0
 ```
 
@@ -99,18 +138,24 @@ templates/config/talos/patches/
 
 ### Common Patches
 
-**Cluster Configuration** (global):
+**Cluster Configuration** (controller):
 ```yaml
 cluster:
-  network:
-    cni:
-      name: none  # Cilium provides CNI
-    podSubnets:
-      - 10.42.0.0/16
-    serviceSubnets:
-      - 10.43.0.0/16
+  allowSchedulingOnControlPlanes: false
   proxy:
     disabled: true  # Cilium replaces kube-proxy
+  coreDNS:
+    disabled: true  # CoreDNS deployed via Flux
+```
+
+**CNI Configuration** (talconfig.yaml):
+```yaml
+# Disable built-in CNI to use Cilium
+cniConfig:
+  name: none
+
+clusterPodNets: ["10.42.0.0/16"]
+clusterSvcNets: ["10.43.0.0/16"]
 ```
 
 **Machine Configuration** (global):
@@ -118,14 +163,32 @@ cluster:
 machine:
   kubelet:
     extraArgs:
-      rotate-server-certificates: "true"
+      feature-gates: ImageVolume=true  # CNPG managed extensions
+    extraConfig:
+      serializeImagePulls: false
+    nodeIP:
+      validSubnets:
+        - <node_cidr>
+  
+  features:
+    hostDNS:
+      enabled: true                    # Local DNS caching at 127.0.0.53
+      forwardKubeDNSToHost: true       # Forward CoreDNS queries
+      resolveMemberNames: true         # Hostname resolution (e.g., talos-cp-001)
+  
   network:
+    disableSearchDomain: true
     nameservers:
-      - 1.1.1.1
-      - 1.0.0.1
+      - <configured_dns_servers>       # From cluster.yaml
+    interfaces:
+      - interface: lo
+        addresses:
+          - 169.254.116.108/32         # Cilium eBPF workaround
+  
   time:
+    disabled: false
     servers:
-      - 162.159.200.1
+      - <configured_ntp_servers>       # From cluster.yaml
 ```
 
 ## Node Lifecycle
@@ -379,3 +442,10 @@ TALOSCONFIG=./talos/clusterconfig/talosconfig
 ```
 
 Set automatically by Taskfile and mise.
+
+---
+
+**Last Updated:** January 13, 2026  
+**Talos Version:** v1.12.1  
+**Kubernetes Version:** v1.35.0  
+**talhelper Version:** v3.1.0

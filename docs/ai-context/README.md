@@ -100,7 +100,13 @@ These documents are designed for efficient context loading:
 - Provides troubleshooting decision trees
 
 For minimal context loading, start with:
-1. `PROJECT_INDEX.json` (3KB)
+1. `PROJECT_INDEX.json` or `PROJECT_INDEX.md` (3KB)
 2. Relevant ai-context document (~8-12KB each)
 
 This is more efficient than loading full documentation (~64KB).
+
+---
+
+**Last Updated:** January 13, 2026
+**Total Documents:** 10 domain-specific guides
+**Coverage:** Talos, Cilium, Flux, Templates, IaC, AI Platform (LiteLLM, Langfuse, Obot, Dragonfly)

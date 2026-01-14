@@ -607,12 +607,23 @@ class Plugin(makejinja.plugin.Plugin):
             # Default settings
             data.setdefault("obot_version", "0.2.33")
             data.setdefault("obot_replicas", 1)
+            data.setdefault("obot_cpu_request", "500m")
+            data.setdefault("obot_cpu_limit", "2000m")
+            data.setdefault("obot_memory_request", "1Gi")
+            data.setdefault("obot_memory_limit", "4Gi")
             data.setdefault("obot_mcp_namespace", "obot-mcp")
             data.setdefault("obot_postgres_user", "obot")
             data.setdefault("obot_postgres_db", "obot")
             data.setdefault("obot_postgresql_replicas", 1)
             data.setdefault("obot_postgresql_storage_size", "10Gi")
             data.setdefault("obot_storage_size", "20Gi")
+            data.setdefault("obot_workspace_provider", "directory")
+            data.setdefault("obot_s3_bucket", "obot-workspaces")
+            data.setdefault("obot_s3_endpoint", "http://rustfs-svc.storage.svc.cluster.local:9000")
+            data.setdefault("obot_s3_region", "us-east-1")
+            data.setdefault("obot_encryption_provider", "custom")
+            data.setdefault("obot_allowed_email_domains", "*")
+            data.setdefault("obot_otel_sample_prob", "0.1")
             data.setdefault("obot_keycloak_client_id", "obot")
 
             # Keycloak integration - derive URLs for custom auth provider
@@ -649,6 +660,18 @@ class Plugin(makejinja.plugin.Plugin):
                 and data.get("obot_audit_s3_secret_key")
             )
             data["obot_audit_logs_enabled"] = obot_audit_logs_enabled
+
+            # Obot tool registries (default: fork's embedded tools)
+            # Comma-separated list of gptscript tool repositories
+            # Default uses jrmatherly/obot-entraid fork's embedded tools at /obot-tools/tools
+            obot_tool_registries = data.get("obot_tool_registries", ["/obot-tools/tools"])
+            data["obot_tool_registries"] = obot_tool_registries
+
+            # Obot default MCP catalog (default: none)
+            # Pre-populated MCP server catalog accessible to all users
+            # Can be GitHub repo URL, HTTP(S) URL, or local path
+            obot_default_mcp_catalog = data.get("obot_default_mcp_catalog", "")
+            data["obot_default_mcp_catalog"] = obot_default_mcp_catalog
 
             # Monitoring enabled when both flags set
             obot_monitoring_enabled = data.get(

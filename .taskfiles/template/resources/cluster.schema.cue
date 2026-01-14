@@ -680,6 +680,10 @@ import (
 	obot_subdomain?:  *"obot" | string & !=""
 	obot_version?:    *"0.2.33" | string & =~"^[0-9]+\\.[0-9]+\\.[0-9]+$"
 	obot_replicas?:   *1 | int & >=1 & <=10
+	obot_cpu_request?:    *"500m" | string & =~"^[0-9]+m?$"
+	obot_cpu_limit?:      *"2000m" | string & =~"^[0-9]+m?$"
+	obot_memory_request?: *"1Gi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_memory_limit?:   *"4Gi" | string & =~"^[0-9]+[KMGT]i$"
 
 	// Obot PostgreSQL Database (CloudNativePG with pgvector)
 	// Requires cnpg_enabled: true and cnpg_pgvector_enabled: true
@@ -689,7 +693,21 @@ import (
 	obot_postgresql_replicas?:   *1 | int & >=1 & <=5
 	obot_postgresql_storage_size?: *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
 	obot_storage_size?:          *"20Gi" | string & =~"^[0-9]+[KMGT]i$"
+	obot_storage_class?:         string  // Falls back to global storage_class if not set
 
+	// Obot Workspace Provider - Storage backend for agent files and artifacts
+	// "directory": Single PVC (requires updateStrategy: Recreate, replicas: 1)
+	// "s3": S3-compatible storage (enables multi-replica with RollingUpdate)
+	obot_workspace_provider?: *"directory" | "directory" | "s3"
+	obot_s3_bucket?:          *"obot-workspaces" | string & !=""
+	obot_s3_endpoint?:        *"http://rustfs-svc.storage.svc.cluster.local:9000" | string & !=""
+	obot_s3_region?:          *"us-east-1" | string & !=""
+	obot_workspace_s3_access_key?: string & !=""
+	obot_workspace_s3_secret_key?: string & !=""
+
+	// Obot Encryption Provider and Key for data at rest
+	// Encryption provider type: custom, aws, gcp, azure
+	obot_encryption_provider?: *"custom" | "custom" | "aws" | "gcp" | "azure"
 	// Obot Encryption Key for data at rest (base64-encoded 32 bytes)
 	// Generate with: openssl rand -base64 32
 	obot_encryption_key?: string & =~"^[A-Za-z0-9+/]{43}=$"
@@ -697,6 +715,11 @@ import (
 	// Obot Bootstrap Token for initial platform setup
 	// Generate with: openssl rand -hex 32
 	obot_bootstrap_token?: string & !=""
+
+	// Obot Authentication & Access Control
+	obot_admin_emails?:         string  // Comma-separated admin email addresses
+	obot_owner_emails?:         string  // Comma-separated owner email addresses
+	obot_allowed_email_domains?: *"*" | string  // Allowed email domains or "*" for all
 
 	// Obot Keycloak SSO (requires keycloak_enabled: true)
 	// Uses custom auth provider from jrmatherly/obot-entraid fork
@@ -706,6 +729,12 @@ import (
 	obot_keycloak_cookie_secret?:  string & =~".{32,}"  // At least 32 characters (openssl rand -base64 32)
 	obot_keycloak_allowed_groups?: string  // Comma-separated group restrictions
 	obot_keycloak_allowed_roles?:  string  // Comma-separated role restrictions
+
+	// Obot Entra ID (Azure AD) SSO - Alternative to Keycloak
+	// NOTE: Use either Keycloak OR Entra ID, not both
+	obot_entra_tenant_id?:     string & !=""  // Azure AD tenant ID
+	obot_entra_client_id?:     string & !=""  // OIDC client ID
+	obot_entra_client_secret?: string & !=""  // OIDC client secret
 
 	// Obot MCP Namespace Resource Quotas
 	obot_mcp_namespace?:               *"obot-mcp" | string & !=""
@@ -735,6 +764,7 @@ import (
 	// Obot Observability (requires monitoring_enabled and/or tracing_enabled)
 	obot_monitoring_enabled?: *false | bool  // ServiceMonitor for Prometheus metrics
 	obot_tracing_enabled?:    *false | bool  // OpenTelemetry traces to Tempo
+	obot_otel_sample_prob?:   *"0.1" | string & =~"^0\\.[0-9]+$|^1\\.0$"  // Sampling probability 0.0-1.0
 
 	// Obot LiteLLM Integration (uses internal LiteLLM as model gateway)
 	obot_litellm_enabled?: *false | bool

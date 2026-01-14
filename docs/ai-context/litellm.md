@@ -232,7 +232,8 @@ templates/config/kubernetes/apps/ai-system/litellm/
     ├── secret.sops.yaml.j2     # API keys and credentials
     ├── referencegrant.yaml.j2  # Gateway API cross-namespace access
     ├── networkpolicy.yaml.j2   # Cilium NetworkPolicy
-    └── servicemonitor.yaml.j2  # Prometheus scraping
+    ├── servicemonitor.yaml.j2  # Prometheus scraping
+    └── grafana-dashboard.yaml.j2  # Grafana dashboard (when monitoring enabled)
 
 # Note: Dragonfly is provided by the shared cache namespace deployment
 
@@ -539,3 +540,10 @@ When `network_policies_enabled: true`:
 - **Keycloak** (`keycloak_enabled`): OIDC authentication (optional)
 - **RustFS** (`rustfs_enabled`): PostgreSQL backups via CNPG Barman Cloud Plugin (optional)
 - **SOPS/Age**: Secret encryption for API keys and credentials
+
+---
+
+**Last Updated:** January 13, 2026
+**Default Image:** ghcr.io/berriai/litellm:main-v1.80.8-stable.1
+**Chart Template:** bjw-s/app-template (via OCI)
+**Azure API Versions:** 2025-01-01-preview (US East), 2025-04-01-preview (US East2)

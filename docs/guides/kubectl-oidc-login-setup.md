@@ -12,9 +12,9 @@ This guide explains how to configure `kubectl` to authenticate with your Kuberne
 ```
 ┌──────────┐    1. kubectl command     ┌────────────────────┐
 │  kubectl │ ─────────────────────────▶│  kubectl oidc-login│
-└──────────┘                            └─────────┬──────────┘
-                                                  │ 2. Opens browser
-                                                  ▼
+└──────────┘                           └─────────┬──────────┘
+                                                 │ 2. Opens browser
+                                                 ▼
                                         ┌──────────────────────┐
                                         │   Keycloak OIDC      │
                                         │  (Google IdP auth)   │
@@ -23,7 +23,7 @@ This guide explains how to configure `kubectl` to authenticate with your Kuberne
                                                   ▼
 ┌──────────┐    4. API request         ┌────────────────────┐
 │  kubectl │ ◀──── with Bearer token ──│ kubectl oidc-login │
-└─────┬────┘                            └────────────────────┘
+└─────┬────┘                           └────────────────────┘
       │ 5. API Server validates token
       ▼
 ┌────────────────────────┐

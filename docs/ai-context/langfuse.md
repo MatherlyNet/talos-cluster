@@ -368,6 +368,7 @@ templates/config/kubernetes/apps/ai-system/langfuse/
     ├── referencegrant.yaml.j2  # Allow network namespace HTTPRoute access
     ├── networkpolicy.yaml.j2   # Cilium NetworkPolicy
     ├── servicemonitor.yaml.j2  # Prometheus scraping
+    ├── dashboard-configmap.yaml.j2  # Grafana dashboard (when monitoring enabled)
     ├── sync-cronjob.yaml.j2    # SCIM role sync CronJob (if scim_sync_enabled)
     ├── sync-secret.sops.yaml.j2    # SCIM sync credentials (if scim_sync_enabled)
     └── sync-configmap.yaml.j2  # Role mapping + Python sync script (if scim_sync_enabled)
@@ -576,3 +577,10 @@ When `network_policies_enabled: true`:
 - `langfuse_monitoring_enabled` - true when monitoring + langfuse_monitoring_enabled
 - `langfuse_tracing_enabled` - true when tracing + langfuse_tracing_enabled
 - `langfuse_scim_sync_enabled` - true when keycloak + scim_sync_enabled + all credentials set
+
+---
+
+**Last Updated:** January 13, 2026
+**Helm Chart:** langfuse/langfuse-k8s (default: latest)
+**Default Subdomain:** langfuse
+**Default Storage:** PostgreSQL 10Gi, ClickHouse 20Gi

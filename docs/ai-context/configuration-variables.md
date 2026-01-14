@@ -192,7 +192,7 @@ Uses ImageVolume pattern (Kubernetes 1.35+, PostgreSQL 18+)
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | `keycloak_enabled` | Enable Keycloak | false |
-| `keycloak_subdomain` | Subdomain | "sso" |
+| `keycloak_subdomain` | Subdomain | "auth" |
 | `keycloak_realm` | Realm name | "matherlynet" |
 | `keycloak_db_mode` | "embedded" or "cnpg" | "embedded" |
 
@@ -405,7 +405,7 @@ See: `docs/guides/grafana-dashboards-implementation.md`
 | Variable | Description | Default |
 | -------- | ----------- | ------- |
 | `litellm_enabled` | Enable LiteLLM | false |
-| `litellm_subdomain` | Subdomain | "llms" |
+| `litellm_subdomain` | Subdomain | "litellm" |
 | `litellm_master_key` | API master key (SOPS) | - |
 | `litellm_salt_key` | Credential salt (SOPS) | - |
 | `litellm_db_password` | PostgreSQL password (SOPS) | - |
@@ -875,3 +875,9 @@ Computed automatically by `templates/scripts/plugin.py`:
 | `obot_monitoring_enabled` | monitoring + obot_monitoring both true |
 | `obot_tracing_enabled` | tracing + obot_tracing both true |
 | `obot_litellm_enabled` | litellm + obot_litellm both true |
+
+---
+
+**Last Updated:** January 13, 2026
+**Plugin Version:** templates/scripts/plugin.py (60+ computed variables)
+**Configuration Files:** cluster.yaml, nodes.yaml

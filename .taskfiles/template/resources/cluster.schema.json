@@ -1852,6 +1852,26 @@
       "minimum": 1,
       "maximum": 10
     },
+    "obot_cpu_request": {
+      "default": "500m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "obot_cpu_limit": {
+      "default": "2000m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "obot_memory_request": {
+      "default": "1Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "obot_memory_limit": {
+      "default": "4Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
     "obot_db_password": {
       "type": "string",
       "minLength": 1,
@@ -1883,6 +1903,52 @@
       "type": "string",
       "pattern": "^[0-9]+[KMGT]i$"
     },
+    "obot_storage_class": {
+      "type": "string"
+    },
+    "obot_workspace_provider": {
+      "default": "directory",
+      "type": "string",
+      "enum": [
+        "directory",
+        "s3"
+      ],
+      "description": "Obot Workspace Provider - Storage backend for agent files and artifacts \"directory\": Single PVC (requires updateStrategy: Recreate, replicas: 1) \"s3\": S3-compatible storage (enables multi-replica with RollingUpdate)"
+    },
+    "obot_s3_bucket": {
+      "default": "obot-workspaces",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_s3_endpoint": {
+      "default": "http://rustfs-svc.storage.svc.cluster.local:9000",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_s3_region": {
+      "default": "us-east-1",
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_workspace_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_workspace_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_encryption_provider": {
+      "default": "custom",
+      "type": "string",
+      "enum": [
+        "custom",
+        "aws",
+        "gcp",
+        "azure"
+      ],
+      "description": "Obot Encryption Provider and Key for data at rest Encryption provider type: custom, aws, gcp, azure"
+    },
     "obot_encryption_key": {
       "type": "string",
       "pattern": "^[A-Za-z0-9+/]{43}=$",
@@ -1892,6 +1958,17 @@
       "type": "string",
       "minLength": 1,
       "description": "Obot Bootstrap Token for initial platform setup Generate with: openssl rand -hex 32"
+    },
+    "obot_admin_emails": {
+      "type": "string",
+      "description": "Obot Authentication & Access Control"
+    },
+    "obot_owner_emails": {
+      "type": "string"
+    },
+    "obot_allowed_email_domains": {
+      "default": "*",
+      "type": "string"
     },
     "obot_keycloak_enabled": {
       "default": false,
@@ -1916,6 +1993,19 @@
     },
     "obot_keycloak_allowed_roles": {
       "type": "string"
+    },
+    "obot_entra_tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Obot Entra ID (Azure AD) SSO - Alternative to Keycloak NOTE: Use either Keycloak OR Entra ID, not both"
+    },
+    "obot_entra_client_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "obot_entra_client_secret": {
+      "type": "string",
+      "minLength": 1
     },
     "obot_mcp_namespace": {
       "default": "obot-mcp",
@@ -2004,6 +2094,11 @@
     "obot_tracing_enabled": {
       "default": false,
       "type": "boolean"
+    },
+    "obot_otel_sample_prob": {
+      "default": "0.1",
+      "type": "string",
+      "pattern": "^0\\.[0-9]+$|^1\\.0$"
     },
     "obot_litellm_enabled": {
       "default": false,

@@ -634,3 +634,10 @@ After `task bootstrap:talos`:
 | ---------------- | ------------- |
 | `kubeconfig` | Cluster access credentials |
 | `talos/talsecret.sops.yaml` | Encrypted Talos secrets |
+
+---
+
+**Last Updated:** January 13, 2026
+**Schema Files:** cluster.schema.cue, nodes.schema.cue (.taskfiles/template/resources/)
+**Plugin:** templates/scripts/plugin.py (60+ computed variables)
+**Default Versions:** Talos 1.12.0, Kubernetes 1.35.0 (tuppr targets)

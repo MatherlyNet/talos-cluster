@@ -11,28 +11,25 @@ This project uses [makejinja](https://github.com/mirkolenz/makejinja) for templa
 ### makejinja.toml
 
 ```toml
-[jinja]
-block_start_string = "#%"
-block_end_string = "%#"
-variable_start_string = "#{"
-variable_end_string = "}#"
-comment_start_string = "#|"
-comment_end_string = "#|"
+[makejinja]
+inputs = ["./templates/overrides", "./templates/config"]
+output = "./"
+exclude_patterns = ["*.partial.yaml.j2"]
+data = ["./cluster.yaml", "./nodes.yaml"]
+import_paths = ["./templates/scripts"]
+loaders = ["plugin:Plugin"]
+jinja_suffix = ".j2"
+copy_metadata = true
+force = true
+undefined = "chainable"
 
-# Standard Jinja settings
-trim_blocks = true
-lstrip_blocks = true
-keep_trailing_newline = true
-
-[data]
-sources = ["cluster.yaml", "nodes.yaml"]
-
-[plugins]
-loaders = ["templates/scripts/plugin.py"]
-
-[output]
-path = "."
-copy_all = false
+[makejinja.delimiter]
+block_start = "#%"
+block_end = "%#"
+comment_start = "#|"
+comment_end = "#|"
+variable_start = "#{"
+variable_end = "}#"
 ```
 
 ### Why Custom Delimiters?
@@ -171,6 +168,7 @@ vip: "#{ node_cidr | nthhost(10) }#"  # 192.168.1.10
 | `github_deploy_key()` | SSH key from github-deploy.key |
 | `github_push_token()` | Token from github-push-token.txt |
 | `talos_patches(type)` | List patch files for type |
+| `infrastructure_enabled()` | Check if Proxmox infrastructure is configured |
 
 Examples:
 ```yaml
@@ -185,46 +183,94 @@ age: "#{ age_key('public') }#"
 
 ### Computed Defaults
 
-Set automatically if not defined in cluster.yaml:
+**Simple Defaults** - Set automatically if not defined in cluster.yaml:
 
 | Variable | Default Value |
 | ---------- | -------------- |
-| `node_default_gateway` | First IP in node_cidr |
+| `node_default_gateway` | First IP in node_cidr (via nthhost) |
 | `node_dns_servers` | `["1.1.1.1", "1.0.0.1"]` |
-| `node_ntp_servers` | `["162.159.200.1", ...]` |
+| `node_ntp_servers` | `["162.159.200.1", "162.159.200.123"]` |
 | `cluster_pod_cidr` | `10.42.0.0/16` |
 | `cluster_svc_cidr` | `10.43.0.0/16` |
 | `repository_branch` | `main` |
 | `repository_visibility` | `public` |
 | `cilium_loadbalancer_mode` | `dsr` |
 
-Computed from other values:
+**Network & Infrastructure** - Computed from configuration:
 
 | Variable | Computed When |
 | ---------- | --------------- |
-| `cilium_bgp_enabled` | All BGP keys present |
-| `spegel_enabled` | More than 1 node |
+| `cilium_bgp_enabled` | All BGP keys present (router_addr, router_asn, node_asn) |
+| `spegel_enabled` | More than 1 node (or explicitly set) |
 | `unifi_dns_enabled` | unifi_host + unifi_api_key set |
-| `k8s_gateway_enabled` | unifi_dns_enabled is false |
+| `k8s_gateway_enabled` | unifi_dns_enabled is false (mutually exclusive) |
 | `talos_backup_enabled` | backup_s3_endpoint + backup_s3_bucket set |
-| `oidc_enabled` | oidc_issuer_url + oidc_jwks_uri set |
+| `backup_s3_internal` | backup_s3_endpoint contains `.svc.cluster.local` |
 | `infrastructure_enabled` | proxmox_api_url + proxmox_node set |
-| `cnpg_enabled` | cnpg_enabled explicitly set to true |
-| `cnpg_backup_enabled` | cnpg + rustfs + backup flag + credentials set |
+
+**Authentication & OIDC** - Auto-derived from Keycloak or explicit config:
+
+| Variable | Computed When |
+| ---------- | --------------- |
+| `oidc_enabled` | oidc_issuer_url + oidc_jwks_uri set |
+| `oidc_sso_enabled` | oidc_sso_enabled + issuer_url + client_id + client_secret set |
+| `keycloak_enabled` | keycloak_enabled explicitly true |
+| `keycloak_hostname` | `{keycloak_subdomain}.{cloudflare_domain}` |
+| `keycloak_issuer_url` | `https://{keycloak_hostname}/realms/{keycloak_realm}` |
+| `keycloak_internal_issuer_url` | `http://keycloak-service.identity.svc.cluster.local:8080/realms/{keycloak_realm}` |
+| `keycloak_jwks_uri` | `{keycloak_issuer_url}/protocol/openid-connect/certs` |
+| `keycloak_bootstrap_oidc_client` | keycloak_enabled + oidc_sso_enabled + oidc_client_secret set |
+| `grafana_oidc_enabled` | monitoring + keycloak + grafana_oidc_enabled + client_secret set |
+
+**Database (CNPG)** - PostgreSQL operator features:
+
+| Variable | Computed When |
+| ---------- | --------------- |
+| `cnpg_enabled` | cnpg_enabled explicitly true |
+| `cnpg_backup_enabled` | cnpg + rustfs + cnpg_backup_enabled + S3 credentials set |
 | `cnpg_barman_plugin_enabled` | cnpg_enabled + cnpg_barman_plugin_enabled both true |
 | `cnpg_pgvector_enabled` | cnpg_enabled + cnpg_pgvector_enabled both true |
-| `loki_deployment_mode` | "SimpleScalable" when rustfs_enabled, else "SingleBinary" |
-| `keycloak_enabled` | keycloak_enabled explicitly set to true |
-| `keycloak_hostname` | Auto-derived: subdomain + cloudflare_domain |
-| `keycloak_issuer_url` | Auto-derived: https://hostname/realms/realm |
-| `keycloak_jwks_uri` | Auto-derived: issuer_url + /protocol/openid-connect/certs |
-| `keycloak_backup_enabled` | rustfs_enabled + keycloak S3 credentials set |
-| `keycloak_tracing_enabled` | tracing_enabled + keycloak_tracing_enabled both true |
-| `keycloak_monitoring_enabled` | monitoring_enabled + keycloak_monitoring_enabled both true |
-| `rustfs_monitoring_enabled` | monitoring_enabled + rustfs_monitoring_enabled both true |
+| `cnpg_postgres_image` | `ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie` |
+| `cnpg_pgvector_image` | `ghcr.io/cloudnative-pg/pgvector:0.8.1-18-trixie` |
+
+**Storage & Caching**:
+
+| Variable | Computed When |
+| ---------- | --------------- |
+| `rustfs_enabled` | rustfs_enabled explicitly true |
+| `rustfs_storage_class` | Defaults to `storage_class` or `local-path` when rustfs_enabled |
+| `dragonfly_enabled` | dragonfly_enabled explicitly true |
+| `dragonfly_backup_enabled` | dragonfly + rustfs + dragonfly_backup_enabled + S3 credentials set |
+| `dragonfly_monitoring_enabled` | monitoring_enabled + dragonfly_monitoring_enabled both true |
+
+**Observability**:
+
+| Variable | Computed When |
+| ---------- | --------------- |
+| `loki_deployment_mode` | `SimpleScalable` when rustfs_enabled, else `SingleBinary` |
 | `loki_monitoring_enabled` | monitoring_enabled + loki_monitoring_enabled both true |
-| `keycloak_bootstrap_oidc_client` | keycloak_enabled + oidc_sso_enabled + oidc_client_secret set |
-| `grafana_oidc_enabled` | monitoring_enabled + keycloak_enabled + grafana_oidc_enabled + grafana_oidc_client_secret set |
+| `keycloak_monitoring_enabled` | monitoring_enabled + keycloak_monitoring_enabled both true |
+| `keycloak_tracing_enabled` | tracing_enabled + keycloak_tracing_enabled both true |
+| `rustfs_monitoring_enabled` | monitoring_enabled + rustfs_monitoring_enabled both true |
+| `keycloak_backup_enabled` | rustfs_enabled + keycloak S3 credentials set |
+
+**AI & LLM Platform**:
+
+| Variable | Computed When |
+| ---------- | --------------- |
+| `litellm_enabled` | litellm_enabled explicitly true |
+| `litellm_hostname` | `{litellm_subdomain}.{cloudflare_domain}` |
+| `litellm_oidc_enabled` | keycloak_enabled + litellm_oidc_enabled + client_secret set |
+| `litellm_backup_enabled` | rustfs_enabled + litellm S3 credentials set |
+| `litellm_monitoring_enabled` | monitoring_enabled + litellm_monitoring_enabled both true |
+| `litellm_tracing_enabled` | tracing_enabled + litellm_tracing_enabled both true |
+| `litellm_langfuse_enabled` | litellm_langfuse_enabled + public_key + secret_key set |
+| `langfuse_enabled` | langfuse_enabled explicitly true |
+| `langfuse_sso_enabled` | keycloak_enabled + langfuse_sso_enabled + client_secret set |
+| `obot_enabled` | obot_enabled explicitly true |
+| `obot_keycloak_enabled` | keycloak_enabled + obot_keycloak_enabled + client_secret set |
+
+**REF:** Complete variable reference in `docs/ai-context/configuration-variables.md`
 
 ## Template Structure
 
@@ -438,3 +484,11 @@ task configure
 | `task template:debug` | Debug template variables |
 | `task template:tidy` | Archive template files |
 | `task template:reset` | Remove generated files |
+
+---
+
+**Last Updated:** January 13, 2026  
+**makejinja Version:** Configured in `.mise.toml`  
+**Template Delimiters:** `#%`/`%#` (blocks), `#{`/`}#` (variables), `#|`/`#|` (comments)  
+**Data Sources:** `cluster.yaml`, `nodes.yaml`  
+**Plugin:** `templates/scripts/plugin.py` (2 filters, 8 functions, 60+ computed variables)

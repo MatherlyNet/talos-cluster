@@ -117,19 +117,61 @@ When both are present, `task configure` generates `infrastructure/tofu/terraform
 
 ### Default VM Settings (Talos-optimized)
 
-Defined in `templates/scripts/plugin.py`:
+Defined in `templates/scripts/plugin.py` with **role-based defaults**:
 
+**Global Defaults** (fallback when role-specific defaults not set):
 ```python
 PROXMOX_VM_DEFAULTS = {
     "cores": 4, "sockets": 1, "memory": 8192, "disk_size": 128
 }
-PROXMOX_VM_ADVANCED = {
-    "bios": "ovmf", "machine": "q35", "cpu_type": "host",
-    "scsi_hw": "virtio-scsi-pci", "balloon": 0, "numa": True,
-    "qemu_agent": True, "net_queues": 4, "disk_discard": True,
-    "disk_ssd": True, "tags": ["kubernetes", "linux", "talos"]
+```
+
+**Controller Defaults** (optimized for etcd and control plane):
+```python
+PROXMOX_VM_CONTROLLER_DEFAULTS = {
+    "cores": 4,
+    "sockets": 1,
+    "memory": 8192,
+    "disk_size": 64  # Smaller disk - etcd only, no workloads
 }
 ```
+
+**Worker Defaults** (optimized for running workloads):
+```python
+PROXMOX_VM_WORKER_DEFAULTS = {
+    "cores": 8,
+    "sockets": 1,
+    "memory": 16384,
+    "disk_size": 256  # Larger disk for container images and workloads
+}
+```
+
+**Advanced Settings** (applied to all VMs):
+```python
+PROXMOX_VM_ADVANCED = {
+    "bios": "ovmf",
+    "machine": "q35",
+    "cpu_type": "host",
+    "scsi_hw": "virtio-scsi-pci",
+    "balloon": 0,
+    "numa": True,
+    "qemu_agent": True,
+    "net_queues": 4,
+    "disk_discard": True,
+    "disk_ssd": True,
+    "tags": ["kubernetes", "linux", "talos"],
+    "network_bridge": "vmbr0",  # Proxmox bridge interface
+    "ostype": "l26",  # Linux 2.6/3.x/4.x/5.x/6.x kernel
+    "disk_backup": False,  # Exclude from Proxmox backup jobs
+    "disk_replicate": False  # Disable Proxmox replication (K8s handles HA)
+}
+```
+
+**Merge Priority:**
+1. Per-node overrides from `nodes.yaml` (highest)
+2. Role-based defaults (`proxmox_vm_controller_defaults` or `proxmox_vm_worker_defaults`)
+3. Global defaults (`proxmox_vm_defaults`)
+4. Built-in defaults from `plugin.py` (fallback)
 
 **Important:** Never edit `terraform.tfvars` directly. Edit `cluster.yaml`/`nodes.yaml` and run `task configure`.
 
@@ -142,14 +184,16 @@ Configures the HTTP backend pointing to tfstate-worker:
 ```hcl
 terraform {
   backend "http" {
-    address        = "https://tfstate.matherlynet.io/tfstate/states/proxmox"
-    lock_address   = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    address        = "https://tfstate.#{cloudflare_domain}#/states/proxmox"
+    lock_address   = "https://tfstate.#{cloudflare_domain}#/states/proxmox/lock"
     lock_method    = "LOCK"
-    unlock_address = "https://tfstate.matherlynet.io/tfstate/states/proxmox/lock"
+    unlock_address = "https://tfstate.#{cloudflare_domain}#/states/proxmox/lock"
     unlock_method  = "UNLOCK"
   }
 }
 ```
+
+**Note:** The URL is templated from `cloudflare_domain` in `cluster.yaml`. Example: `https://tfstate.example.com/states/proxmox`
 
 Authentication is provided via environment variables:
 - `TF_HTTP_USERNAME` - Basic auth username
@@ -528,3 +572,11 @@ Bucket: `matherlynet-tfstate`
 3. **Commit after changes**: State is remote, but .tf files need version control
 4. **Lock awareness**: If interrupted, use `force-unlock` carefully
 5. **Secrets rotation**: Update passwords in both worker secrets and SOPS file
+
+---
+
+**Last Updated:** January 13, 2026  
+**OpenTofu Version:** v1.11.2  
+**Proxmox Provider:** bpg/proxmox >= 0.78.0  
+**State Backend:** HTTP (Cloudflare R2 via tfstate-worker)  
+**Repository:** `github.com/MatherlyNet/matherlynet-tfstate`

@@ -672,3 +672,10 @@ kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
 | `hubble observe --verdict DROPPED` | Policy-blocked traffic |
 | `kubectl get cnp -A` | List CiliumNetworkPolicies |
 | `kubectl get ccnp -A` | List CiliumClusterwideNetworkPolicies |
+
+---
+
+**Last Updated:** January 13, 2026  
+**Cilium Version:** 1.19.0-pre.3-dev.1-7df990dc67  
+**CNI Mode:** Native routing (no overlay)  
+**kube-proxy:** Replaced by Cilium eBPF

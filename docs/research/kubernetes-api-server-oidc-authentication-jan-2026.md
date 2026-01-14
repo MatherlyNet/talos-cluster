@@ -44,7 +44,7 @@ The Kubernetes API Server **rejects the ID token** because it has no OIDC config
        ▼
 ┌─────────────────────────────────────────────┐
 │          Keycloak OIDC Provider             │
-│  https://sso.matherly.net/realms/matherlynet │
+│ https://sso.matherly.net/realms/matherlynet │
 └──────┬──────────────────────────────────────┘
        │ 3. User logs in (Google IdP)
        │ 4. Returns authorization code

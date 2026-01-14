@@ -370,3 +370,11 @@ High Memory Usage / Evictions
 - Validation Report: `docs/research/dragonfly-implementation-validation-jan-2026.md`
 - Dragonfly Docs: https://www.dragonflydb.io/docs
 - Operator Docs: https://www.dragonflydb.io/docs/getting-started/kubernetes-operator
+
+---
+
+**Last Updated:** January 13, 2026
+**Dragonfly Version:** v1.36.0
+**Operator Version:** 1.3.1 (Helm chart)
+**Default Memory:** 512mb
+**Performance:** 25x faster than Redis with full API compatibility
