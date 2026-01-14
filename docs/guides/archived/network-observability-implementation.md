@@ -1362,7 +1362,7 @@ kubectl delete prometheusrule -n monitoring network-infrastructure
 
 ### Project Documentation
 - [Cilium Networking Guide](../ai-context/cilium-networking.md) - Cilium architecture and BGP setup
-- [Envoy Gateway Observability](./envoy-gateway-observability-security.md) - Access logging and tracing
+- [Envoy Gateway Observability](../envoy-gateway-observability-security.md) - Access logging and tracing
 - [k8s-at-home Patterns](./k8s-at-home-patterns-implementation.md) - Monitoring stack deployment
 
 ### External Documentation

@@ -3,7 +3,7 @@
 > **Guide Version:** 1.0.0
 > **Last Updated:** January 2026
 > **Status:** Implemented
-> **Source Research:** [gitops-examples-integration.md](../research/gitops-examples-integration.md)
+> **Source Research:** [gitops-examples-integration.md](../research/archive/implemented/gitops-examples-integration.md)
 
 ---
 
@@ -511,7 +511,7 @@ rclone ls r2:cluster-backups/
 
 #### Restore Procedure
 
-See [Disaster Recovery: Talos Backup Restore Procedure](../research/gitops-examples-integration.md#disaster-recovery-talos-backup-restore-procedure) in the research document.
+See [Disaster Recovery: Talos Backup Restore Procedure](../research/archive/implemented/gitops-examples-integration.md#disaster-recovery-talos-backup-restore-procedure) in the research document.
 
 ---
 

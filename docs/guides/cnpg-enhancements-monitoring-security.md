@@ -698,7 +698,7 @@ kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:909
 - [CloudNativePG External Secrets](https://cloudnative-pg.io/docs/1.28/cncf-projects/external-secrets)
 - [Cilium Network Policy Editor](https://editor.networkpolicy.io/)
 - [Project CNPG Implementation Guide](./cnpg-implementation.md)
-- [Project Cilium Network Policies Research](../research/cilium-network-policies-jan-2026.md)
+- [Project Cilium Network Policies Research](../research/archive/cilium-network-policies-jan-2026.md)
 
 ---
 

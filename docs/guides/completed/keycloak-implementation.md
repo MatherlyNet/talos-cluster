@@ -1500,7 +1500,7 @@ Key features available in this version:
 - [CloudNativePG Implementation](./cnpg-implementation.md) - PostgreSQL operator for production
 - [JWT SecurityPolicy Implementation](./jwt-securitypolicy-implementation.md)
 - [Native OIDC SecurityPolicy Implementation](./native-oidc-securitypolicy-implementation.md)
-- [OAuth2-Proxy ext_authz Implementation](./oauth2-proxy-ext-authz-implementation.md)
+- [OAuth2-Proxy ext_authz Implementation](../oauth2-proxy-ext-authz-implementation.md)
 
 ---
 

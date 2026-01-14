@@ -1529,8 +1529,8 @@ curl http://localhost:8429/targets | grep -c "node-exporter"
 ## References
 
 ### Related Project Guides
-- [Envoy Gateway Observability & Security](./envoy-gateway-observability-security.md) - JSON access logging, JWT auth, tracing (extends this stack)
-- [BGP/UniFi/Cilium Implementation](./bgp-unifi-cilium-implementation.md) - BGP networking with Hubble visibility
+- [Envoy Gateway Observability & Security](../envoy-gateway-observability-security.md) - JSON access logging, JWT auth, tracing (extends this stack)
+- [BGP/UniFi/Cilium Implementation](../bgp-unifi-cilium-implementation.md) - BGP networking with Hubble visibility
 
 ### GitHub Repositories
 - [dotdc/grafana-dashboards-kubernetes](https://github.com/dotdc/grafana-dashboards-kubernetes) - Modern K8s dashboards

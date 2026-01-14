@@ -636,7 +636,7 @@ loki:      "0 4 * * *"   # 4 AM
 
 ### Project Documentation
 - [k8s-at-home Remaining Implementation](./k8s-at-home-remaining-implementation.md#phase-2-volsync-pvc-backup)
-- [RustFS Research](../research/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
+- [RustFS Research](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
 
 ---
 

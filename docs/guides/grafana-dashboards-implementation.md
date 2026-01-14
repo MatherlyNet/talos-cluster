@@ -66,7 +66,7 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 2. **OpenTelemetry Collector configured** to receive OTLP and export to Prometheus (NOT yet implemented)
 3. **kube-prometheus-stack deployed** with `monitoring_enabled: true`
 
-**Implementation Guide:** See [RustFS OTLP Metrics Integration via Alloy](../research/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
+**Implementation Guide:** See [RustFS OTLP Metrics Integration via Alloy](../research/archive/completed/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
 
 ---
 
@@ -462,7 +462,7 @@ The RustFS OTLP metrics integration has been implemented:
 - ⏳ Pending: `task configure -y` to render templates
 - ⏳ Pending: Cluster deployment and verification
 
-**Implementation Details:** See [RustFS OTLP Metrics Integration via Alloy](../research/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
+**Implementation Details:** See [RustFS OTLP Metrics Integration via Alloy](../research/archive/completed/rustfs-otlp-metrics-alloy-integration-jan-2026.md) for the complete solution.
 
 ### Current RustFS Metrics Available
 

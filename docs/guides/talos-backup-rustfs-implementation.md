@@ -594,7 +594,7 @@ kubectl -n kube-system get secret talos-backup-s3-credentials -o jsonpath='{.dat
 
 ### Project Documentation
 - [GitOps Components Implementation](./gitops-components-implementation.md#12-talos-backup)
-- [RustFS Research](../research/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
+- [RustFS Research](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
 
 ---
 

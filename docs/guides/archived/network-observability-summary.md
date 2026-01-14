@@ -402,7 +402,7 @@ kubectl -n kube-system exec -it ds/cilium -- cilium bgp peers
 
 - **Full Implementation Guide:** [network-observability-implementation.md](./network-observability-implementation.md)
 - **Cilium Networking:** [cilium-networking.md](../ai-context/cilium-networking.md)
-- **Envoy Gateway Observability:** [envoy-gateway-observability-security.md](./envoy-gateway-observability-security.md)
+- **Envoy Gateway Observability:** [envoy-gateway-observability-security.md](../envoy-gateway-observability-security.md)
 - **k8s-at-home Patterns:** [k8s-at-home-patterns-implementation.md](./k8s-at-home-patterns-implementation.md)
 
 ---

@@ -1949,15 +1949,15 @@ hubble observe --namespace ai-system --output json > ai-system-flows.json
 - [Cilium Network Policy Guide](https://docs.cilium.io/en/stable/security/policy/)
 
 ### Project Documentation
-- [Cilium Network Policies Research](../research/cilium-network-policies-jan-2026.md)
+- [Cilium Network Policies Research](../research/archive/cilium-network-policies-jan-2026.md)
 - [Architecture Overview](../ARCHITECTURE.md)
 - [Configuration Reference](../CONFIGURATION.md)
 - [Troubleshooting Guide](../TROUBLESHOOTING.md)
 
 ### Related Guides
-- [Observability Stack Implementation](./observability-stack-implementation.md)
-- [BGP UniFi Cilium Implementation](./bgp-unifi-cilium-implementation.md)
-- [CNPG Implementation](./cnpg-implementation.md)
+- [Observability Stack Implementation](./observability-stack-implementation-victoriametrics.md)
+- [BGP UniFi Cilium Implementation](../bgp-unifi-cilium-implementation.md)
+- [CNPG Implementation](../completed/cnpg-implementation.md)
 
 ---
 

@@ -509,7 +509,7 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 - [Release Notes v1.6.1](https://docs.tetrate.io/envoy-gateway/release-announcement)
 
 ### Project Documentation
-- [Envoy Gateway Observability & Security](./envoy-gateway-observability-security.md) - JWT SecurityPolicy (Phase 2)
+- [Envoy Gateway Observability & Security](../envoy-gateway-observability-security.md) - JWT SecurityPolicy (Phase 2)
 - [OIDC Integration Research](../research/envoy-gateway-oidc-integration.md) - Research analysis
 
 ---

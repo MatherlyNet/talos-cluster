@@ -4,7 +4,7 @@
 > **Last Updated:** January 2026
 > **Status:** Partially Implemented (Phase 1 Complete, Phase 3A Enhanced)
 > **Source Research:** [k8s-at-home-patterns-research.md](../research/k8s-at-home-patterns-research.md)
-> **Remaining Phases:** [k8s-at-home-remaining-implementation.md](./k8s-at-home-remaining-implementation.md)
+> **Remaining Phases:** [k8s-at-home-remaining-implementation.md](../k8s-at-home-remaining-implementation.md)
 
 ---
 
@@ -17,14 +17,14 @@ This guide provides step-by-step implementation instructions for integrating com
 | Phase | Components | Status | Value |
 | ----- | ---------- | ------ | ----- |
 | **Phase 1** | ✅ Already Complete | ✅ Done | Foundation |
-| **Phase 2** | VolSync (PVC Backup) | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-2-volsync-pvc-backup) | High - DR for stateful apps |
+| **Phase 2** | VolSync (PVC Backup) | 📋 [Remaining Guide](../k8s-at-home-remaining-implementation.md#phase-2-volsync-pvc-backup) | High - DR for stateful apps |
 | **Phase 3A** | VictoriaMetrics + Loki + Alloy + Tempo | ✅ Enhanced | High - Full observability |
-| **Phase 3B** | kube-prometheus-stack Alternative | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-3-option-b-kube-prometheus-stack-alternative) | Alternative option |
-| **Phase 4** | bjw-s, External Secrets | 📋 [Remaining Guide](./k8s-at-home-remaining-implementation.md#phase-4-optional-enhancements) | Medium - As needed |
+| **Phase 3B** | kube-prometheus-stack Alternative | 📋 [Remaining Guide](../k8s-at-home-remaining-implementation.md#phase-3-option-b-kube-prometheus-stack-alternative) | Alternative option |
+| **Phase 4** | bjw-s, External Secrets | 📋 [Remaining Guide](../k8s-at-home-remaining-implementation.md#phase-4-optional-enhancements) | Medium - As needed |
 
 ### Phase 1 Status (Already Implemented)
 
-These components were implemented via the [GitOps Components Implementation Guide](./gitops-components-implementation.md):
+These components were implemented via the [GitOps Components Implementation Guide](../gitops-components-implementation.md):
 
 | Component | Location | Status |
 | --------- | -------- | ------ |
@@ -1120,7 +1120,7 @@ templates/config/kubernetes/apps/
 ### Project Documentation
 
 - [Source Research](../research/k8s-at-home-patterns-research.md) - Community patterns analysis
-- [GitOps Components Guide](./gitops-components-implementation.md) - Phase 1 implementation
+- [GitOps Components Guide](../gitops-components-implementation.md) - Phase 1 implementation
 - [Architecture](../ARCHITECTURE.md) - System design
 - [Configuration](../CONFIGURATION.md) - Schema reference
 

@@ -756,7 +756,7 @@ You have successfully implemented network observability when:
 - [Network Observability Summary](./network-observability-summary.md) - Executive summary
 - [Network Observability Diagrams](./network-observability-diagram.md) - Architecture diagrams
 - [Cilium Networking Guide](../ai-context/cilium-networking.md) - Cilium architecture
-- [Envoy Gateway Observability](./envoy-gateway-observability-security.md) - Access logging and tracing
+- [Envoy Gateway Observability](../envoy-gateway-observability-security.md) - Access logging and tracing
 - [k8s-at-home Patterns](./k8s-at-home-patterns-implementation.md) - Monitoring stack deployment
 
 ---
