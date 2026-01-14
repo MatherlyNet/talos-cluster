@@ -29,19 +29,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create file list excluding archived content
+        id: file-list
+        run: |
+          # Find all markdown files excluding archived directories
+          # Archived content represents frozen snapshots and doesn't need link validation
+          FILES=$(find docs/ -name "*.md" \
+            -not -path "*/archived/*" \
+            -not -path "*/archive/*" \
+            -not -path "*/serena-archive/*" | tr '\n' ',' | sed 's/,$//')
+          # Add root markdown files
+          FILES="./README.md,./CLAUDE.md,./PROJECT_INDEX.md,$FILES"
+          echo "file-list=$FILES" >> $GITHUB_OUTPUT
+          echo "Found $(echo $FILES | tr ',' '\n' | wc -l) markdown files (excluding archived content)"
+
       - name: Check links in markdown files
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: "yes"
           use-verbose-mode: "no"
           config-file: ".github/workflows/markdown-link-check-config.json"
-          folder-path: "docs/"
-          file-path: "./README.md, ./CLAUDE.md, ./PROJECT_INDEX.md"
-          max-depth: -1
+          file-path: "${{ steps.file-list.outputs.file-list }}"
           check-modified-files-only: "no"
-          # Exclude archived content from link validation
-          # Archived docs represent frozen snapshots and don't require ongoing link maintenance
-          file-exclude-pattern: "**/archived/**,**/archive/**,**/serena-archive/**"
 
       - name: Report results
         if: failure()
