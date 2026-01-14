@@ -547,7 +547,7 @@ OAuth2-Proxy automatically skips auth for `/health` via `skip-auth-regex`.
 - [OAuth2-Proxy Helm Chart](https://github.com/oauth2-proxy/manifests)
 
 ### Project Documentation
-- [Native OIDC SecurityPolicy](./native-oidc-securitypolicy-implementation.md) - Simpler SSO alternative
+- [Native OIDC SecurityPolicy](./completed/native-oidc-securitypolicy-implementation.md) - Simpler SSO alternative
 - [JWT SecurityPolicy](./envoy-gateway-observability-security.md) - API token validation
 
 ---

@@ -3,7 +3,7 @@
 > **Guide Version:** 1.2.0
 > **Last Updated:** January 2026
 > **Status:** Partially Implemented
-> **Parent Guide:** [k8s-at-home-patterns-implementation.md](./k8s-at-home-patterns-implementation.md)
+> **Parent Guide:** [k8s-at-home-patterns-implementation.md](./archived/k8s-at-home-patterns-implementation.md)
 
 ---
 
@@ -926,7 +926,7 @@ resources:
 
 ### Project Documentation
 
-- [Parent Implementation Guide](./k8s-at-home-patterns-implementation.md) - Full patterns overview
+- [Parent Implementation Guide](./archived/k8s-at-home-patterns-implementation.md) - Full patterns overview
 - [Source Research](../research/k8s-at-home-patterns-research.md) - Community patterns analysis
 - [GitOps Components Guide](./gitops-components-implementation.md) - Phase 1 implementation
 - [Configuration](../CONFIGURATION.md) - Schema reference
