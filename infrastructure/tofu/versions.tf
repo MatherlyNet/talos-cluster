@@ -12,7 +12,7 @@ terraform {
     # Using pessimistic constraint (~>) to allow patch updates while blocking breaking changes
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.78.0"
+      version = "~> 0.91.0"
     }
   }
 }
