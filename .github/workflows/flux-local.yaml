@@ -78,14 +78,14 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
+        uses: github/codeql-action/upload-sarif@db2c8fe24a75c0f28f87ed1a6fe918a5ccf7b1e6 # v4.31.10
         if: always()
         with:
           sarif_file: 'trivy-fs-results.sarif'
           category: 'trivy-filesystem'
 
       - name: Upload Trivy config scan results
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
+        uses: github/codeql-action/upload-sarif@db2c8fe24a75c0f28f87ed1a6fe918a5ccf7b1e6 # v4.31.10
         if: always()
         with:
           sarif_file: 'trivy-config-results.sarif'
