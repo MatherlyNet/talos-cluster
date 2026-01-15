@@ -139,6 +139,23 @@
       minimumReleaseAge: "3 days",
       ignoreTests: true,
     },
+    // CRITICAL: Helm v4 blocking rule MUST come before general mise auto-merge
+    {
+      description: "Block Helm v4 major updates (breaking changes)",
+      matchManagers: ["mise"],
+      matchPackageNames: ["aqua:helm/helm"],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+      // Explanation: Helm v4 introduces breaking changes requiring significant
+      // refactoring of Flux HelmReleases and chart compatibility validation.
+      // Manual upgrade required with comprehensive testing.
+    },
+    {
+      description: "Restrict Helm to v3.x versions only",
+      matchManagers: ["mise"],
+      matchPackageNames: ["aqua:helm/helm"],
+      allowedVersions: "<4.0.0",
+    },
     {
       description: "Auto-merge Mise Tools",
       matchManagers: ["mise"],
@@ -172,12 +189,6 @@
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
-    },
-    {
-      description: "Restrict Helm to v3.x",
-      matchManagers: ["mise"],
-      matchPackageNames: ["aqua:helm/helm"],
-      allowedVersions: "<4.0.0",
     },
     {
       matchUpdateTypes: ["major"],
