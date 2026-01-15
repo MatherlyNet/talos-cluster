@@ -15,6 +15,9 @@ exclude = [
   "^https?://example\\.com",
   # Rate-limited sites
   "^https://www\\.linkedin\\.com",
+  # External sites with transient connectivity issues
+  "^https://gateway-api\\.sigs\\.k8s\\.io",
+  "^https://taskfile\\.dev",
 ]
 
 # Accept these HTTP status codes as valid
