@@ -11,14 +11,36 @@ on:
     branches:
       - main
     paths:
-      - "docs/**/*.md"
-      - "*.md"
+      - "README.md"
+      - "CLAUDE.md"
+      - "PROJECT_INDEX.md"
+      - "QUICKSTART.md"
+      - "docs/ARCHITECTURE.md"
+      - "docs/APPLICATIONS.md"
+      - "docs/CONFIGURATION.md"
+      - "docs/OPERATIONS.md"
+      - "docs/TROUBLESHOOTING.md"
+      - "docs/CLI_REFERENCE.md"
+      - "docs/NETWORK-INVENTORY.md"
+      - "docs/ai-context/**/*.md"
       - ".github/workflows/markdown-link-check.yaml"
+      - ".github/workflows/lychee.toml"
   pull_request:
     paths:
-      - "docs/**/*.md"
-      - "*.md"
+      - "README.md"
+      - "CLAUDE.md"
+      - "PROJECT_INDEX.md"
+      - "QUICKSTART.md"
+      - "docs/ARCHITECTURE.md"
+      - "docs/APPLICATIONS.md"
+      - "docs/CONFIGURATION.md"
+      - "docs/OPERATIONS.md"
+      - "docs/TROUBLESHOOTING.md"
+      - "docs/CLI_REFERENCE.md"
+      - "docs/NETWORK-INVENTORY.md"
+      - "docs/ai-context/**/*.md"
       - ".github/workflows/markdown-link-check.yaml"
+      - ".github/workflows/lychee.toml"
 
 jobs:
   markdown-link-check:
@@ -30,53 +52,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check links in core documentation
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        uses: lycheeverse/lychee-action@v2
         with:
-          use-quiet-mode: "yes"
-          use-verbose-mode: "no"
-          config-file: ".github/workflows/markdown-link-check-config.json"
-          check-modified-files-only: "no"
-          # Core documentation only - explicit whitelist for operational docs
-          # Excludes guides, research, workflows, and other auxiliary documentation
-          file-path: >-
-            ./AGENTS.md,
-            ./CLAUDE.md,
-            ./README.md,
-            ./QUICKSTART.md,
-            ./PROJECT_INDEX.md,
-            ./docs/ARCHITECTURE.md,
-            ./docs/APPLICATIONS.md,
-            ./docs/AUDIT_DELIVERABLES.md,
-            ./docs/AUDIT_SUMMARY.md,
-            ./docs/CLI_REFERENCE.md,
-            ./docs/CONFIGURATION.md,
-            ./docs/DIAGRAMS.md,
-            ./docs/INDEX.md,
-            ./docs/NETWORK-INVENTORY.md,
-            ./docs/OPERATIONS.md,
-            ./docs/PLUGIN_API_REFERENCE.md,
-            ./docs/QUICKSTART.md,
-            ./docs/TROUBLESHOOTING.md,
-            ./docs/ai-context/README.md,
-            ./docs/ai-context/cilium-networking.md,
-            ./docs/ai-context/configuration-variables.md,
-            ./docs/ai-context/dragonfly.md,
-            ./docs/ai-context/flux-gitops.md,
-            ./docs/ai-context/infrastructure-opentofu.md,
-            ./docs/ai-context/langfuse.md,
-            ./docs/ai-context/litellm.md,
-            ./docs/ai-context/obot.md,
-            ./docs/ai-context/talos-operations.md,
-            ./docs/ai-context/template-system.md,
-            ./docs/ai-context/patterns/README.md,
-            ./docs/ai-context/patterns/CHANGELOG.md,
-            ./docs/ai-context/patterns/cnpg-password-rotation.md,
-            ./docs/ai-context/patterns/dragonfly-acl-configuration.md,
-            ./docs/ai-context/patterns/rustfs-iam-setup.md
+          # Explicitly list core documentation files to check
+          # Excludes auxiliary docs (guides, research, workflows)
+          args: >-
+            --verbose
+            --no-progress
+            --config .github/workflows/lychee.toml
+            README.md
+            CLAUDE.md
+            PROJECT_INDEX.md
+            QUICKSTART.md
+            AGENTS.md
+            docs/ARCHITECTURE.md
+            docs/APPLICATIONS.md
+            docs/AUDIT_DELIVERABLES.md
+            docs/AUDIT_SUMMARY.md
+            docs/CLI_REFERENCE.md
+            docs/CONFIGURATION.md
+            docs/DIAGRAMS.md
+            docs/INDEX.md
+            docs/NETWORK-INVENTORY.md
+            docs/OPERATIONS.md
+            docs/PLUGIN_API_REFERENCE.md
+            docs/QUICKSTART.md
+            docs/TROUBLESHOOTING.md
+            'docs/ai-context/*.md'
+            'docs/ai-context/patterns/*.md'
+          fail: true
+          format: markdown
+          output: lychee-report.md
+
+      - name: Upload link check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lychee-report
+          path: lychee-report.md
+          retention-days: 7
 
       - name: Report results
         if: failure()
         run: |
-          echo "::error::Broken links detected in markdown files"
-          echo "Please check the workflow logs for details"
+          echo "::error::Broken links detected in core documentation"
+          echo "Check the lychee-report artifact for details"
           exit 1
