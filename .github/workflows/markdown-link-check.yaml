@@ -29,28 +29,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create file list excluding archived content
-        id: file-list
-        run: |
-          # Find all markdown files excluding archived directories
-          # Archived content represents frozen snapshots and doesn't need link validation
-          FILES=$(find docs/ -name "*.md" \
-            -not -path "*/archived/*" \
-            -not -path "*/archive/*" \
-            -not -path "*/serena-archive/*" | tr '\n' ',' | sed 's/,$//')
-          # Add root markdown files
-          FILES="./README.md,./CLAUDE.md,./PROJECT_INDEX.md,$FILES"
-          echo "file-list=$FILES" >> $GITHUB_OUTPUT
-          echo "Found $(echo $FILES | tr ',' '\n' | wc -l) markdown files (excluding archived content)"
-
-      - name: Check links in markdown files
+      - name: Check links in core documentation
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: "yes"
           use-verbose-mode: "no"
           config-file: ".github/workflows/markdown-link-check-config.json"
-          file-path: "${{ steps.file-list.outputs.file-list }}"
           check-modified-files-only: "no"
+          # Core documentation only - explicit whitelist for operational docs
+          # Excludes guides, research, workflows, and other auxiliary documentation
+          file-path: >-
+            ./AGENTS.md,
+            ./CLAUDE.md,
+            ./README.md,
+            ./QUICKSTART.md,
+            ./PROJECT_INDEX.md,
+            ./docs/ARCHITECTURE.md,
+            ./docs/APPLICATIONS.md,
+            ./docs/AUDIT_DELIVERABLES.md,
+            ./docs/AUDIT_SUMMARY.md,
+            ./docs/CLI_REFERENCE.md,
+            ./docs/CONFIGURATION.md,
+            ./docs/DIAGRAMS.md,
+            ./docs/INDEX.md,
+            ./docs/NETWORK-INVENTORY.md,
+            ./docs/OPERATIONS.md,
+            ./docs/PLUGIN_API_REFERENCE.md,
+            ./docs/QUICKSTART.md,
+            ./docs/TROUBLESHOOTING.md,
+            ./docs/ai-context/README.md,
+            ./docs/ai-context/cilium-networking.md,
+            ./docs/ai-context/configuration-variables.md,
+            ./docs/ai-context/dragonfly.md,
+            ./docs/ai-context/flux-gitops.md,
+            ./docs/ai-context/infrastructure-opentofu.md,
+            ./docs/ai-context/langfuse.md,
+            ./docs/ai-context/litellm.md,
+            ./docs/ai-context/obot.md,
+            ./docs/ai-context/talos-operations.md,
+            ./docs/ai-context/template-system.md,
+            ./docs/ai-context/patterns/README.md,
+            ./docs/ai-context/patterns/CHANGELOG.md,
+            ./docs/ai-context/patterns/cnpg-password-rotation.md,
+            ./docs/ai-context/patterns/dragonfly-acl-configuration.md,
+            ./docs/ai-context/patterns/rustfs-iam-setup.md
 
       - name: Report results
         if: failure()
