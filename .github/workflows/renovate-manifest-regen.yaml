@@ -168,11 +168,9 @@ jobs:
       # ------------------------------------------------------------------------
       # mise provides task runner and all required tools (opentofu, talosctl, etc.)
       - name: Setup mise
-        uses: jdx/mise-action@d6e32c1796099e0f1f3ac741c220a8b7eae9e5dd # v2.1.0
+        uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3.5.1
         with:
-          install: true
           cache: true
-          experimental: true
 
       # ------------------------------------------------------------------------
       # Step 3: Configure Git Identity
