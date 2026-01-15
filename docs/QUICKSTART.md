@@ -347,7 +347,7 @@ kubectl get ciliumloadbalancerippool
 ## Next Steps
 
 1. **Add Applications**: See [OPERATIONS.md](./OPERATIONS.md#adding-a-new-application)
-2. **Configure BGP**: See [research/bgp-unifi-cilium-integration.md](./research/bgp-unifi-cilium-integration.md)
+2. **Configure BGP**: See [research/archive/implemented/bgp-unifi-cilium-integration.md](./research/archive/implemented/bgp-unifi-cilium-integration.md)
 3. **Understand Architecture**: See [ARCHITECTURE.md](./ARCHITECTURE.md)
 4. **Day-2 Operations**: See [OPERATIONS.md](./OPERATIONS.md)
 
