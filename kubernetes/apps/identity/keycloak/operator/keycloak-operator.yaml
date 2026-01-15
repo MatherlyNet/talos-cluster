@@ -6,7 +6,7 @@ metadata:
   namespace: identity
   labels:
     app.kubernetes.io/name: keycloak-operator
-    app.kubernetes.io/version: "26.5.0"
+    app.kubernetes.io/version: "26.5.1"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -162,7 +162,7 @@ metadata:
   namespace: identity
   labels:
     app.kubernetes.io/name: keycloak-operator
-    app.kubernetes.io/version: "26.5.0"
+    app.kubernetes.io/version: "26.5.1"
 spec:
   replicas: 1
   selector:
@@ -184,7 +184,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: RELATED_IMAGE_KEYCLOAK
-              value: "quay.io/keycloak/keycloak:26.5.0"
+              value: "quay.io/keycloak/keycloak:26.5.1"
           resources:
             requests:
               cpu: 100m

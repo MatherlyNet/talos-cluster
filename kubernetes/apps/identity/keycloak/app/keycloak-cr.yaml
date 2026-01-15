@@ -6,7 +6,7 @@ metadata:
   namespace: identity
   labels:
     app.kubernetes.io/name: keycloak
-    app.kubernetes.io/version: "26.5.0"
+    app.kubernetes.io/version: "26.5.1"
 spec:
   instances: 1
 
@@ -65,7 +65,7 @@ spec:
     - name: telemetry-service-name
       value: "keycloak"
     - name: telemetry-resource-attributes
-      value: "k8s.namespace.name=identity,service.version=26.5.0,k8s.cluster.name=matherlynet"
+      value: "k8s.namespace.name=identity,service.version=26.5.1,k8s.cluster.name=matherlynet"
 
   resources:
     requests:
