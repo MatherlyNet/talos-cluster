@@ -176,7 +176,7 @@ spec:
       serviceAccountName: keycloak-operator
       containers:
         - name: keycloak-operator
-          image: "quay.io/keycloak/keycloak-operator:26.5.0"
+          image: "quay.io/keycloak/keycloak-operator:26.5.1"
           imagePullPolicy: IfNotPresent
           env:
             - name: KUBERNETES_NAMESPACE
