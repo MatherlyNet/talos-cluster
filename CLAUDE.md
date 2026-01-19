@@ -161,9 +161,17 @@ Deep context in `docs/ai-context/`:
 - `template-system.md` - makejinja templating
 - `infrastructure-opentofu.md` - OpenTofu IaC & R2 backend
 - `configuration-variables.md` - Complete cluster.yaml variable reference
+- `context-loading-strategy.md` - Token optimization & progressive loading
 - `litellm.md` - LiteLLM proxy configuration
 - `langfuse.md` - Langfuse LLM observability
 - `obot.md` - Obot MCP gateway + Keycloak SSO
+
+### Documentation Standards
+
+When creating comprehensive documentation (analysis, validation reports, implementation guides):
+- Apply standards from `docs/DOCUMENTATION_STANDARDS.md`
+- Core: Evidence-based, specific line refs, copy-paste ready code, validation commands, visual elements
+- Enhanced: CI/CD impact, failure modes, automated testing (when relevant)
 
 ## Troubleshooting Quick Reference
 

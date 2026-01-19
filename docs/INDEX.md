@@ -36,9 +36,18 @@ For AI assistants working on specific subsystems, see `ai-context/` directory:
 | -------- | ------ | -------- |
 | [flux-gitops.md](./ai-context/flux-gitops.md) | Flux CD | Adding apps, troubleshooting sync issues |
 | [talos-operations.md](./ai-context/talos-operations.md) | Talos Linux | Node operations, upgrades, configuration |
-| [cilium-networking.md](./ai-context/cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer, BGP |
+| [cilium-networking.md](./ai-context/cilium-networking.md) | Cilium CNI | Network debugging, LoadBalancer, BGP, OIDC |
 | [template-system.md](./ai-context/template-system.md) | makejinja | Template syntax, variables, new templates |
 | [infrastructure-opentofu.md](./ai-context/infrastructure-opentofu.md) | OpenTofu | IaC operations, R2 backend, Proxmox |
+| [context-loading-strategy.md](./ai-context/context-loading-strategy.md) | Context Optimization | Token usage optimization, progressive loading |
+
+### Documentation Standards
+
+For creating high-quality documentation:
+
+| Document | Purpose | Use When |
+| -------- | ------- | -------- |
+| [DOCUMENTATION_STANDARDS.md](./DOCUMENTATION_STANDARDS.md) | Standards for comprehensive docs | Creating analysis, validation reports, implementation guides |
 
 ### Understanding the System
 
