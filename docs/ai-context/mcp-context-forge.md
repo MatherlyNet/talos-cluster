@@ -147,6 +147,20 @@ mcp_context_forge_internal_observability_enabled: true  # Built-in database-back
 mcp_context_forge_plugins_enabled: true                 # Enable MCP server plugins/extensions
 ```
 
+### Header Passthrough
+```yaml
+mcp_context_forge_passthrough_enabled: true             # Enable header passthrough to MCP servers
+mcp_context_forge_passthrough_headers: '["X-Trace-Id", "X-Span-Id", "X-Request-Id", "X-User-Id", "X-Tenant-Id"]'
+mcp_context_forge_passthrough_source: "env"             # Source priority: db, env, or merge
+```
+
+**Passthrough Architecture:**
+- Forwards specified HTTP headers from client requests to backend MCP servers
+- Enables distributed tracing correlation across MCP server boundaries
+- Supports auth context forwarding (X-User-Id) for audit logging
+- Multi-tenant identification via X-Tenant-Id header
+- Security: `Authorization` headers excluded by default to prevent token leakage
+
 **Observability Architecture:**
 - **Internal Observability:** `OBSERVABILITY_ENABLED=true` enables built-in database-backed tracing with Admin UI at `/admin/observability`
 - **Prometheus Metrics:** Exposed at `/metrics/prometheus` (no authentication required)
@@ -184,6 +198,9 @@ mcp_context_forge_tracing_enabled = tracing_enabled and mcp_context_forge_tracin
 # Defaults
 mcp_context_forge_internal_observability_enabled = True  # Built-in observability always defaults to enabled
 mcp_context_forge_plugins_enabled = True                 # Plugins enabled by default
+mcp_context_forge_passthrough_enabled = False            # Passthrough disabled by default
+mcp_context_forge_passthrough_headers = '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]'  # Default tracing headers
+mcp_context_forge_passthrough_source = "env"             # Use env vars for Kubernetes
 ```
 
 ## File Structure

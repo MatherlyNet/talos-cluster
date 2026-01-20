@@ -2641,6 +2641,24 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: true)
 # mcp_context_forge_plugins_enabled: true
 
+# -- Enable HTTP header passthrough to MCP servers
+#    Forwards specified headers from client requests to backend MCP servers
+#    Useful for distributed tracing, auth context, and multi-tenancy
+#    (OPTIONAL) / (DEFAULT: false)
+# mcp_context_forge_passthrough_enabled: false
+
+# -- Headers to forward to MCP servers (JSON array format)
+#    Common headers: X-Trace-Id, X-Span-Id, X-Request-Id, X-User-Id, X-Tenant-Id
+#    (OPTIONAL) / (DEFAULT: '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]')
+# mcp_context_forge_passthrough_headers: '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]'
+
+# -- Header passthrough source priority: db, env, or merge
+#    db = database config takes precedence (default)
+#    env = environment variables always win (Kubernetes-friendly)
+#    merge = combines both sources with database values overriding duplicates
+#    (OPTIONAL) / (DEFAULT: "env")
+# mcp_context_forge_passthrough_source: "env"
+
 # -- Enable optional HyprMCP Gateway for anonymous DCR proxy
 #    Only needed if MCP clients require anonymous DCR without Keycloak IAT
 #    (OPTIONAL) / (DEFAULT: false)

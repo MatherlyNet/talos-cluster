@@ -229,6 +229,9 @@ kubernetes_version: "1.35.0"
 # mcp_context_forge_tracing_sample_rate: "0.1"
 # mcp_context_forge_internal_observability_enabled: true
 # mcp_context_forge_plugins_enabled: true
+# mcp_context_forge_passthrough_enabled: false
+# mcp_context_forge_passthrough_headers: '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]'
+# mcp_context_forge_passthrough_source: "env"
 
 # Headlamp - Kubernetes Web UI (optional - uncomment to test)
 # REF: https://headlamp.dev/

@@ -158,6 +158,15 @@ spec:
             - name: PLUGINS_ENABLED
               value: "true"
 
+            - name: ENABLE_HEADER_PASSTHROUGH
+              value: "true"
+            - name: DEFAULT_PASSTHROUGH_HEADERS
+              value: '["X-Trace-Id", "X-Span-Id", "X-Request-Id", "X-User-Id", "X-Tenant-Id"]'
+            - name: PASSTHROUGH_HEADERS_SOURCE
+              value: "env"
+            - name: ENABLE_OVERWRITE_BASE_HEADERS
+              value: "false"
+
             - name: OBSERVABILITY_ENABLED
               value: "true"
 

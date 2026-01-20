@@ -2259,6 +2259,29 @@
       "default": true,
       "type": "boolean"
     },
+    "mcp_context_forge_passthrough_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge Header Passthrough (forward headers to MCP servers)"
+    },
+    "mcp_context_forge_passthrough_headers": {
+      "type": "string",
+      "enum": [
+        "[\\",
+        ", \\",
+        ", \\",
+        "]"
+      ]
+    },
+    "mcp_context_forge_passthrough_source": {
+      "default": "env",
+      "type": "string",
+      "enum": [
+        "db",
+        "env",
+        "merge"
+      ]
+    },
     "mcp_context_forge_hyprmcp_enabled": {
       "default": false,
       "type": "boolean",

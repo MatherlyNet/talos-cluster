@@ -186,6 +186,19 @@ spec:
             - name: PLUGINS_ENABLED
               value: "#{ mcp_context_forge_plugins_enabled | default(true) | lower }#"
 
+#% if mcp_context_forge_passthrough_enabled | default(false) %#
+            #| Header Passthrough (forward headers to MCP servers) #|
+            #| REF: https://ibm.github.io/mcp-context-forge/overview/passthrough/ #|
+            - name: ENABLE_HEADER_PASSTHROUGH
+              value: "true"
+            - name: DEFAULT_PASSTHROUGH_HEADERS
+              value: '#{ mcp_context_forge_passthrough_headers | default("[]") }#'
+            - name: PASSTHROUGH_HEADERS_SOURCE
+              value: "#{ mcp_context_forge_passthrough_source | default('env') }#"
+            - name: ENABLE_OVERWRITE_BASE_HEADERS
+              value: "false"
+#% endif %#
+
             #| Internal Observability (built-in database-backed tracing with Admin UI) #|
             #| Dashboard available at /admin/observability #|
             - name: OBSERVABILITY_ENABLED

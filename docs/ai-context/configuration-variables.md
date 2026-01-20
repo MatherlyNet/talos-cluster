@@ -772,8 +772,13 @@ See: `docs/research/mcp-context-forge-deployment-guide-jan-2026.md`, `docs/ai-co
 | `mcp_context_forge_tracing_sample_rate` | Tracing sample rate | "0.1" |
 | `mcp_context_forge_internal_observability_enabled` | Built-in observability (/admin/observability) | true |
 | `mcp_context_forge_plugins_enabled` | Enable MCP server plugins/extensions | true |
+| `mcp_context_forge_passthrough_enabled` | Enable header passthrough to MCP servers | false |
+| `mcp_context_forge_passthrough_headers` | JSON array of headers to forward | `["X-Trace-Id", "X-Span-Id", "X-Request-Id"]` |
+| `mcp_context_forge_passthrough_source` | Header config source: db, env, or merge | "env" |
 
 **Metrics endpoint:** `/metrics/prometheus` (no authentication required)
+
+**Header passthrough:** Enables forwarding of HTTP headers to backend MCP servers for distributed tracing, auth context, and multi-tenancy.
 
 **Note:** External OTEL tracing requires `opentelemetry-exporter-otlp-proto-grpc` package which is NOT included in official image 1.0.0-BETA-1.
 

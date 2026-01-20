@@ -768,6 +768,11 @@ class Plugin(makejinja.plugin.Plugin):
 
             # Plugins (MCP server extensions)
             data.setdefault("mcp_context_forge_plugins_enabled", True)
+
+            # Header passthrough (forward headers to MCP servers for tracing/auth context)
+            data.setdefault("mcp_context_forge_passthrough_enabled", False)
+            data.setdefault("mcp_context_forge_passthrough_headers", '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]')
+            data.setdefault("mcp_context_forge_passthrough_source", "env")
         else:
             data["mcp_context_forge_keycloak_enabled"] = False
             data["mcp_context_forge_backup_enabled"] = False
