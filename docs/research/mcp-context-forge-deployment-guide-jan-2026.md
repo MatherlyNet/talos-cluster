@@ -1565,24 +1565,25 @@ Add MCP Context Forge user to Dragonfly ACL:
 ```yaml
 # In cluster.yaml
 dragonfly_mcpgateway_password: "..."  # Generate: openssl rand -base64 24
-
-# Dragonfly ACL rule (added to dragonfly config)
-# User: mcpgateway
-# Permissions: Full access to mcpgw:* keys
 ```
 
-Update `templates/config/kubernetes/apps/cache/dragonfly/app/configmap.yaml.j2`:
+MCP Context Forge requires broad Redis access for:
+- **Leader election**: `gateway_service_leader` key (configurable via `REDIS_LEADER_KEY`)
+- **Cache keys**: `mcpgw:*` prefix (configurable via `CACHE_PREFIX`)
+- **Pub/Sub events**: Tool, prompt, resource, and gateway event channels
+- **Session management**: Session and message TTL management
+
+The ACL is automatically configured in `dragonfly/app/secret.sops.yaml.j2`:
 
 ```yaml
-#% if mcp_context_forge_enabled | default(false) %#
-  #| MCP Context Forge cache user #|
-  - name: mcpgateway
-    password: "#{ dragonfly_mcpgateway_password | default(dragonfly_password) }#"
-    permissions:
-      - "+@all"
-      - "~mcpgw:*"
+#% if dragonfly_mcpgateway_password | default('') %#
+    #| MCP Context Forge requires broad access for leader election, cache, pub/sub, sessions #|
+    user mcpgateway on >#{ dragonfly_mcpgateway_password }# ~* +@all -@dangerous +INFO
 #% endif %#
 ```
+
+**Note**: The `~*` pattern is required because MCP Context Forge uses multiple key patterns
+that cannot be easily scoped (leader election keys don't follow a predictable prefix).
 
 ---
 
