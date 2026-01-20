@@ -1,0 +1,87 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mcp-context-forge-postgresql
+  namespace: ai-system
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+
+  bootstrap:
+    initdb:
+      database: mcpgateway
+      owner: mcpgateway
+      secret:
+        name: mcp-context-forge-db-secret
+
+  storage:
+    size: 20Gi
+    storageClass: proxmox-zfs
+
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      effective_cache_size: "768MB"
+      maintenance_work_mem: "128MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "16MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+      max_worker_processes: "4"
+      max_parallel_workers_per_gather: "2"
+      max_parallel_workers: "4"
+      max_parallel_maintenance_workers: "2"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://mcpgateway-postgres-backups/"
+      endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: mcp-context-forge-s3-secret
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: mcp-context-forge-s3-secret
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+    retentionPolicy: "7d"
+
+  monitoring:
+    enablePodMonitor: true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-context-forge-db-secret
+  namespace: ai-system
+type: kubernetes.io/basic-auth
+stringData:
+  username: mcpgateway
+  password: "7admLOM8Du66RDIxoaj7Ya48xt78r"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-context-forge-s3-secret
+  namespace: ai-system
+type: Opaque
+stringData:
+  ACCESS_KEY_ID: "mcpgateway-backup"
+  SECRET_ACCESS_KEY: "GghJJBLWpQvfJ7COmxa8GDpwgYGlDO6"

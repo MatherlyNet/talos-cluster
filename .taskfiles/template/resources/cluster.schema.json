@@ -2105,6 +2105,157 @@
       "type": "boolean",
       "description": "Obot LiteLLM Integration (uses internal LiteLLM as model gateway)"
     },
+    "mcp_context_forge_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge - MCP Gateway Platform (IBM) REF: https://github.com/IBM/mcp-context-forge REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md Provides centralized MCP server registry and gateway with multi-tenant authentication"
+    },
+    "mcp_context_forge_subdomain": {
+      "default": "mcp",
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_version": {
+      "default": "1.0.0-BETA-2",
+      "type": "string",
+      "pattern": "^v?[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "mcp_context_forge_replicas": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "mcp_context_forge_cpu_request": {
+      "default": "100m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "mcp_context_forge_cpu_limit": {
+      "default": "1000m",
+      "type": "string",
+      "pattern": "^[0-9]+m?$"
+    },
+    "mcp_context_forge_memory_request": {
+      "default": "512Mi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "mcp_context_forge_memory_limit": {
+      "default": "1Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "mcp_context_forge_db_user": {
+      "default": "mcpgateway",
+      "type": "string",
+      "minLength": 1,
+      "description": "MCP Context Forge PostgreSQL Database (CloudNativePG) Requires cnpg_enabled: true"
+    },
+    "mcp_context_forge_db_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_db_name": {
+      "default": "mcpgateway",
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_db_instances": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "mcp_context_forge_storage_size": {
+      "default": "10Gi",
+      "type": "string",
+      "pattern": "^[0-9]+[KMGT]i$"
+    },
+    "mcp_context_forge_admin_password": {
+      "type": "string",
+      "pattern": ".{16,}",
+      "description": "MCP Context Forge Core Credentials (SOPS-encrypted)"
+    },
+    "mcp_context_forge_admin_email": {
+      "type": "string",
+      "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+    },
+    "mcp_context_forge_jwt_secret": {
+      "type": "string",
+      "pattern": ".{32,}"
+    },
+    "mcp_context_forge_auth_encryption_secret": {
+      "type": "string",
+      "pattern": ".{32,}"
+    },
+    "mcp_context_forge_keycloak_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge Keycloak SSO (requires keycloak_enabled: true)"
+    },
+    "mcp_context_forge_keycloak_client_id": {
+      "default": "mcp-context-forge",
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_keycloak_client_secret": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_dcr_enabled": {
+      "default": true,
+      "type": "boolean",
+      "description": "MCP Context Forge Dynamic Client Registration (DCR) - RFC 7591 Enables MCP clients to self-register without manual configuration"
+    },
+    "mcp_context_forge_dcr_allowed_issuers": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mcp_context_forge_dcr_default_scopes": {
+      "default": "mcp:read",
+      "type": "string"
+    },
+    "mcp_context_forge_backup_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge PostgreSQL Backups (requires rustfs_enabled: true) Credentials must be created via RustFS Console UI"
+    },
+    "mcp_context_forge_s3_access_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_context_forge_s3_secret_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dragonfly_mcpgateway_password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "MCP Context Forge Dragonfly Cache Password (requires dragonfly_enabled: true + ACL) Set dragonfly_mcpgateway_password for ACL authentication"
+    },
+    "mcp_context_forge_monitoring_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge Observability (requires monitoring_enabled and/or tracing_enabled)"
+    },
+    "mcp_context_forge_tracing_enabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "mcp_context_forge_tracing_sample_rate": {
+      "default": "0.1",
+      "type": "string",
+      "pattern": "^(0|1|0\\.[0-9]+)$"
+    },
+    "mcp_context_forge_hyprmcp_enabled": {
+      "default": false,
+      "type": "boolean",
+      "description": "MCP Context Forge HyprMCP Gateway (optional anonymous DCR proxy) Only needed if MCP clients require anonymous DCR without Keycloak Initial Access Token"
+    },
     "headlamp_enabled": {
       "default": false,
       "type": "boolean",

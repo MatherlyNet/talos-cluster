@@ -2486,6 +2486,157 @@ cloudflare_gateway_addr: ""
 # obot_litellm_enabled: false
 
 # =============================================================================
+# MCP CONTEXT FORGE - MCP Gateway Platform (IBM)
+# =============================================================================
+# MCP Context Forge provides a centralized MCP (Model Context Protocol) server
+# registry and gateway with multi-tenant authentication, team management, and
+# comprehensive auditing. It enables organizations to manage and share MCP
+# servers across teams with role-based access control.
+# REF: https://github.com/IBM/mcp-context-forge
+# REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md
+# REQUIRES: cnpg_enabled: true, dragonfly_enabled: true
+# OPTIONAL: keycloak_enabled: true (for SSO), rustfs_enabled: true (for backups)
+# -----------------------------------------------------------------------------
+
+# -- Enable MCP Context Forge deployment
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: cnpg_enabled, dragonfly_enabled)
+# mcp_context_forge_enabled: false
+
+# -- MCP Context Forge subdomain (creates mcp.${cloudflare_domain})
+#    (OPTIONAL) / (DEFAULT: "mcp")
+# mcp_context_forge_subdomain: "mcp"
+
+# -- MCP Context Forge version (image tag)
+#    (OPTIONAL) / (DEFAULT: "1.0.0-BETA-2")
+# mcp_context_forge_version: "1.0.0-BETA-2"
+
+# -- Number of MCP Context Forge replicas
+#    (OPTIONAL) / (DEFAULT: 1)
+# mcp_context_forge_replicas: 1
+
+# -- CPU resource request
+#    (OPTIONAL) / (DEFAULT: "100m")
+# mcp_context_forge_cpu_request: "100m"
+
+# -- CPU resource limit
+#    (OPTIONAL) / (DEFAULT: "1000m")
+# mcp_context_forge_cpu_limit: "1000m"
+
+# -- Memory resource request
+#    (OPTIONAL) / (DEFAULT: "512Mi")
+# mcp_context_forge_memory_request: "512Mi"
+
+# -- Memory resource limit
+#    (OPTIONAL) / (DEFAULT: "1Gi")
+# mcp_context_forge_memory_limit: "1Gi"
+
+# -- PostgreSQL database username
+#    (OPTIONAL) / (DEFAULT: "mcpgateway")
+# mcp_context_forge_db_user: "mcpgateway"
+
+# -- PostgreSQL database password
+#    (REQUIRED when mcp_context_forge_enabled) / (SOPS-encrypted)
+#    Generate: openssl rand -base64 24 | tr -d '/+=' | head -c 32
+# mcp_context_forge_db_password: ""
+
+# -- PostgreSQL database name
+#    (OPTIONAL) / (DEFAULT: "mcpgateway")
+# mcp_context_forge_db_name: "mcpgateway"
+
+# -- PostgreSQL cluster instances (HA replicas)
+#    (OPTIONAL) / (DEFAULT: 1)
+# mcp_context_forge_db_instances: 1
+
+# -- PostgreSQL storage size
+#    (OPTIONAL) / (DEFAULT: "10Gi")
+# mcp_context_forge_storage_size: "10Gi"
+
+# -- Platform admin email (for initial admin account)
+#    (REQUIRED when mcp_context_forge_enabled)
+# mcp_context_forge_admin_email: "admin@example.com"
+
+# -- Platform admin password (for initial admin account)
+#    (REQUIRED when mcp_context_forge_enabled) / (SOPS-encrypted)
+#    Minimum 16 characters
+#    Generate: openssl rand -base64 24 | tr -d '/+=' | head -c 32
+# mcp_context_forge_admin_password: ""
+
+# -- JWT signing secret
+#    (REQUIRED when mcp_context_forge_enabled) / (SOPS-encrypted)
+#    Minimum 32 characters
+#    Generate: openssl rand -base64 48
+# mcp_context_forge_jwt_secret: ""
+
+# -- Auth encryption secret (for encrypting stored credentials)
+#    (REQUIRED when mcp_context_forge_enabled) / (SOPS-encrypted)
+#    Minimum 32 characters
+#    Generate: openssl rand -base64 48
+# mcp_context_forge_auth_encryption_secret: ""
+
+# -- Dragonfly cache password for MCP Gateway
+#    (REQUIRED when mcp_context_forge_enabled) / (SOPS-encrypted)
+#    Requires dragonfly_acl_enabled: true
+#    Generate: openssl rand -base64 24 | tr -d '/+=' | head -c 32
+# dragonfly_mcpgateway_password: ""
+
+# -- Enable Keycloak SSO integration
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: keycloak_enabled: true)
+# mcp_context_forge_keycloak_enabled: false
+
+# -- Keycloak client ID
+#    (OPTIONAL) / (DEFAULT: "mcp-context-forge")
+# mcp_context_forge_keycloak_client_id: "mcp-context-forge"
+
+# -- Keycloak client secret
+#    (REQUIRED when mcp_context_forge_keycloak_enabled) / (SOPS-encrypted)
+#    Generate: openssl rand -hex 32
+# mcp_context_forge_keycloak_client_secret: ""
+
+# -- Enable Dynamic Client Registration (DCR) for MCP clients
+#    (OPTIONAL) / (DEFAULT: true)
+# mcp_context_forge_dcr_enabled: true
+
+# -- DCR allowed issuers (empty = Keycloak issuer auto-added when keycloak_enabled)
+#    (OPTIONAL) / (DEFAULT: [])
+# mcp_context_forge_dcr_allowed_issuers: []
+
+# -- DCR default scopes for registered clients
+#    (OPTIONAL) / (DEFAULT: "mcp:read")
+# mcp_context_forge_dcr_default_scopes: "mcp:read"
+
+# -- Enable PostgreSQL backups to RustFS
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
+# mcp_context_forge_backup_enabled: false
+
+# -- S3 access key for PostgreSQL backups
+#    (REQUIRED when mcp_context_forge_backup_enabled) / (SOPS-encrypted)
+#    Create via RustFS Console UI
+# mcp_context_forge_s3_access_key: ""
+
+# -- S3 secret key for PostgreSQL backups
+#    (REQUIRED when mcp_context_forge_backup_enabled) / (SOPS-encrypted)
+#    Create via RustFS Console UI
+#    Generate: openssl rand -base64 24 | tr -d '/+=' | head -c 32
+# mcp_context_forge_s3_secret_key: ""
+
+# -- Enable Prometheus ServiceMonitor
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: monitoring_enabled: true)
+# mcp_context_forge_monitoring_enabled: false
+
+# -- Enable OpenTelemetry tracing to Tempo
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: tracing_enabled: true)
+# mcp_context_forge_tracing_enabled: false
+
+# -- OpenTelemetry tracing sample rate (0.0 - 1.0)
+#    (OPTIONAL) / (DEFAULT: "0.1")
+# mcp_context_forge_tracing_sample_rate: "0.1"
+
+# -- Enable optional HyprMCP Gateway for anonymous DCR proxy
+#    Only needed if MCP clients require anonymous DCR without Keycloak IAT
+#    (OPTIONAL) / (DEFAULT: false)
+# mcp_context_forge_hyprmcp_enabled: false
+
+# =============================================================================
 # HEADLAMP - Kubernetes Web UI
 # =============================================================================
 # Headlamp provides a modern, user-friendly web interface for Kubernetes cluster

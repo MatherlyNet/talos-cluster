@@ -1,0 +1,20 @@
+#% if mcp_context_forge_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE KUSTOMIZATION                                               #|
+#| ============================================================================= #|
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+  - postgresql.yaml
+  - secret.sops.yaml
+  - referencegrant.yaml
+#% if network_policies_enabled | default(false) %#
+  - networkpolicy.yaml
+#% endif %#
+#% if mcp_context_forge_monitoring_enabled | default(monitoring_enabled | default(false)) %#
+  - servicemonitor.yaml
+#% endif %#
+#% endif %#

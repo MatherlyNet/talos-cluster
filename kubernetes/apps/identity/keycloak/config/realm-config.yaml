@@ -119,6 +119,40 @@ data:
               access.token.claim: "true"
               userinfo.token.claim: "true"
 
+
+      - name: "mcp:tools"
+        description: "Access to MCP server tools"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server tools"
+        protocolMappers:
+          - name: "mcp-audience"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-audience-mapper"
+            consentRequired: false
+            config:
+              included.custom.audience: "https://mcp.matherly.net"
+              id.token.claim: "true"
+              access.token.claim: "true"
+
+      - name: "mcp:prompts"
+        description: "Access to MCP server prompts"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server prompts"
+
+      - name: "mcp:resources"
+        description: "Access to MCP server resources"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server resources"
+
     clients:
       - clientId: "$(env:OIDC_CLIENT_ID)"
         name: "Envoy Gateway SSO"
@@ -246,6 +280,56 @@ data:
         attributes:
           pkce.code.challenge.method: "S256"
           post.logout.redirect.uris: "https://obot.matherly.net/*"
+        defaultClientScopes:
+          - "profile"
+          - "email"
+          - "offline_access"
+          - "groups"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+        protocolMappers:
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+      - clientId: "$(env:MCP_CONTEXT_FORGE_CLIENT_ID)"
+        name: "MCP Context Forge"
+        description: "OIDC client for MCP Context Forge Gateway - enables SSO for multi-tenant MCP server registry"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:MCP_CONTEXT_FORGE_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://mcp.matherly.net/*"
+          - "https://mcp.matherly.net/auth/callback"
+        webOrigins:
+          - "https://mcp.matherly.net"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://mcp.matherly.net/*"
         defaultClientScopes:
           - "profile"
           - "email"

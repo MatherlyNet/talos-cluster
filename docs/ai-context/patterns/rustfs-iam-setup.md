@@ -360,6 +360,42 @@ print(s3.list_buckets())
 
 ---
 
+### MCP Context Forge (PostgreSQL Backups)
+
+**Buckets:** `mcpgateway-postgres-backups`
+
+**Policy:**
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::mcpgateway-postgres-backups"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::mcpgateway-postgres-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+---
+
 ### Loki (Log Storage)
 
 **Buckets:** `loki-chunks`, `loki-ruler`, `loki-admin`
@@ -515,6 +551,7 @@ kubectl exec -n storage deploy/rustfs -- \
 | **LiteLLM** | ai-system | litellm-cache, litellm-logs | Read/Write |
 | **Langfuse** | ai-system | langfuse-events, langfuse-media, langfuse-exports | Read/Write |
 | **Obot** | ai-system | obot-workspaces | Read/Write |
+| **MCP Context Forge** | ai-system | mcpgateway-postgres-backups | Read/Write (PostgreSQL backups) |
 | **Loki** | monitoring | loki-chunks, loki-ruler, loki-admin | Read/Write |
 | **Talos Backup** | kube-system | talos-backups | Write (etcd snapshots) |
 

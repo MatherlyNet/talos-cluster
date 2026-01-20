@@ -126,7 +126,7 @@ For complete configuration variable reference, see `docs/ai-context/configuratio
 
 **Required variables:** `node_cidr`, `cluster_api_addr`, `cluster_gateway_addr`, `cloudflare_domain`, `cloudflare_token`, `cloudflare_gateway_addr`, `repository_name`
 
-**Optional features:** UniFi DNS, Cilium BGP, Observability Stack, RustFS S3, Network Policies, Talos Backup, CloudNativePG, Keycloak OIDC, LiteLLM, Dragonfly, Langfuse, Obot, Proxmox Infrastructure
+**Optional features:** UniFi DNS, Cilium BGP, Observability Stack, RustFS S3, Network Policies, Talos Backup, CloudNativePG, Keycloak OIDC, LiteLLM, Dragonfly, Langfuse, Obot, MCP Context Forge, Proxmox Infrastructure
 
 All derived variables are computed in `templates/scripts/plugin.py`. See `docs/CONFIGURATION.md` for complete schema reference.
 
@@ -165,6 +165,7 @@ Deep context in `docs/ai-context/`:
 - `litellm.md` - LiteLLM proxy configuration
 - `langfuse.md` - Langfuse LLM observability
 - `obot.md` - Obot MCP gateway + Keycloak SSO
+- `mcp-context-forge.md` - MCP Context Forge gateway + Keycloak SSO
 
 ### Documentation Standards
 

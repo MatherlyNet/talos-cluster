@@ -1,0 +1,23 @@
+#% if mcp_context_forge_enabled | default(false) and mcp_context_forge_monitoring_enabled | default(monitoring_enabled | default(false)) %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE SERVICEMONITOR                                              #|
+#| Prometheus metrics scraping configuration                                     #|
+#| ============================================================================= #|
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mcp-context-forge
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: mcp-context-forge
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-context-forge
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+#% endif %#

@@ -691,6 +691,83 @@ class Plugin(makejinja.plugin.Plugin):
             data["obot_monitoring_enabled"] = False
             data["obot_tracing_enabled"] = False
 
+        # MCP Context Forge - MCP Gateway Platform (IBM)
+        # Enabled when mcp_context_forge_enabled is true
+        mcp_context_forge_enabled = data.get("mcp_context_forge_enabled", False)
+        data["mcp_context_forge_enabled"] = mcp_context_forge_enabled
+
+        if mcp_context_forge_enabled:
+            # Derive full hostname from subdomain + cloudflare_domain
+            mcp_context_forge_subdomain = data.get("mcp_context_forge_subdomain", "mcp")
+            cloudflare_domain = data.get("cloudflare_domain", "")
+            mcp_context_forge_hostname = f"{mcp_context_forge_subdomain}.{cloudflare_domain}"
+            data["mcp_context_forge_hostname"] = mcp_context_forge_hostname
+
+            # Default settings
+            data.setdefault("mcp_context_forge_version", "1.0.0-BETA-2")
+            data.setdefault("mcp_context_forge_replicas", 1)
+            data.setdefault("mcp_context_forge_cpu_request", "100m")
+            data.setdefault("mcp_context_forge_cpu_limit", "1000m")
+            data.setdefault("mcp_context_forge_memory_request", "512Mi")
+            data.setdefault("mcp_context_forge_memory_limit", "1Gi")
+            data.setdefault("mcp_context_forge_db_name", "mcpgateway")
+            data.setdefault("mcp_context_forge_db_user", "mcpgateway")
+            data.setdefault("mcp_context_forge_db_instances", 1)
+            data.setdefault("mcp_context_forge_storage_size", "10Gi")
+            data.setdefault("mcp_context_forge_keycloak_client_id", "mcp-context-forge")
+
+            # Dynamic Client Registration (DCR) defaults - RFC 7591
+            data.setdefault("mcp_context_forge_dcr_enabled", True)
+            data.setdefault("mcp_context_forge_dcr_allowed_issuers", [])
+            data.setdefault("mcp_context_forge_dcr_default_scopes", "mcp:read")
+
+            # HyprMCP anonymous DCR proxy (optional)
+            data.setdefault("mcp_context_forge_hyprmcp_enabled", False)
+
+            # Keycloak integration - derive URLs for native SSO
+            # Uses Keycloak OIDC with KEYCLOAK_* env vars in deployment
+            if data.get("mcp_context_forge_keycloak_enabled") and data.get("keycloak_enabled"):
+                keycloak_realm = data.get("keycloak_realm", "matherlynet")
+                keycloak_hostname = data.get("keycloak_hostname")
+                # External issuer URL (matches Keycloak's returned issuer)
+                data["mcp_context_forge_keycloak_issuer_url"] = (
+                    f"https://{keycloak_hostname}/realms/{keycloak_realm}"
+                )
+                # Internal token endpoint for backchannel validation
+                data["mcp_context_forge_keycloak_token_endpoint"] = (
+                    f"http://keycloak-service.identity.svc.cluster.local:8080/realms/{keycloak_realm}/protocol/openid-connect/token"
+                )
+                data["mcp_context_forge_keycloak_enabled"] = True
+            else:
+                data["mcp_context_forge_keycloak_enabled"] = False
+
+            # Backup enabled when RustFS + credentials configured
+            mcp_context_forge_backup_enabled = (
+                data.get("rustfs_enabled", False)
+                and data.get("mcp_context_forge_backup_enabled", False)
+                and data.get("mcp_context_forge_s3_access_key")
+                and data.get("mcp_context_forge_s3_secret_key")
+            )
+            data["mcp_context_forge_backup_enabled"] = mcp_context_forge_backup_enabled
+
+            # Monitoring enabled when both flags set
+            mcp_context_forge_monitoring_enabled = data.get(
+                "monitoring_enabled", False
+            ) and data.get("mcp_context_forge_monitoring_enabled", False)
+            data["mcp_context_forge_monitoring_enabled"] = mcp_context_forge_monitoring_enabled
+
+            # Tracing enabled when both flags set
+            mcp_context_forge_tracing_enabled = data.get("tracing_enabled", False) and data.get(
+                "mcp_context_forge_tracing_enabled", False
+            )
+            data["mcp_context_forge_tracing_enabled"] = mcp_context_forge_tracing_enabled
+            data.setdefault("mcp_context_forge_tracing_sample_rate", "0.1")
+        else:
+            data["mcp_context_forge_keycloak_enabled"] = False
+            data["mcp_context_forge_backup_enabled"] = False
+            data["mcp_context_forge_monitoring_enabled"] = False
+            data["mcp_context_forge_tracing_enabled"] = False
+
         # Langfuse LLM Observability - tracing, prompts, evaluation, analytics
         # Enabled when langfuse_enabled is true
         langfuse_enabled = data.get("langfuse_enabled", False)

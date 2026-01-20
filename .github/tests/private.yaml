@@ -195,6 +195,39 @@ kubernetes_version: "1.35.0"
 # obot_tracing_enabled: false
 # obot_otel_sample_prob: "0.1"
 
+# MCP Context Forge - MCP Gateway Platform (optional - uncomment to test)
+# REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md
+# NOTE: Requires cnpg_enabled: true, dragonfly_enabled: true
+# mcp_context_forge_enabled: false
+# mcp_context_forge_subdomain: "mcp"
+# mcp_context_forge_version: "1.0.0-BETA-2"
+# mcp_context_forge_replicas: 1
+# mcp_context_forge_db_password: "test-mcp-db-password"
+# mcp_context_forge_db_user: "mcpgateway"
+# mcp_context_forge_db_name: "mcpgateway"
+# mcp_context_forge_db_instances: 1
+# mcp_context_forge_storage_size: "10Gi"
+# mcp_context_forge_admin_password: "test-admin-password-16chars"
+# mcp_context_forge_jwt_secret: "test-jwt-secret-at-least-32-characters"
+# mcp_context_forge_auth_encryption_secret: "test-auth-encryption-secret-32-chars"
+# mcp_context_forge_admin_email: "admin@test.local"
+# dragonfly_mcpgateway_password: "test-mcpgateway-cache-password"
+# MCP Context Forge Keycloak SSO (requires keycloak_enabled: true)
+# mcp_context_forge_keycloak_enabled: false
+# mcp_context_forge_keycloak_client_id: "mcp-context-forge"
+# mcp_context_forge_keycloak_client_secret: "test-mcp-oidc-secret"
+# MCP Context Forge DCR (Dynamic Client Registration)
+# mcp_context_forge_dcr_enabled: true
+# mcp_context_forge_dcr_default_scopes: "mcp:read"
+# MCP Context Forge Backups (requires rustfs_enabled: true)
+# mcp_context_forge_backup_enabled: false
+# mcp_context_forge_s3_access_key: "test-mcp-s3-access"
+# mcp_context_forge_s3_secret_key: "test-mcp-s3-secret"
+# MCP Context Forge Observability
+# mcp_context_forge_monitoring_enabled: false
+# mcp_context_forge_tracing_enabled: false
+# mcp_context_forge_tracing_sample_rate: "0.1"
+
 # Headlamp - Kubernetes Web UI (optional - uncomment to test)
 # REF: https://headlamp.dev/
 # NOTE: Requires keycloak_enabled: true for OIDC authentication

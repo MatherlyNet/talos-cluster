@@ -1,0 +1,107 @@
+#% if mcp_context_forge_enabled | default(false) and network_policies_enabled | default(false) %#
+#% set enforce = network_policies_mode | default('audit') == 'enforce' %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE NETWORK POLICY                                              #|
+#| Allow: Envoy Gateway ingress, PostgreSQL, Dragonfly, Keycloak, Tempo          #|
+#| Mode: #{ 'enforce' if network_policies_mode | default('audit') == 'enforce' else 'audit' }# #|
+#| ============================================================================= #|
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-context-forge
+  namespace: ai-system
+spec:
+  description: "MCP Context Forge: Gateway traffic, database, cache, auth, and tracing"
+#% if enforce %#
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+#% else %#
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+#% endif %#
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-context-forge
+  ingress:
+    #| Allow ingress from Envoy Gateway proxy #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: external
+      toPorts:
+        - ports:
+            - port: "4444"
+              protocol: TCP
+    #| Allow Prometheus scraping #|
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "4444"
+              protocol: TCP
+  egress:
+    #| Allow DNS resolution #|
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    #| Allow PostgreSQL access #|
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: mcp-context-forge-postgresql
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    #| Allow Dragonfly (Redis) access #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: dragonfly
+            io.kubernetes.pod.namespace: cache
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+#% if mcp_context_forge_keycloak_enabled | default(false) %#
+    #| Allow Keycloak access (for SSO validation) #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: keycloak
+            io.kubernetes.pod.namespace: identity
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+#% endif %#
+#% if mcp_context_forge_tracing_enabled | default(false) %#
+    #| Allow Tempo access (for tracing) #|
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: tempo
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+#% endif %#
+    #| Allow egress to upstream MCP servers (external) #|
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+#% endif %#

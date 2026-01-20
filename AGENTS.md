@@ -8,7 +8,7 @@ This file provides context and instructions for AI coding assistants working wit
 
 **Type:** GitOps-driven Kubernetes cluster on Talos Linux
 **Stack:** Talos Linux v1.12.0, Kubernetes v1.35.0, Flux CD, Cilium CNI, Gateway API + Envoy Gateway, SOPS/Age encryption, Cloudflare (DNS + Tunnel), UniFi DNS (optional internal)
-**Platform Components:** talos-ccm (node lifecycle), tuppr (automated upgrades), talos-backup (etcd snapshots, optional), dragonfly (Redis-compatible cache, optional), litellm (LLM proxy, optional), langfuse (LLM observability, optional), obot (MCP gateway, optional)
+**Platform Components:** talos-ccm (node lifecycle), tuppr (automated upgrades), talos-backup (etcd snapshots, optional), dragonfly (Redis-compatible cache, optional), litellm (LLM proxy, optional), langfuse (LLM observability, optional), obot (MCP gateway, optional), mcp-context-forge (MCP registry/gateway, optional)
 **Deployment Model:** 7-stage workflow with Jinja2 templating via makejinja
 **Infrastructure:** Optional OpenTofu v1.11+ for Proxmox VM automation with Cloudflare R2 state backend
 **Upstream:** Forked from [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template)
@@ -26,6 +26,7 @@ This file provides context and instructions for AI coding assistants working wit
 - `litellm.md` - LiteLLM proxy configuration & model management
 - `langfuse.md` - Langfuse LLM observability, tracing & evaluation
 - `obot.md` - Obot MCP gateway & AI agent platform
+- `mcp-context-forge.md` - MCP Context Forge gateway & registry platform
 - Research guides in `docs/research/` and `docs/guides/` for specific integrations
 
 ## Project Structure

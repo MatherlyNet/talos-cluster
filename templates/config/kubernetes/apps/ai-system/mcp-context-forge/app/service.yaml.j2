@@ -1,0 +1,22 @@
+#% if mcp_context_forge_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE SERVICE                                                     #|
+#| ============================================================================= #|
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-context-forge
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: mcp-context-forge
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 4444
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: mcp-context-forge
+#% endif %#

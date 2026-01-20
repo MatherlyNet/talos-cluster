@@ -222,8 +222,20 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
             prop["default"] = False
         elif default_val.isdigit():
             prop["default"] = int(default_val)
+        elif default_val == "[]":
+            # Empty array default (e.g., *[] | [...string])
+            prop["default"] = []
         else:
             prop["default"] = default_val
+
+        # Handle array type in rest_type (e.g., [...string] or [...string] // comment)
+        # Use non-greedy match to stop at first ] and don't require end of string
+        array_match = re.match(r"\[\.\.\.(.+?)\]", rest_type.strip())
+        if array_match:
+            inner_type = array_match.group(1).strip()
+            prop["type"] = "array"
+            prop["items"] = get_simple_type(inner_type)
+            return prop
 
         # Parse remaining type constraints
         type_props = parse_type_constraints(rest_type)

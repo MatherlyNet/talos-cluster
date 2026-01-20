@@ -252,6 +252,50 @@ data:
               access.token.claim: "true"
               userinfo.token.claim: "true"
 
+#% if mcp_context_forge_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| MCP CLIENT SCOPES - For MCP Server Authorization                            #|
+      #| REF: https://www.keycloak.org/securing-apps/mcp-authz-server                #|
+      #| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md           #|
+      #| =========================================================================== #|
+
+      #| MCP Tools scope - access to MCP server tools #|
+      - name: "mcp:tools"
+        description: "Access to MCP server tools"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server tools"
+        protocolMappers:
+          - name: "mcp-audience"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-audience-mapper"
+            consentRequired: false
+            config:
+              included.custom.audience: "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#"
+              id.token.claim: "true"
+              access.token.claim: "true"
+
+      #| MCP Prompts scope - access to MCP server prompts #|
+      - name: "mcp:prompts"
+        description: "Access to MCP server prompts"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server prompts"
+
+      #| MCP Resources scope - access to MCP server resources #|
+      - name: "mcp:resources"
+        description: "Access to MCP server resources"
+        protocol: "openid-connect"
+        attributes:
+          include.in.token.scope: "true"
+          display.on.consent.screen: "true"
+          consent.screen.text: "Access to MCP server resources"
+#% endif %#
+
     #| =========================================================================== #|
     #| OIDC CLIENTS                                                                #|
     #| =========================================================================== #|
@@ -502,11 +546,11 @@ data:
 #% endif %#
 #% if obot_keycloak_enabled | default(false) %#
       #| =========================================================================== #|
-      #| OBOT OIDC CLIENT - MCP Gateway Authentication                              #|
-      #| Auto-created when obot_keycloak_enabled + obot_keycloak_client_secret set  #|
-      #| Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork       #|
+      #| OBOT OIDC CLIENT - MCP Gateway Authentication                               #|
+      #| Auto-created when obot_keycloak_enabled + obot_keycloak_client_secret set   #|
+      #| Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork        #|
       #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
-      #| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                #|
+      #| REF: docs/research/obot-mcp-gateway-integration-jan-2026.md                 #|
       #| =========================================================================== #|
       - clientId: "$(env:OBOT_CLIENT_ID)"
         name: "Obot MCP Gateway"
@@ -566,18 +610,83 @@ data:
               userinfo.token.claim: "true"
 #% endif %#
 #% endif %#
+#% if mcp_context_forge_keycloak_enabled | default(false) %#
+      #| =========================================================================== #|
+      #| MCP CONTEXT FORGE OIDC CLIENT                                               #|
+      #| Gateway for MCP servers with multi-tenant authentication                    #|
+      #| Auto-created when mcp_context_forge_keycloak_enabled + secret set           #|
+      #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
+      #| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md           #|
+      #| =========================================================================== #|
+      - clientId: "$(env:MCP_CONTEXT_FORGE_CLIENT_ID)"
+        name: "MCP Context Forge"
+        description: "OIDC client for MCP Context Forge Gateway - enables SSO for multi-tenant MCP server registry"
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: "client-secret"
+        secret: "$(env:MCP_CONTEXT_FORGE_CLIENT_SECRET)"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        implicitFlowEnabled: false
+        protocol: "openid-connect"
+        redirectUris:
+          - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/*"
+          - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/auth/callback"
+        webOrigins:
+          - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#"
+        attributes:
+          pkce.code.challenge.method: "S256"
+          post.logout.redirect.uris: "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/*"
+        #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
+        #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| groups scope provides OIDC-compliant group membership claims #|
+        defaultClientScopes:
+          - "profile"
+          - "email"
+          - "offline_access"
+          - "groups"
+        optionalClientScopes:
+          - "address"
+          - "phone"
+        #| Protocol mappers for role and group claims (used for team mapping) #|
+        protocolMappers:
+          #| Map realm roles to 'roles' claim for MCP Gateway team/role mapping #|
+          - name: "realm-roles"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-usermodel-realm-role-mapper"
+            consentRequired: false
+            config:
+              claim.name: "roles"
+              jsonType.label: "String"
+              multivalued: "true"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          #| Map groups to 'groups' claim for team assignment #|
+          - name: "groups"
+            protocol: "openid-connect"
+            protocolMapper: "oidc-group-membership-mapper"
+            consentRequired: false
+            config:
+              claim.name: "groups"
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+#% endif %#
 #% if kubernetes_oidc_enabled | default(false) %#
       #| =========================================================================== #|
-      #| KUBERNETES API SERVER OIDC CLIENT - Shared Client Architecture             #|
-      #| SHARED client for Kubernetes API Server OIDC authentication                #|
-      #| Used by: Headlamp (web UI), kubectl (CLI), kubelogin, oidc-login plugin    #|
-      #|                                                                              #|
-      #| ARCHITECTURE RATIONALE:                                                      #|
+      #| KUBERNETES API SERVER OIDC CLIENT - Shared Client Architecture              #|
+      #| SHARED client for Kubernetes API Server OIDC authentication                 #|
+      #| Used by: Headlamp (web UI), kubectl (CLI), kubelogin, oidc-login plugin     #|
+      #|                                                                             #|
+      #| ARCHITECTURE RATIONALE:                                                     #|
       #| - All tokens MUST have aud: ["kubernetes"] to be accepted by API Server     #|
       #| - Headlamp passes OIDC tokens directly to K8s API for authentication        #|
       #| - Therefore, Headlamp MUST use this client (not a separate client)          #|
       #| - Multiple redirect URIs support both CLI (localhost) and web (Headlamp)    #|
-      #|                                                                              #|
+      #|                                                                             #|
       #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
       #| REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md    #|
       #| =========================================================================== #|
@@ -662,9 +771,9 @@ data:
 #% endif %#
 #% if langfuse_scim_sync_enabled | default(false) %#
       #| =========================================================================== #|
-      #| LANGFUSE SCIM SYNC CLIENT - Service Account for Role Synchronization       #|
+      #| LANGFUSE SCIM SYNC CLIENT - Service Account for Role Synchronization        #|
       #| Auto-created when langfuse_scim_sync_enabled is true                        #|
-      #| Used by CronJob to query users and sync roles from Keycloak to Langfuse    #|
+      #| Used by CronJob to query users and sync roles from Keycloak to Langfuse     #|
       #| clientId and secret use $(env:VAR) substitution from keycloak-realm-secrets #|
       #| REF: docs/research/langfuse-scim-role-sync-implementation-jan-2026.md       #|
       #| =========================================================================== #|

@@ -1,0 +1,100 @@
+#% if mcp_context_forge_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE POSTGRESQL - CloudNativePG Cluster                          #|
+#| REF: docs/guides/cnpg-implementation.md                                       #|
+#| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md             #|
+#| ============================================================================= #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mcp-context-forge-postgresql
+  namespace: ai-system
+spec:
+  instances: #{ mcp_context_forge_db_instances | default(1) }#
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:17.2-standard-bookworm') }#
+
+  bootstrap:
+    initdb:
+      database: #{ mcp_context_forge_db_name | default('mcpgateway') }#
+      owner: #{ mcp_context_forge_db_user | default('mcpgateway') }#
+      secret:
+        name: mcp-context-forge-db-secret
+
+  storage:
+    size: #{ mcp_context_forge_storage_size | default('10Gi') }#
+    storageClass: #{ cnpg_storage_class | default('local-path') }#
+
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      effective_cache_size: "768MB"
+      maintenance_work_mem: "128MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "16MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+      max_worker_processes: "4"
+      max_parallel_workers_per_gather: "2"
+      max_parallel_workers: "4"
+      max_parallel_maintenance_workers: "2"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+
+#% if mcp_context_forge_backup_enabled | default(false) and rustfs_enabled | default(false) %#
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://mcpgateway-postgres-backups/"
+      endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
+      s3Credentials:
+        accessKeyId:
+          name: mcp-context-forge-s3-secret
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: mcp-context-forge-s3-secret
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+    retentionPolicy: "7d"
+#% endif %#
+
+  monitoring:
+    enablePodMonitor: #{ mcp_context_forge_monitoring_enabled | default(monitoring_enabled | default(false)) | string | lower }#
+---
+#| Database credentials secret #|
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-context-forge-db-secret
+  namespace: ai-system
+type: kubernetes.io/basic-auth
+stringData:
+  username: #{ mcp_context_forge_db_user | default('mcpgateway') }#
+  password: "#{ mcp_context_forge_db_password }#"
+#% if mcp_context_forge_backup_enabled | default(false) and rustfs_enabled | default(false) %#
+---
+#| S3 backup credentials secret #|
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-context-forge-s3-secret
+  namespace: ai-system
+type: Opaque
+stringData:
+  ACCESS_KEY_ID: "#{ mcp_context_forge_s3_access_key }#"
+  SECRET_ACCESS_KEY: "#{ mcp_context_forge_s3_secret_key }#"
+#% endif %#
+#% endif %#

@@ -1,5 +1,5 @@
 #| =========================================================================== #|
-#| CENTRALIZED HTTPROUTES - All web UIs routed through Envoy Gateway          #|
+#| CENTRALIZED HTTPROUTES - All web UIs routed through Envoy Gateway           #|
 #| =========================================================================== #|
 #| HTTPRoutes are centralized in the 'network' namespace to enable:            #|
 #|   - Consistent SecurityPolicy application (OIDC/JWT protection)             #|
@@ -234,11 +234,48 @@ spec:
 #% endif %#
 
 #| =========================================================================== #|
-#| HEADLAMP - Kubernetes Web UI with RBAC                                     #|
-#| Internal only: Cluster management tool, LAN access only                    #|
-#| NOTE: NO security label - Headlamp uses native OIDC via Keycloak           #|
-#|       (config.oidc.*). Gateway OIDC would cause dual authentication.       #|
-#| REF: https://headlamp.dev/docs/latest/installation/in-cluster/oidc/        #|
+#| MCP CONTEXT FORGE - MCP Gateway Platform (IBM)                              #|
+#| Both gateways: Split-horizon DNS (prevents asymmetric routing)              #|
+#|   - External users: Cloudflare DNS → envoy-external → MCP Context Forge     #|
+#|   - Internal users: UniFi DNS → envoy-internal → MCP Context Forge          #|
+#| NOTE: NO security label - MCP Context Forge uses native SSO via Keycloak    #|
+#|       (KEYCLOAK_* env vars). Gateway OIDC would cause dual authentication.  #|
+#| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md           #|
+#| =========================================================================== #|
+#% if mcp_context_forge_enabled | default(false) %#
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mcp-context-forge
+  namespace: network
+  #| No OIDC protection - MCP Context Forge uses native SSO via KEYCLOAK_* env vars #|
+spec:
+  hostnames:
+    - "#{ mcp_context_forge_subdomain | default('mcp') }#.${SECRET_DOMAIN}"
+  parentRefs:
+    #| External gateway: Cloudflare DNS creates record (public access via tunnel) #|
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        #| MCP Context Forge service in ai-system namespace #|
+        - name: mcp-context-forge
+          namespace: ai-system
+          port: 4444
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+#% endif %#
+
+#| =========================================================================== #|
+#| HEADLAMP - Kubernetes Web UI with RBAC                                      #|
+#| Internal only: Cluster management tool, LAN access only                     #|
+#| NOTE: NO security label - Headlamp uses native OIDC via Keycloak            #|
+#|       (config.oidc.*). Gateway OIDC would cause dual authentication.        #|
+#| REF: https://headlamp.dev/docs/latest/installation/in-cluster/oidc/         #|
 #| =========================================================================== #|
 #% if headlamp_enabled | default(false) %#
 ---

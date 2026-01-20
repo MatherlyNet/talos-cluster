@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: realm-configuration
   annotations:
     kustomize.toolkit.fluxcd.io/force: "enabled"
-    config.keycloak.io/client-version: "envoy=53d421bfa66a8fd78cedb106f4375635da2b1ae1507527bee0417308ae756178,grafana=7a4b9c2d1e8f3a6b5c0d9e2f1a4b7c8d3e6f9a0b1c2d3e4f5a6b7c8d9e0f1a2b,litellm=False,obot=True,langfuse=60c36ed902c78fe0d20632cc2bbc4de91bdcc54973d7e95aabc84cdd2ca90f2b,langfuse-sync=False,headlamp=True,kubernetes=True,google=True,github=False,microsoft=False"
+    config.keycloak.io/client-version: "envoy=53d421bfa66a8fd78cedb106f4375635da2b1ae1507527bee0417308ae756178,grafana=7a4b9c2d1e8f3a6b5c0d9e2f1a4b7c8d3e6f9a0b1c2d3e4f5a6b7c8d9e0f1a2b,litellm=False,obot=True,langfuse=60c36ed902c78fe0d20632cc2bbc4de91bdcc54973d7e95aabc84cdd2ca90f2b,langfuse-sync=False,headlamp=True,kubernetes=True,mcp-context-forge=True,google=True,github=False,microsoft=False"
     config.keycloak.io/config-hash: "v1-headlamp-pkce="
 spec:
   backoffLimit: 3

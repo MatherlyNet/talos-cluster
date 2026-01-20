@@ -769,6 +769,63 @@ import (
 	// Obot LiteLLM Integration (uses internal LiteLLM as model gateway)
 	obot_litellm_enabled?: *false | bool
 
+	// MCP Context Forge - MCP Gateway Platform (IBM)
+	// REF: https://github.com/IBM/mcp-context-forge
+	// REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md
+	// Provides centralized MCP server registry and gateway with multi-tenant authentication
+	mcp_context_forge_enabled?:       *false | bool
+	mcp_context_forge_subdomain?:     *"mcp" | string & !=""
+	mcp_context_forge_version?:       *"1.0.0-BETA-2" | string & =~"^v?[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+	mcp_context_forge_replicas?:      *1 | int & >=1 & <=10
+	mcp_context_forge_cpu_request?:   *"100m" | string & =~"^[0-9]+m?$"
+	mcp_context_forge_cpu_limit?:     *"1000m" | string & =~"^[0-9]+m?$"
+	mcp_context_forge_memory_request?: *"512Mi" | string & =~"^[0-9]+[KMGT]i$"
+	mcp_context_forge_memory_limit?:  *"1Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// MCP Context Forge PostgreSQL Database (CloudNativePG)
+	// Requires cnpg_enabled: true
+	mcp_context_forge_db_user?:       *"mcpgateway" | string & !=""
+	mcp_context_forge_db_password?:   string & !=""
+	mcp_context_forge_db_name?:       *"mcpgateway" | string & !=""
+	mcp_context_forge_db_instances?:  *1 | int & >=1 & <=5
+	mcp_context_forge_storage_size?:  *"10Gi" | string & =~"^[0-9]+[KMGT]i$"
+
+	// MCP Context Forge Core Credentials (SOPS-encrypted)
+	mcp_context_forge_admin_password?:        string & =~".{16,}"  // Platform admin password (min 16 chars)
+	mcp_context_forge_admin_email?:           string & =~"^[^@]+@[^@]+\\.[^@]+$"  // Platform admin email (required for initial setup)
+	mcp_context_forge_jwt_secret?:            string & =~".{32,}"  // JWT signing secret (min 32 chars)
+	mcp_context_forge_auth_encryption_secret?: string & =~".{32,}" // Auth encryption secret (min 32 chars)
+
+	// MCP Context Forge Keycloak SSO (requires keycloak_enabled: true)
+	mcp_context_forge_keycloak_enabled?:       *false | bool
+	mcp_context_forge_keycloak_client_id?:     *"mcp-context-forge" | string & !=""
+	mcp_context_forge_keycloak_client_secret?: string & !=""
+
+	// MCP Context Forge Dynamic Client Registration (DCR) - RFC 7591
+	// Enables MCP clients to self-register without manual configuration
+	mcp_context_forge_dcr_enabled?:          *true | bool
+	mcp_context_forge_dcr_allowed_issuers?:  *[] | [...string]  // Empty = Keycloak issuer auto-added
+	mcp_context_forge_dcr_default_scopes?:   *"mcp:read" | string
+
+	// MCP Context Forge PostgreSQL Backups (requires rustfs_enabled: true)
+	// Credentials must be created via RustFS Console UI
+	mcp_context_forge_backup_enabled?:  *false | bool
+	mcp_context_forge_s3_access_key?:   string & !=""
+	mcp_context_forge_s3_secret_key?:   string & !=""
+
+	// MCP Context Forge Dragonfly Cache Password (requires dragonfly_enabled: true + ACL)
+	// Set dragonfly_mcpgateway_password for ACL authentication
+	dragonfly_mcpgateway_password?:  string & !=""
+
+	// MCP Context Forge Observability (requires monitoring_enabled and/or tracing_enabled)
+	mcp_context_forge_monitoring_enabled?:    *false | bool  // ServiceMonitor for Prometheus metrics
+	mcp_context_forge_tracing_enabled?:       *false | bool  // OpenTelemetry traces to Tempo
+	mcp_context_forge_tracing_sample_rate?:   *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // 0.0-1.0
+
+	// MCP Context Forge HyprMCP Gateway (optional anonymous DCR proxy)
+	// Only needed if MCP clients require anonymous DCR without Keycloak Initial Access Token
+	mcp_context_forge_hyprmcp_enabled?: *false | bool
+
 	// Headlamp - Kubernetes Web UI
 	// REF: https://headlamp.dev/
 	// REF: docs/ai-context/configuration-variables.md

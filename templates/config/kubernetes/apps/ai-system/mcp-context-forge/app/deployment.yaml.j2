@@ -1,0 +1,242 @@
+#% if mcp_context_forge_enabled | default(false) %#
+---
+#| ============================================================================= #|
+#| MCP CONTEXT FORGE DEPLOYMENT                                                  #|
+#| REF: https://github.com/IBM/mcp-context-forge                                 #|
+#| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md             #|
+#| ============================================================================= #|
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-context-forge
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: mcp-context-forge
+    app.kubernetes.io/version: "#{ mcp_context_forge_version | default('1.0.0-BETA-2') }#"
+spec:
+  replicas: #{ mcp_context_forge_replicas | default(1) }#
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-context-forge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-context-forge
+#% if network_policies_enabled | default(false) %#
+        network.cilium.io/api-access: "true"
+#% endif %#
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4444"
+        prometheus.io/path: "/metrics"
+        secret.reloader.stakater.com/reload: "mcp-context-forge-secret,mcp-context-forge-db-secret"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: mcp-context-forge
+          image: ghcr.io/ibm/mcp-context-forge:#{ mcp_context_forge_version | default('1.0.0-BETA-2') }#
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4444
+              protocol: TCP
+          env:
+            #| Core Settings #|
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "4444"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: LOG_FORMAT
+              value: "json"
+
+            #| Database Configuration #|
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: DATABASE_URL
+            - name: DB_POOL_SIZE
+              value: "15"
+            - name: DB_MAX_OVERFLOW
+              value: "30"
+
+            #| Cache Configuration (Dragonfly) #|
+            - name: CACHE_TYPE
+              value: "redis"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: REDIS_URL
+
+            #| Authentication #|
+            - name: AUTH_REQUIRED
+              value: "true"
+            - name: EMAIL_AUTH_ENABLED
+              value: "true"
+            - name: PLATFORM_ADMIN_EMAIL
+              value: "#{ mcp_context_forge_admin_email }#"
+            - name: PLATFORM_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: PLATFORM_ADMIN_PASSWORD
+
+            #| JWT Configuration #|
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: JWT_SECRET_KEY
+            - name: JWT_ALGORITHM
+              value: "HS256"
+            - name: JWT_AUDIENCE
+              value: "mcpgateway-api"
+            - name: JWT_ISSUER
+              value: "mcpgateway"
+            - name: TOKEN_EXPIRY
+              value: "10080"
+
+            #| Auth Encryption #|
+            - name: AUTH_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: AUTH_ENCRYPTION_SECRET
+
+#% if mcp_context_forge_keycloak_enabled | default(false) %#
+            #| Keycloak SSO Configuration #|
+            - name: SSO_ENABLED
+              value: "true"
+            - name: SSO_KEYCLOAK_ENABLED
+              value: "true"
+            - name: SSO_KEYCLOAK_BASE_URL
+              value: "https://#{ keycloak_hostname }#"
+            - name: SSO_KEYCLOAK_REALM
+              value: "#{ keycloak_realm }#"
+            - name: SSO_KEYCLOAK_CLIENT_ID
+              value: "#{ mcp_context_forge_keycloak_client_id | default('mcp-context-forge') }#"
+            - name: SSO_KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: KEYCLOAK_CLIENT_SECRET
+            - name: SSO_KEYCLOAK_MAP_REALM_ROLES
+              value: "true"
+            - name: SSO_KEYCLOAK_GROUPS_CLAIM
+              value: "groups"
+            - name: SSO_AUTO_CREATE_USERS
+              value: "true"
+#% endif %#
+
+#% if mcp_context_forge_dcr_enabled | default(true) %#
+            #| Dynamic Client Registration (DCR) #|
+            - name: DCR_ENABLED
+              value: "true"
+            - name: DCR_AUTO_REGISTER_ON_MISSING_CREDENTIALS
+              value: "true"
+            - name: OAUTH_DISCOVERY_ENABLED
+              value: "true"
+            - name: DCR_DEFAULT_SCOPES
+              value: '["#{ mcp_context_forge_dcr_default_scopes | default("mcp:read") }#"]'
+#% if mcp_context_forge_keycloak_enabled | default(false) %#
+            - name: DCR_ALLOWED_ISSUERS
+              value: '["https://#{ keycloak_hostname }#/realms/#{ keycloak_realm }#"]'
+#% elif mcp_context_forge_dcr_allowed_issuers | default([]) | length > 0 %#
+            - name: DCR_ALLOWED_ISSUERS
+              value: '#{ mcp_context_forge_dcr_allowed_issuers | tojson }#'
+#% endif %#
+#% endif %#
+
+            #| Admin UI #|
+            - name: MCPGATEWAY_UI_ENABLED
+              value: "true"
+            - name: MCPGATEWAY_ADMIN_API_ENABLED
+              value: "true"
+            - name: MCPGATEWAY_A2A_ENABLED
+              value: "true"
+
+#% if mcp_context_forge_tracing_enabled | default(false) %#
+            #| OpenTelemetry Tracing (Tempo) #|
+            - name: OTEL_ENABLE_OBSERVABILITY
+              value: "true"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo.monitoring.svc:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_SERVICE_NAME
+              value: "mcp-context-forge"
+            - name: OBSERVABILITY_SAMPLE_RATE
+              value: "#{ mcp_context_forge_tracing_sample_rate | default('0.1') }#"
+#% endif %#
+
+            #| Prometheus Metrics #|
+            - name: ENABLE_METRICS
+              value: "true"
+
+          resources:
+            requests:
+              cpu: #{ mcp_context_forge_cpu_request | default('200m') }#
+              memory: #{ mcp_context_forge_memory_request | default('512Mi') }#
+            limits:
+              cpu: #{ mcp_context_forge_cpu_limit | default('1000m') }#
+              memory: #{ mcp_context_forge_memory_limit | default('1Gi') }#
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /.cache
+
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 500Mi
+#% endif %#
