@@ -893,7 +893,7 @@ metadata:
 type: Opaque
 stringData:
   #| Database connection URL #|
-  DATABASE_URL: "postgresql+psycopg://#{ mcp_context_forge_db_user | default('mcpgateway') }#:#{ mcp_context_forge_db_password }#@mcp-context-forge-postgresql-rw.ai-system.svc.cluster.local:5432/#{ mcp_context_forge_db_name | default('mcpgateway') }#"
+  DATABASE_URL: "postgresql://#{ mcp_context_forge_db_user | default('mcpgateway') }#:#{ mcp_context_forge_db_password }#@mcp-context-forge-postgresql-rw.ai-system.svc.cluster.local:5432/#{ mcp_context_forge_db_name | default('mcpgateway') }#"
 
   #| Redis/Dragonfly connection URL #|
   REDIS_URL: "redis://mcpgateway:#{ dragonfly_mcpgateway_password | default(dragonfly_password) }#@dragonfly.cache.svc.cluster.local:6379/0"
