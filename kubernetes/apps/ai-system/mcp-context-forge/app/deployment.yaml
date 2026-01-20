@@ -157,6 +157,8 @@ spec:
 
             - name: PLUGINS_ENABLED
               value: "true"
+            - name: PLUGIN_CONFIG_FILE
+              value: "/app/plugins/config.yaml"
 
             - name: ENABLE_HEADER_PASSTHROUGH
               value: "true"
@@ -212,6 +214,9 @@ spec:
               mountPath: /tmp
             - name: cache
               mountPath: /.cache
+            - name: plugins-config
+              mountPath: /app/plugins
+              readOnly: true
 
       volumes:
         - name: tmp
@@ -220,3 +225,6 @@ spec:
         - name: cache
           emptyDir:
             sizeLimit: 500Mi
+        - name: plugins-config
+          configMap:
+            name: mcp-context-forge-plugins

@@ -183,8 +183,13 @@ spec:
               value: "true"
 
             #| Plugins (MCP server extensions) #|
+            #| REF: https://ibm.github.io/mcp-context-forge/using/plugins/ #|
             - name: PLUGINS_ENABLED
               value: "#{ mcp_context_forge_plugins_enabled | default(true) | lower }#"
+#% if mcp_context_forge_plugins_enabled | default(true) %#
+            - name: PLUGIN_CONFIG_FILE
+              value: "/app/plugins/config.yaml"
+#% endif %#
 
 #% if mcp_context_forge_passthrough_enabled | default(false) %#
             #| Header Passthrough (forward headers to MCP servers) #|
@@ -264,6 +269,11 @@ spec:
               mountPath: /tmp
             - name: cache
               mountPath: /.cache
+#% if mcp_context_forge_plugins_enabled | default(true) %#
+            - name: plugins-config
+              mountPath: /app/plugins
+              readOnly: true
+#% endif %#
 
       volumes:
         - name: tmp
@@ -272,4 +282,9 @@ spec:
         - name: cache
           emptyDir:
             sizeLimit: 500Mi
+#% if mcp_context_forge_plugins_enabled | default(true) %#
+        - name: plugins-config
+          configMap:
+            name: mcp-context-forge-plugins
+#% endif %#
 #% endif %#

@@ -11,6 +11,9 @@ resources:
   - postgresql.yaml
   - secret.sops.yaml
   - referencegrant.yaml
+#% if mcp_context_forge_plugins_enabled | default(true) %#
+  - configmap-plugins.yaml
+#% endif %#
 #% if network_policies_enabled | default(false) %#
   - networkpolicy.yaml
 #% endif %#

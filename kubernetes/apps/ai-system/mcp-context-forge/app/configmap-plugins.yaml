@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-context-forge-plugins
+  namespace: ai-system
+  labels:
+    app.kubernetes.io/name: mcp-context-forge
+    app.kubernetes.io/component: plugins
+data:
+  config.yaml: |
+    plugins: []
+
+    plugin_settings:
+      parallel_execution_within_band: false
+
+      plugin_timeout: 30
+
+      fail_on_plugin_error: false
+
+      plugin_health_check_interval: 60
