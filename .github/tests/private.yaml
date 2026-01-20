@@ -200,7 +200,7 @@ kubernetes_version: "1.35.0"
 # NOTE: Requires cnpg_enabled: true, dragonfly_enabled: true
 # mcp_context_forge_enabled: false
 # mcp_context_forge_subdomain: "mcp"
-# mcp_context_forge_version: "1.0.0-BETA-2"
+# mcp_context_forge_version: "v1.0.0-BETA-1"
 # mcp_context_forge_replicas: 1
 # mcp_context_forge_db_password: "test-mcp-db-password"
 # mcp_context_forge_db_user: "mcpgateway"

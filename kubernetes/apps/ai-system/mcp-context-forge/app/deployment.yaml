@@ -6,7 +6,7 @@ metadata:
   namespace: ai-system
   labels:
     app.kubernetes.io/name: mcp-context-forge
-    app.kubernetes.io/version: "1.0.0-BETA-2"
+    app.kubernetes.io/version: "v1.0.0-BETA-1"
 spec:
   replicas: 1
   strategy:
@@ -39,7 +39,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: mcp-context-forge
-          image: ghcr.io/ibm/mcp-context-forge:1.0.0-BETA-2
+          image: ghcr.io/ibm/mcp-context-forge:v1.0.0-BETA-1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -704,7 +704,7 @@ class Plugin(makejinja.plugin.Plugin):
             data["mcp_context_forge_hostname"] = mcp_context_forge_hostname
 
             # Default settings
-            data.setdefault("mcp_context_forge_version", "1.0.0-BETA-2")
+            data.setdefault("mcp_context_forge_version", "v1.0.0-BETA-1")
             data.setdefault("mcp_context_forge_replicas", 1)
             data.setdefault("mcp_context_forge_cpu_request", "100m")
             data.setdefault("mcp_context_forge_cpu_limit", "1000m")

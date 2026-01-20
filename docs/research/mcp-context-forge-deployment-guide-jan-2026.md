@@ -2,7 +2,7 @@
 
 **Date:** January 2026
 **Status:** Research Complete - Implementation Ready
-**Version:** 1.0.0-BETA-2 (January 2026)
+**Version:** v1.0.0-BETA-1 (January 2026)
 
 ## Executive Summary
 
@@ -172,8 +172,8 @@ mcp_context_forge_subdomain: "mcp"
 
 # -- MCP Context Forge version (container image tag)
 #    REF: https://github.com/IBM/mcp-context-forge/releases
-#    (OPTIONAL) / (DEFAULT: "1.0.0-BETA-2")
-mcp_context_forge_version: "1.0.0-BETA-2"
+#    (OPTIONAL) / (DEFAULT: "v1.0.0-BETA-1")
+mcp_context_forge_version: "v1.0.0-BETA-1"
 
 # -- MCP Context Forge replicas
 #    (OPTIONAL) / (DEFAULT: 1)
@@ -656,7 +656,7 @@ metadata:
   namespace: ai-system
   labels:
     app.kubernetes.io/name: mcp-context-forge
-    app.kubernetes.io/version: "#{ mcp_context_forge_version | default('1.0.0-BETA-2') }#"
+    app.kubernetes.io/version: "#{ mcp_context_forge_version | default('v1.0.0-BETA-1') }#"
 spec:
   replicas: #{ mcp_context_forge_replicas | default(1) }#
   strategy:
@@ -691,7 +691,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: mcp-context-forge
-          image: ghcr.io/ibm/mcp-context-forge:#{ mcp_context_forge_version | default('1.0.0-BETA-2') }#
+          image: ghcr.io/ibm/mcp-context-forge:#{ mcp_context_forge_version | default('v1.0.0-BETA-1') }#
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -1658,7 +1658,7 @@ curl -s https://mcp.matherly.net/health | jq .
 # Core Settings
 mcp_context_forge_enabled: true
 mcp_context_forge_subdomain: "mcp"
-mcp_context_forge_version: "1.0.0-BETA-2"
+mcp_context_forge_version: "v1.0.0-BETA-1"
 mcp_context_forge_replicas: 1
 
 # Resources

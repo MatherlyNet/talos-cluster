@@ -775,7 +775,7 @@ import (
 	// Provides centralized MCP server registry and gateway with multi-tenant authentication
 	mcp_context_forge_enabled?:       *false | bool
 	mcp_context_forge_subdomain?:     *"mcp" | string & !=""
-	mcp_context_forge_version?:       *"1.0.0-BETA-2" | string & =~"^v?[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+	mcp_context_forge_version?:       *"v1.0.0-BETA-1" | string & =~"^v?[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
 	mcp_context_forge_replicas?:      *1 | int & >=1 & <=10
 	mcp_context_forge_cpu_request?:   *"100m" | string & =~"^[0-9]+m?$"
 	mcp_context_forge_cpu_limit?:     *"1000m" | string & =~"^[0-9]+m?$"

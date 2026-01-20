@@ -2116,7 +2116,7 @@
       "minLength": 1
     },
     "mcp_context_forge_version": {
-      "default": "1.0.0-BETA-2",
+      "default": "v1.0.0-BETA-1",
       "type": "string",
       "pattern": "^v?[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
     },
