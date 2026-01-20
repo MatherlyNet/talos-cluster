@@ -48,7 +48,7 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
 ```yaml
 mcp_context_forge_enabled: true           # Enable MCP Context Forge deployment
 mcp_context_forge_subdomain: "mcp"        # Creates mcp.${cloudflare_domain}
-mcp_context_forge_version: "v1.0.0-BETA-1" # Image tag
+mcp_context_forge_version: "latest"        # Image tag (uses commit SHAs, not semver)
 mcp_context_forge_replicas: 1             # Pod replicas
 ```
 

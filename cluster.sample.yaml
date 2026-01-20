@@ -2507,8 +2507,9 @@ cloudflare_gateway_addr: ""
 # mcp_context_forge_subdomain: "mcp"
 
 # -- MCP Context Forge version (image tag)
-#    (OPTIONAL) / (DEFAULT: "v1.0.0-BETA-1")
-# mcp_context_forge_version: "v1.0.0-BETA-1"
+#    (OPTIONAL) / (DEFAULT: "1.0.0-BETA-1")
+#    REF: https://github.com/IBM/mcp-context-forge/releases
+# mcp_context_forge_version: "1.0.0-BETA-1"
 
 # -- Number of MCP Context Forge replicas
 #    (OPTIONAL) / (DEFAULT: 1)
