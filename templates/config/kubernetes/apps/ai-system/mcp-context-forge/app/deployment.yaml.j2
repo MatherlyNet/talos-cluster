@@ -182,6 +182,10 @@ spec:
             - name: MCPGATEWAY_A2A_ENABLED
               value: "true"
 
+            #| Plugins (MCP server extensions) #|
+            - name: PLUGINS_ENABLED
+              value: "#{ mcp_context_forge_plugins_enabled | default(true) | lower }#"
+
             #| Internal Observability (built-in database-backed tracing with Admin UI) #|
             #| Dashboard available at /admin/observability #|
             - name: OBSERVABILITY_ENABLED

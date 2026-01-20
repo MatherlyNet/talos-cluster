@@ -155,6 +155,9 @@ spec:
             - name: MCPGATEWAY_A2A_ENABLED
               value: "true"
 
+            - name: PLUGINS_ENABLED
+              value: "true"
+
             - name: OBSERVABILITY_ENABLED
               value: "true"
 

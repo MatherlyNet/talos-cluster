@@ -2255,6 +2255,10 @@
       "default": true,
       "type": "boolean"
     },
+    "mcp_context_forge_plugins_enabled": {
+      "default": true,
+      "type": "boolean"
+    },
     "mcp_context_forge_hyprmcp_enabled": {
       "default": false,
       "type": "boolean",

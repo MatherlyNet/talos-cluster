@@ -822,6 +822,7 @@ import (
 	mcp_context_forge_tracing_enabled?:                 *false | bool  // OpenTelemetry traces to Tempo
 	mcp_context_forge_tracing_sample_rate?:             *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // 0.0-1.0
 	mcp_context_forge_internal_observability_enabled?:  *true | bool   // Built-in database-backed tracing with Admin UI
+	mcp_context_forge_plugins_enabled?:                 *true | bool   // MCP server plugins/extensions
 
 	// MCP Context Forge HyprMCP Gateway (optional anonymous DCR proxy)
 	// Only needed if MCP clients require anonymous DCR without Keycloak Initial Access Token

@@ -771,6 +771,7 @@ See: `docs/research/mcp-context-forge-deployment-guide-jan-2026.md`, `docs/ai-co
 | `mcp_context_forge_tracing_enabled` | External OTEL traces to Tempo | false |
 | `mcp_context_forge_tracing_sample_rate` | Tracing sample rate | "0.1" |
 | `mcp_context_forge_internal_observability_enabled` | Built-in observability (/admin/observability) | true |
+| `mcp_context_forge_plugins_enabled` | Enable MCP server plugins/extensions | true |
 
 **Metrics endpoint:** `/metrics/prometheus` (no authentication required)
 
