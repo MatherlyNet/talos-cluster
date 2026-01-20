@@ -7,6 +7,5 @@ resources:
   - postgresql.yaml
   - secret.sops.yaml
   - referencegrant.yaml
-  - configmap-plugins.yaml
   - networkpolicy.yaml
   - servicemonitor.yaml
