@@ -898,8 +898,11 @@ stringData:
   #| Redis/Dragonfly connection URL #|
   REDIS_URL: "redis://mcpgateway:#{ dragonfly_mcpgateway_password | default(dragonfly_password) }#@dragonfly.cache.svc.cluster.local:6379/0"
 
-  #| Platform admin password #|
+  #| Platform admin password (email-based auth) #|
   PLATFORM_ADMIN_PASSWORD: "#{ mcp_context_forge_admin_password }#"
+
+  #| Basic Auth credentials (HTTP Basic auth for admin UI) #|
+  BASIC_AUTH_PASSWORD: "#{ mcp_context_forge_admin_password }#"
 
   #| JWT secret key #|
   JWT_SECRET_KEY: "#{ mcp_context_forge_jwt_secret }#"

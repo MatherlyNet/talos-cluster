@@ -99,6 +99,15 @@ spec:
                   name: mcp-context-forge-secret
                   key: PLATFORM_ADMIN_PASSWORD
 
+            #| Basic Auth (HTTP Basic auth for admin endpoints) #|
+            - name: BASIC_AUTH_USER
+              value: "admin"
+            - name: BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-context-forge-secret
+                  key: BASIC_AUTH_PASSWORD
+
             #| JWT Configuration #|
             - name: JWT_SECRET_KEY
               valueFrom:
