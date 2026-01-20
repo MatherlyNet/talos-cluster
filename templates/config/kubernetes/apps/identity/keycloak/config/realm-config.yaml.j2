@@ -631,21 +631,30 @@ data:
         implicitFlowEnabled: false
         protocol: "openid-connect"
         redirectUris:
+          #| Primary SSO callback endpoint per IBM docs #|
+          - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/auth/sso/callback/keycloak"
+          #| Wildcard fallback for any additional auth endpoints #|
           - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/*"
-          - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/auth/callback"
         webOrigins:
           - "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#"
+          #| + allows all valid redirect URI origins (Keycloak feature) #|
+          - "+"
         attributes:
           pkce.code.challenge.method: "S256"
-          post.logout.redirect.uris: "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/*"
+          #| Post-logout redirects to admin login page per IBM docs #|
+          post.logout.redirect.uris: "https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/admin/login##https://#{ mcp_context_forge_subdomain | default('mcp') }#.#{ cloudflare_domain }#/*"
         #| NOTE: 'openid' is implicit in OIDC protocol, not a configurable scope in Keycloak #|
         #| offline_access in default scopes enables refresh tokens for session persistence #|
+        #| roles scope provides realm and client role claims in tokens #|
         #| groups scope provides OIDC-compliant group membership claims #|
+        #| web-origins scope enables CORS support (automatic in Keycloak but explicit is safer) #|
         defaultClientScopes:
           - "profile"
           - "email"
+          - "roles"
           - "offline_access"
           - "groups"
+          - "web-origins"
         optionalClientScopes:
           - "address"
           - "phone"

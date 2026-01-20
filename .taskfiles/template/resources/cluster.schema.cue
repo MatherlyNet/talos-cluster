@@ -818,9 +818,10 @@ import (
 	dragonfly_mcpgateway_password?:  string & !=""
 
 	// MCP Context Forge Observability (requires monitoring_enabled and/or tracing_enabled)
-	mcp_context_forge_monitoring_enabled?:    *false | bool  // ServiceMonitor for Prometheus metrics
-	mcp_context_forge_tracing_enabled?:       *false | bool  // OpenTelemetry traces to Tempo
-	mcp_context_forge_tracing_sample_rate?:   *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // 0.0-1.0
+	mcp_context_forge_monitoring_enabled?:              *false | bool  // ServiceMonitor for Prometheus metrics
+	mcp_context_forge_tracing_enabled?:                 *false | bool  // OpenTelemetry traces to Tempo
+	mcp_context_forge_tracing_sample_rate?:             *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // 0.0-1.0
+	mcp_context_forge_internal_observability_enabled?:  *true | bool   // Built-in database-backed tracing with Admin UI
 
 	// MCP Context Forge HyprMCP Gateway (optional anonymous DCR proxy)
 	// Only needed if MCP clients require anonymous DCR without Keycloak Initial Access Token

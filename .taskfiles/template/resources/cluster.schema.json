@@ -2251,6 +2251,10 @@
       "type": "string",
       "pattern": "^(0|1|0\\.[0-9]+)$"
     },
+    "mcp_context_forge_internal_observability_enabled": {
+      "default": true,
+      "type": "boolean"
+    },
     "mcp_context_forge_hyprmcp_enabled": {
       "default": false,
       "type": "boolean",

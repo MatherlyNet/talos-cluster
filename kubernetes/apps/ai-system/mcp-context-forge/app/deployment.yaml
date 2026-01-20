@@ -25,7 +25,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "4444"
-        prometheus.io/path: "/metrics"
+        prometheus.io/path: "/metrics/prometheus"
         secret.reloader.stakater.com/reload: "mcp-context-forge-secret,mcp-context-forge-db-secret"
     spec:
       securityContext:
@@ -155,18 +155,9 @@ spec:
             - name: MCPGATEWAY_A2A_ENABLED
               value: "true"
 
-            - name: OTEL_ENABLE_OBSERVABILITY
+            - name: OBSERVABILITY_ENABLED
               value: "true"
-            - name: OTEL_TRACES_EXPORTER
-              value: "otlp"
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://tempo.monitoring.svc:4317"
-            - name: OTEL_EXPORTER_OTLP_PROTOCOL
-              value: "grpc"
-            - name: OTEL_SERVICE_NAME
-              value: "mcp-context-forge"
-            - name: OBSERVABILITY_SAMPLE_RATE
-              value: "0.1"
+
 
             - name: ENABLE_METRICS
               value: "true"

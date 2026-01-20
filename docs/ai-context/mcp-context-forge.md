@@ -140,10 +140,16 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) and [MCP Context 
 
 ### Observability
 ```yaml
-mcp_context_forge_monitoring_enabled: true    # ServiceMonitor for Prometheus
-mcp_context_forge_tracing_enabled: true       # OpenTelemetry traces to Tempo
+mcp_context_forge_monitoring_enabled: true    # ServiceMonitor for Prometheus (/metrics/prometheus)
+mcp_context_forge_tracing_enabled: true       # External OpenTelemetry traces to Tempo (requires custom image with OTLP exporter)
 mcp_context_forge_tracing_sample_rate: "0.1"  # Sampling rate (0.0-1.0)
+mcp_context_forge_internal_observability_enabled: true  # Built-in database-backed tracing with Admin UI (/admin/observability)
 ```
+
+**Observability Architecture:**
+- **Internal Observability:** `OBSERVABILITY_ENABLED=true` enables built-in database-backed tracing with Admin UI at `/admin/observability`
+- **Prometheus Metrics:** Exposed at `/metrics/prometheus` (no authentication required)
+- **External OTEL Tracing:** Requires `opentelemetry-exporter-otlp-proto-grpc` package which is NOT included in official image 1.0.0-BETA-1
 
 ## Dependencies
 
@@ -173,6 +179,9 @@ mcp_context_forge_keycloak_token_endpoint = f"http://keycloak-service.identity.s
 mcp_context_forge_backup_enabled = rustfs_enabled and mcp_context_forge_s3_access_key and mcp_context_forge_s3_secret_key
 mcp_context_forge_monitoring_enabled = monitoring_enabled and mcp_context_forge_monitoring_enabled
 mcp_context_forge_tracing_enabled = tracing_enabled and mcp_context_forge_tracing_enabled
+
+# Defaults
+mcp_context_forge_internal_observability_enabled = True  # Built-in observability always defaults to enabled
 ```
 
 ## File Structure

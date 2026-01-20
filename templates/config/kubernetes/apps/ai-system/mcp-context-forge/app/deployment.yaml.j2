@@ -33,7 +33,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "4444"
-        prometheus.io/path: "/metrics"
+        prometheus.io/path: "/metrics/prometheus"
         secret.reloader.stakater.com/reload: "mcp-context-forge-secret,mcp-context-forge-db-secret"
     spec:
       securityContext:
@@ -182,8 +182,15 @@ spec:
             - name: MCPGATEWAY_A2A_ENABLED
               value: "true"
 
+            #| Internal Observability (built-in database-backed tracing with Admin UI) #|
+            #| Dashboard available at /admin/observability #|
+            - name: OBSERVABILITY_ENABLED
+              value: "#{ mcp_context_forge_internal_observability_enabled | default(true) | lower }#"
+
 #% if mcp_context_forge_tracing_enabled | default(false) %#
-            #| OpenTelemetry Tracing (Tempo) #|
+            #| External OpenTelemetry Tracing (Tempo) #|
+            #| NOTE: Requires opentelemetry-exporter-otlp-proto-grpc package in container image #|
+            #| Official image 1.0.0-BETA-1 does NOT include this package - use custom image or disable #|
             - name: OTEL_ENABLE_OBSERVABILITY
               value: "true"
             - name: OTEL_TRACES_EXPORTER
@@ -198,7 +205,7 @@ spec:
               value: "#{ mcp_context_forge_tracing_sample_rate | default('0.1') }#"
 #% endif %#
 
-            #| Prometheus Metrics #|
+            #| Prometheus Metrics (endpoint: /metrics/prometheus) #|
             - name: ENABLE_METRICS
               value: "true"
 

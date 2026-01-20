@@ -713,6 +713,79 @@ Configure via Obot UI: Admin Settings → Audit Logs → Export Audit Logs
 
 ---
 
+### MCP Context Forge (MCP Gateway Platform)
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `mcp_context_forge_enabled` | Enable MCP Context Forge | false |
+| `mcp_context_forge_subdomain` | Subdomain | "mcp" |
+| `mcp_context_forge_version` | Image tag | "1.0.0-BETA-1" |
+| `mcp_context_forge_replicas` | Pod replicas | 1 |
+| `mcp_context_forge_db_user` | Database username | "mcpgateway" |
+| `mcp_context_forge_db_password` | Database password (SOPS) | - |
+| `mcp_context_forge_db_name` | Database name | "mcpgateway" |
+| `mcp_context_forge_db_instances` | PostgreSQL instances | 1 |
+| `mcp_context_forge_storage_size` | PostgreSQL storage | "10Gi" |
+| `mcp_context_forge_admin_email` | Platform admin email | - |
+| `mcp_context_forge_admin_password` | Platform admin password (SOPS, min 16 chars) | - |
+| `mcp_context_forge_jwt_secret` | JWT signing secret (SOPS, min 32 chars) | - |
+| `mcp_context_forge_auth_encryption_secret` | Auth encryption secret (SOPS, min 32 chars) | - |
+
+Requires: `cnpg_enabled`, `dragonfly_enabled`, `dragonfly_acl_enabled`
+
+**Derived:** `mcp_context_forge_hostname`
+
+See: `docs/research/mcp-context-forge-deployment-guide-jan-2026.md`, `docs/ai-context/mcp-context-forge.md`
+
+#### MCP Context Forge Keycloak SSO
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `mcp_context_forge_keycloak_enabled` | Enable Keycloak auth | false |
+| `mcp_context_forge_keycloak_client_id` | Client ID | "mcp-context-forge" |
+| `mcp_context_forge_keycloak_client_secret` | Client secret (SOPS) | - |
+
+**Derived:** `mcp_context_forge_keycloak_issuer_url`, `mcp_context_forge_keycloak_token_endpoint`
+
+#### MCP Context Forge DCR (Dynamic Client Registration)
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `mcp_context_forge_dcr_enabled` | Enable RFC 7591 DCR | true |
+| `mcp_context_forge_dcr_default_scopes` | Default scopes | "mcp:read" |
+| `mcp_context_forge_dcr_allowed_issuers` | Allowed issuers (empty = Keycloak auto) | [] |
+
+#### MCP Context Forge PostgreSQL Backup
+
+| Variable | Description |
+| -------- | ----------- |
+| `mcp_context_forge_backup_enabled` | Enable S3 backups |
+| `mcp_context_forge_s3_access_key` | S3 access key (SOPS) |
+| `mcp_context_forge_s3_secret_key` | S3 secret key (SOPS) |
+
+#### MCP Context Forge Observability
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `mcp_context_forge_monitoring_enabled` | ServiceMonitor for Prometheus | false |
+| `mcp_context_forge_tracing_enabled` | External OTEL traces to Tempo | false |
+| `mcp_context_forge_tracing_sample_rate` | Tracing sample rate | "0.1" |
+| `mcp_context_forge_internal_observability_enabled` | Built-in observability (/admin/observability) | true |
+
+**Metrics endpoint:** `/metrics/prometheus` (no authentication required)
+
+**Note:** External OTEL tracing requires `opentelemetry-exporter-otlp-proto-grpc` package which is NOT included in official image 1.0.0-BETA-1.
+
+#### MCP Context Forge Dragonfly Cache
+
+| Variable | Description |
+| -------- | ----------- |
+| `dragonfly_mcpgateway_password` | Dragonfly ACL password (SOPS) |
+
+Requires `dragonfly_acl_enabled: true`. Uses broad ACL pattern `~* +@all -@dangerous +INFO` for leader election and session management.
+
+---
+
 ### OIDC/JWT Authentication (Envoy Gateway)
 
 | Variable | Description | Default |

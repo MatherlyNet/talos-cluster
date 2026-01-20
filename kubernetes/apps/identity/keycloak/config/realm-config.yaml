@@ -323,18 +323,21 @@ data:
         implicitFlowEnabled: false
         protocol: "openid-connect"
         redirectUris:
+          - "https://mcp.matherly.net/auth/sso/callback/keycloak"
           - "https://mcp.matherly.net/*"
-          - "https://mcp.matherly.net/auth/callback"
         webOrigins:
           - "https://mcp.matherly.net"
+          - "+"
         attributes:
           pkce.code.challenge.method: "S256"
-          post.logout.redirect.uris: "https://mcp.matherly.net/*"
+          post.logout.redirect.uris: "https://mcp.matherly.net/admin/login##https://mcp.matherly.net/*"
         defaultClientScopes:
           - "profile"
           - "email"
+          - "roles"
           - "offline_access"
           - "groups"
+          - "web-origins"
         optionalClientScopes:
           - "address"
           - "phone"

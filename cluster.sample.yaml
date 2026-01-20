@@ -2632,6 +2632,11 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "0.1")
 # mcp_context_forge_tracing_sample_rate: "0.1"
 
+# -- Enable internal database-backed observability with Admin UI
+#    Dashboard available at /admin/observability
+#    (OPTIONAL) / (DEFAULT: true)
+# mcp_context_forge_internal_observability_enabled: true
+
 # -- Enable optional HyprMCP Gateway for anonymous DCR proxy
 #    Only needed if MCP clients require anonymous DCR without Keycloak IAT
 #    (OPTIONAL) / (DEFAULT: false)

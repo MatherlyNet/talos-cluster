@@ -762,6 +762,9 @@ class Plugin(makejinja.plugin.Plugin):
             )
             data["mcp_context_forge_tracing_enabled"] = mcp_context_forge_tracing_enabled
             data.setdefault("mcp_context_forge_tracing_sample_rate", "0.1")
+
+            # Internal observability (built-in database-backed tracing with Admin UI)
+            data.setdefault("mcp_context_forge_internal_observability_enabled", True)
         else:
             data["mcp_context_forge_keycloak_enabled"] = False
             data["mcp_context_forge_backup_enabled"] = False
