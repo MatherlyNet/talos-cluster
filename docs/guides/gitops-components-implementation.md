@@ -68,10 +68,12 @@ machine:
 > **Note:** This patch must be applied to all nodes. It will take effect after `task talos:apply-node` or during the next upgrade.
 
 **Role Explanations:**
+
 - `os:admin` - Required for tuppr to perform Talos OS and Kubernetes upgrades
 - `os:etcd:backup` - Required for talos-backup to create etcd snapshots
 
 **Namespace Explanations:**
+
 - `system-upgrade` - Where tuppr runs
 - `kube-system` - Where talos-backup runs
 
@@ -487,6 +489,7 @@ task reconcile
 ```
 
 > **Note:** If you haven't yet applied the Talos machine patch from Section 1.1, you'll need to apply it to all nodes before talos-backup will work:
+>
 > ```bash
 > for ip in $(yq '.nodes[].ip' nodes.yaml); do
 >   task talos:apply-node IP=$ip
@@ -945,6 +948,7 @@ Proxmox CCM provides node labeling, lifecycle management, and topology awareness
 - **Provider ID**: Sets `providerID` in format `proxmox://region/vmid`
 
 **Labels Applied:**
+
 - `topology.kubernetes.io/region` - Proxmox cluster name
 - `topology.kubernetes.io/zone` - Proxmox hypervisor hostname
 - `node.kubernetes.io/instance-type` - Generated from CPU/RAM configuration

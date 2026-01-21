@@ -6,6 +6,7 @@
 
 > [!NOTE]
 > **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+>
 > - RustFS StatefulSet deployment via Helm (`storage/rustfs/app/helmrelease.yaml.j2`)
 > - Bucket provisioning job (`storage/rustfs/setup/job-setup.yaml.j2`) - buckets only, no `mc admin`
 > - Loki SimpleScalable mode with per-component `extraEnvFrom` for S3 credentials
@@ -43,9 +44,11 @@
 >    - **Pod restart behavior on mode transition (SingleBinary ↔ SimpleScalable):**
 >      - **Grafana**: Has `checksum/config` annotation - auto-restarts when datasource ConfigMap changes
 >      - **Alloy**: Has `config-reloader` sidecar for hot-reload, but restart recommended for mode transitions:
+>
 >        ```bash
 >        kubectl rollout restart daemonset/alloy -n monitoring
 >        ```
+>
 >      - Fresh deployments with `rustfs_enabled` set from start do NOT need manual restarts
 >
 > 4. **Tempo uses local filesystem storage, NOT RustFS/S3**
@@ -69,6 +72,7 @@
 > The project is in rapid development—do not assume full S3 coverage.
 >
 > **Recommendations:**
+>
 > - Deploy in test environment first before production migration
 > - Run exhaustive S3 compatibility tests with Loki workloads
 > - Have rollback plan ready (SingleBinary mode without RustFS)
@@ -852,6 +856,7 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
 | Bucket location | `s3:GetBucketLocation` | AWS SDK compatibility |
 
 **Why Not Built-in `readwrite`:**
+
 - The `readwrite` policy grants access to **ALL** buckets
 - The custom `loki-storage` policy scopes access to only `loki-*` buckets
 - This protects the `backups` bucket from Loki access (principle of least privilege)
@@ -859,9 +864,11 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
 #### 2.5.2 Step-by-Step Console UI Instructions
 
 1. **Access RustFS Console**
+
    ```
    https://rustfs.<your-domain>
    ```
+
    Login with `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` from `cluster.yaml`
 
 2. **Create Custom Policy**
@@ -892,12 +899,14 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
    - ⚠️ **Copy and save both keys immediately** - the secret key won't be shown again!
 
 6. **Update cluster.yaml**
+
    ```yaml
    loki_s3_access_key: "<access-key-from-step-5>"
    loki_s3_secret_key: "<secret-key-from-step-5>"
    ```
 
 7. **Apply Changes**
+
    ```bash
    task configure
    task reconcile
@@ -1479,6 +1488,7 @@ kubectl get endpoints -n monitoring loki
 ## Implementation Checklist
 
 ### Phase 1: Infrastructure Setup
+
 - [ ] Add RustFS configuration section to `cluster.sample.yaml`
 - [ ] Update `templates/scripts/plugin.py` with derived variables
 - [ ] Create `templates/config/kubernetes/apps/storage/` directory structure
@@ -1486,6 +1496,7 @@ kubectl get endpoints -n monitoring loki
 - [ ] Add `storage/kustomization.yaml.j2`
 
 ### Phase 2: RustFS Deployment
+
 - [ ] Create `storage/rustfs/ks.yaml.j2`
 - [ ] Create `storage/rustfs/app/kustomization.yaml.j2`
 - [ ] Create `storage/rustfs/app/helmrepository.yaml.j2`
@@ -1497,16 +1508,19 @@ kubectl get endpoints -n monitoring loki
 - [ ] Create `storage/rustfs/app/servicemonitor.yaml.j2`
 
 ### Phase 3: Loki Integration
+
 - [ ] Update `monitoring/loki/app/helmrelease.yaml.j2` with conditional S3 config
 - [ ] Add `monitoring/loki/app/secret-s3.sops.yaml.j2` for S3 credentials
 - [ ] Update `monitoring/loki/ks.yaml.j2` with RustFS dependency
 - [ ] Update `monitoring/loki/app/kustomization.yaml.j2`
 
 ### Phase 4: Top-Level Integration
+
 - [ ] Update `templates/config/kubernetes/apps/kustomization.yaml.j2`
 - [ ] Update documentation (CLAUDE.md, CONFIGURATION.md)
 
 ### Phase 5: Validation
+
 - [ ] Run `task configure`
 - [ ] Verify generated files in `kubernetes/apps/storage/`
 - [ ] Deploy to cluster

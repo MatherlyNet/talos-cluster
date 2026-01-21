@@ -12,6 +12,7 @@ Production-quality Bash script for cleaning up Kubernetes application resources 
 Time-saving tool for removing all resources related to a failed or unwanted deployment. Automatically discovers and removes Flux resources, workloads, networking, storage, and custom resources.
 
 **Key Features:**
+
 - ✅ Defensive bash scripting with comprehensive error handling
 - 🔍 Automatic resource discovery across all namespaces
 - 🎨 Color-coded output for readability
@@ -55,16 +56,19 @@ Time-saving tool for removing all resources related to a failed or unwanted depl
 | **Custom Resources** | ExternalSecrets, ServiceMonitors |
 
 **Exit Codes:**
+
 - `0` - Success (all resources deleted)
 - `1` - Partial failure (some resources failed to delete)
 - `2` - Error (validation failed, missing dependencies, or user cancelled)
 
 **Requirements:**
+
 - kubectl (with cluster connectivity)
 - jq (for JSON processing)
 - Bash 4.4+ (for modern error handling)
 
 **Safety Features:**
+
 - Proper quoting of all variables
 - Timeout handling for all kubectl commands
 - Temporary file cleanup with EXIT trap
@@ -91,6 +95,7 @@ After successful cleanup, the script offers three non-automatic options:
 3. **Exit** - No further action
 
 This is intentionally NOT automatic - useful for:
+
 - Cleaning up apps removed from Git (verify no lingering artifacts)
 - Fresh redeploy of failed deployments
 - Controlled recovery after debugging
@@ -201,6 +206,7 @@ tasks:
 ```
 
 Then use with:
+
 ```bash
 task cleanup:app -- obot
 task cleanup:app:dry-run -- litellm
@@ -223,6 +229,7 @@ task cleanup:app:dry-run -- litellm
 3. **Verify connectivity**: Test `kubectl cluster-info` before running
 4. **Check Flux state**: Run `flux get ks -A` to see if resources will be recreated
 5. **Suspend Flux reconciliation**: If needed, suspend Kustomization first:
+
    ```bash
    flux suspend ks <app-name> -n flux-system
    ```

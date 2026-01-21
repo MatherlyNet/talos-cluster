@@ -31,6 +31,7 @@ Developer / CI Pipeline
 Before using these configurations, complete the following in Cloudflare:
 
 1. **Create R2 Bucket**
+
    ```bash
    npx wrangler login
    npx wrangler r2 bucket create matherlynet-tfstate
@@ -44,6 +45,7 @@ Before using these configurations, complete the following in Cloudflare:
    - (Optional) Configure custom domain: `tfstate.matherly.net`
 
 3. **Regenerate SOPS config** (if not done already)
+
    ```bash
    task configure  # This regenerates .sops.yaml with infrastructure rules
    ```
@@ -118,17 +120,20 @@ templates/config/infrastructure/     # Source templates
 All files in `infrastructure/` are **auto-generated** from templates using makejinja. This follows the same pattern as `kubernetes/`, `talos/`, and `bootstrap/` directories.
 
 **Source files:**
+
 - `cluster.yaml` - Proxmox connection, VM defaults, network configuration
 - `nodes.yaml` - Per-node specifications (cores, memory, disk, startup order)
 
 **Conditional templates:** Some templates (providers.tf.j2, main.tf.j2) generate different content based on `infrastructure_enabled` (when `proxmox_api_url` and `proxmox_node` are set in cluster.yaml).
 
 **Generation:**
+
 ```bash
 task configure  # Regenerates all templates and encrypts secrets
 ```
 
 **Important:** Never edit files in `infrastructure/` directly. Changes will be overwritten. Instead:
+
 1. Edit `cluster.yaml` for Proxmox settings, VM defaults, and credentials
 2. Edit `nodes.yaml` for per-node resource overrides
 3. Edit templates in `templates/config/infrastructure/` for structural changes
@@ -157,6 +162,7 @@ proxmox_vm_defaults:
 ```
 
 Per-node overrides in `nodes.yaml`:
+
 ```yaml
 nodes:
   - name: k8s-0
@@ -171,18 +177,21 @@ nodes:
 The bpg/proxmox provider requires specific privileges. The `download_file` resource (for ISO downloads) requires `Sys.Audit` and `Sys.Modify` on the root path (`/`).
 
 **Create a dedicated role on Proxmox:**
+
 ```bash
 # SSH to Proxmox server
 pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.GuestAgent.Audit,VM.Migrate,VM.PowerMgmt"
 ```
 
 **Option A: Use existing root token with role assignment**
+
 ```bash
 # Assign role to root token on root path
 pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
 ```
 
 **Option B: Create dedicated user and token**
+
 ```bash
 pveum user add terraform@pve
 pveum aclmod / -user terraform@pve -role TerraformProv
@@ -228,6 +237,7 @@ proxmox_api_token_secret: "your-api-secret"    # Required when infrastructure_en
 ```
 
 **Workflow:**
+
 1. Add credentials to `cluster.yaml`
 2. Run `task configure` - Generates and encrypts `infrastructure/secrets.sops.yaml`, auto-runs `tofu init`
 3. Use `task infra:secrets-edit` only for credential rotation (not initial setup)
@@ -237,12 +247,14 @@ proxmox_api_token_secret: "your-api-secret"    # Required when infrastructure_en
 ## Troubleshooting
 
 ### "Error acquiring state lock"
+
 ```bash
 # Get the lock ID from the error message, then:
 task infra:force-unlock LOCK_ID=<lock-id>
 ```
 
 ### "401 Unauthorized"
+
 ```bash
 # Verify credentials in cluster.yaml match tfstate-worker secrets
 # Then regenerate:
@@ -250,7 +262,9 @@ task configure
 ```
 
 ### "Checksum validation failed"
+
 The Taskfile sets `AWS_REQUEST_CHECKSUM_CALCULATION=when_required` automatically. If running tofu manually:
+
 ```bash
 export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
 export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
@@ -258,6 +272,7 @@ tofu init
 ```
 
 ### Backend configuration changed
+
 ```bash
 task infra:init -- -reconfigure
 # or for state migration:
@@ -265,13 +280,16 @@ task infra:init -- -migrate-state
 ```
 
 ### "403 Permission check failed" on ISO download
+
 The bpg/proxmox provider's `download_file` resource requires `Sys.Audit` and `Sys.Modify` privileges on the root path (`/`):
+
 ```bash
 # On Proxmox server - add privileges to your token
 pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
 # Or use PVEDatastoreAdmin role if TerraformProv doesn't exist:
 pveum aclmod / -token 'root@pam!k8s-gitops' -role PVEDatastoreAdmin
 ```
+
 See [Proxmox API Token Permissions](#proxmox-api-token-permissions-critical) for creating the role.
 
 ## Next Steps

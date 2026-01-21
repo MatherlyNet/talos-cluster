@@ -176,9 +176,12 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
 
     # Handle default values with alternation: *"value" | type OR *value | type
     # Try quoted default first: *"value" | rest
-    quoted_default = re.match(r'\*"([^"]*)"\s*\|\s*(.+)', type_def)
+    # Use (?:[^"\\]|\\.)* to properly handle escaped quotes within the string
+    quoted_default = re.match(r'\*"((?:[^"\\]|\\.)*)"\s*\|\s*(.+)', type_def)
     if quoted_default:
         default_val = quoted_default.group(1)
+        # Unescape CUE string escape sequences: \" -> ", \\ -> \
+        default_val = default_val.replace('\\"', '"').replace("\\\\", "\\")
         rest_type = quoted_default.group(2)
         prop["default"] = default_val
 
@@ -194,7 +197,8 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
             return prop
 
         # Check if rest_type contains enum values: "value1" | "value2"
-        enum_match = re.findall(r'"([^"]*)"', rest_type)
+        # Use (?:[^"\\]|\\.)* to properly handle escaped quotes
+        enum_match = re.findall(r'"((?:[^"\\]|\\.)*)"', rest_type)
         if enum_match and "|" in rest_type:
             prop["type"] = "string"
             # Build enum list from rest_type only (not from full type_def)
@@ -243,7 +247,8 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
         return prop
 
     # Handle enum types: "value1" | "value2"
-    enum_match = re.findall(r'"([^"]+)"', type_def)
+    # Use (?:[^"\\]|\\.)+ to properly handle escaped quotes
+    enum_match = re.findall(r'"((?:[^"\\]|\\.)+)"', type_def)
     if enum_match and "|" in type_def and "=~" not in type_def:
         prop["type"] = "string"
         prop["enum"] = enum_match

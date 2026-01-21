@@ -828,7 +828,7 @@ import (
 	// MCP Context Forge Header Passthrough (forward headers to MCP servers)
 	mcp_context_forge_passthrough_enabled?:            *false | bool   // Enable header passthrough to MCP servers
 	mcp_context_forge_passthrough_headers?:            *"[\"X-Trace-Id\", \"X-Span-Id\", \"X-Request-Id\"]" | string  // JSON array of headers to forward
-	mcp_context_forge_passthrough_source?:             *"env" | "db" | "env" | "merge"  // Header config source priority
+	mcp_context_forge_passthrough_source?:             *"env" | "db" | "merge"  // Header config source priority
 
 	// MCP Context Forge HyprMCP Gateway (optional anonymous DCR proxy)
 	// Only needed if MCP clients require anonymous DCR without Keycloak Initial Access Token

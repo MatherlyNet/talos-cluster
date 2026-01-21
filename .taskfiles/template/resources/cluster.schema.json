@@ -2270,20 +2270,15 @@
       "description": "MCP Context Forge Header Passthrough (forward headers to MCP servers)"
     },
     "mcp_context_forge_passthrough_headers": {
-      "type": "string",
-      "enum": [
-        "[\\",
-        ", \\",
-        ", \\",
-        "]"
-      ]
+      "default": "[\"X-Trace-Id\", \"X-Span-Id\", \"X-Request-Id\"]",
+      "type": "string"
     },
     "mcp_context_forge_passthrough_source": {
       "default": "env",
       "type": "string",
       "enum": [
-        "db",
         "env",
+        "db",
         "merge"
       ]
     },

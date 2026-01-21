@@ -200,27 +200,27 @@ Add to `Makefile`:
 ```makefile
 .PHONY: cleanup-app
 cleanup-app: ## Clean up Kubernetes application resources
-	@if [ -z "$(APP)" ]; then \
-		echo "ERROR: APP variable required. Usage: make cleanup-app APP=obot"; \
-		exit 1; \
-	fi
-	./scripts/cleanup-app.sh $(ARGS) $(APP)
+ @if [ -z "$(APP)" ]; then \
+  echo "ERROR: APP variable required. Usage: make cleanup-app APP=obot"; \
+  exit 1; \
+ fi
+ ./scripts/cleanup-app.sh $(ARGS) $(APP)
 
 .PHONY: cleanup-app-dry-run
 cleanup-app-dry-run: ## Preview cleanup without deleting
-	@if [ -z "$(APP)" ]; then \
-		echo "ERROR: APP variable required. Usage: make cleanup-app-dry-run APP=obot"; \
-		exit 1; \
-	fi
-	./scripts/cleanup-app.sh --dry-run $(APP)
+ @if [ -z "$(APP)" ]; then \
+  echo "ERROR: APP variable required. Usage: make cleanup-app-dry-run APP=obot"; \
+  exit 1; \
+ fi
+ ./scripts/cleanup-app.sh --dry-run $(APP)
 
 .PHONY: cleanup-app-auto
 cleanup-app-auto: ## Automatic cleanup without confirmation
-	@if [ -z "$(APP)" ]; then \
-		echo "ERROR: APP variable required. Usage: make cleanup-app-auto APP=obot"; \
-		exit 1; \
-	fi
-	./scripts/cleanup-app.sh --yes $(APP)
+ @if [ -z "$(APP)" ]; then \
+  echo "ERROR: APP variable required. Usage: make cleanup-app-auto APP=obot"; \
+  exit 1; \
+ fi
+ ./scripts/cleanup-app.sh --yes $(APP)
 ```
 
 Usage:
