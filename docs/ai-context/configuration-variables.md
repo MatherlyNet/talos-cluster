@@ -771,6 +771,7 @@ See: `docs/research/mcp-context-forge-deployment-guide-jan-2026.md`, `docs/ai-co
 | `mcp_context_forge_tracing_enabled` | External OTEL traces to Tempo | false |
 | `mcp_context_forge_tracing_sample_rate` | Tracing sample rate | "0.1" |
 | `mcp_context_forge_internal_observability_enabled` | Built-in observability (/admin/observability) | true |
+| `mcp_context_forge_internal_observability_sample_rate` | Internal span sampling rate (0.0-1.0) | "0.1" |
 | `mcp_context_forge_plugins_enabled` | Enable MCP server plugins/extensions | true |
 | `mcp_context_forge_passthrough_enabled` | Enable header passthrough to MCP servers | false |
 | `mcp_context_forge_passthrough_headers` | JSON array of headers to forward | `["X-Trace-Id", "X-Span-Id", "X-Request-Id"]` |

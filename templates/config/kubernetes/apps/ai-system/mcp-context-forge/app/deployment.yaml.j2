@@ -203,8 +203,12 @@ spec:
 
             #| Internal Observability (built-in database-backed tracing with Admin UI) #|
             #| Dashboard available at /admin/observability #|
+            #| NOTE: OBSERVABILITY_SAMPLE_RATE controls internal span sampling (1.0=100%, 0.1=10%) #|
+            #| Lower sample rates reduce "Span queue is full" warnings in high-traffic scenarios #|
             - name: OBSERVABILITY_ENABLED
               value: "#{ mcp_context_forge_internal_observability_enabled | default(true) | lower }#"
+            - name: OBSERVABILITY_SAMPLE_RATE
+              value: "#{ mcp_context_forge_internal_observability_sample_rate | default('0.1') }#"
 
 #% if mcp_context_forge_tracing_enabled | default(false) %#
             #| External OpenTelemetry Tracing (Tempo) #|
@@ -220,8 +224,6 @@ spec:
               value: "grpc"
             - name: OTEL_SERVICE_NAME
               value: "mcp-context-forge"
-            - name: OBSERVABILITY_SAMPLE_RATE
-              value: "#{ mcp_context_forge_tracing_sample_rate | default('0.1') }#"
 #% endif %#
 
             #| Prometheus Metrics (endpoint: /metrics/prometheus) #|

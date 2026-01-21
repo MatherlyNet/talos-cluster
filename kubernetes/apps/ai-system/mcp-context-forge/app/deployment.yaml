@@ -169,6 +169,8 @@ spec:
 
             - name: OBSERVABILITY_ENABLED
               value: "true"
+            - name: OBSERVABILITY_SAMPLE_RATE
+              value: "0.1"
 
 
             - name: ENABLE_METRICS

@@ -821,8 +821,9 @@ import (
 	mcp_context_forge_monitoring_enabled?:              *false | bool  // ServiceMonitor for Prometheus metrics
 	mcp_context_forge_tracing_enabled?:                 *false | bool  // OpenTelemetry traces to Tempo
 	mcp_context_forge_tracing_sample_rate?:             *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // 0.0-1.0
-	mcp_context_forge_internal_observability_enabled?:  *true | bool   // Built-in database-backed tracing with Admin UI
-	mcp_context_forge_plugins_enabled?:                 *true | bool   // MCP server plugins/extensions
+	mcp_context_forge_internal_observability_enabled?:       *true | bool   // Built-in database-backed tracing with Admin UI
+	mcp_context_forge_internal_observability_sample_rate?: *"0.1" | string & =~"^(0|1|0\\.[0-9]+)$"  // Internal span sampling (0.0-1.0)
+	mcp_context_forge_plugins_enabled?:                    *true | bool   // MCP server plugins/extensions
 
 	// MCP Context Forge Header Passthrough (forward headers to MCP servers)
 	mcp_context_forge_passthrough_enabled?:            *false | bool   // Enable header passthrough to MCP servers

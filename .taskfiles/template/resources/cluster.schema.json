@@ -2255,6 +2255,11 @@
       "default": true,
       "type": "boolean"
     },
+    "mcp_context_forge_internal_observability_sample_rate": {
+      "default": "0.1",
+      "type": "string",
+      "pattern": "^(0|1|0\\.[0-9]+)$"
+    },
     "mcp_context_forge_plugins_enabled": {
       "default": true,
       "type": "boolean"

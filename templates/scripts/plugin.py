@@ -765,6 +765,7 @@ class Plugin(makejinja.plugin.Plugin):
 
             # Internal observability (built-in database-backed tracing with Admin UI)
             data.setdefault("mcp_context_forge_internal_observability_enabled", True)
+            data.setdefault("mcp_context_forge_internal_observability_sample_rate", "0.1")
 
             # Plugins (MCP server extensions)
             data.setdefault("mcp_context_forge_plugins_enabled", True)

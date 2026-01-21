@@ -143,8 +143,9 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) and [MCP Context 
 mcp_context_forge_monitoring_enabled: true    # ServiceMonitor for Prometheus (/metrics/prometheus)
 mcp_context_forge_tracing_enabled: true       # External OpenTelemetry traces to Tempo (requires custom image with OTLP exporter)
 mcp_context_forge_tracing_sample_rate: "0.1"  # Sampling rate (0.0-1.0)
-mcp_context_forge_internal_observability_enabled: true  # Built-in database-backed tracing with Admin UI (/admin/observability)
-mcp_context_forge_plugins_enabled: true                 # Enable MCP server plugins/extensions
+mcp_context_forge_internal_observability_enabled: true       # Built-in database-backed tracing with Admin UI (/admin/observability)
+mcp_context_forge_internal_observability_sample_rate: "0.1"  # Internal span sampling rate (0.0-1.0), lower reduces queue warnings
+mcp_context_forge_plugins_enabled: true                      # Enable MCP server plugins/extensions
 ```
 
 ### Header Passthrough
@@ -196,8 +197,9 @@ mcp_context_forge_monitoring_enabled = monitoring_enabled and mcp_context_forge_
 mcp_context_forge_tracing_enabled = tracing_enabled and mcp_context_forge_tracing_enabled
 
 # Defaults
-mcp_context_forge_internal_observability_enabled = True  # Built-in observability always defaults to enabled
-mcp_context_forge_plugins_enabled = True                 # Plugins enabled by default
+mcp_context_forge_internal_observability_enabled = True       # Built-in observability always defaults to enabled
+mcp_context_forge_internal_observability_sample_rate = "0.1"  # 10% span sampling to reduce queue warnings
+mcp_context_forge_plugins_enabled = True                      # Plugins enabled by default
 mcp_context_forge_passthrough_enabled = False            # Passthrough disabled by default
 mcp_context_forge_passthrough_headers = '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]'  # Default tracing headers
 mcp_context_forge_passthrough_source = "env"             # Use env vars for Kubernetes

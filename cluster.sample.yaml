@@ -2637,6 +2637,12 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: true)
 # mcp_context_forge_internal_observability_enabled: true
 
+# -- Internal observability sample rate (0.0 - 1.0)
+#    Controls span sampling for built-in tracing. Lower values reduce
+#    "Span queue is full" warnings in high-traffic scenarios.
+#    (OPTIONAL) / (DEFAULT: "0.1")
+# mcp_context_forge_internal_observability_sample_rate: "0.1"
+
 # -- Enable MCP server plugins/extensions
 #    (OPTIONAL) / (DEFAULT: true)
 # mcp_context_forge_plugins_enabled: true
