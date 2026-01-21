@@ -1,0 +1,175 @@
+# markdownlint-cli2 configuration
+# https://github.com/DavidAnson/markdownlint-cli2
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Files to lint
+globs:
+  - "**/*.md"
+
+# Files to ignore
+ignores:
+  - "node_modules/**"
+  - "**/node_modules/**"
+  - ".git/**"
+  # Generated directories (never edit these - source is templates/)
+  - "kubernetes/**"
+  - "talos/**"
+  - "bootstrap/**"
+  - "infrastructure/**"
+  # Build artifacts
+  - "**/build/**"
+  - "**/dist/**"
+
+# Rule configuration
+# Adapted for GitOps infrastructure documentation
+config:
+  # Defaults to true for all rules
+  default: true
+
+  # MD003 - Heading style
+  # Use ATX-style headings (# Heading)
+  MD003:
+    style: "atx"
+
+  # MD004 - Unordered list style
+  # Use dashes for consistency
+  MD004:
+    style: "dash"
+
+  # MD007 - Unordered list indentation
+  # Use 2 spaces for list indentation
+  MD007:
+    indent: 2
+
+  # MD009 - Trailing spaces
+  # No trailing whitespace allowed
+  MD009: true
+
+  # MD010 - Hard tabs
+  # No hard tabs (use spaces)
+  MD010: true
+
+  # MD012 - Multiple consecutive blank lines
+  # Only single blank lines allowed
+  MD012: true
+
+  # MD013 - Line length
+  # Disable - documentation often has long URLs, YAML examples, and tables
+  MD013: false
+
+  # MD022 - Headings should be surrounded by blank lines
+  MD022: true
+
+  # MD024 - Multiple headings with the same content
+  # Allow sibling headings (different sections can have same sub-headings)
+  MD024:
+    siblings_only: true
+
+  # MD025 - Multiple top-level headings
+  # Disable - some files legitimately have multiple H1s
+  MD025: false
+
+  # MD026 - Trailing punctuation in headings
+  # Disable - some headings intentionally end with : or ?
+  MD026: false
+
+  # MD029 - Ordered list item prefix
+  # Use ordered style (1, 2, 3)
+  MD029:
+    style: "ordered"
+
+  # MD031 - Fenced code blocks should be surrounded by blank lines
+  MD031: true
+
+  # MD032 - Lists should be surrounded by blank lines
+  MD032: true
+
+  # MD033 - Inline HTML
+  # Allow specific HTML elements commonly used in documentation
+  MD033:
+    allowed_elements:
+      - "a"
+      - "br"
+      - "details"
+      - "summary"
+      - "img"
+      - "kbd"
+      - "sup"
+      - "sub"
+      - "div"
+      - "span"
+      - "p"
+      - "table"
+      - "thead"
+      - "tbody"
+      - "tr"
+      - "th"
+      - "td"
+      - "pre"
+      - "code"
+      # GitHub-specific elements
+      - "picture"
+      - "source"
+      # Mermaid diagrams
+      - "mermaid"
+
+  # MD034 - Bare URL
+  # Disable - URLs in documentation are often intentionally bare
+  # (GitHub links, API endpoints, kubectl commands)
+  MD034: false
+
+  # MD036 - Emphasis used instead of heading
+  # Disable - many files intentionally use bold text for emphasis
+  MD036: false
+
+  # MD038 - Spaces inside code spans
+  MD038: true
+
+  # MD040 - Fenced code blocks should have a language specified
+  # Disable - infrastructure docs have many generic code blocks
+  MD040: false
+
+  # MD041 - First line in file should be a top-level heading
+  # Disable - CLAUDE.md, AGENTS.md, and some files have frontmatter first
+  MD041: false
+
+  # MD046 - Code block style
+  # Use fenced code blocks (```)
+  MD046:
+    style: "fenced"
+
+  # MD047 - Files should end with single newline
+  MD047: true
+
+  # MD048 - Code fence style
+  # Disable - tildes needed for nested code block examples
+  MD048: false
+
+  # MD049 - Emphasis style
+  # Use asterisks for emphasis
+  MD049:
+    style: "asterisk"
+
+  # MD050 - Strong style
+  # Use asterisks for strong
+  MD050:
+    style: "asterisk"
+
+  # MD051 - Link fragments should be valid
+  # Disable - too many false positives with dynamic content
+  MD051: false
+
+  # MD056 - Table column count
+  # Disable - some tables intentionally have varying columns
+  MD056: false
+
+  # MD058 - Tables should be surrounded by blank lines
+  MD058: true
+
+  # MD059 - Link text should be descriptive
+  # Disable - "here" and similar text is sometimes appropriate
+  MD059: false
+
+  # MD060 - Table column style
+  # Disable - mixed table styles are acceptable
+  MD060: false

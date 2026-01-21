@@ -3,6 +3,7 @@
 ## Overview
 
 MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server registry and gateway platform. It provides:
+
 - Multi-tenant MCP server management with team-based access control
 - Centralized gateway for MCP server routing and discovery
 - Role-based authentication via Keycloak SSO integration
@@ -45,6 +46,7 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
 ## Configuration Variables
 
 ### Enable/Disable
+
 ```yaml
 mcp_context_forge_enabled: true           # Enable MCP Context Forge deployment
 mcp_context_forge_subdomain: "mcp"        # Creates mcp.${cloudflare_domain}
@@ -53,6 +55,7 @@ mcp_context_forge_replicas: 1             # Pod replicas
 ```
 
 ### Resource Configuration
+
 ```yaml
 mcp_context_forge_cpu_request: "100m"     # CPU request
 mcp_context_forge_cpu_limit: "1000m"      # CPU limit
@@ -61,6 +64,7 @@ mcp_context_forge_memory_limit: "1Gi"     # Memory limit
 ```
 
 ### Database (CloudNativePG)
+
 ```yaml
 mcp_context_forge_db_user: "mcpgateway"        # Database username
 mcp_context_forge_db_password: "..."           # SOPS-encrypted password
@@ -72,6 +76,7 @@ mcp_context_forge_storage_size: "10Gi"         # PostgreSQL storage
 **Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### Core Credentials (SOPS-encrypted)
+
 ```yaml
 # Platform admin password (minimum 16 characters)
 # Generate: openssl rand -base64 24
@@ -87,6 +92,7 @@ mcp_context_forge_auth_encryption_secret: "..."
 ```
 
 ### Dragonfly Cache
+
 ```yaml
 # MCP Gateway cache password (requires dragonfly_acl_enabled: true)
 # Generate: openssl rand -base64 24
@@ -96,6 +102,7 @@ dragonfly_mcpgateway_password: "..."
 MCP Context Forge uses shared Dragonfly in the cache namespace for session storage and caching. When `dragonfly_acl_enabled: true`, each application gets its own ACL user with key prefix isolation.
 
 ### Keycloak SSO Integration
+
 ```yaml
 mcp_context_forge_keycloak_enabled: true              # Enable Keycloak SSO
 mcp_context_forge_keycloak_client_id: "mcp-context-forge"  # OIDC client ID
@@ -103,16 +110,19 @@ mcp_context_forge_keycloak_client_secret: "..."       # SOPS-encrypted client se
 ```
 
 **Authentication Architecture:**
+
 - **Native SSO:** MCP Context Forge handles OIDC directly via `KEYCLOAK_*` environment variables
 - **No Gateway OIDC:** HTTPRoute has no security label to avoid dual authentication
 - **Token Validation:** Uses internal Keycloak endpoint for backchannel validation
 
 **Keycloak Client Configuration:**
+
 - Auto-created when `mcp_context_forge_keycloak_enabled: true`
 - Configured in `realm-config.yaml.j2` with protocol mappers for roles/groups claims
 - Available MCP scopes: `mcp:read`, `mcp:tools`, `mcp:prompts`, `mcp:resources`
 
 ### Dynamic Client Registration (DCR)
+
 ```yaml
 mcp_context_forge_dcr_enabled: true            # Enable RFC 7591 DCR
 mcp_context_forge_dcr_default_scopes: "mcp:read"  # Default scopes for registered clients
@@ -120,11 +130,13 @@ mcp_context_forge_dcr_allowed_issuers: []      # Empty = Keycloak issuer auto-ad
 ```
 
 **DCR Architecture:**
+
 - **RFC 7591 Compliant:** MCP clients can self-register without manual configuration
 - **Least Privilege:** Default scope is `mcp:read` (read-only access)
 - **Elevated Access:** Additional scopes (`mcp:tools`, `mcp:prompts`, `mcp:resources`) granted via Keycloak roles
 
 ### PostgreSQL Backups
+
 ```yaml
 mcp_context_forge_backup_enabled: true        # Enable S3 backups (requires rustfs_enabled)
 mcp_context_forge_s3_access_key: "..."        # SOPS-encrypted (create in RustFS Console)
@@ -132,6 +144,7 @@ mcp_context_forge_s3_secret_key: "..."        # SOPS-encrypted (create in RustFS
 ```
 
 **RustFS IAM Setup:** Backups use the `mcpgateway-postgres-backups` bucket with a scoped `mcp-context-forge-storage` policy.
+
 - **Policy:** `mcp-context-forge-storage` (scoped to `mcpgateway-postgres-backups` bucket only)
 - **Group:** `databases` (shared with CNPG) or `ai-system-backups` (dedicated)
 - **User:** `mcpgateway-backup`
@@ -139,6 +152,7 @@ mcp_context_forge_s3_secret_key: "..."        # SOPS-encrypted (create in RustFS
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) and [MCP Context Forge Deployment Guide](../research/mcp-context-forge-deployment-guide-jan-2026.md#rustfs-iam-setup-for-postgresql-backups) for detailed setup instructions.
 
 ### Observability
+
 ```yaml
 mcp_context_forge_monitoring_enabled: true    # ServiceMonitor for Prometheus (/metrics/prometheus)
 mcp_context_forge_tracing_enabled: true       # External OpenTelemetry traces to Tempo (requires custom image with OTLP exporter)
@@ -149,6 +163,7 @@ mcp_context_forge_plugins_enabled: true                      # Enable MCP server
 ```
 
 ### Header Passthrough
+
 ```yaml
 mcp_context_forge_passthrough_enabled: true             # Enable header passthrough to MCP servers
 mcp_context_forge_passthrough_headers: '["X-Trace-Id", "X-Span-Id", "X-Request-Id", "X-User-Id", "X-Tenant-Id"]'
@@ -156,6 +171,7 @@ mcp_context_forge_passthrough_source: "env"             # Source priority: db, e
 ```
 
 **Passthrough Architecture:**
+
 - Forwards specified HTTP headers from client requests to backend MCP servers
 - Enables distributed tracing correlation across MCP server boundaries
 - Supports auth context forwarding (X-User-Id) for audit logging
@@ -163,6 +179,7 @@ mcp_context_forge_passthrough_source: "env"             # Source priority: db, e
 - Security: `Authorization` headers excluded by default to prevent token leakage
 
 **Observability Architecture:**
+
 - **Internal Observability:** `OBSERVABILITY_ENABLED=true` enables built-in database-backed tracing with Admin UI at `/admin/observability`
 - **Prometheus Metrics:** Exposed at `/metrics/prometheus` (no authentication required)
 - **External OTEL Tracing:** Requires `opentelemetry-exporter-otlp-proto-grpc` package which is NOT included in official image 1.0.0-BETA-1
@@ -170,10 +187,12 @@ mcp_context_forge_passthrough_source: "env"             # Source priority: db, e
 ## Dependencies
 
 **Required:**
+
 - `cnpg_enabled: true` - CloudNativePG operator for PostgreSQL
 - `dragonfly_enabled: true` - Dragonfly cache with ACL enabled
 
 **Optional:**
+
 - `keycloak_enabled: true` - Keycloak for SSO authentication
 - `rustfs_enabled: true` - RustFS S3 for PostgreSQL backups
 - `monitoring_enabled: true` - Prometheus metrics collection
@@ -238,10 +257,12 @@ These scopes are defined in `realm-config.yaml.j2` under `clientScopes` and can 
 The CiliumNetworkPolicy allows:
 
 **Ingress:**
+
 - Envoy Gateway proxy (port 4444)
 - Prometheus scraping (port 4444)
 
 **Egress:**
+
 - DNS resolution (kube-dns)
 - PostgreSQL (mcp-context-forge-postgresql:5432)
 - Dragonfly cache (dragonfly:6379)
@@ -254,24 +275,28 @@ The CiliumNetworkPolicy allows:
 ### Common Issues
 
 **Application not starting:**
+
 ```bash
 kubectl logs -n ai-system deploy/mcp-context-forge
 kubectl describe pod -n ai-system -l app.kubernetes.io/name=mcp-context-forge
 ```
 
 **Database connection issues:**
+
 ```bash
 kubectl cnpg status mcp-context-forge-postgresql -n ai-system
 kubectl logs -n ai-system -l cnpg.io/cluster=mcp-context-forge-postgresql
 ```
 
 **Cache connection issues:**
+
 ```bash
 kubectl logs -n cache -l app.kubernetes.io/name=dragonfly
 # Verify ACL user exists for mcpgateway
 ```
 
 **SSO authentication failures:**
+
 ```bash
 # Check Keycloak client configuration
 kubectl logs -n identity deploy/keycloak
@@ -280,6 +305,7 @@ kubectl exec -n ai-system deploy/mcp-context-forge -- curl -s http://keycloak-se
 ```
 
 **Network policy blocking traffic:**
+
 ```bash
 # Check for dropped packets
 hubble observe --verdict DROPPED -n ai-system
@@ -287,9 +313,22 @@ hubble observe --verdict DROPPED -n ai-system
 kubectl get ciliumnetworkpolicies -n ai-system
 ```
 
+## Claude Code Integration
+
+MCP Context Forge has dedicated Claude Code specialist files:
+
+| Resource | Path | Purpose |
+| -------- | ---- | ------- |
+| **Agent** | `.claude/agents/context-forge-expert.md` | Gateway config, federation, SSO troubleshooting |
+| **Skill** | `.claude/skills/mcp-context-forge/SKILL.md` | Server registration, federation operations |
+| **Rule** | `.claude/rules/mcp-context-forge.md` | Auto-activates for MCP Context Forge templates |
+
+Use `/mcp-context-forge` skill for guided operations or spawn the `context-forge-expert` agent for complex troubleshooting.
+
 ## Reference Documentation
 
 - [MCP Context Forge Deployment Guide](../research/mcp-context-forge-deployment-guide-jan-2026.md)
 - [CloudNativePG Implementation](../guides/cnpg-implementation.md)
 - [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md)
 - [Network Policy Patterns](../research/cilium-network-policies-jan-2026.md)
+- [Upstream Documentation](../../local_docs/context_forge_docs/) - IBM MCP Context Forge docs

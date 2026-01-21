@@ -2,18 +2,33 @@
 ---
 #| ============================================================================= #|
 #| MCP CONTEXT FORGE POSTGRESQL - CloudNativePG Cluster                          #|
-#| REF: docs/guides/cnpg-implementation.md                                       #|
-#| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md             #|
+#| Stores gateway configuration, MCP server registry, user accounts, and logs    #|
+#| REF: https://cloudnative-pg.io/documentation/                                  #|
+#| REF: docs/guides/cnpg-implementation.md                                        #|
+#| REF: docs/research/mcp-context-forge-deployment-guide-jan-2026.md              #|
 #| ============================================================================= #|
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: mcp-context-forge-postgresql
   namespace: ai-system
+  labels:
+    app.kubernetes.io/name: mcp-context-forge-postgresql
+    app.kubernetes.io/part-of: mcp-context-forge
+#% if network_policies_enabled | default(false) %#
+    #| Network policy labels for CiliumNetworkPolicy tiered policies #|
+    network.cilium.io/api-access: "true"
+#% endif %#
 spec:
+  #| Number of PostgreSQL instances (1 for dev, 3+ for HA) #|
   instances: #{ mcp_context_forge_db_instances | default(1) }#
-  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:17.2-standard-bookworm') }#
 
+  #| PostgreSQL image - standard/minimal images work with Barman Cloud Plugin #|
+  #| Plugin provides barman-cloud binaries via sidecar container               #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/                  #|
+  imageName: #{ cnpg_postgres_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie') }#
+
+  #| Bootstrap from initdb (fresh database) #|
   bootstrap:
     initdb:
       database: #{ mcp_context_forge_db_name | default('mcpgateway') }#
@@ -21,12 +36,46 @@ spec:
       secret:
         name: mcp-context-forge-db-secret
 
-  storage:
-    size: #{ mcp_context_forge_storage_size | default('10Gi') }#
-    storageClass: #{ cnpg_storage_class | default('local-path') }#
+  #| =========================================================================== #|
+  #| MANAGED ROLES - Declarative role management with password auto-rotation     #|
+  #| CNPG syncs password changes from secret when cnpg.io/reload: "true" label   #|
+  #| REF: https://cloudnative-pg.io/documentation/current/declarative_role_management/ #|
+  #| REF: docs/research/cnpg-managed-roles-password-rotation-jan-2026.md         #|
+  #| =========================================================================== #|
+  managed:
+    roles:
+      - name: #{ mcp_context_forge_db_user | default('mcpgateway') }#
+        ensure: present
+        login: true
+        createdb: false
+        createrole: false
+        inherit: true
+        connectionLimit: -1
+        passwordSecret:
+          name: mcp-context-forge-db-secret
 
+  #| Storage configuration #|
+  storage:
+    size: #{ mcp_context_forge_storage_size | default('20Gi') }#
+    storageClass: #{ cnpg_storage_class | default(storage_class) | default('local-path') }#
+
+  #| Resource limits #|
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+  #| Monitoring (if prometheus-stack enabled) #|
+  monitoring:
+    enablePodMonitor: #{ 'true' if mcp_context_forge_monitoring_enabled | default(monitoring_enabled | default(false)) else 'false' }#
+
+  #| PostgreSQL configuration optimized for MCP Context Forge #|
   postgresql:
     parameters:
+      max_connections: "200"
       shared_buffers: "256MB"
       effective_cache_size: "768MB"
       maintenance_work_mem: "128MB"
@@ -43,36 +92,42 @@ spec:
       max_parallel_workers: "4"
       max_parallel_maintenance_workers: "2"
 
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "256Mi"
-    limits:
-      cpu: "1000m"
-      memory: "1Gi"
-
-#% if mcp_context_forge_backup_enabled | default(false) and rustfs_enabled | default(false) %#
-  backup:
-    barmanObjectStore:
-      destinationPath: "s3://mcpgateway-postgres-backups/"
-      endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
-      s3Credentials:
-        accessKeyId:
-          name: mcp-context-forge-s3-secret
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: mcp-context-forge-s3-secret
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-        maxParallel: 2
-      data:
-        compression: gzip
-    retentionPolicy: "7d"
+  #| Affinity rules for HA deployments #|
+#% if (mcp_context_forge_db_instances | default(1)) > 1 %#
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
 #% endif %#
 
-  monitoring:
-    enablePodMonitor: #{ mcp_context_forge_monitoring_enabled | default(monitoring_enabled | default(false)) | string | lower }#
+  #| Priority class for critical database workload #|
+  priorityClassName: #{ cnpg_priority_class | default('system-cluster-critical') }#
+
+#% if mcp_context_forge_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
+  #| =========================================================================== #|
+  #| BARMAN CLOUD PLUGIN - Backup via external plugin to RustFS S3              #|
+  #| References ObjectStore CRD for backup destination configuration            #|
+  #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/             #|
+  #| =========================================================================== #|
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: mcp-context-forge-objectstore
+#% endif %#
+---
+#| =========================================================================== #|
+#| Database resource to declaratively manage mcpgateway database               #|
+#| =========================================================================== #|
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: mcp-context-forge-db-mcpgateway
+  namespace: ai-system
+spec:
+  name: #{ mcp_context_forge_db_name | default('mcpgateway') }#
+  owner: #{ mcp_context_forge_db_user | default('mcpgateway') }#
+  cluster:
+    name: mcp-context-forge-postgresql
 ---
 #| Database credentials secret #|
 apiVersion: v1
@@ -80,21 +135,59 @@ kind: Secret
 metadata:
   name: mcp-context-forge-db-secret
   namespace: ai-system
+  labels:
+    #| Enable CNPG password sync on secret changes #|
+    cnpg.io/reload: "true"
 type: kubernetes.io/basic-auth
 stringData:
   username: #{ mcp_context_forge_db_user | default('mcpgateway') }#
   password: "#{ mcp_context_forge_db_password }#"
-#% if mcp_context_forge_backup_enabled | default(false) and rustfs_enabled | default(false) %#
+#% if mcp_context_forge_backup_enabled | default(false) and cnpg_barman_plugin_enabled | default(false) %#
 ---
-#| S3 backup credentials secret #|
-apiVersion: v1
-kind: Secret
+#| =========================================================================== #|
+#| OBJECTSTORE - Barman Cloud Plugin backup destination for MCP Context Forge  #|
+#| Configures S3 credentials, WAL compression, and retention policy            #|
+#| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/usage/              #|
+#| =========================================================================== #|
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
 metadata:
-  name: mcp-context-forge-s3-secret
+  name: mcp-context-forge-objectstore
   namespace: ai-system
-type: Opaque
-stringData:
-  ACCESS_KEY_ID: "#{ mcp_context_forge_s3_access_key }#"
-  SECRET_ACCESS_KEY: "#{ mcp_context_forge_s3_secret_key }#"
+  labels:
+    app.kubernetes.io/name: mcp-context-forge-objectstore
+    app.kubernetes.io/part-of: mcp-context-forge
+spec:
+  configuration:
+    destinationPath: "s3://mcpgateway-postgres-backups"
+    endpointURL: "http://rustfs-svc.storage.svc.cluster.local:9000"
+    s3Credentials:
+      accessKeyId:
+        name: mcp-context-forge-backup-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: mcp-context-forge-backup-credentials
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    retentionPolicy: "#{ mcp_context_forge_backup_retention | default('7d') }#"
+  instanceSidecarConfiguration:
+    #| boto3 1.36+ S3 Data Integrity Protection workaround for RustFS/S3-compatible storage #|
+    #| REF: https://cloudnative-pg.io/plugin-barman-cloud/docs/next/object_stores/ #|
+    #| REF: docs/research/barman-cloud-plugin-wal-archive-remediation-jan-2026.md #|
+    env:
+      - name: AWS_REQUEST_CHECKSUM_CALCULATION
+        value: when_required
+      - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+        value: when_required
+    logLevel: #{ cnpg_barman_plugin_log_level | default('info') }#
+    retentionPolicyIntervalSeconds: 1800
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
 #% endif %#
 #% endif %#

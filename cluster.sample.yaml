@@ -2605,8 +2605,8 @@ cloudflare_gateway_addr: ""
 #    (OPTIONAL) / (DEFAULT: "mcp:read")
 # mcp_context_forge_dcr_default_scopes: "mcp:read"
 
-# -- Enable PostgreSQL backups to RustFS
-#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true)
+# -- Enable PostgreSQL backups to RustFS via Barman Cloud Plugin
+#    (OPTIONAL) / (DEFAULT: false) / (REQUIRES: rustfs_enabled: true, cnpg_barman_plugin_enabled: true)
 # mcp_context_forge_backup_enabled: false
 
 # -- S3 access key for PostgreSQL backups

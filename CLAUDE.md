@@ -1,6 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+Claude Code-specific guidance for the matherlynet-talos-cluster repository. This file complements `AGENTS.md` with Claude-specific tooling and context.
+
+> **Important**: For universal project guidelines (commands, code patterns, dos/don'ts), see `AGENTS.md` at the repository root. This file contains only Claude Code-specific information.
+
+## Quick Start
+
+1. **Universal guidelines**: Read `AGENTS.md` for project structure, commands, and conventions
+2. **Claude-specific**: This file for Serena MCP, memories, skills, and Claude Code features
+3. **Initialization**: Run `/expert-mode` to activate full context efficiently
 
 ## Repository Overview
 
@@ -10,185 +18,216 @@ GitOps-driven Kubernetes cluster template on Talos Linux with Flux CD. All clust
 
 **Upstream:** Based on [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template)
 
-**Deployment:** 7-stage workflow (Hardware → Machine Prep → Workstation → Cloudflare → Infrastructure → Cluster Config → Bootstrap)
-
 **Control Plane:** Does NOT run workloads by default (`allowSchedulingOnControlPlanes: false`)
 
-## Quick Context Loading
+## When to Read What
 
-Run `/expert-mode` for efficient project context loading (94% token reduction).
+| Task | Read | Don't Read |
+|------|------|------------|
+| **Any task** | `AGENTS.md` (auto-loaded) | Full architecture docs |
+| **Quick fix / simple edit** | `CLAUDE.md` only | Memories, deep docs |
+| **New application** | `/scaffold-flux-app` skill | Full Flux documentation |
+| **Template work** | `docs/ai-context/template-system.md` | All ai-context files |
+| **Debugging Flux** | `docs/ai-context/flux-gitops.md` | Unrelated domains |
+| **Node operations** | `docs/ai-context/talos-operations.md` | Network docs |
+| **Network issues** | `docs/ai-context/cilium-networking.md` | Template docs |
+| **OIDC integration** | `/oidc-integration` skill | All OIDC research docs |
+| **Architecture design** | `docs/ARCHITECTURE.md` + relevant ai-context | Quick references |
+| **Deep project work** | Load relevant Serena memory | All memories upfront |
 
-Alternatively, read `PROJECT_INDEX.md` first - it provides complete project understanding in ~3K tokens.
+## Serena MCP Integration
 
-## Common Commands (go-task)
+This project uses [Serena MCP](https://github.com/serena-ai/serena) for enhanced code intelligence. Serena provides memories for deep context.
 
-This project uses **go-task** as the primary task runner. All commands via `task <name>`.
+### Available Serena Memories
 
-```bash
-task --list              # List all available tasks
-task init                # Initialize config files from samples
-task configure -y        # Render templates, validate, encrypt secrets
-task reconcile           # Force Flux to sync from Git
+Load on-demand based on task requirements:
 
-# Bootstrap
-task bootstrap:talos     # Install Talos on nodes
-task bootstrap:apps      # Deploy Cilium, CoreDNS, Spegel, Flux
+| Memory | When to Load |
+|--------|--------------|
+| `codebase_architecture` | Deep architectural patterns, design decisions, dependency chains |
+| `task_completion_checklist` | Before completing any task (pre-commit validation) |
+| `documentation_best_practices` | Creating formal documentation, analysis reports |
+| `style_and_conventions` | Detailed style rules beyond AGENTS.md |
+| `flux_dependency_patterns` | Working with Flux dependencies, app ordering |
+| `network_policy_patterns` | Creating CiliumNetworkPolicies |
+| `authentication_architecture` | OIDC, Keycloak, SSO integration |
+| `tech_stack_and_dependencies` | Tool versions, upgrade paths, compatibility |
+| `project_overview` | Quick project context |
 
-# Talos
-task talos:apply-node IP=<ip>     # Apply config to running node
-task talos:upgrade-node IP=<ip>   # Upgrade Talos version
-task talos:upgrade-k8s            # Upgrade Kubernetes version
+**Note**: `AGENTS.md` contains essential commands and conventions. Serena memories provide deeper context when needed.
 
-# Infrastructure (OpenTofu)
-task infra:plan          # Create execution plan
-task infra:apply         # Apply saved plan
+## Claude Code Directory Structure
+
 ```
-
-For complete CLI reference, see `docs/CLI_REFERENCE.md`.
-
-## Architecture
-
-### Directory Layout
-- `templates/config/kubernetes/apps/<namespace>/<app>/` - Jinja2 templates for K8s manifests
-- `templates/config/talos/` - Talos configuration templates
-- `templates/config/bootstrap/` - Bootstrap resource templates
-- `templates/config/infrastructure/` - OpenTofu/IaC templates
-- `kubernetes/`, `talos/`, `infrastructure/` - GENERATED (after `task configure`)
-- `docs/` - Comprehensive documentation
-
-### Template Flow
+.claude/
+├── commands/                     # Slash commands
+│   ├── expert-mode.md            # Session initialization
+│   ├── flux-status.md            # GitOps health check
+│   ├── talos-status.md           # Node health check
+│   ├── infra-status.md           # Infrastructure check
+│   └── network-status.md         # Network diagnostics
+├── agents/                       # Custom subagents
+│   ├── talos-expert.md           # Talos operations
+│   ├── flux-expert.md            # Flux troubleshooting
+│   ├── template-expert.md        # makejinja patterns
+│   ├── network-debugger.md       # Cilium/Gateway debugging
+│   ├── infra-expert.md           # OpenTofu/Proxmox
+│   └── context-forge-expert.md   # MCP Context Forge
+├── skills/                       # Progressive disclosure skills
+│   ├── scaffold-flux-app/        # New app scaffolding
+│   ├── helm-chart-lookup/        # Chart discovery
+│   ├── oidc-integration/         # OIDC configuration
+│   ├── network-policy-helper/    # Policy generation
+│   ├── node-config-helper/       # Node configuration
+│   ├── cnpg-database/            # PostgreSQL provisioning
+│   ├── feature-advisor/          # Feature enablement
+│   ├── debug-context/            # Context loading
+│   └── mcp-context-forge/        # MCP gateway config
+├── rules/                        # Path-specific auto-activated rules
+│   ├── kubernetes.md             # K8s manifest patterns
+│   ├── flux-apps.md              # Flux app structure
+│   ├── talos-patches.md          # Talos patch patterns
+│   ├── makejinja.md              # Template delimiters
+│   └── mcp-context-forge.md      # MCP template rules
+├── output-styles/                # Response formatting
+│   ├── minimal.md                # Terse responses
+│   ├── debugging.md              # Structured debugging
+│   └── ops-runbook.md            # Operations format
+├── instructions/                 # General instructions
+│   ├── context-optimization-guide.md
+│   ├── documentation-standards.md
+│   └── gitops-patterns.md
+├── settings.json                 # Hooks configuration
+└── settings.local.json           # Local overrides
 ```
-cluster.yaml + nodes.yaml → makejinja → kubernetes/ + talos/ + bootstrap/ + infrastructure/
-                                            ↓
-                              task bootstrap:talos → Nodes ready
-                                            ↓
-                              task bootstrap:apps → Flux syncs Git
-```
-
-### Key Patterns
-
-**App Template Structure:**
-```
-templates/config/kubernetes/apps/<namespace>/<app>/
-├── ks.yaml.j2              # Flux Kustomization
-└── app/
-    ├── kustomization.yaml.j2
-    ├── helmrelease.yaml.j2
-    ├── ocirepository.yaml.j2
-    └── secret.sops.yaml.j2  # (if secrets needed)
-```
-
-**Template Delimiters (makejinja):**
-- Block: `#% ... %#` (e.g., `#% if condition %#`)
-- Variable: `#{ ... }#` (e.g., `#{ cluster_api_addr }#`)
-- Comment: `#| ... #|` - **SYMMETRICAL** - both ends use `#|`, NOT `|#`
-
-> **CRITICAL**: Comments use the SAME delimiter on both ends (`#|`). The correct comment is `#| comment here #|`, **never** `#| comment here |#`.
-
-**SOPS Encryption:** All `*.sops.yaml` files encrypted with Age.
-
-### Networks (Configured via cluster.yaml)
-- Node Network: `node_cidr` (e.g., 192.168.1.0/24)
-- Pods: `cluster_pod_cidr` (default: 10.42.0.0/16)
-- Services: `cluster_svc_cidr` (default: 10.43.0.0/16)
-- LoadBalancers: `cluster_gateway_addr`, `cloudflare_gateway_addr`
-
-## Key Files
-
-| Purpose | Path |
-| ------- | ---- |
-| **Task runner** | `Taskfile.yaml`, `.taskfiles/` |
-| **Dev tools** | `.mise.toml` (managed by mise) |
-| **AI assistants** | `.claude/` (agents, commands), `docs/ai-context/` |
-| **Cluster config** | `cluster.yaml` (network, cloudflare, repo) |
-| **Node config** | `nodes.yaml` (name, IP, disk, MAC, schematic) |
-| **Infrastructure** | `infrastructure/` (OpenTofu configs, R2 backend) |
-| **Template engine** | `makejinja.toml` |
-| **SOPS rules** | `.sops.yaml` (generated) |
-| Age encryption key | `age.key` (gitignored, NEVER commit) |
-| **Detailed docs** | `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`, `docs/OPERATIONS.md` |
-
-## Conventions
-
-### Configuration
-- Edit `cluster.yaml` and `nodes.yaml` for cluster settings
-- NEVER edit files in `kubernetes/`, `talos/`, `bootstrap/`, or `infrastructure/` directly - they are generated
-- After changes: `task configure` to regenerate
-
-### Kubernetes/GitOps
-- HelmReleases use OCI repositories for charts
-- Secrets via SOPS/Age encryption
-- All apps follow the standard template structure
-
-### Configuration Variables
-
-For complete configuration variable reference, see `docs/ai-context/configuration-variables.md`.
-
-**Required variables:** `node_cidr`, `cluster_api_addr`, `cluster_gateway_addr`, `cloudflare_domain`, `cloudflare_token`, `cloudflare_gateway_addr`, `repository_name`
-
-**Optional features:** UniFi DNS, Cilium BGP, Observability Stack, RustFS S3, Network Policies, Talos Backup, CloudNativePG, Keycloak OIDC, LiteLLM, Dragonfly, Langfuse, Obot, MCP Context Forge, Proxmox Infrastructure
-
-All derived variables are computed in `templates/scripts/plugin.py`. See `docs/CONFIGURATION.md` for complete schema reference.
-
-## AI Assistants
 
 ### Slash Commands
 
 | Command | Purpose |
-| ------- | ------- |
-| `/expert-mode` | Load project context efficiently |
-| `/flux-status` | Check Flux GitOps health |
-| `/talos-status` | Check Talos node health |
-| `/infra-status` | Check OpenTofu state/resources |
-| `/network-status` | Network diagnostics |
+|---------|---------|
+| `/expert-mode` | Initialize session with efficient context loading |
+| `/flux-status` | Quick GitOps health check |
+| `/talos-status` | Quick node health check |
+| `/infra-status` | Quick infrastructure health check |
+| `/network-status` | Quick network diagnostics |
 
-### Agents
+### Custom Agents
 
-| Agent | Use For |
-| ----- | ------- |
+| Agent | Purpose |
+|-------|---------|
 | `talos-expert` | Talos node operations, upgrades, patches |
 | `flux-expert` | Flux troubleshooting, reconciliation issues |
 | `template-expert` | makejinja templates, Jinja2 patterns |
 | `network-debugger` | Cilium/Gateway debugging, connectivity, OIDC |
 | `infra-expert` | OpenTofu/Proxmox IaC operations |
+| `context-forge-expert` | MCP Context Forge gateway, federation, SSO |
 
-### Domain Documentation
+### Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/scaffold-flux-app` | Scaffold new Flux CD application structure |
+| `/helm-chart-lookup` | Find OCI repository URLs for Helm charts |
+| `/oidc-integration` | Configure OIDC/SSO for applications |
+| `/network-policy-helper` | Generate CiliumNetworkPolicy |
+| `/node-config-helper` | Help configure nodes in nodes.yaml |
+| `/cnpg-database` | Provision CloudNativePG PostgreSQL database |
+| `/feature-advisor` | Explain feature effects and prerequisites |
+| `/debug-context` | Auto-load debugging context based on error |
+
+### Output Styles
+
+| Style | When to Use |
+|-------|-------------|
+| `minimal` | Quick answers, simple tasks |
+| `debugging` | Structured problem analysis |
+| `ops-runbook` | Operations procedures, step-by-step guides |
+
+### Path-Specific Rules
+
+Rules auto-activate based on file patterns:
+
+| Rule | Glob Pattern | Purpose |
+|------|--------------|---------|
+| `kubernetes.md` | `**/*.yaml.j2` in kubernetes/ | K8s manifest patterns |
+| `flux-apps.md` | `**/apps/**` | Flux app structure |
+| `talos-patches.md` | `**/talos/**` | Talos patch patterns |
+| `makejinja.md` | `**/*.j2` | Template delimiters |
+
+## Context Optimization
+
+Claude Code automatically injects this file (~1,500 tokens) into every conversation. To minimize context usage:
+
+1. **Don't re-read CLAUDE.md** - it's already in context
+2. **Reference AGENTS.md** - universal content is there
+3. **Load memories on-demand** - not upfront
+4. **Use skills** - they have built-in context
+
+See `.claude/instructions/context-optimization-guide.md` for detailed strategies.
+
+## Domain Documentation
 
 Deep context in `docs/ai-context/`:
-- `flux-gitops.md` - Flux architecture & patterns
-- `talos-operations.md` - Talos workflows
-- `cilium-networking.md` - Cilium CNI patterns + OIDC integration
-- `template-system.md` - makejinja templating
-- `infrastructure-opentofu.md` - OpenTofu IaC & R2 backend
-- `configuration-variables.md` - Complete cluster.yaml variable reference
-- `context-loading-strategy.md` - Token optimization & progressive loading
-- `litellm.md` - LiteLLM proxy configuration
-- `langfuse.md` - Langfuse LLM observability
-- `obot.md` - Obot MCP gateway + Keycloak SSO
-- `mcp-context-forge.md` - MCP Context Forge gateway + Keycloak SSO
 
-### Documentation Standards
+| Document | Domain | When to Load |
+|----------|--------|--------------|
+| `flux-gitops.md` | Flux CD | Adding apps, sync issues |
+| `talos-operations.md` | Talos Linux | Node ops, upgrades |
+| `cilium-networking.md` | Cilium CNI | Network debugging, BGP |
+| `template-system.md` | makejinja | Template syntax, variables |
+| `infrastructure-opentofu.md` | OpenTofu | IaC operations |
+| `litellm.md` | LiteLLM | LLM proxy configuration |
+| `langfuse.md` | Langfuse | LLM observability |
+| `mcp-context-forge.md` | MCP Context Forge | MCP gateway configuration |
 
-When creating comprehensive documentation (analysis, validation reports, implementation guides):
-- Apply standards from `docs/DOCUMENTATION_STANDARDS.md`
-- Core: Evidence-based, specific line refs, copy-paste ready code, validation commands, visual elements
-- Enhanced: CI/CD impact, failure modes, automated testing (when relevant)
+## Documentation Standards
+
+When creating comprehensive documentation:
+
+- Apply standards from `.claude/instructions/documentation-standards.md`
+- Load `documentation_best_practices` memory for detailed templates
+- Core: Evidence-based, specific file refs, copy-paste ready code, validation commands
+- Enhanced: Diagnostic flowcharts, error catalogs (when relevant)
 
 ## Troubleshooting Quick Reference
 
 | Issue | Command |
-| ----- | ------- |
+|-------|---------|
 | Template errors | `task configure` (check output) |
 | Flux not syncing | `flux get ks -A`, `task reconcile` |
 | Node not ready | `talosctl health -n <ip>` |
 | CNI issues | `cilium status`, `cilium connectivity test` |
 | Network policy blocking | `hubble observe --verdict DROPPED` |
-| OIDC "OAuth flow failed" | Check envoy logs; verify SecurityPolicy has internal `tokenEndpoint` |
-| OIDC API Server auth | Headlamp/kubectl OIDC: verify API Server has `--oidc-*` flags; check token aud claim matches |
+| OIDC "OAuth flow failed" | Check envoy logs; verify SecurityPolicy internal `tokenEndpoint` |
 | PostgreSQL issues | `kubectl cnpg status <cluster> -n <namespace>` |
 
-For comprehensive troubleshooting with diagnostic flowcharts, see `docs/TROUBLESHOOTING.md`.
+For comprehensive troubleshooting, see `docs/TROUBLESHOOTING.md`.
 
-For complete CLI command reference, see `docs/CLI_REFERENCE.md`.
+## Key Files Reference
 
-For network endpoints and policies inventory, see `docs/NETWORK-INVENTORY.md`.
+| Purpose | Path |
+|---------|------|
+| **Universal guidelines** | `AGENTS.md` |
+| **Task runner** | `Taskfile.yaml`, `.taskfiles/` |
+| **Dev tools** | `.mise.toml` (managed by mise) |
+| **Cluster config** | `cluster.yaml` |
+| **Node config** | `nodes.yaml` |
+| **Template engine** | `makejinja.toml` |
+| **SOPS rules** | `.sops.yaml` (generated) |
+| **CLI reference** | `docs/CLI_REFERENCE.md` |
+| **Troubleshooting** | `docs/TROUBLESHOOTING.md` |
+
+## Template Delimiters (CRITICAL)
+
+```text
+Block:    #% ... %#     (NOT {% ... %})
+Variable: #{ ... }#     (NOT {{ ... }})
+Comment:  #| ... #|     (SYMMETRICAL - both ends use #|)
+```
+
+> **CRITICAL**: Comments use the SAME delimiter on both ends (`#|`). The correct comment is `#| comment here #|`, **never** `#| comment here |#`.
+
+---
+
+*For universal project guidelines, commands, code patterns, and conventions, see `AGENTS.md`.*

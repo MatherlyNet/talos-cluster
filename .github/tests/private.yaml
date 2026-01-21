@@ -219,7 +219,7 @@ kubernetes_version: "1.35.0"
 # MCP Context Forge DCR (Dynamic Client Registration)
 # mcp_context_forge_dcr_enabled: true
 # mcp_context_forge_dcr_default_scopes: "mcp:read"
-# MCP Context Forge Backups (requires rustfs_enabled: true)
+# MCP Context Forge Backups (requires rustfs_enabled: true, cnpg_barman_plugin_enabled: true)
 # mcp_context_forge_backup_enabled: false
 # mcp_context_forge_s3_access_key: "test-mcp-s3-access"
 # mcp_context_forge_s3_secret_key: "test-mcp-s3-secret"

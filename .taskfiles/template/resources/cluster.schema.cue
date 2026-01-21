@@ -807,7 +807,7 @@ import (
 	mcp_context_forge_dcr_allowed_issuers?:  *[] | [...string]  // Empty = Keycloak issuer auto-added
 	mcp_context_forge_dcr_default_scopes?:   *"mcp:read" | string
 
-	// MCP Context Forge PostgreSQL Backups (requires rustfs_enabled: true)
+	// MCP Context Forge PostgreSQL Backups (requires rustfs_enabled: true, cnpg_barman_plugin_enabled: true)
 	// Credentials must be created via RustFS Console UI
 	mcp_context_forge_backup_enabled?:  *false | bool
 	mcp_context_forge_s3_access_key?:   string & !=""
