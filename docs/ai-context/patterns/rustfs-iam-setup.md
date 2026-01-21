@@ -106,16 +106,19 @@ graph TB
 ### Step 1: Access RustFS Console
 
 **Port Forward to Console UI:**
+
 ```bash
 kubectl port-forward -n storage svc/rustfs-console 9001:9001
 ```
 
 **Open in Browser:**
+
 ```
 http://localhost:9001
 ```
 
 **Login Credentials:**
+
 - **Username**: `admin`
 - **Password**: `#{ rustfs_secret_key }#` (from cluster.yaml)
 
@@ -183,6 +186,7 @@ Navigate to: **Identity** → **Policies** → **Create Policy**
 | `s3:ListAllMyBuckets` | List all buckets | Admin, discovery |
 
 **Resource Wildcards:**
+
 - `arn:aws:s3:::<component>-*` - All buckets starting with `<component>-`
 - `arn:aws:s3:::<component>-*/*` - All objects in those buckets
 - `arn:aws:s3:::<component>-events` - Specific bucket only
@@ -199,6 +203,7 @@ Navigate to: **Identity** → **Users** → **Create User**
 **User Naming Convention:** `<component>-svc`
 
 **Configuration:**
+
 - **Access Key**: `<component>-access-key` (auto-generated or custom)
 - **Secret Key**: Click "Generate" or set custom
 - **Status**: Enabled
@@ -221,6 +226,7 @@ Add the access credentials to `cluster.yaml`:
 ```
 
 **Encrypt with SOPS:**
+
 ```bash
 # Edit cluster.yaml with SOPS (auto-encrypts sensitive fields)
 sops cluster.yaml
@@ -294,6 +300,7 @@ print(s3.list_buckets())
 **Buckets:** `litellm-cache`, `litellm-logs`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -319,6 +326,7 @@ print(s3.list_buckets())
 **Buckets:** `langfuse-events`, `langfuse-media`, `langfuse-exports`, `langfuse-postgres-backups`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -342,6 +350,7 @@ print(s3.list_buckets())
 **Buckets:** `obot-workspaces`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -365,6 +374,7 @@ print(s3.list_buckets())
 **Buckets:** `mcpgateway-postgres-backups`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -401,6 +411,7 @@ print(s3.list_buckets())
 **Buckets:** `loki-chunks`, `loki-ruler`, `loki-admin`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -424,6 +435,7 @@ print(s3.list_buckets())
 **Buckets:** `talos-backups`
 
 **Policy:**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -447,15 +459,18 @@ print(s3.list_buckets())
 ### Issue: "Access Denied" Errors
 
 **Symptoms:**
+
 - Application logs show `403 Forbidden` or `AccessDenied`
 - S3 operations fail with permission errors
 
 **Causes:**
+
 1. Policy not assigned to user
 2. Incorrect bucket name in policy
 3. Missing action in policy
 
 **Resolution:**
+
 ```bash
 # 1. Verify policy assignment in RustFS Console
 # Navigate to: Identity → Users → <component>-svc → Check assigned policies
@@ -472,15 +487,18 @@ kubectl logs -n storage deploy/rustfs | grep -i "access\|denied\|policy"
 ### Issue: "InvalidAccessKeyId" Errors
 
 **Symptoms:**
+
 - Authentication fails immediately
 - Application can't connect to RustFS
 
 **Causes:**
+
 1. Wrong access key in secret
 2. User disabled in RustFS
 3. SOPS decryption failed
 
 **Resolution:**
+
 ```bash
 # 1. Verify access key in secret matches RustFS
 kubectl get secret -n <namespace> <component>-s3-secret -o jsonpath='{.data.access-key-id}' | base64 -d
@@ -497,15 +515,18 @@ sops -d cluster.yaml | grep "<component>_s3_secret_key"
 ### Issue: Buckets Not Found
 
 **Symptoms:**
+
 - Application logs show `NoSuchBucket`
 - S3 operations fail with bucket errors
 
 **Causes:**
+
 1. Buckets not created yet
 2. Bucket name typo in configuration
 3. RustFS setup job failed
 
 **Resolution:**
+
 ```bash
 # 1. List existing buckets
 kubectl exec -n storage deploy/rustfs -- mc ls local/
@@ -571,5 +592,6 @@ kubectl exec -n storage deploy/rustfs -- \
 **Tested With:** RustFS v1.0.0-alpha.78
 
 ### Version History
+
 - **v1.1.0** (2026-01-14): Added Mermaid diagrams for IAM workflow visualization
 - **v1.0.0** (2026-01-14): Initial pattern extraction

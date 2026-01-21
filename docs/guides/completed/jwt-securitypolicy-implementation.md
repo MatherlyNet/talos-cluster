@@ -60,6 +60,7 @@ When using the built-in Keycloak deployment (`keycloak_enabled: true`), **no add
 ### Optional Override Variables (cluster.yaml)
 
 These variables are only needed if you want to:
+
 - Use a non-Keycloak OIDC provider
 - Override the auto-derived values
 
@@ -474,11 +475,13 @@ echo "$TOKEN" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq
 ## References
 
 ### External Documentation
+
 - [Envoy Gateway JWT Authentication](https://gateway.envoyproxy.io/docs/tasks/security/jwt-authentication/)
 - [JWT Claim-Based Authorization](https://gateway.envoyproxy.io/docs/tasks/security/jwt-claim-authorization/)
 - [SecurityPolicy API Reference](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/)
 
 ### Project Documentation
+
 - [Envoy Gateway Observability & Security](../envoy-gateway-observability-security.md) - Phase 2 implementation
 - [Native OIDC SecurityPolicy](./native-oidc-securitypolicy-implementation.md) - Web SSO alternative
 

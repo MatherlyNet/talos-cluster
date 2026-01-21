@@ -163,6 +163,7 @@ The [community.proxmox collection](https://docs.ansible.com/projects/ansible/lat
 ### The SSH Challenge
 
 Talos Linux is an **immutable, API-driven operating system** that deliberately removes:
+
 - SSH access
 - Shell access
 - Package managers
@@ -217,6 +218,7 @@ qm set $VM_ID --smbios1 "uuid=$(uuidgen),serial=${SERIAL},base64=1"
 ```
 
 Talos fetches configuration from:
+
 - `http://10.10.0.1/configs/user-data` (machine config)
 - `http://10.10.0.1/configs/network-config` (optional)
 
@@ -604,6 +606,7 @@ proxmox_token_secret: ENC[AES256_GCM,data:...,type:str]
 ```
 
 **Create and encrypt:**
+
 ```bash
 # Create plaintext
 cat > infrastructure/ansible/secrets.yaml <<EOF
@@ -698,11 +701,13 @@ Running playbooks against multiple Proxmox nodes can cause lock errors when clon
 ### Recommended Hybrid Approach
 
 Use Ansible for:
+
 - VM provisioning on Proxmox
 - Template management
 - Network preparation (DHCP, DNS)
 
 Use existing project tools for:
+
 - Talos configuration (`talosctl` via `task bootstrap:talos`)
 - Kubernetes deployment (Flux via `task bootstrap:apps`)
 - Secrets management (SOPS/Age)
@@ -712,17 +717,20 @@ Use existing project tools for:
 ## Sources
 
 ### Official Documentation
+
 - [community.proxmox Collection](https://docs.ansible.com/projects/ansible/latest/collections/community/proxmox/index.html)
 - [community.proxmox GitHub Repository](https://github.com/ansible-collections/community.proxmox)
 - [Talos Linux NoCloud Documentation](https://docs.siderolabs.com/talos/v1.11/platform-specific-installations/cloud-platforms/nocloud)
 
 ### Community Examples
+
 - [jdefreeuw/talos-ansible](https://github.com/jdefreeuw/talos-ansible) - Talos deployment on Proxmox using Ansible
 - [Proxmox VM Deployment with Ansible](https://joshrnoll.com/deploying-proxmox-vms-with-ansible/)
 - [Automate Proxmox VM Deployment with Ansible Cloud-Init](https://www.uncommonengineer.com/docs/engineer/LAB/proxmox-cloudinit/)
 - [Automation in Action: Proxmox and Ansible](https://dev.to/serafiev/automation-in-action-scenarios-with-proxmox-and-ansible-3dno)
 
 ### Proxmox Forums
+
 - [Ansible Proxmox Forum Tag](https://forum.proxmox.com/tags/ansible/)
 - [VM Provisioning from Template Discussion](https://forum.proxmox.com/threads/provision-vm-from-template-using-ansible.130596/)
 - [Network Configuration with Ansible](https://forum.proxmox.com/threads/how-to-configure-network-settings-using-ansible-community-general-proxmox_kvm-module.156466/)

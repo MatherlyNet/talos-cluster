@@ -188,7 +188,7 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
         # Check if rest_type contains type keywords (type union, not enum)
         # Pattern: *"value" | string OR *"value" | "-" | string
         # Type keywords: string, int, bool, net.IPv4, net.FQDN, net.IPCIDR
-        type_keywords = r'\b(string|int|bool|net\.IPv4|net\.FQDN|net\.IPCIDR)\b'
+        type_keywords = r"\b(string|int|bool|net\.IPv4|net\.FQDN|net\.IPCIDR)\b"
         if re.search(type_keywords, rest_type):
             # This is a type union (e.g., "oidc:" | "-" | string), not an enum
             # Just parse the type and keep the default value
@@ -214,7 +214,7 @@ def parse_field_type(field_name: str, type_def: str) -> dict[str, Any]:
         return prop
 
     # Try unquoted default: *value | rest
-    unquoted_default = re.match(r'\*([^\s|]+)\s*\|\s*(.+)', type_def)
+    unquoted_default = re.match(r"\*([^\s|]+)\s*\|\s*(.+)", type_def)
     if unquoted_default:
         default_val = unquoted_default.group(1).strip()
         rest_type = unquoted_default.group(2)

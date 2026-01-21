@@ -25,6 +25,7 @@ This guide covers the **remaining phases** from the k8s-at-home patterns impleme
 ### What's Already Enhanced Beyond Original Guide
 
 The monitoring stack (Phase 3 Option A) was implemented with additional observability components:
+
 - **Loki** - Log aggregation (conditional on `loki_enabled`)
 - **Alloy** - OpenTelemetry collector for unified telemetry
 - **Tempo** - Distributed tracing (conditional on `tracing_enabled`)
@@ -607,6 +608,7 @@ spec:
 ### Example Application Usage
 
 The following example shows a complete HelmRelease using bjw-s app-template. Adjust the `chartRef.namespace` based on your chosen approach:
+
 - **Per-App (Option A):** Remove the `namespace` line (or leave empty)
 - **Shared Repository (Option B):** Keep `namespace: flux-system`
 

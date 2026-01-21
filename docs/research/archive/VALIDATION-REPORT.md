@@ -2,6 +2,7 @@
 
 > **Validation Date:** January 2, 2026
 > **Documents Validated:**
+>
 > - `docs/research/ansible-proxmox-automation.md` (Focused Deep-Dive)
 > - `docs/research/crossplane-proxmox-automation.md`
 > **Cross-Referenced:** `docs/research/proxmox-vm-automation.md`
@@ -49,6 +50,7 @@ The research documents are substantially accurate with high-quality analysis. Th
 | October 2025 | October 28, 2025 (announced November 6, 2025) | ✅ CONFIRMED |
 
 **Sources:**
+
 - [CNCF Project Page](https://www.cncf.io/projects/crossplane/)
 - [CNCF Graduation Announcement](https://www.cncf.io/announcements/2025/11/06/cloud-native-computing-foundation-announces-graduation-of-crossplane/)
 
@@ -68,6 +70,7 @@ The research documents are substantially accurate with high-quality analysis. Th
 ## User Concern Validation
 
 ### Original Question
+>
 > "The primary method identified in this documentation does not appear to be updated for Kubernetes 1.35, and has issues/bugs, making me question if this should be the primary."
 
 ### Validation Result: **CONCERN VALIDATED**
@@ -188,6 +191,7 @@ This section provides comprehensive verification of all major claims in `ansible
 ### 3. Talos NoCloud Requirements Verification
 
 **Documented Claims:**
+
 - Talos 1.8.0+ defaults to metal image (no cloud-init)
 - NoCloud image required from Image Factory
 - SMBIOS serial and CDROM methods available
@@ -206,6 +210,7 @@ This section provides comprehensive verification of all major claims in `ansible
 ### 4. proxmox_kvm Module Parameters Verification
 
 **Documented Parameters:**
+
 ```yaml
 api_host, api_token_id, api_token_secret, node, name, clone,
 full, storage, cores, memory, net, scsihw, boot, bios, agent, tags, state
@@ -298,6 +303,7 @@ full, storage, cores, memory, net, scsihw, boot, bios, agent, tags, state
 | Module count | ⚠️ Minor: says 35, actual 37-38 |
 
 **Corrections Needed:**
+
 1. Update module count from "35 total" to "37+ modules" (v1.5.0 added 4 new Ceph modules)
 
 ### Crossplane Research Document

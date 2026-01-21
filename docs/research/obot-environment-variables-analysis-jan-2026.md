@@ -13,6 +13,7 @@ Analyzed 11 environment variables from the obot-entraid development environment.
 ## Environment Variables Analysis
 
 ### 1. KUBECONFIG (Dev-Only)
+
 ```bash
 export KUBECONFIG=$(pwd)/tools/devmode-kubeconfig
 ```
@@ -22,6 +23,7 @@ export KUBECONFIG=$(pwd)/tools/devmode-kubeconfig
 **Recommendation:** ❌ **Do NOT add to cluster.yaml**
 
 **Rationale:**
+
 - Development-only variable for local testing
 - In Kubernetes deployment, Obot uses in-cluster service account authentication
 - Already configured via Helm chart serviceAccount (line 300-302 in helmrelease.yaml.j2)
@@ -29,6 +31,7 @@ export KUBECONFIG=$(pwd)/tools/devmode-kubeconfig
 ---
 
 ### 2. OBOT_DEV_MODE (Dev-Only)
+
 ```bash
 export OBOT_DEV_MODE=true
 ```
@@ -36,6 +39,7 @@ export OBOT_DEV_MODE=true
 **Purpose:** Enables development mode with relaxed security and debug features
 
 **Source Code:** `pkg/services/config.go:84, 834-852`
+
 ```go
 DevMode bool `usage:"Enable development mode" default:"false" name:"dev-mode" env:"OBOT_DEV_MODE"`
 
@@ -52,6 +56,7 @@ func configureDevMode(config Config) (int, Config) {
 **Recommendation:** ❌ **Do NOT add to cluster.yaml**
 
 **Rationale:**
+
 - Development mode should never be enabled in production
 - Automatically sets `WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND=true`
 - Enables debug logging and relaxed security
@@ -60,6 +65,7 @@ func configureDevMode(config Config) (int, Config) {
 ---
 
 ### 3. WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND (Dev-Only)
+
 ```bash
 export WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND=true
 ```
@@ -67,6 +73,7 @@ export WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND=true
 **Purpose:** Suppresses errors when workspace directories don't exist during development
 
 **Source Code:** `pkg/services/config.go:850`
+
 ```go
 // Automatically set in dev mode
 _ = os.Setenv("WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND", "true")
@@ -75,6 +82,7 @@ _ = os.Setenv("WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND", "true")
 **Recommendation:** ❌ **Do NOT add to cluster.yaml**
 
 **Rationale:**
+
 - Automatically enabled when `OBOT_DEV_MODE=true`
 - Masks real errors in production (workspace initialization failures)
 - Not a production-safe configuration
@@ -83,6 +91,7 @@ _ = os.Setenv("WORKSPACE_PROVIDER_IGNORE_WORKSPACE_NOT_FOUND", "true")
 ---
 
 ### 4. OBOT_SERVER_TOOL_REGISTRIES ⭐ (Production-Ready)
+
 ```bash
 export OBOT_SERVER_TOOL_REGISTRIES=github.com/obot-platform/tools,./tools
 ```
@@ -90,12 +99,14 @@ export OBOT_SERVER_TOOL_REGISTRIES=github.com/obot-platform/tools,./tools
 **Purpose:** Specifies gptscript tool registries for custom tools and auth providers
 
 **Current Deployment:**
+
 ```yaml
 # templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2:176
 OBOT_SERVER_TOOL_REGISTRIES: "/obot-tools/tools"
 ```
 
 **Source Code:** `pkg/services/config.go:88, 357-359`
+
 ```go
 ToolRegistries []string `usage:"The remote tool references to the set of gptscript tool registries to use" default:"github.com/obot-platform/tools"`
 
@@ -107,6 +118,7 @@ if len(config.ToolRegistries) < 1 {
 **Recommendation:** ✅ **ADD to cluster.yaml as optional array variable**
 
 **Proposed Configuration:**
+
 ```yaml
 # cluster.yaml
 obot_tool_registries:
@@ -118,11 +130,13 @@ obot_tool_registries = data.get("obot_tool_registries", ["/obot-tools/tools"])
 ```
 
 **Use Cases:**
+
 - Add custom tool repositories (GitHub, GitLab, etc.)
 - Include organization-specific gptscript tools
 - Enable beta/experimental tool registries for testing
 
 **Implementation Notes:**
+
 - Current deployment only uses `/obot-tools/tools` (baked into container)
 - Default should remain `/obot-tools/tools` for jrmatherly/obot-entraid fork
 - Comma-separated string in env var, list in cluster.yaml
@@ -131,6 +145,7 @@ obot_tool_registries = data.get("obot_tool_registries", ["/obot-tools/tools"])
 ---
 
 ### 5. OBOT_SERVER_DEFAULT_MCPCATALOG_PATH ⭐ (Production-Ready)
+
 ```bash
 export OBOT_SERVER_DEFAULT_MCPCATALOG_PATH=https://github.com/obot-platform/mcp-catalog
 ```
@@ -140,6 +155,7 @@ export OBOT_SERVER_DEFAULT_MCPCATALOG_PATH=https://github.com/obot-platform/mcp-
 **Current Deployment:** ❌ **NOT CONFIGURED** (no env var set)
 
 **Source Code:** `pkg/services/config.go:105, 806`
+
 ```go
 DefaultMCPCatalogPath string `usage:"The path to the default MCP catalog (accessible to all users)" default:""`
 
@@ -149,6 +165,7 @@ DefaultMCPCatalogPath: config.DefaultMCPCatalogPath,
 **Recommendation:** ✅ **ADD to cluster.yaml as optional string variable**
 
 **Proposed Configuration:**
+
 ```yaml
 # cluster.yaml
 obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
@@ -158,11 +175,13 @@ obot_default_mcp_catalog = data.get("obot_default_mcp_catalog", "")
 ```
 
 **Use Cases:**
+
 - Pre-populate MCP server catalog for all users
 - Point to organization-specific MCP catalog repository
 - Enable curated tool discovery experience
 
 **Implementation Notes:**
+
 - Empty string = no default catalog (current behavior)
 - Can be GitHub repo, HTTP(S) URL, or local path
 - Catalog is accessible to all authenticated users
@@ -171,6 +190,7 @@ obot_default_mcp_catalog = data.get("obot_default_mcp_catalog", "")
 ---
 
 ### 6. OBOT_SERVER_ENABLE_AUTHENTICATION ⭐ (Already Configured)
+
 ```bash
 export OBOT_SERVER_ENABLE_AUTHENTICATION=true
 ```
@@ -178,12 +198,14 @@ export OBOT_SERVER_ENABLE_AUTHENTICATION=true
 **Purpose:** Enables authentication requirement for API access
 
 **Current Deployment:** ✅ **ALREADY CONFIGURED**
+
 ```yaml
 # templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2:112
 OBOT_SERVER_ENABLE_AUTHENTICATION: true
 ```
 
 **Source Code:** `pkg/services/config.go:98`
+
 ```go
 EnableAuthentication bool `usage:"Enable authentication" default:"false"`
 ```
@@ -191,6 +213,7 @@ EnableAuthentication bool `usage:"Enable authentication" default:"false"`
 **Recommendation:** ✅ **Keep current implementation (hardcoded true)**
 
 **Rationale:**
+
 - Production security requirement
 - No valid use case for disabling authentication in cluster deployment
 - Hardcoded to `true` in helmrelease.yaml.j2 is correct
@@ -199,6 +222,7 @@ EnableAuthentication bool `usage:"Enable authentication" default:"false"`
 ---
 
 ### 7. OBOT_BOOTSTRAP_TOKEN ⭐ (Already Configured)
+
 ```bash
 export OBOT_BOOTSTRAP_TOKEN=aZmdYlGbolpifiPEOKFGNAErS0LDEqZ7ZIUIDsNwg
 ```
@@ -206,6 +230,7 @@ export OBOT_BOOTSTRAP_TOKEN=aZmdYlGbolpifiPEOKFGNAErS0LDEqZ7ZIUIDsNwg
 **Purpose:** Initial API token for pre-OIDC authentication
 
 **Current Deployment:** ✅ **ALREADY CONFIGURED**
+
 ```yaml
 # cluster.yaml
 obot_bootstrap_token: "..."  # SOPS-encrypted
@@ -219,6 +244,7 @@ OBOT_BOOTSTRAP_TOKEN: "#{ obot_bootstrap_token }#"
 **Recommendation:** ✅ **Keep current implementation**
 
 **Rationale:**
+
 - Already properly implemented as SOPS-encrypted secret
 - Required for initial admin access before OIDC configuration
 - Correctly documented in docs/ai-context/obot.md:75-78
@@ -227,6 +253,7 @@ OBOT_BOOTSTRAP_TOKEN: "#{ obot_bootstrap_token }#"
 ---
 
 ### 8. OBOT_SERVER_AUTH_ADMIN_EMAILS ⭐ (Already Configured)
+
 ```bash
 # export OBOT_SERVER_AUTH_ADMIN_EMAILS=admin1@company.com,admin2@company.com
 ```
@@ -234,6 +261,7 @@ OBOT_BOOTSTRAP_TOKEN: "#{ obot_bootstrap_token }#"
 **Purpose:** Comma-separated list of admin user email addresses
 
 **Current Deployment:** ✅ **ALREADY CONFIGURED**
+
 ```yaml
 # cluster.yaml
 obot_admin_emails: "jason@matherly.net,..."  # Optional
@@ -245,6 +273,7 @@ obot_admin_emails: "jason@matherly.net,..."  # Optional
 ```
 
 **Source Code:** `pkg/services/config.go:100`
+
 ```go
 AuthAdminEmails []string `usage:"Emails of admin users"`
 ```
@@ -252,6 +281,7 @@ AuthAdminEmails []string `usage:"Emails of admin users"`
 **Recommendation:** ✅ **Keep current implementation**
 
 **Rationale:**
+
 - Already properly implemented as optional conditional variable
 - Correctly documented in docs/ai-context/obot.md (not explicitly listed but implied)
 - Supports comma-separated email list
@@ -260,6 +290,7 @@ AuthAdminEmails []string `usage:"Emails of admin users"`
 ---
 
 ### 9. OBOT_SERVER_AUTH_OWNER_EMAILS ⭐ (Already Configured)
+
 ```bash
 # export OBOT_SERVER_AUTH_OWNER_EMAILS=owner@company.com
 ```
@@ -267,6 +298,7 @@ AuthAdminEmails []string `usage:"Emails of admin users"`
 **Purpose:** Comma-separated list of owner user email addresses (highest privilege)
 
 **Current Deployment:** ✅ **ALREADY CONFIGURED**
+
 ```yaml
 # cluster.yaml
 obot_owner_emails: "jason@matherly.net"  # Optional
@@ -278,6 +310,7 @@ obot_owner_emails: "jason@matherly.net"  # Optional
 ```
 
 **Source Code:** `pkg/services/config.go:101`
+
 ```go
 AuthOwnerEmails []string `usage:"Emails of owner users"`
 ```
@@ -285,6 +318,7 @@ AuthOwnerEmails []string `usage:"Emails of owner users"`
 **Recommendation:** ✅ **Keep current implementation**
 
 **Rationale:**
+
 - Already properly implemented as optional conditional variable
 - Correctly documented in docs/ai-context/obot.md (not explicitly listed but implied)
 - Supports comma-separated email list
@@ -379,6 +413,7 @@ Specify additional gptscript tool registries. Supports GitHub repos, HTTP URLs, 
 **Default:** `["/obot-tools/tools"]` (jrmatherly/obot-entraid fork embedded tools)
 
 ### MCP Catalog Configuration (Optional)
+
 ```yaml
 obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
 ```
@@ -386,6 +421,7 @@ obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
 Provides a default MCP server catalog accessible to all users for tool discovery.
 
 **Default:** `""` (no default catalog)
+
 ```
 
 ## Benefits
@@ -434,6 +470,7 @@ kubectl -n ai-system exec -it deploy/obot -- env | grep OBOT_SERVER_TOOL_REGISTR
 ```
 
 ### 2. MCP Catalog Testing
+
 ```bash
 # Test with catalog enabled
 obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
@@ -446,6 +483,7 @@ kubectl -n ai-system exec -it deploy/obot -- env | grep OBOT_SERVER_DEFAULT_MCPC
 ```
 
 ### 3. Validation Tests
+
 - [ ] Verify template rendering with `task configure`
 - [ ] Check env vars in deployed pod
 - [ ] Verify tool registry functionality in Obot UI
@@ -456,11 +494,13 @@ kubectl -n ai-system exec -it deploy/obot -- env | grep OBOT_SERVER_DEFAULT_MCPC
 ## Backward Compatibility
 
 ### Impact: NONE
+
 - Both variables are optional with safe defaults
 - Existing deployments continue working unchanged
 - No breaking changes to existing configurations
 
 ### Migration Path
+
 1. Current users: No action required
 2. New users: Can optionally configure in cluster.yaml
 3. Advanced users: Can customize tool registries and catalogs
@@ -468,16 +508,19 @@ kubectl -n ai-system exec -it deploy/obot -- env | grep OBOT_SERVER_DEFAULT_MCPC
 ## References
 
 ### Source Code
+
 - `pkg/services/config.go:88, 105` - Variable definitions
 - `pkg/services/config.go:357-359, 806` - Default value logic
 - `.envrc.dev` - Development environment reference
 
 ### Documentation
+
 - `docs/ai-context/obot.md` - Obot deployment configuration
 - `DOCKERFILE-OPTIMIZATION.md` - Tool registry container setup
 - `UPSTREAM_SYNC_ANALYSIS.md` - Upstream merge strategy
 
 ### Templates
+
 - `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 - `templates/scripts/plugin.py`
 

@@ -3,6 +3,7 @@
 ## Overview
 
 LiteLLM is an LLM proxy that provides a unified OpenAI-compatible API for multiple LLM backends. It enables:
+
 - Multi-provider routing (Azure OpenAI, Anthropic via Azure, Cohere)
 - Credential management with named credentials
 - Rate limiting and quota management
@@ -45,6 +46,7 @@ LiteLLM is an LLM proxy that provides a unified OpenAI-compatible API for multip
 ## Configuration Variables
 
 ### Enable/Disable
+
 ```yaml
 litellm_enabled: true        # Enable LiteLLM deployment
 litellm_subdomain: "litellm" # Creates litellm.${cloudflare_domain}
@@ -52,12 +54,14 @@ litellm_replicas: 1          # Number of LiteLLM replicas
 ```
 
 ### Security Keys (SOPS-encrypted)
+
 ```yaml
 litellm_master_key: "sk-..."  # Master API key (min 32 chars, starts with sk-)
 litellm_salt_key: "..."       # Encryption salt (min 32 chars)
 ```
 
 ### Resource Configuration
+
 ```yaml
 litellm_cpu_request: "200m"
 litellm_cpu_limit: "1000m"
@@ -67,6 +71,7 @@ litellm_image_tag: "main-v1.80.8-stable.1"  # LiteLLM container tag
 ```
 
 ### PostgreSQL Database
+
 ```yaml
 litellm_db_user: "litellm"
 litellm_db_password: "..."      # SOPS-encrypted
@@ -82,6 +87,7 @@ litellm_db_storage_size: "20Gi"
 LiteLLM uses the shared Dragonfly deployment in the `cache` namespace for caching.
 
 **Configuration Requirements:**
+
 ```yaml
 dragonfly_enabled: true           # Enable shared Dragonfly
 dragonfly_acl_enabled: true       # Enable ACL for multi-tenant access
@@ -89,6 +95,7 @@ dragonfly_litellm_password: "..." # SOPS-encrypted, ACL user password
 ```
 
 **Connection Details:**
+
 - **Endpoint:** `dragonfly.cache.svc.cluster.local:6379`
 - **ACL User:** `litellm` (namespace isolation)
 - **Key Pattern:** `~litellm:*` (ACL-enforced)
@@ -96,6 +103,7 @@ dragonfly_litellm_password: "..." # SOPS-encrypted, ACL user password
 See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for complete multi-tenant setup.
 
 ### Azure OpenAI Backends
+
 ```yaml
 # US East Region
 azure_openai_us_east_api_key: ""           # API key (SOPS-encrypted)
@@ -121,12 +129,14 @@ azure_cohere_embed_api_base: ""
 ```
 
 ### OIDC Authentication (requires keycloak_enabled)
+
 ```yaml
 litellm_oidc_enabled: true
 litellm_oidc_client_secret: "..."  # SOPS-encrypted
 ```
 
 ### Observability
+
 ```yaml
 # Prometheus metrics (auto-enabled with litellm_enabled)
 litellm_monitoring_enabled: true   # ServiceMonitor + Dashboard
@@ -142,6 +152,7 @@ litellm_langfuse_secret_key: ""    # SOPS-encrypted
 ```
 
 ### Backups (requires rustfs_enabled)
+
 ```yaml
 litellm_backup_enabled: true
 litellm_s3_access_key: ""          # SOPS-encrypted (create via RustFS Console)
@@ -154,6 +165,7 @@ litellm_s3_secret_key: ""          # SOPS-encrypted
 **Bucket:** `litellm-backups` (auto-created by RustFS setup job)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
 - `s3:GetObject` - PITR restore
 - `s3:PutObject` - Base backups and WAL segments
@@ -162,6 +174,7 @@ litellm_s3_secret_key: ""          # SOPS-encrypted
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+
 1. Creating `litellm-storage` policy with scoped bucket access
 2. Creating service account user
 3. Updating `cluster.yaml` with SOPS-encrypted credentials
@@ -195,12 +208,15 @@ templates/config/kubernetes/apps/ai-system/litellm/
 ## Key Implementation Details
 
 ### Container Image
+
 LiteLLM uses `ghcr.io/berriai/litellm:main-v1.80.8-stable.1`:
+
 - Standard base image with pre-built UI
 - Runs as root (UID 0) for UI serving
 - Prisma migrations via `LITELLM_MIGRATION_DIR: /tmp/prisma`
 
 Security context:
+
 ```yaml
 securityContext:
   allowPrivilegeEscalation: false
@@ -212,6 +228,7 @@ securityContext:
 ```
 
 ### Health Check Endpoints
+
 LiteLLM provides several health check endpoints:
 
 | Endpoint | Purpose | Use Case |
@@ -222,6 +239,7 @@ LiteLLM provides several health check endpoints:
 | `/health/services` | Admin-only integration check | Debugging |
 
 **Kubernetes Probe Configuration:**
+
 ```yaml
 probes:
   startup:
@@ -238,13 +256,16 @@ probes:
 
 **Background Health Checks:**
 Disabled to prevent Prisma connection pool exhaustion:
+
 ```yaml
 general_settings:
   background_health_checks: false
 ```
 
 ### ConfigMap Mount
+
 The proxy configuration is mounted via persistence volume:
+
 ```yaml
 persistence:
   config-file:
@@ -257,7 +278,9 @@ persistence:
 ```
 
 ### Prometheus Metrics
+
 Metrics are exposed at `/metrics` endpoint. Required configuration:
+
 ```yaml
 # In envVars section of HelmRelease
 LITELLM_CALLBACKS: prometheus
@@ -274,16 +297,21 @@ failure_callback:
 ```
 
 ### Grafana Dashboard
+
 When `litellm_monitoring_enabled: true`:
+
 - ServiceMonitor deployed for Prometheus scraping
 - Dashboard can be added to Grafana's AI folder
 
 ### UI Authentication
+
 The LiteLLM UI uses:
+
 - Username: `admin` (hardcoded)
 - Password: `LITELLM_MASTER_KEY` (from SOPS secret)
 
 Environment variables:
+
 ```yaml
 - name: UI_USERNAME
   value: "admin"
@@ -297,6 +325,7 @@ Environment variables:
 ## Model Configuration
 
 Models are defined in the ConfigMap (`configmap.yaml.j2`) under `model_list`. Each model specifies:
+
 - `model_name`: Public name exposed via API
 - `litellm_params`: Backend configuration
   - `model`: Provider prefix + model name (e.g., `azure/gpt-4.1`)
@@ -306,7 +335,9 @@ Models are defined in the ConfigMap (`configmap.yaml.j2`) under `model_list`. Ea
 - `model_info`: Metadata (access_groups, base_model, supports_reasoning)
 
 ### Credential Management
+
 Credentials are defined in `credential_list`:
+
 ```yaml
 credential_list:
   - credential_name: azure_credential_us_east
@@ -317,6 +348,7 @@ credential_list:
 ```
 
 ### Model Prefixes
+
 Different model providers require specific prefixes:
 
 | Prefix | Provider | Example |
@@ -329,6 +361,7 @@ Different model providers require specific prefixes:
 **Important**: For Azure-hosted Cohere embedding models, use `azure_ai/` prefix (NOT `cohere/`).
 
 ### Model Health Check Modes
+
 Per-model health check configuration in `model_info`:
 
 | Mode | Use Case | Health Check Support |
@@ -360,6 +393,7 @@ Per-model health check configuration in `model_info`:
    - **Must use**: `disable_background_health_check: true`
 
 Example configuration:
+
 ```yaml
 # Audio chat model (NOT TTS)
 - model_name: gpt-audio
@@ -383,11 +417,13 @@ Example configuration:
 ### Available Models (when Azure regions configured)
 
 **US East:**
+
 - gpt-4.1, gpt-4.1-nano, gpt-4o-mini
 - o3, o4-mini (reasoning models)
 - text-embedding-3-small, text-embedding-ada-002
 
 **US East2:**
+
 - gpt-5, gpt-5-chat, gpt-5-mini, gpt-5-nano
 - gpt-5.1, gpt-5.2
 - gpt-audio, gpt-audio-mini (audio chat models)
@@ -397,6 +433,7 @@ Example configuration:
 - text-embedding-3-large
 
 **Azure AI Services:**
+
 - cohere-embed-v-4-0 (embeddings)
 - cohere-rerank-v3.5 (reranking)
 
@@ -424,17 +461,22 @@ https://litellm.<domain>/
 ## Troubleshooting
 
 ### Prisma ConnectTimeout Errors
+
 If you see `httpcore.ConnectTimeout` errors:
+
 - Verify `background_health_checks: false` in general_settings
 - Check Prisma migration directory: `LITELLM_MIGRATION_DIR: /tmp/prisma`
 - Restart pods to clear connection pool
 
 ### Models Not Loading
+
 If only default models appear (gpt-3.5-turbo, fake-openai-endpoint):
+
 - Verify ConfigMap is correctly mounted: `kubectl exec -n ai-system <pod> -- cat /app/config.yaml`
 - Check for syntax errors in config.yaml
 
 ### Model Health Check Failures
+
 Common health check issues:
 
 | Error | Model Type | Solution |
@@ -444,23 +486,31 @@ Common health check issues:
 | "requires audio modalities" | gpt-audio | These are chat models, NOT TTS - disable health check |
 
 ### /metrics Returns 404
+
 Ensure both are configured:
+
 - `LITELLM_CALLBACKS: prometheus` in envVars
 - `callbacks: ["prometheus"]` in ConfigMap litellm_settings
 
 ### UI Login Fails
+
 Verify environment variables:
+
 - `UI_USERNAME` must be set (default: "admin")
 - `UI_PASSWORD` must reference the secret
 
 ### Readiness Probe Failures
+
 If readiness probe fails but liveness passes:
+
 - Check database connectivity
 - Verify PostgreSQL pod is running: `kubectl get pods -n ai-system -l app.kubernetes.io/name=litellm-postgresql`
 - Check Dragonfly (Redis) connectivity: `kubectl get pods -n cache -l app=dragonfly`
 
 ### OIDC Login Issues
+
 If SSO redirect fails:
+
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches: `litellm_oidc_client_secret`
 - Verify redirect URLs in Keycloak client configuration
@@ -471,11 +521,13 @@ If SSO redirect fails:
 ## NetworkPolicy Considerations
 
 LiteLLM requires egress to external Azure OpenAI endpoints. The NetworkPolicy in `networkpolicy.yaml.j2` includes:
+
 - DNS egress to kube-system
 - External HTTPS (443) egress to Azure OpenAI endpoints
 - CiliumNetworkPolicy for Kubernetes API access (if needed)
 
 When `network_policies_enabled: true`:
+
 - Labels are added: `network.cilium.io/api-access: "true"`
 - Pods can access Kubernetes API for service discovery
 

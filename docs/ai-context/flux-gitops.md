@@ -7,6 +7,7 @@
 This project uses **Flux CD v2.7.5** (via Flux Operator v0.38.1) for GitOps-based continuous delivery. The cluster state is defined in Git, and Flux automatically reconciles the cluster to match.
 
 **Key Architecture:**
+
 - **Flux Operator** (OCI-based deployment) manages Flux installation lifecycle
 - **Flux Instance** (FluxInstance CR) configures Flux to sync from GitHub repository
 - **Interval-based reconciliation**: 1h for Kustomizations/HelmReleases, 30m for OCIRepository sources
@@ -241,12 +242,14 @@ spec:
 ### Automatic
 
 **Actual Intervals (as configured):**
+
 - **Kustomizations**: Every 1 hour (`interval: 1h`)
 - **HelmReleases**: Every 1 hour (`interval: 1h`)
 - **OCIRepository** (chart sources): Every 30 minutes (`interval: 30m`)
 - **GitRepository** (flux-system): Configured in FluxInstance, syncs kubernetes/flux/cluster path
 
 **Performance Tuning:**
+
 - Flux controllers run with `--concurrent=10` (10 parallel reconciliations)
 - `--requeue-dependency=5s` for faster dependency resolution
 - Memory limits: 1Gi per controller
@@ -329,6 +332,7 @@ When `network_policies_enabled: true`, Flux controllers have dedicated CiliumNet
 **Location:** `templates/config/kubernetes/apps/flux-system/network-policies/app/flux-controllers.yaml.j2`
 
 **Traffic Allowed:**
+
 - **Ingress**: Prometheus metrics scraping (GET /metrics on port 8080)
 - **Egress**:
   - DNS resolution (CoreDNS on port 53 UDP/TCP)
@@ -336,6 +340,7 @@ When `network_policies_enabled: true`, Flux controllers have dedicated CiliumNet
   - External HTTPS (port 443) for OCI registries and GitHub
 
 **Mode-Based Enforcement:**
+
 - `audit` mode: Policies observe without blocking
 - `enforce` mode: Default deny with explicit allow rules
 

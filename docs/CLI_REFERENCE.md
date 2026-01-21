@@ -141,6 +141,7 @@ task infra:verify-nodes
 ```
 
 **Prerequisites:**
+
 - Configure credentials in `cluster.yaml`: `tfstate_username`, `tfstate_password`, `proxmox_api_token_id`, `proxmox_api_token_secret`
 - Run `task configure` to generate and encrypt `infrastructure/secrets.sops.yaml`
 - `age.key` must be present for SOPS encryption
@@ -545,6 +546,7 @@ export SOPS_AGE_KEY_FILE=./age.key
 ```
 
 These are automatically set by:
+
 - `Taskfile.yaml` (`env:` block)
 - `.mise.toml` (`[env]` section)
 

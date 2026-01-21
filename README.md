@@ -16,6 +16,7 @@ A GitOps-driven Kubernetes cluster on Talos Linux, forked from [onedr0p/cluster-
 **Included components:** flux, cilium, cert-manager, spegel, reloader, envoy-gateway, external-dns, cloudflared, k8s-gateway (or unifi-dns), talos-ccm, tuppr, talos-backup (optional), cloudnative-pg (optional), keycloak (optional), headlamp (optional), rustfs (optional), dragonfly (optional), litellm (optional), langfuse (optional), obot (optional), mcp-context-forge (optional)
 
 **Other features:**
+
 - Dev environment managed with [mise](https://mise.jdx.dev/)
 - Workflow automation with [GitHub Actions](https://github.com/features/actions)
 - Dependency automation with [Renovate](https://www.mend.io/renovate)
@@ -78,6 +79,7 @@ For a **stable** and **high-availability** production Kubernetes cluster, hardwa
 2. **Boot Nodes**: Flash the ISO/RAW image to USB and boot your nodes into maintenance mode.
 
 3. **Verify Network Access**:
+
    ```sh
    nmap -Pn -n -p 50000 192.168.1.0/24 -vv | grep 'Discovered'
    ```
@@ -87,6 +89,7 @@ For a **stable** and **high-availability** production Kubernetes cluster, hardwa
 If using OpenTofu for automated VM provisioning, configuration follows the same templating pattern as the rest of the project.
 
 1. **Configure Infrastructure Settings** in `cluster.yaml`:
+
    ```yaml
    # -- Proxmox API endpoint
    #    (REQUIRED for VM deployment)
@@ -104,6 +107,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    ```
 
 2. **Configure Node VM Specs** in `nodes.yaml`:
+
    ```yaml
    nodes:
      - name: cp-1
@@ -121,11 +125,13 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    > **Note:** The `schematic_id`, `address`, and `mac_addr` from `nodes.yaml` are used by both Talos configuration AND OpenTofu VM provisioning.
 
 3. **Render Templates** (generates infrastructure alongside kubernetes/talos):
+
    ```sh
    task configure
    ```
 
 4. **Provision Infrastructure**:
+
    ```sh
    task infra:plan    # Review what will be created
    task infra:apply   # Provision VMs
@@ -139,6 +145,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    - Boots VMs into Talos maintenance mode
 
 5. **Verify Network Access**:
+
    ```sh
    nmap -Pn -n -p 50000 192.168.1.0/24 -vv | grep 'Discovered'
    ```
@@ -152,6 +159,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
 ### Steps
 
 1. **Create Repository** from template:
+
    ```sh
    export REPONAME="home-ops"
    gh repo create $REPONAME --template onedr0p/cluster-template --disable-wiki --public --clone && cd $REPONAME
@@ -160,6 +168,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
 2. **Install Mise CLI**: Follow the [installation guide](https://mise.jdx.dev/getting-started.html#installing-mise-cli) and [activate it](https://mise.jdx.dev/getting-started.html#activate-mise).
 
 3. **Install Tools**:
+
    ```sh
    mise trust
    pip install pipx
@@ -167,6 +176,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    ```
 
 4. **Logout of GHCR** (prevents auth issues):
+
    ```sh
    docker logout ghcr.io
    helm registry logout ghcr.io
@@ -188,6 +198,7 @@ If using OpenTofu for automated VM provisioning, configuration follows the same 
    - Save the token securely
 
 2. **Create Cloudflare Tunnel**:
+
    ```sh
    cloudflared tunnel login
    cloudflared tunnel create --credentials-file cloudflare-tunnel.json kubernetes
@@ -227,6 +238,7 @@ Developer Workstation
 Complete these in Cloudflare before proceeding:
 
 1. **Create R2 Bucket**:
+
    ```sh
    npx wrangler login
    npx wrangler r2 bucket create matherlynet-tfstate
@@ -236,16 +248,19 @@ Complete these in Cloudflare before proceeding:
    - Clone: https://github.com/MatherlyNet/matherlynet-tfstate
    - Configure `wrangler.toml` with your account ID
    - Set secrets:
+
      ```sh
      npx wrangler secret put TFSTATE_USERNAME
      npx wrangler secret put TFSTATE_PASSWORD
      ```
+
    - Deploy: `npx wrangler deploy`
    - (Optional) Configure custom domain
 
 ### Setup
 
 1. **Initialize Config Files** (if not done already):
+
    ```sh
    task init
    ```
@@ -255,6 +270,7 @@ Complete these in Cloudflare before proceeding:
    - `nodes.yaml` - Add VM specs per node (`vm_cores`, `vm_memory`, etc.)
 
 3. **Add Credentials** to `cluster.yaml`:
+
    ```yaml
    # R2 state backend credentials (must match tfstate-worker secrets)
    tfstate_username: "terraform"
@@ -266,14 +282,17 @@ Complete these in Cloudflare before proceeding:
    ```
 
 4. **Render Templates** (generates configs and auto-initializes backend):
+
    ```sh
    task configure
    ```
 
 5. **Verify Connection** (use `-lock=false` for initial setup when no state exists):
+
    ```sh
    task infra:plan -- -lock=false
    ```
+
    > **Note:** The `-lock=false` flag is only needed for the first plan/apply when no state file exists yet. After the initial apply creates state, locking works normally.
 
 ### Backend Configuration
@@ -316,6 +335,7 @@ terraform {
 ### Steps
 
 1. **Initialize Config Files** (skip if done in Stage 5):
+
    ```sh
    task init
    ```
@@ -325,18 +345,22 @@ terraform {
    - `nodes.yaml` - Node names, IPs, disks, MAC addresses, schematic IDs
 
 3. **Render Templates**:
+
    ```sh
    task configure
    ```
+
    This validates schemas, renders templates, and encrypts secrets.
 
 4. **Verify Encryption**:
+
    ```sh
    # All *.sops.* files should be encrypted
    find kubernetes talos bootstrap infrastructure -name "*.sops.*" -exec sops filestatus {} \;
    ```
 
 5. **Commit and Push**:
+
    ```sh
    git add -A
    git commit -m "chore: initial commit"
@@ -356,11 +380,13 @@ terraform {
 ### Steps
 
 1. **Install Talos**:
+
    ```sh
    task bootstrap:talos
    ```
 
 2. **Commit Talos Secrets**:
+
    ```sh
    git add -A
    git commit -m "chore: add talhelper encrypted secret"
@@ -368,11 +394,13 @@ terraform {
    ```
 
 3. **Install Cilium, CoreDNS, Spegel, and Flux**:
+
    ```sh
    task bootstrap:apps
    ```
 
 4. **Watch Deployment**:
+
    ```sh
    kubectl get pods --all-namespaces --watch
    ```
@@ -384,11 +412,13 @@ terraform {
 ### Verification
 
 1. **Cilium Status**:
+
    ```sh
    cilium status
    ```
 
 2. **Flux Status**:
+
    ```sh
    flux check
    flux get sources git flux-system
@@ -397,16 +427,19 @@ terraform {
    ```
 
 3. **Gateway Connectivity**:
+
    ```sh
    nmap -Pn -n -p 443 ${cluster_gateway_addr} ${cloudflare_gateway_addr} -vv
    ```
 
 4. **DNS Resolution**:
+
    ```sh
    dig @${cluster_dns_gateway_addr} echo.${cloudflare_domain}
    ```
 
 5. **Certificate Status**:
+
    ```sh
    kubectl -n network describe certificates
    ```
@@ -414,6 +447,7 @@ terraform {
 ### GitHub Webhook (Push-based Reconciliation)
 
 1. Get webhook path:
+
    ```sh
    kubectl -n flux-system get receiver github-webhook --output=jsonpath='{.status.webhookPath}'
    ```
@@ -439,6 +473,7 @@ task talos:apply-node IP=10.10.10.10 MODE=auto
 **Option A: Automated via tuppr (Recommended)**
 
 Update version in `cluster.yaml` and let GitOps handle the upgrade:
+
 ```sh
 # Edit cluster.yaml:
 #   talos_version: "1.12.1"
@@ -462,10 +497,12 @@ task talos:upgrade-k8s
 
 1. Boot new node into maintenance mode
 2. Get disk and MAC info:
+
    ```sh
    talosctl get disks -n <ip> --insecure
    talosctl get links -n <ip> --insecure
    ```
+
 3. Update `nodes.yaml` and run `task configure`
 4. Apply config: `task talos:apply-node IP=<ip>`
 

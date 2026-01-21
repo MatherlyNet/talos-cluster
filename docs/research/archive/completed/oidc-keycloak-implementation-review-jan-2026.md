@@ -32,6 +32,7 @@ This document summarizes the systematic review of 6 research and implementation 
 **Purpose:** Analysis of Envoy Gateway examples to inform implementation decisions.
 
 **Key Findings Validated:**
+
 - JSON access logging patterns - implemented via EnvoyProxy CR
 - JWT authentication patterns - implemented via `securitypolicy-jwt.yaml.j2`
 - Distributed tracing integration - implemented via Tempo/Zipkin
@@ -47,6 +48,7 @@ This document summarizes the systematic review of 6 research and implementation 
 **Purpose:** Comprehensive OIDC/Keycloak integration patterns for Envoy Gateway.
 
 **Implementation Verification:**
+
 - ✅ OIDC SecurityPolicy template: `securitypolicy-oidc.yaml.j2`
 - ✅ JWT SecurityPolicy template: `securitypolicy-jwt.yaml.j2`
 - ✅ Dynamic redirect URL support (omitting `redirectURL` for auto-generation)
@@ -54,6 +56,7 @@ This document summarizes the systematic review of 6 research and implementation 
 - ✅ PKCE enforcement via `pkce.code.challenge.method: S256`
 
 **Code Locations:**
+
 ```
 templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy-oidc.yaml.j2
 templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy-jwt.yaml.j2
@@ -73,6 +76,7 @@ templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
 **Recommendation Implemented:** Native SecurityPolicy OIDC (Phase 1) was chosen and fully implemented.
 
 **Implementation Status:**
+
 - ✅ Native OIDC SecurityPolicy implemented
 - ✅ Phase 2 (ext_authz) documented but not yet needed
 - Research recommendation followed correctly
@@ -97,11 +101,13 @@ templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
 | IdP Role Mappers | `realm-import.sops.yaml.j2` lines 254-322 | ✅ Implemented |
 
 **Mapper Types Implemented:**
+
 - ✅ `oidc-hardcoded-role-idp-mapper` - Default roles for all IdP users
 - ✅ `oidc-role-idp-mapper` - Google domain (`hd` claim) mapping
 - ✅ `oidc-advanced-role-idp-mapper` - Microsoft groups, GitHub orgs
 
 **Conditional Variables:**
+
 - `google_idp_enabled`, `google_client_id`, `google_client_secret`
 - `github_idp_enabled`, `github_client_id`, `github_client_secret`
 - `microsoft_idp_enabled`, `microsoft_client_id`, `microsoft_client_secret`, `microsoft_tenant_id`
@@ -120,6 +126,7 @@ templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
 **Purpose:** JWT-based API authentication via Envoy Gateway SecurityPolicy.
 
 **Implementation Verification:**
+
 - ✅ Template exists: `securitypolicy-jwt.yaml.j2`
 - ✅ Auto-derivation from Keycloak in `plugin.py`:
   - `oidc_issuer_url` auto-derived from `keycloak_issuer_url`
@@ -131,6 +138,7 @@ templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
 - ✅ Label selector: `security: jwt-protected`
 
 **Code Verification:**
+
 ```python
 # plugin.py lines 333-336
 data["oidc_enabled"] = bool(
@@ -165,6 +173,7 @@ data["oidc_enabled"] = bool(
 | Backup CronJob | `postgres-backup-cronjob.yaml.j2` | ✅ Available |
 
 **Features Verified:**
+
 - ✅ CRD split pattern (operator Kustomization → instance Kustomization)
 - ✅ `bootstrapAdmin.user.secret` pattern (avoids GitHub Issue #35862)
 - ✅ OpenTelemetry tracing support (`keycloak_tracing_enabled`)
@@ -173,6 +182,7 @@ data["oidc_enabled"] = bool(
 - ✅ Backup to RustFS S3
 
 **Plugin.py Derived Variables:**
+
 ```python
 # Lines 302-336
 keycloak_enabled

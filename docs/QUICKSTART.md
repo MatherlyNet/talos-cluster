@@ -70,6 +70,7 @@ mise install
 ```
 
 **Installed Tools:**
+
 - `talosctl` - Talos node management
 - `kubectl` - Kubernetes CLI
 - `flux` - GitOps CLI
@@ -86,6 +87,7 @@ task init
 ```
 
 This creates:
+
 - `cluster.yaml` - Cluster-wide settings
 - `nodes.yaml` - Node definitions
 - `age.key` - Encryption key (keep safe!)
@@ -112,6 +114,7 @@ cloudflare_token: "your-api-token"
 ### Edit nodes.yaml
 
 Get node info while booted to Talos ISO:
+
 ```bash
 talosctl get disks -n <node-ip> --insecure
 talosctl get links -n <node-ip> --insecure
@@ -163,6 +166,7 @@ task configure
 ```
 
 **What happens:**
+
 1. Jinja2 templates → Kubernetes YAML
 2. CUE schema validation
 3. SOPS encryption of secrets
@@ -189,6 +193,7 @@ task bootstrap:talos
 ```
 
 **What happens:**
+
 1. Generates Talos configs via talhelper
 2. Applies machine config to each node
 3. Bootstraps etcd on first control plane
@@ -196,6 +201,7 @@ task bootstrap:talos
 5. Generates kubeconfig
 
 **Verify:**
+
 ```bash
 kubectl get nodes
 # All nodes should be Ready
@@ -210,6 +216,7 @@ task bootstrap:apps
 ```
 
 **Deployment Order:**
+
 ```
 1. CRDs (Gateway API, Prometheus, etc.)
    ↓
@@ -225,6 +232,7 @@ task bootstrap:apps
 ```
 
 **Verify:**
+
 ```bash
 # All pods running
 kubectl get pods -A
@@ -244,11 +252,13 @@ For internal access to services, you have two options:
 Configure your home router/DNS to forward queries to k8s-gateway:
 
 **Forward these domains to `cluster_dns_gateway_addr`:**
+
 ```
 *.your-domain.com → 192.168.1.102
 ```
 
 **Example (Pi-hole/AdGuard):**
+
 ```
 # Custom DNS rules
 your-domain.com 192.168.1.102
@@ -259,6 +269,7 @@ your-domain.com 192.168.1.102
 If you have a UniFi controller (v9.0.0+), configure native DNS record management:
 
 1. **Add to cluster.yaml:**
+
    ```yaml
    # UniFi DNS Integration (replaces k8s-gateway)
    unifi_host: "https://192.168.1.1"      # Controller URL
@@ -268,6 +279,7 @@ If you have a UniFi controller (v9.0.0+), configure native DNS record management
    ```
 
 2. **Re-render and push:**
+
    ```bash
    task configure
    git add -A && git commit -m "Enable UniFi DNS" && git push

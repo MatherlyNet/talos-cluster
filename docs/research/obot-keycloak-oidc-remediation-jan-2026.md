@@ -8,6 +8,7 @@
 
 > **Architecture Note:** Obot uses **native OAuth** via its built-in Keycloak auth provider, NOT Envoy Gateway SecurityPolicy.
 > This is fundamentally different from Hubble/Grafana which use gateway-level OIDC (split-path architecture).
+>
 > - **Native OAuth apps** (Obot, LiteLLM, Langfuse, Grafana native): Handle their own OAuth flow directly with Keycloak
 > - **Gateway-level OIDC apps** (Hubble, Grafana if using SecurityPolicy): Use Envoy Gateway SecurityPolicy with split-path architecture
 > - For split-path OIDC details, see: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
@@ -46,11 +47,13 @@ Cross-referencing the upstream [jrmatherly/obot-entraid](https://github.com/jrma
 ### Evidence
 
 **Upstream fork expects (from tool.gpt and main.go):**
+
 ```
 OBOT_KEYCLOAK_AUTH_PROVIDER_URL
 ```
 
 **Our project uses (helmrelease.yaml.j2 line 125):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
 ```
@@ -64,11 +67,13 @@ The Keycloak auth provider will fail to initialize because it will not find the 
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 
 **Current (line 125):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
 ```
 
 **Change to:**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "#{ obot_keycloak_base_url }#"
 ```
@@ -84,11 +89,13 @@ Further analysis of the fork's source code revealed another naming mismatch for 
 ### Evidence
 
 **Upstream fork expects (from main.go):**
+
 ```go
 AuthCookieSecret string `env:"OBOT_AUTH_PROVIDER_COOKIE_SECRET"`
 ```
 
 **Our project uses (secret.sops.yaml.j2 line 38):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "#{ obot_keycloak_cookie_secret }#"
 ```
@@ -102,11 +109,13 @@ The cookie encryption will fail because the expected `OBOT_AUTH_PROVIDER_COOKIE_
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/secret.sops.yaml.j2`
 
 **Current (line 38):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET: "#{ obot_keycloak_cookie_secret }#"
 ```
 
 **Change to:**
+
 ```yaml
 OBOT_AUTH_PROVIDER_COOKIE_SECRET: "#{ obot_keycloak_cookie_secret }#"
 ```
@@ -122,6 +131,7 @@ The fork's oauth2-proxy integration supports email domain filtering, but our con
 ### Evidence
 
 **Upstream fork supports (from main.go):**
+
 ```go
 AuthEmailDomains string `env:"OBOT_AUTH_PROVIDER_EMAIL_DOMAINS" default:"*"`
 ```
@@ -137,12 +147,14 @@ Low - the default `*` allows all email domains which is likely the intended beha
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 
 **Add after OBOT_SERVER_AUTH_PROVIDER (line 124):**
+
 ```yaml
 #| Allow all email domains (explicitly configured for clarity) #|
 OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
 ```
 
 Or for configurable deployments:
+
 ```yaml
 OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') }#"
 ```

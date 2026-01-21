@@ -25,6 +25,7 @@ This document provides a comprehensive analysis for integrating [Dragonfly](http
 ### Recommendation
 
 **Implement Dragonfly as a shared cluster resource** in a dedicated `cache` namespace, following the established CNPG operator pattern with:
+
 - Dragonfly Operator deployment via HelmRelease
 - Dragonfly CR (Custom Resource) for instance configuration
 - Optional S3 snapshots to RustFS
@@ -120,16 +121,19 @@ From [Dragonfly Configuration documentation](https://www.dragonflydb.io/docs/man
 ### Option 1: Dragonfly Operator (Recommended)
 
 **Pros:**
+
 - Official, maintained by DragonflyDB team
 - Automatic failover and scaling
 - CRD-based configuration
 - Native S3 snapshot support
 
 **Cons:**
+
 - Adds CRDs to cluster
 - Operator overhead (minimal)
 
 **Installation:**
+
 ```yaml
 # Via kubectl (raw manifests)
 kubectl apply -f https://raw.githubusercontent.com/dragonflydb/dragonfly-operator/main/manifests/dragonfly-operator.yaml
@@ -144,15 +148,18 @@ helm upgrade --install dragonfly-operator \
 ### Option 2: Standalone Helm Chart
 
 **Pros:**
+
 - Simpler, no CRDs
 - Direct Helm values configuration
 
 **Cons:**
+
 - No automatic failover
 - Manual scaling
 - Less integrated monitoring
 
 **Installation:**
+
 ```yaml
 helm upgrade --install dragonfly \
   oci://ghcr.io/dragonflydb/dragonfly/helm/dragonfly \
@@ -162,6 +169,7 @@ helm upgrade --install dragonfly \
 ### Recommendation
 
 **Use the Dragonfly Operator** for:
+
 1. High availability with automatic failover
 2. Declarative scaling
 3. S3 snapshot integration
@@ -198,11 +206,13 @@ cnpg-system/cloudnative-pg  (optional, for apps needing both)
 ### Service Discovery
 
 Applications connect via:
+
 ```
 dragonfly.<namespace>.svc.cluster.local:6379
 ```
 
 For the recommended setup:
+
 ```
 dragonfly.cache.svc.cluster.local:6379
 ```
@@ -724,6 +734,7 @@ From [Dragonfly Flags documentation](https://www.dragonflydb.io/docs/managing-dr
 ### Configuration Methods
 
 Dragonfly supports multiple configuration methods:
+
 - **Command-line**: `dragonfly --port=6379`
 - **Config file**: `dragonfly --flagfile=/path/to/flags.txt`
 - **Environment variables**: `DFLY_` prefix (e.g., `DFLY_port=6379`)
@@ -988,6 +999,7 @@ dragonfly_s3_secret_key: "ENC[AES256_GCM,...]"  # SOPS-encrypted
 ```
 
 Then encrypt the secret key:
+
 ```bash
 sops --encrypt --in-place cluster.yaml
 ```
@@ -1029,6 +1041,7 @@ env:
 From [Dragonfly Authentication documentation](https://www.dragonflydb.io/docs/managing-dragonfly/operator/authentication):
 
 **Password Authentication:**
+
 ```yaml
 authentication:
   passwordFromSecret:
@@ -1037,6 +1050,7 @@ authentication:
 ```
 
 **TLS with Client Certificates:**
+
 ```yaml
 authentication:
   clientCaCertSecret:
@@ -1304,12 +1318,14 @@ data:
 ### Phase 1: Core Deployment
 
 **Scope:**
+
 - Create `cache` namespace template
 - Deploy Dragonfly Operator via HelmRelease
 - Create basic Dragonfly instance (single replica, no HA)
 - Password authentication
 
 **Configuration:**
+
 ```yaml
 dragonfly_enabled: true
 dragonfly_password: "<generated>"
@@ -1317,6 +1333,7 @@ dragonfly_replicas: 1
 ```
 
 **Files to Create:**
+
 - `templates/config/kubernetes/apps/cache/kustomization.yaml.j2`
 - `templates/config/kubernetes/apps/cache/namespace.yaml.j2`
 - `templates/config/kubernetes/apps/cache/dragonfly/ks.yaml.j2`
@@ -1332,19 +1349,23 @@ dragonfly_replicas: 1
 ### Phase 2: Monitoring Integration
 
 **Scope:**
+
 - PodMonitor for Prometheus scraping
 - PrometheusRule for alerts
 - Grafana dashboard ConfigMap
 
 **Prerequisites:**
+
 - `monitoring_enabled: true`
 
 **Configuration:**
+
 ```yaml
 dragonfly_monitoring_enabled: true
 ```
 
 **Files to Add:**
+
 - `templates/config/kubernetes/apps/cache/dragonfly/app/podmonitor.yaml.j2`
 - `templates/config/kubernetes/apps/cache/dragonfly/app/prometheusrule.yaml.j2`
 - `templates/config/kubernetes/apps/cache/dragonfly/app/dashboard-configmap.yaml.j2`
@@ -1354,14 +1375,17 @@ dragonfly_monitoring_enabled: true
 ### Phase 3: S3 Backup Integration
 
 **Scope:**
+
 - S3 snapshot configuration for RustFS
 - RustFS bucket and IAM policy documentation
 - Backup schedule configuration
 
 **Prerequisites:**
+
 - `rustfs_enabled: true`
 
 **Configuration:**
+
 ```yaml
 dragonfly_backup_enabled: true
 dragonfly_s3_access_key: "<from RustFS console>"
@@ -1374,11 +1398,13 @@ dragonfly_snapshot_cron: "0 */6 * * *"
 ### Phase 4: High Availability
 
 **Scope:**
+
 - Multi-replica deployment
 - Pod anti-affinity
 - TLS configuration (optional)
 
 **Configuration:**
+
 ```yaml
 dragonfly_replicas: 3
 ```
@@ -1388,13 +1414,16 @@ dragonfly_replicas: 3
 ### Phase 5: Network Policies
 
 **Scope:**
+
 - CiliumNetworkPolicy for zero-trust
 - Per-namespace access rules
 
 **Prerequisites:**
+
 - `network_policies_enabled: true`
 
 **Files to Add:**
+
 - `templates/config/kubernetes/apps/cache/dragonfly/app/networkpolicy.yaml.j2`
 
 **Estimated Effort:** 1-2 hours
@@ -1526,6 +1555,7 @@ This document was reviewed and validated against the project's established patte
 #### Cross-Reference Verification
 
 The following project memories were consulted:
+
 - `flux_dependency_patterns.md` - Cross-namespace dependency and CRD split patterns
 - `style_and_conventions.md` - Template delimiters and directory structure
 - `task_completion_checklist.md` - Validation workflow

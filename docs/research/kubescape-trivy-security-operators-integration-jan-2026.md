@@ -1,4 +1,5 @@
 # Kubescape and Trivy Security Operators Integration Guide
+
 **Date:** January 2026
 **Purpose:** Integration guidance for adding Kubescape and Trivy security scanning operators with Headlamp plugins
 
@@ -9,6 +10,7 @@
 This guide provides step-by-step integration instructions for deploying **Kubescape** and **Trivy** security scanning operators into the matherlynet-talos-cluster, enabling comprehensive security visibility through Headlamp plugins.
 
 **Target State:**
+
 - ✅ Kubescape Operator v1.22.0+ for configuration scanning and compliance
 - ✅ Trivy Operator v0.24.1+ for CVE vulnerability scanning
 - ✅ Headlamp plugins for visual security dashboard
@@ -16,6 +18,7 @@ This guide provides step-by-step integration instructions for deploying **Kubesc
 - ✅ Integration with existing monitoring stack (Alloy/Prometheus)
 
 **Security Scanning Coverage:**
+
 | Operator | Focus Area | Key Features |
 |----------|------------|--------------|
 | **Kubescape** | Configuration & Compliance | NSA/CISA guidelines, CIS benchmarks, network policy analysis, admission policy playground |
@@ -42,6 +45,7 @@ This guide provides step-by-step integration instructions for deploying **Kubesc
 **Kubescape** is a CNCF Incubating project (as of Feb 2025) providing Kubernetes security posture management.
 
 **Key Capabilities:**
+
 - Configuration scanning (NSA/CISA, CIS benchmarks)
 - Network policy visualization
 - Admission policy testing with CEL expressions (WASM-based)
@@ -543,6 +547,7 @@ kubectl get cronjobs -n security
 **Trivy** is an Aqua Security open-source project for comprehensive vulnerability and misconfiguration scanning.
 
 **Key Capabilities:**
+
 - Container image CVE scanning
 - SBOM (Software Bill of Materials) generation
 - Secret detection in containers and IaC
@@ -1084,10 +1089,12 @@ plugins:
 Both operators expose Prometheus metrics:
 
 **Kubescape metrics:**
+
 - Endpoint: `http://kubescape-operator:8080/metrics`
 - ServiceMonitor: Auto-created by Helm chart when `serviceMonitor.enabled: true`
 
 **Trivy metrics:**
+
 - Endpoint: `http://trivy-operator:8080/metrics`
 - ServiceMonitor: Auto-created by Helm chart when `serviceMonitor.enabled: true`
 
@@ -1164,6 +1171,7 @@ hubble observe --namespace trivy-system --verdict DROPPED
 #### Kubescape Operator Issues
 
 **Problem:** Operator pods CrashLoopBackOff
+
 ```bash
 # Check logs
 kubectl logs -n security -l app.kubernetes.io/name=kubescape-operator --tail=100
@@ -1179,6 +1187,7 @@ kubescape_memory_limit: "2Gi"
 ```
 
 **Problem:** Scans not running
+
 ```bash
 # Check CronJobs
 kubectl get cronjobs -n security
@@ -1193,6 +1202,7 @@ kubectl logs -n security job/manual-scan
 #### Trivy Operator Issues
 
 **Problem:** Vulnerability reports not generating
+
 ```bash
 # Check operator status
 kubectl get pods -n security
@@ -1209,6 +1219,7 @@ kubectl delete pod -n security -l app.kubernetes.io/name=trivy-operator
 ```
 
 **Problem:** Network policy blocking DB updates
+
 ```bash
 # Temporarily allow all egress for testing
 kubectl label namespace security network-policies-audit=true
@@ -1223,6 +1234,7 @@ kubectl get ciliumnetworkpolicies -n security trivy-operator -o yaml
 #### Headlamp Plugin Issues
 
 **Problem:** Plugins not showing in UI
+
 ```bash
 # Check plugin loading in Headlamp logs
 kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100 | grep -i plugin
@@ -1235,6 +1247,7 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=500 | grep
 ```
 
 **Problem:** Kubescape plugin shows "No data"
+
 ```bash
 # Verify Kubescape scans have run
 kubectl get configurationscansummaries -A
@@ -1324,21 +1337,21 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # ... existing namespaces ...
-  
+
 #% if keycloak_enabled | default(false) %#
   - ./identity
 #% endif %#
-  
+
   - ./kube-system
   - ./monitoring
   - ./network
-  
+
 #% if kubescape_enabled | default(false) or trivy_enabled | default(false) %#
   - ./security
 #% endif %#
-  
+
   - ./storage
-  
+
   # ... remaining namespaces ...
 ```
 
@@ -1371,20 +1384,24 @@ git diff kubernetes/apps/security/
 ## References
 
 ### Official Documentation
+
 - [Kubescape Documentation](https://kubescape.io/docs/)
 - [Kubescape GitHub](https://github.com/kubescape/kubescape)
 - [Trivy Operator Documentation](https://aquasecurity.github.io/trivy-operator/)
 - [Trivy Documentation](https://trivy.dev/)
 
 ### Headlamp Plugins
+
 - [Kubescape Headlamp Plugin](https://github.com/kubescape/headlamp-plugin)
 - [Trivy Headlamp Plugin](https://github.com/kubebeam/trivy-headlamp-plugin)
 
 ### CNCF Resources
+
 - [Kubescape CNCF Incubating Announcement](https://www.cncf.io/blog/2025/02/26/kubescape-becomes-a-cncf-incubating-project/)
 - [Kubescape Headlamp Integration Announcement](https://kubescape.io/blog/2025/04/30/kubescape-headlamp/)
 
 ### Compliance Frameworks
+
 - [NSA/CISA Kubernetes Hardening Guide](https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF)
 - [CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes)
 

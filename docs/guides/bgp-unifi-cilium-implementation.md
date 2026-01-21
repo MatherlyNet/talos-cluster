@@ -70,6 +70,7 @@ The following Helm values/CLI flags have been removed:
 | `--enable-l2-announcements` | Always enabled when L2 config present |
 
 **Verification:** Confirm project templates don't use these:
+
 ```bash
 grep -E "enable-nodeport|enable-session-affinity|enable-host-port" \
   templates/config/kubernetes/apps/kube-system/cilium/
@@ -102,6 +103,7 @@ grep -E "enable-nodeport|enable-session-affinity|enable-host-port" \
 The project uses Cilium 1.19.0-pre.3 from the official Cilium OCI dev charts repository:
 
 **1. `templates/config/kubernetes/apps/kube-system/cilium/app/ocirepository.yaml.j2`:**
+
 ```yaml
 spec:
   ref:
@@ -110,6 +112,7 @@ spec:
 ```
 
 **2. `templates/config/bootstrap/helmfile.d/01-apps.yaml.j2`:**
+
 ```yaml
 releases:
   - name: cilium
@@ -149,6 +152,7 @@ spec:
 ```
 
 **Limitations:**
+
 - Multi-homing: Only one BGP session per address family when using auto-discovery
 - Link-local addresses as default gateway are not supported
 - Requires ToR switches configured with `bgp listen range`
@@ -291,6 +295,7 @@ BGP requires one of these devices with minimum firmware:
 | Cloud Gateway Ultra | 4.1.13+ |
 
 **Verify your firmware:**
+
 1. Log into UniFi Network UI
 2. Navigate to **Settings > System > Updates**
 3. Confirm UniFi OS version is 4.1.13 or newer
@@ -340,6 +345,7 @@ This guide uses **Option A** which matches the current cluster configuration. Op
 > **✅ Already Complete:** The project templates already use `cilium.io/v2` API version for all Cilium CRDs. No template modifications are required before enabling BGP.
 
 Verify this by checking the template:
+
 ```bash
 grep "apiVersion: cilium.io" templates/config/kubernetes/apps/kube-system/cilium/app/networks.yaml.j2
 # Should show: apiVersion: cilium.io/v2
@@ -382,6 +388,7 @@ cilium_bgp_node_asn: "64514"
 | Kubernetes Nodes | 64514 | Must differ from gateway ASN |
 
 Private ASN ranges:
+
 - **2-byte:** 64512-65534
 - **4-byte:** 4200000000-4294967294
 
@@ -396,6 +403,7 @@ The UniFi FRR configuration is **automatically generated** from your `cluster.ya
 ### Generated Configuration Features
 
 The template automatically includes:
+
 - **ECMP** (Equal-Cost Multi-Path) for load balancing across advertising nodes
 - **Route-map filtering** to only accept LoadBalancer IPs from the cluster
 - **All node IPs** from your `nodes.yaml` as BGP neighbors
@@ -710,6 +718,7 @@ task configure
 ```
 
 This automatically:
+
 1. Creates a SOPS-encrypted Kubernetes Secret (`bgp-peer-password`) in `kube-system` namespace
 2. Configures `authSecretRef` in `CiliumBGPPeerConfig`
 3. Adds the password to the UniFi FRR configuration template
@@ -737,6 +746,7 @@ cilium_bgp_ecmp_max_paths: 4
 ```
 
 **How ECMP works:**
+
 - When multiple nodes advertise the same LoadBalancer IP, the router can use multiple paths
 - Traffic is distributed across up to `maximum-paths` nodes
 - Requires `bgp bestpath as-path multipath-relax` to treat paths with different AS paths as equal
@@ -798,6 +808,7 @@ The project uses `cilium.io/v2` for all BGP CRDs:
 > **⚠️ Breaking Change:** `CiliumBGPPeeringPolicy` CRD and its control plane (BGPv1) will be **completely removed** in Cilium 1.19. Migration to `cilium.io/v2` CRDs is **required before upgrading**.
 
 New features in 1.19:
+
 - **Auto-Discovery**: `DefaultGateway` mode for automatic BGP peer discovery
 - **Prefix Aggregation**: Service VIP aggregation with `aggregationLengthIPv4/IPv6`
 - **Enhanced Transport**: Custom destination ports and source interface specification

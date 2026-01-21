@@ -1054,6 +1054,7 @@ Garage exposes Prometheus metrics at `:3903/metrics`. Key metrics include:
 ### Grafana Dashboard
 
 Import the official Garage dashboard:
+
 - **Dashboard JSON:** https://git.deuxfleurs.fr/Deuxfleurs/garage/raw/branch/main/script/telemetry/grafana-garage-dashboard-prometheus.json
 - **Grafana ID:** N/A (self-hosted)
 
@@ -1277,6 +1278,7 @@ spec:
 ## Implementation Checklist
 
 ### Phase 1: Infrastructure Setup
+
 - [ ] Add Garage configuration section to `cluster.sample.yaml`
 - [ ] Update `templates/scripts/plugin.py` with derived variables
 - [ ] Create `templates/config/kubernetes/apps/storage/` directory structure
@@ -1284,6 +1286,7 @@ spec:
 - [ ] Add `storage/kustomization.yaml.j2`
 
 ### Phase 2: Garage Deployment
+
 - [ ] Create `storage/garage/ks.yaml.j2`
 - [ ] Create `storage/garage/app/kustomization.yaml.j2`
 - [ ] Create `storage/garage/app/helmrelease.yaml.j2`
@@ -1294,16 +1297,19 @@ spec:
 - [ ] Create `storage/garage/app/secret-credentials.sops.yaml.j2`
 
 ### Phase 3: Loki Integration
+
 - [ ] Update `monitoring/loki/app/helmrelease.yaml.j2` with conditional S3 config
 - [ ] Add `monitoring/loki/app/secret.sops.yaml.j2` for S3 credentials
 - [ ] Update `monitoring/loki/ks.yaml.j2` with Garage dependency
 
 ### Phase 4: Top-Level Integration
+
 - [ ] Update `templates/config/kubernetes/apps/kustomization.yaml.j2`
 - [ ] Update documentation (CLAUDE.md, CONFIGURATION.md)
 - [ ] Add Garage dashboard ConfigMap
 
 ### Phase 5: Validation
+
 - [ ] Run `task configure`
 - [ ] Verify generated files in `kubernetes/apps/storage/`
 - [ ] Deploy to cluster

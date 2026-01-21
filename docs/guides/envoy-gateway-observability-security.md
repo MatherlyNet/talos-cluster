@@ -415,12 +415,14 @@ Add tracing configuration to the existing EnvoyProxy in `envoy.yaml.j2`.
 ### Sampling Configuration
 
 **Percentage-based (1-100%):**
+
 ```yaml
 tracing:
   samplingRate: 10  # Sample 10% of requests
 ```
 
 **Fractional sampling (for rates below 1%):**
+
 ```yaml
 tracing:
   samplingFraction:
@@ -646,12 +648,14 @@ kubectl port-forward -n network svc/envoy-internal 19000:19000
 ## References
 
 ### Project Documentation
+
 - [Application Docs: kube-prometheus-stack](../APPLICATIONS.md#kube-prometheus-stack) - **Primary** - kube-prometheus-stack + Loki + Grafana platform
 - [Envoy Gateway Examples Analysis](../research/archive/completed/envoy-gateway-examples-analysis.md) - Source research document
 - [k8s-at-home Patterns Implementation](./archived/k8s-at-home-patterns-implementation.md) - General k8s-at-home patterns
 - [Bootstrap CRDs](../../templates/config/bootstrap/helmfile.d/00-crds.yaml.j2) - kube-prometheus-stack CRD installation
 
 ### External Documentation
+
 - [Proxy Access Logs](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-accesslog/) - Official docs
 - [SecurityPolicy Reference](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/) - JWT/OIDC patterns
 - [Observability Tracing](https://gateway.envoyproxy.io/docs/tasks/observability/proxy-trace/) - Tracing setup

@@ -24,6 +24,7 @@ This document analyzes three CNPG enhancement areas from the official documentat
 ### Current Implementation Analysis
 
 Your project now has comprehensive CNPG monitoring:
+
 - ✅ ServiceMonitor for operator metrics (port 8080)
 - ✅ PodMonitor for cluster instance metrics (port 9187) - **Implemented**
 - ✅ PrometheusRule with 9 alert rules (added failover, fencing, checkpoint) - **Implemented**
@@ -521,11 +522,13 @@ With the `enableDefaultDeny` pattern (matching project conventions), only **2 po
 ### Analysis
 
 **External Secrets Operator (ESO) provides:**
+
 - Automated password generation and rotation
 - Integration with external KMS (Vault, AWS SM, etc.)
 - `cnpg.io/reload: "true"` label triggers CNPG to reload credentials automatically
 
 **Current SOPS approach:**
+
 - Secrets encrypted in Git with Age key
 - Manual rotation via `task configure` after editing secrets
 - No external dependency (Vault, cloud KMS)
@@ -533,12 +536,14 @@ With the `enableDefaultDeny` pattern (matching project conventions), only **2 po
 ### Recommendation: Low Priority
 
 **Reasons to keep SOPS:**
+
 1. **Simplicity:** No external dependency, works offline
 2. **GitOps native:** Secrets versioned with code
 3. **Current workflow:** Already established with SOPS/Age
 4. **No vault infrastructure:** Would need to deploy and manage Vault
 
 **When ESO makes sense:**
+
 - Enterprise environments with existing Vault infrastructure
 - Compliance requirements for automated credential rotation
 - Multi-tenant clusters sharing secrets from central KMS
@@ -645,6 +650,7 @@ EOF
 ### Step 2: Update Kustomizations
 
 Add network policy resources to:
+
 - `templates/config/kubernetes/apps/cnpg-system/cloudnative-pg/app/kustomization.yaml.j2`
 - `templates/config/kubernetes/apps/identity/keycloak/app/kustomization.yaml.j2`
 

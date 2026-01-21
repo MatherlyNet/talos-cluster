@@ -3,6 +3,7 @@
 ## Overview
 
 Dragonfly is a Redis-compatible in-memory data store deployed via the Dragonfly Operator. It provides:
+
 - 25x better performance than Redis with full API compatibility
 - Multi-threaded architecture with optimized memory usage
 - Shared cache infrastructure for cluster services (Keycloak, LiteLLM, Langfuse)
@@ -55,6 +56,7 @@ Dragonfly is a Redis-compatible in-memory data store deployed via the Dragonfly 
 ## Configuration Variables
 
 ### Core Settings
+
 ```yaml
 dragonfly_enabled: true           # Enable Dragonfly deployment
 dragonfly_version: "v1.36.0"      # Dragonfly server version
@@ -64,6 +66,7 @@ dragonfly_password: "..."         # SOPS-encrypted default password
 ```
 
 ### Resource Configuration
+
 ```yaml
 dragonfly_maxmemory: "512mb"      # Maximum memory allocation
 dragonfly_threads: 2              # Proactor threads (match CPU cores)
@@ -74,6 +77,7 @@ dragonfly_control_plane_only: false # Schedule on control-plane nodes
 ```
 
 ### Performance Tuning
+
 ```yaml
 dragonfly_cache_mode: true        # Enable LRU eviction (recommended for caching)
 dragonfly_slowlog_threshold: 10000 # Slow query log threshold (microseconds)
@@ -81,6 +85,7 @@ dragonfly_slowlog_max_len: 128    # Maximum slow queries to retain
 ```
 
 ### S3 Backups (requires RustFS)
+
 ```yaml
 dragonfly_backup_enabled: true
 dragonfly_s3_endpoint: "rustfs-svc.storage.svc.cluster.local:9000"
@@ -95,6 +100,7 @@ dragonfly_snapshot_cron: "0 */6 * * *"        # Every 6 hours
 **Bucket:** `dragonfly-backups` (auto-created by RustFS setup job)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - Browse snapshots
 - `s3:GetObject` - Download snapshots for restore
 - `s3:PutObject` - Upload RDB snapshots
@@ -103,17 +109,20 @@ dragonfly_snapshot_cron: "0 */6 * * *"        # Every 6 hours
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+
 1. Creating `dragonfly-storage` policy scoped to `dragonfly-backups`
 2. Creating service account user
 3. Updating `cluster.yaml` with `dragonfly_s3_access_key` and `dragonfly_s3_secret_key`
 4. Verifying S3 connectivity
 
 ### Monitoring (requires monitoring_enabled)
+
 ```yaml
 dragonfly_monitoring_enabled: true  # Deploy PodMonitor + PrometheusRule + Dashboard
 ```
 
 ### ACL Multi-Tenant Access
+
 ```yaml
 dragonfly_acl_enabled: true
 dragonfly_keycloak_password: "..."  # SOPS-encrypted, Keycloak sessions
@@ -161,7 +170,9 @@ templates/config/kubernetes/apps/cache/
 ## Key Implementation Details
 
 ### CRD Split Pattern
+
 The deployment uses a two-phase Flux Kustomization pattern:
+
 1. **Operator Kustomization**: Deploys Dragonfly Operator with CRDs
 2. **Instance Kustomization**: Creates Dragonfly CR after operator is ready
 
@@ -175,13 +186,17 @@ dependsOn:
 ```
 
 ### ACL Configuration
+
 ACL is implemented via `aclFromSecret` CRD field (not ConfigMap):
+
 - More secure: passwords in Secret, not ConfigMap
 - Cleaner: uses official Dragonfly CRD pattern
 - Per-tenant isolation via key pattern restrictions
 
 ### BullMQ Compatibility
+
 For Langfuse integration, special flags are enabled:
+
 ```yaml
 args:
   - "--default_lua_flags=allow-undeclared-keys"  # BullMQ compatibility
@@ -190,7 +205,9 @@ args:
 Langfuse ACL user has broader permissions (`~* +@all -@dangerous +INFO +CONFIG`) for BullMQ job queues.
 
 ### Memory Management
+
 When `dragonfly_cache_mode: true`:
+
 - Enables LRU-like eviction when approaching maxmemory
 - Recommended for session storage and caching use cases
 - NOT recommended for persistent data
@@ -198,16 +215,19 @@ When `dragonfly_cache_mode: true`:
 ## Service Discovery
 
 Applications connect via:
+
 ```
 dragonfly.cache.svc.cluster.local:6379
 ```
 
 With ACL authentication:
+
 ```
 redis://:<password>@dragonfly.cache.svc.cluster.local:6379
 ```
 
 Or with username (ACL mode):
+
 ```
 redis://<username>:<password>@dragonfly.cache.svc.cluster.local:6379
 ```
@@ -215,12 +235,14 @@ redis://<username>:<password>@dragonfly.cache.svc.cluster.local:6379
 ## Network Policies
 
 When `network_policies_enabled: true`, the following ingress is allowed:
+
 - **identity** namespace (Keycloak) → port 6379
 - **ai-system** namespace (LiteLLM, Langfuse) → port 6379
 - **default** namespace → port 6379
 - **monitoring** namespace → port 9999 (metrics)
 
 Egress allowed:
+
 - DNS (kube-dns) → port 53
 - RustFS (backup) → port 9000 (conditional on backup_enabled)
 
@@ -239,6 +261,7 @@ When `dragonfly_monitoring_enabled: true`, these alerts are deployed:
 ## Troubleshooting
 
 ### Common Commands
+
 ```bash
 # Operator status
 kubectl get pods -n dragonfly-operator-system
@@ -277,6 +300,7 @@ Dragonfly Not Ready?
 ```
 
 ### Authentication Issues
+
 ```
 Error: WRONGPASS / NOAUTH
 ├── Verify ACL enabled: dragonfly_acl_enabled: true
@@ -286,6 +310,7 @@ Error: WRONGPASS / NOAUTH
 ```
 
 ### Memory Pressure
+
 ```
 High Memory Usage / Evictions
 ├── Check cache_mode: dragonfly_cache_mode: true for eviction

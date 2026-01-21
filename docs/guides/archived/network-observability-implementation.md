@@ -64,6 +64,7 @@ This guide provides comprehensive network observability for the infrastructure l
 ### Purpose
 
 Hubble provides network flow visibility at L3/L4/L7, showing:
+
 - Pod-to-pod communication patterns
 - Network policy drops
 - DNS queries and responses
@@ -256,6 +257,7 @@ hubble:
 ### Current State
 
 Existing `PodMonitor` scrapes `/stats/prometheus` from Envoy proxies, but lacks configuration for:
+
 - RED metrics (Rate, Errors, Duration)
 - Histogram buckets for latency percentiles
 - Labeled metrics for route/cluster identification
@@ -751,6 +753,7 @@ If BGP Control Plane v2 is enabled, monitor peer status and route advertisements
 ### Current Limitation
 
 **Cilium does NOT expose native Prometheus metrics for BGP** as of January 2026. BGP monitoring requires:
+
 1. FRRouting (FRR) exporter on UniFi gateway (external)
 2. Cilium CLI commands for pod-level status
 3. Custom metric collection (advanced)
@@ -1124,6 +1127,7 @@ kubectl get deployment -n monitoring grafana
 ### Deployment Order
 
 1. **Phase 1: Enable Hubble**
+
    ```bash
    # Edit cilium helmrelease.yaml.j2
    task configure
@@ -1132,6 +1136,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 2. **Phase 2: Enhance Envoy Metrics**
+
    ```bash
    # Edit envoy.yaml.j2 and podmonitor.yaml.j2
    task configure
@@ -1140,6 +1145,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 3. **Phase 3: Add CoreDNS ServiceMonitor**
+
    ```bash
    # Create servicemonitor.yaml.j2
    task configure
@@ -1148,6 +1154,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 4. **Phase 4: Enable external-dns Metrics**
+
    ```bash
    # Edit cloudflare-dns and unifi-dns helmreleases
    task configure
@@ -1156,6 +1163,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 5. **Phase 5: BGP Monitoring (if enabled)**
+
    ```bash
    # Edit cilium helmrelease for debug logging
    task configure
@@ -1164,6 +1172,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 6. **Phase 6: Create PrometheusRules**
+
    ```bash
    # Create rules-network.yaml.j2
    task configure
@@ -1172,6 +1181,7 @@ kubectl get deployment -n monitoring grafana
    ```
 
 7. **Phase 7: Import Grafana Dashboards**
+
    ```bash
    # Create dashboards-network.yaml.j2 ConfigMaps
    task configure
@@ -1361,11 +1371,13 @@ kubectl delete prometheusrule -n monitoring network-infrastructure
 ## References
 
 ### Project Documentation
+
 - [Cilium Networking Guide](../ai-context/cilium-networking.md) - Cilium architecture and BGP setup
 - [Envoy Gateway Observability](../envoy-gateway-observability-security.md) - Access logging and tracing
 - [k8s-at-home Patterns](./k8s-at-home-patterns-implementation.md) - Monitoring stack deployment
 
 ### External Documentation
+
 - [Cilium Observability](https://docs.cilium.io/en/stable/observability/metrics/) - Official Cilium observability docs
 - [Hubble Metrics](https://docs.cilium.io/en/stable/observability/metrics/#hubble-exported-metrics) - Hubble metric reference
 - [Envoy Statistics](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/statistics) - Envoy metrics reference
@@ -1374,6 +1386,7 @@ kubectl delete prometheusrule -n monitoring network-infrastructure
 - [Grafana Dashboards](https://grafana.com/grafana/dashboards/) - Community dashboards
 
 ### BGP Monitoring
+
 - [Cilium BGP Control Plane](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-v2/) - BGP configuration
 - [FRRouting](https://docs.frrouting.org/en/latest/bgp.html) - UniFi BGP backend
 - [Cilium CLI BGP Commands](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-operation/) - BGP debugging

@@ -19,6 +19,7 @@
 > documentation have been integrated into the project.
 >
 > **Implementation Details:**
+>
 > - `grafana_oidc_enabled` and `grafana_oidc_client_secret` variables in cluster.yaml
 > - Keycloak OIDC client with realm-roles protocol mapper
 > - Grafana `auth.generic_oauth` configuration with JMESPath role mapping
@@ -53,6 +54,7 @@ This research document analyzes the optimal approach for securing Grafana with s
 ### Recommended Approach
 
 **Option 3: Gateway OIDC + Grafana Native OAuth** provides the best balance of:
+
 - Seamless SSO via `auto_login: true` (no Grafana login page shown)
 - Full RBAC support with role mapping from Keycloak
 - Groups/teams mapping capability
@@ -601,6 +603,7 @@ contains(roles[*], 'grafana-editor') && 'Editor' ||
 ```
 
 This evaluates to:
+
 - `GrafanaAdmin` if user has `grafana-admin` role
 - `Editor` if user has `grafana-editor` role
 - `Viewer` otherwise (default)
@@ -638,6 +641,7 @@ auth.generic_oauth:
 **Important:** Team Sync (mapping IdP groups to Grafana teams) is **Enterprise only**.
 
 For OSS Grafana, you can:
+
 1. Use organization mapping (org_mapping)
 2. Use role-based access control
 3. Manually create teams and assign users after login
@@ -859,6 +863,7 @@ A potential enhancement would be to implement realm configuration via Keycloak A
 ### Test Procedure
 
 1. **Clear browser state:**
+
    ```bash
    # Clear cookies for *.matherly.net in browser
    ```
@@ -893,6 +898,7 @@ A potential enhancement would be to implement realm configuration via Keycloak A
 > **Symptom:** "Login failed - User sync failed" error after Keycloak recreation
 >
 > **Log Evidence:**
+>
 > ```
 > logger=user.sync t=... level=error msg="Failed to create user" error="user not found"
 > auth_module=oauth_generic_oauth auth_id=<new-subject-id>
@@ -984,16 +990,20 @@ kubectl get httproute -n network grafana -o yaml | grep -A5 labels
 ### Identified Issues & Resolutions
 
 #### Issue 1: Missing cluster.sample.yaml Schema
+
 **Status:** Documentation includes variables but they need to be added to the actual schema.
 
 **Resolution:** The following variables need to be added to `cluster.sample.yaml` in the OBSERVABILITY section:
+
 - `grafana_oidc_enabled`
 - `grafana_oidc_client_secret`
 
 #### Issue 2: Keycloak Client Protocol Mappers
+
 **Status:** The realm-import client definition needs protocol mappers for roles claim.
 
 **Resolution:** The Grafana client in Keycloak needs:
+
 ```yaml
 protocolMappers:
   - name: "realm-roles"
@@ -1008,16 +1018,20 @@ protocolMappers:
 ```
 
 #### Issue 3: auth.jwt Option (Option 2) - Simplest for Ideal State
+
 **Status:** The user's ideal state (Envoy session recognized by Grafana) is achievable with Option 2.
 
 **Key Insight:** Since `forwardAccessToken: true` already forwards the JWT to Grafana:
+
 - Configure `auth.jwt` in Grafana to read `Authorization` header
 - Grafana validates JWT against Keycloak's JWKS endpoint
 - **No redirects needed** - true seamless SSO
 - This is actually the simplest implementation matching the user's ideal state
 
 #### Issue 4: Option 3 Has Double-Authentication
+
 **Status:** Option 3 (Native OAuth) creates two authentication sessions:
+
 1. Envoy Gateway OIDC session (cookies)
 2. Grafana OAuth session (separate tokens)
 

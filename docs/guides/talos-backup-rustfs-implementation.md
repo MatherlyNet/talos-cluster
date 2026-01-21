@@ -143,6 +143,7 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
 | Bucket location | `s3:GetBucketLocation` | AWS SDK compatibility |
 
 **Why Not Built-in `readwrite`:**
+
 - The `readwrite` policy grants access to **ALL** buckets
 - The custom `backup-storage` policy scopes access to only `etcd-backups` bucket
 - This protects other buckets (loki-chunks, tempo, etc.) from backup job access (principle of least privilege)
@@ -150,9 +151,11 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
 #### 2.2 Step-by-Step Console UI Instructions
 
 1. **Access RustFS Console**
+
    ```
    https://rustfs.<your-domain>
    ```
+
    Login with `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` from `cluster.yaml`
 
 2. **Create Custom Policy**
@@ -183,12 +186,14 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
    - ⚠️ **Copy and save both keys immediately** - the secret key won't be shown again!
 
 6. **Update cluster.yaml**
+
    ```yaml
    backup_s3_access_key: "<access-key-from-step-5>"
    backup_s3_secret_key: "<secret-key-from-step-5>"
    ```
 
 7. **Apply Changes**
+
    ```bash
    task configure
    task reconcile
@@ -207,6 +212,7 @@ The backup IAM structure mirrors the Loki setup:
 | **Permissions** | Full CRUD on loki-* | Full CRUD on etcd-backups |
 
 This pattern ensures:
+
 - **Principle of least privilege**: Each service only accesses its own buckets
 - **Audit trail**: User/group structure enables access tracking
 - **Scalability**: New backup consumers can be added to the `backups` group
@@ -304,6 +310,7 @@ spec:
 > | `S3_FORCE_PATH_STYLE` | `USE_PATH_STYLE` | **Inverted logic!** |
 >
 > **Path-Style URL Bug:** The `USE_PATH_STYLE` environment variable has **inverted logic** in talos-backup v0.1.0-beta.2:
+>
 > - `USE_PATH_STYLE="false"` → **Enables** path-style URLs (what you want for RustFS/MinIO)
 > - `USE_PATH_STYLE="true"` → **Disables** path-style URLs (uses virtual-hosted style)
 >
@@ -470,22 +477,26 @@ spec:
 ### Restore Procedure
 
 1. **List available backups:**
+
    ```bash
    mc ls rustfs/etcd-backups/matherlynet/etcd-backups/
    ```
 
 2. **Download backup:**
+
    ```bash
    mc cp rustfs/etcd-backups/matherlynet/etcd-backups/latest.tar.age ./
    ```
 
 3. **Decrypt backup:**
+
    ```bash
    age -d -i age.key latest.tar.age > latest.tar
    tar -xvf latest.tar
    ```
 
 4. **Restore to Talos:**
+
    ```bash
    talosctl -n <control-plane-ip> etcd restore latest.snapshot
    ```
@@ -587,12 +598,14 @@ kubectl -n kube-system get secret talos-backup-s3-credentials -o jsonpath='{.dat
 ## References
 
 ### External Documentation
+
 - [talos-backup GitHub](https://github.com/siderolabs/talos-backup)
 - [RustFS Documentation](https://docs.rustfs.com/)
 - [RustFS IAM Access Tokens](https://docs.rustfs.com/administration/iam/access-token.html)
 - [Talos etcd Disaster Recovery](https://www.talos.dev/v1.12/advanced/disaster-recovery/)
 
 ### Project Documentation
+
 - [GitOps Components Implementation](./gitops-components-implementation.md#12-talos-backup)
 - [RustFS Research](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
 

@@ -88,6 +88,7 @@ See: `docs/guides/observability-stack-implementation.md`
 | `loki_s3_secret_key` | Loki S3 secret key (SOPS) | - |
 
 **Notes:**
+
 - RustFS does NOT support `mc admin` commands
 - Loki access keys must be created via RustFS Console UI (port 9001)
 - Currently alpha software (v1.0.0-alpha.78)
@@ -139,6 +140,7 @@ All CNPG clusters use **declarative role management** via `spec.managed.roles` f
 **Implemented clusters:** Obot, LiteLLM, Langfuse, Keycloak
 
 **Complete Procedure:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for:
+
 - Prerequisites and architecture
 - Step-by-step rotation workflow
 - Troubleshooting authentication failures
@@ -225,12 +227,14 @@ Enables password reset, email verification, and admin notifications. All variabl
 | `keycloak_smtp_password` | SMTP password (SOPS) | required if auth=true |
 
 **Configuration Flow:**
+
 1. Set `keycloak_smtp_host` to enable email functionality
 2. Configure `keycloak_smtp_auth: true` if your SMTP server requires authentication
 3. Add `keycloak_smtp_user` and `keycloak_smtp_password` to cluster.yaml (SOPS-encrypted)
 4. Run `task configure -y` to generate templates and encrypt secrets
 
 **Common Configurations:**
+
 - **Gmail**: `smtp.gmail.com:587` with STARTTLS and authentication
 - **SendGrid**: `smtp.sendgrid.net:587` with STARTTLS and authentication
 - **AWS SES**: `email-smtp.region.amazonaws.com:587` with STARTTLS and authentication
@@ -255,6 +259,7 @@ See: `docs/research/keycloak-configuration-as-code-gitops-jan-2026.md`
 **Purpose:** Compliance and storage management by automatically cleaning up old authentication events.
 
 **Example:**
+
 ```yaml
 keycloak_events_retention_days: 7  # Retain events for 7 days
 ```
@@ -294,6 +299,7 @@ See: `docs/research/keycloak-social-identity-providers-integration-jan-2026.md`
 **Purpose:** Defines RBAC structure for user access control across all OIDC-protected applications.
 
 **keycloak_realm_roles** - Individual permissions:
+
 ```yaml
 keycloak_realm_roles:
   - name: "admin"
@@ -303,6 +309,7 @@ keycloak_realm_roles:
 ```
 
 **keycloak_realm_groups** - Organizational structure with role inheritance:
+
 ```yaml
 keycloak_realm_groups:
   - name: "admins"
@@ -339,17 +346,20 @@ See: `docs/guides/keycloak-security-hardening-jan-2026.md`
 **Purpose:** Enables user authentication to Kubernetes API Server via Keycloak OIDC tokens. Creates dedicated "kubernetes" client in Keycloak for token validation.
 
 **Used by:**
+
 - Headlamp (web UI)
 - kubectl with oidc-login plugin (CLI)
 - kubelogin (alternative CLI)
 - Future Kubernetes tools requiring OIDC authentication
 
 **Configuration:**
+
 - Configures kube-apiserver with `--oidc-*` flags via Talos patches
 - Updates Headlamp to use "kubernetes" client instead of separate "headlamp" client
 - Creates Keycloak client with proper protocol mappers (groups, email, roles)
 
 **RBAC Setup Required:** After enabling, create ClusterRoleBinding for admin group:
+
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -366,6 +376,7 @@ subjects:
 ```
 
 See:
+
 - `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md` (implementation guide)
 - `docs/guides/kubectl-oidc-login-setup.md` (CLI setup)
 
@@ -479,6 +490,7 @@ See: `docs/research/dragonfly-redis-alternative-integration-jan-2026.md`
 | `dragonfly_langfuse_password` | Langfuse cache password (SOPS) |
 
 **Complete Configuration:** See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for:
+
 - ACL secret format and syntax
 - Key namespace isolation patterns
 - Testing and troubleshooting procedures
@@ -695,6 +707,7 @@ See: `docs/research/obot-keycloak-oidc-integration-jan-2026.md`
 Configure via Obot UI: Admin Settings → Audit Logs → Export Audit Logs
 
 **RustFS IAM Setup:** See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for Console UI procedure:
+
 - Bucket: `obot-audit-logs` (auto-created)
 - Policy: `obot-audit-storage` scoped to bucket
 - Service account user with SOPS-encrypted credentials

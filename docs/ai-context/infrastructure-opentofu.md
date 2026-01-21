@@ -88,6 +88,7 @@ infrastructure/                           # GENERATED directory
 ## Template Generation
 
 The `terraform.tfvars` file is **auto-generated** by makejinja from:
+
 - `cluster.yaml` - Proxmox connection settings, VM defaults, network configuration
 - `nodes.yaml` - Per-node specifications (cores, memory, disk, startup order)
 
@@ -105,6 +106,7 @@ When both are present, `task configure` generates `infrastructure/tofu/terraform
 ### Template Variables
 
 **From cluster.yaml:**
+
 - `proxmox_api_url`, `proxmox_node` - Required for enabling
 - `proxmox_iso_storage` (default: "local")
 - `proxmox_disk_storage` (default: "local-lvm")
@@ -112,6 +114,7 @@ When both are present, `task configure` generates `infrastructure/tofu/terraform
 - `proxmox_vm_advanced` - Talos-optimized VM settings
 
 **From nodes.yaml (per-node overrides):**
+
 - `vm_cores`, `vm_sockets`, `vm_memory`, `vm_disk_size`
 - `vm_startup_order`, `vm_startup_delay`
 
@@ -120,6 +123,7 @@ When both are present, `task configure` generates `infrastructure/tofu/terraform
 Defined in `templates/scripts/plugin.py` with **role-based defaults**:
 
 **Global Defaults** (fallback when role-specific defaults not set):
+
 ```python
 PROXMOX_VM_DEFAULTS = {
     "cores": 4, "sockets": 1, "memory": 8192, "disk_size": 128
@@ -127,6 +131,7 @@ PROXMOX_VM_DEFAULTS = {
 ```
 
 **Controller Defaults** (optimized for etcd and control plane):
+
 ```python
 PROXMOX_VM_CONTROLLER_DEFAULTS = {
     "cores": 4,
@@ -137,6 +142,7 @@ PROXMOX_VM_CONTROLLER_DEFAULTS = {
 ```
 
 **Worker Defaults** (optimized for running workloads):
+
 ```python
 PROXMOX_VM_WORKER_DEFAULTS = {
     "cores": 8,
@@ -147,6 +153,7 @@ PROXMOX_VM_WORKER_DEFAULTS = {
 ```
 
 **Advanced Settings** (applied to all VMs):
+
 ```python
 PROXMOX_VM_ADVANCED = {
     "bios": "ovmf",
@@ -168,6 +175,7 @@ PROXMOX_VM_ADVANCED = {
 ```
 
 **Merge Priority:**
+
 1. Per-node overrides from `nodes.yaml` (highest)
 2. Role-based defaults (`proxmox_vm_controller_defaults` or `proxmox_vm_worker_defaults`)
 3. Global defaults (`proxmox_vm_defaults`)
@@ -196,6 +204,7 @@ terraform {
 **Note:** The URL is templated from `cloudflare_domain` in `cluster.yaml`. Example: `https://tfstate.example.com/states/proxmox`
 
 Authentication is provided via environment variables:
+
 - `TF_HTTP_USERNAME` - Basic auth username
 - `TF_HTTP_PASSWORD` - Basic auth password
 
@@ -374,6 +383,7 @@ The Taskfile sets these automatically for all `task infra:*` commands.
 ### Feature Requirements
 
 OpenTofu 1.11+ is required for:
+
 - Enhanced S3 backend compatibility
 - Provider-defined functions
 - Improved state encryption options
@@ -486,6 +496,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 ### Integration with Talos
 
 The infrastructure layer:
+
 1. Downloads correct ISO from Image Factory (standard or secureboot variant)
 2. Creates VMs with UEFI/OVMF and proper SecureBoot settings
 3. Configures networking (MAC addresses, VLAN, MTU)
@@ -545,6 +556,7 @@ task infra:plan -- -detailed-exitcode
 ### Logs
 
 The tfstate-worker can be monitored in Cloudflare Dashboard:
+
 - Workers & Pages → tfstate-worker → Logs
 
 ## External Dependencies
@@ -554,6 +566,7 @@ The tfstate-worker can be monitored in Cloudflare Dashboard:
 Repository: `github.com/MatherlyNet/matherlynet-tfstate`
 
 Deployed to Cloudflare Workers with:
+
 - R2 bucket binding
 - KV namespace for locks
 - Basic auth secrets
@@ -561,6 +574,7 @@ Deployed to Cloudflare Workers with:
 ### R2 Bucket
 
 Bucket: `matherlynet-tfstate`
+
 - Free tier: 10GB storage, 1M Class A, 10M Class B ops/month
 - Unlimited egress
 - No versioning (handled by worker if needed)
@@ -575,8 +589,8 @@ Bucket: `matherlynet-tfstate`
 
 ---
 
-**Last Updated:** January 13, 2026  
-**OpenTofu Version:** v1.11.2  
-**Proxmox Provider:** bpg/proxmox >= 0.78.0  
-**State Backend:** HTTP (Cloudflare R2 via tfstate-worker)  
+**Last Updated:** January 13, 2026
+**OpenTofu Version:** v1.11.2
+**Proxmox Provider:** bpg/proxmox >= 0.78.0
+**State Backend:** HTTP (Cloudflare R2 via tfstate-worker)
 **Repository:** `github.com/MatherlyNet/matherlynet-tfstate`

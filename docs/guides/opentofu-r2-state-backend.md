@@ -149,6 +149,7 @@ npx wrangler r2 bucket list
 ```
 
 **Expected Output:**
+
 ```
 Creating bucket 'matherlynet-tfstate'...
 Created bucket 'matherlynet-tfstate'.
@@ -173,6 +174,7 @@ Created bucket 'matherlynet-tfstate'.
 > **Architecture Note:** All infrastructure secrets are now configured in `cluster.yaml` (gitignored), following the same pattern as other secrets in this project. The `task configure` command generates the encrypted `infrastructure/secrets.sops.yaml` automatically.
 
 **Prerequisites:**
+
 1. Ensure `age.key` exists (created by `task init`)
 
 ```bash
@@ -274,6 +276,7 @@ npx wrangler deploy
 ```
 
 **Expected Output:**
+
 ```
 Uploaded tfstate-worker (1.23 sec)
 Published tfstate-worker (0.45 sec)
@@ -438,6 +441,7 @@ tofu init
 ```
 
 **Expected Output:**
+
 ```
 Initializing the backend...
 
@@ -452,16 +456,19 @@ Terraform has been successfully initialized!
 Open two terminals and try to run `tofu plan` simultaneously:
 
 **Terminal 1:**
+
 ```bash
 tofu plan  # This should acquire lock
 ```
 
 **Terminal 2:**
+
 ```bash
 tofu plan  # This should wait or show lock error
 ```
 
 **Expected behavior:** Second command waits for lock or shows:
+
 ```
 Error: Error acquiring the state lock
 Lock Info:
@@ -584,6 +591,7 @@ jobs:
 **Cause:** Previous operation crashed without releasing lock
 
 **Solution:**
+
 ```bash
 # Force unlock (use with caution)
 tofu force-unlock <LOCK_ID>
@@ -597,6 +605,7 @@ npx wrangler r2 object delete matherlynet-tfstate/proxmox/terraform.tfstate.lock
 **Cause:** Incorrect credentials
 
 **Solution:**
+
 ```bash
 # Verify credentials are set
 echo $TF_HTTP_USERNAME
@@ -612,6 +621,7 @@ curl -u $TF_HTTP_USERNAME:$TF_HTTP_PASSWORD \
 **Cause:** Known R2 compatibility issue with checksums
 
 **Solution:**
+
 ```bash
 # Add to environment before running tofu commands
 export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
@@ -623,6 +633,7 @@ export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
 **Cause:** Backend URL or settings modified
 
 **Solution:**
+
 ```bash
 # Reinitialize with reconfigure
 tofu init -reconfigure
@@ -634,11 +645,13 @@ tofu init -migrate-state
 #### 5. Worker not responding
 
 **Check Worker logs:**
+
 ```bash
 npx wrangler tail tfstate-worker
 ```
 
 **Verify deployment:**
+
 ```bash
 npx wrangler deployments list
 ```
@@ -648,6 +661,7 @@ npx wrangler deployments list
 > **Critical:** R2 has NO object versioning. Implement backups!
 
 **Manual Backup Strategy:**
+
 ```bash
 # Download state file locally (bucket/object format)
 npx wrangler r2 object get matherlynet-tfstate/proxmox/terraform.tfstate \

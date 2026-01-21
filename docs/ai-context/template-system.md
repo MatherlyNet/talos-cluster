@@ -35,6 +35,7 @@ variable_end = "}#"
 ### Why Custom Delimiters?
 
 Standard Jinja delimiters (`{{ }}`, `{% %}`) conflict with:
+
 - YAML multiline strings
 - Helm template syntax
 - Go templates
@@ -149,6 +150,7 @@ Located at `templates/scripts/plugin.py`:
 | `nthhost` | `cidr \| nthhost(n)` | Get nth IP in CIDR |
 
 Examples:
+
 ```yaml
 # Get first IP in network
 gateway: "#{ node_cidr | nthhost(1) }#"  # 192.168.1.1
@@ -171,6 +173,7 @@ vip: "#{ node_cidr | nthhost(10) }#"  # 192.168.1.10
 | `infrastructure_enabled()` | Check if Proxmox infrastructure is configured |
 
 Examples:
+
 ```yaml
 # SOPS configuration
 age: "#{ age_key('public') }#"
@@ -431,6 +434,7 @@ task configure
 ### Template Not Rendering
 
 Check:
+
 1. File has `.j2` extension
 2. File is in `templates/config/` tree
 3. `makejinja.toml` includes the path
@@ -450,11 +454,13 @@ task configure
 ### Adding a New Template Variable
 
 1. Add to `cluster.yaml`:
+
    ```yaml
    my_new_var: "value"
    ```
 
 2. Use in templates:
+
    ```yaml
    config: "#{ my_new_var }#"
    ```
@@ -464,6 +470,7 @@ task configure
 4. (Optional) Add validation in CUE schema
 
 5. Render:
+
    ```bash
    task configure
    ```
@@ -487,8 +494,8 @@ task configure
 
 ---
 
-**Last Updated:** January 13, 2026  
-**makejinja Version:** Configured in `.mise.toml`  
-**Template Delimiters:** `#%`/`%#` (blocks), `#{`/`}#` (variables), `#|`/`#|` (comments)  
-**Data Sources:** `cluster.yaml`, `nodes.yaml`  
+**Last Updated:** January 13, 2026
+**makejinja Version:** Configured in `.mise.toml`
+**Template Delimiters:** `#%`/`%#` (blocks), `#{`/`}#` (variables), `#|`/`#|` (comments)
+**Data Sources:** `cluster.yaml`, `nodes.yaml`
 **Plugin:** `templates/scripts/plugin.py` (2 filters, 8 functions, 60+ computed variables)

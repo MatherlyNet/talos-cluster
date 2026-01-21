@@ -49,6 +49,7 @@ Before implementing any enhancements:
 ### Description
 
 Add a comment to the PR after the workflow completes with a summary of what was regenerated, including:
+
 - List of modified files
 - Workflow run link
 - Status (success/no changes)
@@ -191,6 +192,7 @@ Replace the existing "Workflow summary" step (lines 237-263) with this enhanced 
 ### Testing Procedure
 
 1. **Manual Trigger Test:**
+
    ```bash
    # Trigger workflow on test PR
    gh workflow run "Renovate Manifest Regeneration" -f pr_number=123
@@ -239,6 +241,7 @@ git push
 ### Monitoring
 
 After activation, verify:
+
 - [ ] Comments appear on all Renovate PRs with template changes
 - [ ] Comment format is correct and readable
 - [ ] No duplicate comments on workflow re-runs
@@ -264,6 +267,7 @@ Run `task infra:plan` after regenerating manifests and include the OpenTofu plan
 **Risk Level:** 🟡 Medium
 
 **Risks:**
+
 - Longer workflow runtime (+2-5 minutes)
 - Requires infrastructure/ directory validation
 - Plan output may be very large (comment size limits)
@@ -271,6 +275,7 @@ Run `task infra:plan` after regenerating manifests and include the OpenTofu plan
 - OpenTofu state access required
 
 **Mitigations:**
+
 - Add timeout limits
 - Truncate large plan outputs
 - Sanitize sensitive data before posting
@@ -464,6 +469,7 @@ terraform {
 ### Testing Procedure
 
 1. **Local Plan Test:**
+
    ```bash
    # Verify plan works locally first
    cd infrastructure
@@ -473,6 +479,7 @@ terraform {
    ```
 
 2. **Workflow Test with Plan:**
+
    ```bash
    # Trigger on test PR with infrastructure changes
    gh workflow run "Renovate Manifest Regeneration" -f pr_number=123
@@ -495,6 +502,7 @@ terraform {
 ### Activation
 
 **Prerequisites:**
+
 - Enhancement 1 (PR Comment Summary) must be implemented first
 - Infrastructure backend access configured in GitHub Actions
 - Secrets configured: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (if using R2)
@@ -526,6 +534,7 @@ git push
 ### Monitoring
 
 After activation:
+
 - [ ] Plan generation succeeds on all infrastructure changes
 - [ ] Plan output appears correctly formatted in PR comments
 - [ ] No secrets or sensitive data exposed in plans
@@ -551,11 +560,13 @@ Send notifications to Slack or Discord when the workflow fails, allowing the tea
 **Risk Level:** 🟢 Low
 
 **Risks:**
+
 - Notification noise if workflow fails frequently
 - Webhook URL is a secret (must be protected)
 - External dependency (Slack/Discord must be available)
 
 **Mitigations:**
+
 - Only notify on failure (not success)
 - Store webhook URL as GitHub secret
 - Make notification step optional (continue-on-error)
@@ -566,12 +577,14 @@ Send notifications to Slack or Discord when the workflow fails, allowing the tea
 #### Step 1: Create Webhook URL
 
 **For Slack:**
+
 1. Go to https://api.slack.com/messaging/webhooks
 2. Create new Incoming Webhook for your workspace
 3. Choose channel (e.g., `#infrastructure-alerts`)
 4. Copy webhook URL (format: `https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXX`)
 
 **For Discord:**
+
 1. Go to Server Settings → Integrations → Webhooks
 2. Create New Webhook
 3. Choose channel (e.g., `#infrastructure-alerts`)
@@ -757,6 +770,7 @@ Add this step at the end of the `regenerate-manifests` job (after all other step
 ### Testing Procedure
 
 1. **Test Webhook URL:**
+
    ```bash
    # Test Slack webhook
    curl -X POST "$SLACK_WEBHOOK_URL" \
@@ -770,6 +784,7 @@ Add this step at the end of the `regenerate-manifests` job (after all other step
    ```
 
 2. **Trigger Test Failure:**
+
    ```bash
    # Temporarily break workflow to test notification
    # Option A: Modify task configure to fail
@@ -794,6 +809,7 @@ Add this step at the end of the `regenerate-manifests` job (after all other step
 ### Activation
 
 **Prerequisites:**
+
 - Slack or Discord webhook URL created
 - Webhook URL added to GitHub secrets
 - Test notification successful
@@ -823,6 +839,7 @@ if: always()
 **Customize Message Content:**
 
 Edit the JSON payload in the notification step to include:
+
 - Additional fields (commit SHA, author, etc.)
 - Different emoji/styling
 - @mentions for specific team members
@@ -841,6 +858,7 @@ git push
 ### Monitoring
 
 After activation:
+
 - [ ] Notifications received for all workflow failures
 - [ ] No false positives or notification spam
 - [ ] Links in notifications are correct and accessible
@@ -866,12 +884,14 @@ Create a metrics dashboard that tracks workflow performance over time, including
 **Risk Level:** 🟡 Medium
 
 **Risks:**
+
 - Requires additional workflow complexity
 - Data storage considerations
 - Dashboard maintenance overhead
 - May not provide value if workflow is stable
 
 **Mitigations:**
+
 - Use GitHub Actions built-in summary feature (no external storage)
 - Keep metrics simple and actionable
 - Make dashboard generation optional
@@ -1108,6 +1128,7 @@ jobs:
 ### Testing Procedure
 
 1. **Test Metrics Collection:**
+
    ```bash
    # Run workflow and check summary
    gh workflow run "Renovate Manifest Regeneration" -f pr_number=123
@@ -1118,6 +1139,7 @@ jobs:
    ```
 
 2. **Test Monthly Report (Manual Trigger):**
+
    ```bash
    # Trigger monthly report manually
    gh workflow run "Renovate Workflow Monthly Metrics Report"
@@ -1138,6 +1160,7 @@ jobs:
 ### Activation
 
 **Prerequisites:**
+
 - Base workflow running for at least 2 weeks (to have meaningful data)
 - Team agreement on metrics to track
 
@@ -1155,6 +1178,7 @@ git push
 ### Customization Options
 
 **Additional Metrics to Track:**
+
 - Number of files changed
 - Size of plan output
 - Template rendering time
@@ -1162,6 +1186,7 @@ git push
 - Most frequently regenerated apps
 
 **Alternative Reporting:**
+
 - Send metrics to external service (Datadog, Grafana)
 - Store in GitHub repo (metrics.json file)
 - Create GitHub Pages dashboard
@@ -1180,6 +1205,7 @@ gh workflow disable "Renovate Workflow Monthly Metrics Report"
 ### Monitoring
 
 After activation:
+
 - [ ] Metrics appear in workflow summaries
 - [ ] Monthly reports generated successfully
 - [ ] Metrics provide actionable insights
@@ -1190,6 +1216,7 @@ After activation:
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Weeks 1-2)
+
 **Goal:** Test and enable base workflow
 
 - [ ] Test base workflow via manual trigger (3-5 test PRs)
@@ -1201,6 +1228,7 @@ After activation:
 **Success Criteria:** 95%+ success rate, <5min average runtime, positive team feedback
 
 ### Phase 2: Visibility (Weeks 3-4)
+
 **Goal:** Improve PR review experience
 
 - [ ] Implement Enhancement 1 (PR Comment Summary)
@@ -1211,6 +1239,7 @@ After activation:
 **Success Criteria:** Reviewers find comments helpful, no formatting issues
 
 ### Phase 3: Infrastructure Review (Weeks 5-6)
+
 **Goal:** Enable in-PR infrastructure change review
 
 - [ ] Configure infrastructure backend access in GitHub Actions
@@ -1221,6 +1250,7 @@ After activation:
 **Success Criteria:** Reviewers can approve infrastructure changes from PR without local setup
 
 ### Phase 4: Alerting (Weeks 7-8)
+
 **Goal:** Proactive failure detection
 
 - [ ] Choose notification platform (Slack or Discord)
@@ -1232,6 +1262,7 @@ After activation:
 **Success Criteria:** Team notified within 1 minute of workflow failure
 
 ### Phase 5: Metrics (Weeks 9-10)
+
 **Goal:** Data-driven optimization
 
 - [ ] Implement Enhancement 4 (Metrics Dashboard)
@@ -1275,6 +1306,7 @@ After implementation, is the enhancement providing value?
 ### When to Pause Enhancements
 
 Stop adding enhancements if:
+
 - Base workflow success rate drops below 90%
 - Workflow runtime exceeds 10 minutes
 - Team reports confusion or friction with current features
@@ -1327,11 +1359,13 @@ gh run view --log
 ### Getting Help
 
 **Workflow Issues:**
+
 - Check workflow logs: `gh run view <run-id> --log`
 - Review troubleshooting guide in base workflow documentation
 - Check GitHub Actions status page
 
 **Enhancement Issues:**
+
 - Refer to specific enhancement troubleshooting section in this document
 - Test enhancement in isolation on a feature branch
 - Review GitHub Actions documentation for specific action issues
@@ -1343,6 +1377,7 @@ gh run view --log
 ### Version 1.0.0 (January 14, 2026)
 
 **Created:**
+
 - Enhancement 1: PR Comment Summary (Low risk, High priority)
 - Enhancement 2: Tofu Plan Output (Medium risk, High priority)
 - Enhancement 3: Slack/Discord Notifications (Low risk, Medium priority)

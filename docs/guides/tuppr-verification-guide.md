@@ -362,11 +362,13 @@ curl http://localhost:8080/metrics | grep tuppr
 ## References
 
 ### External Documentation
+
 - [tuppr GitHub Repository](https://github.com/home-operations/tuppr)
 - [Talos kubernetesTalosAPIAccess](https://www.talos.dev/v1.12/kubernetes-guides/configuration/talos-api-access/)
 - [CEL Expressions](https://kubernetes.io/docs/reference/using-api/cel/)
 
 ### Project Documentation
+
 - [GitOps Components Implementation](./gitops-components-implementation.md#11-talos-upgrade-controller-tuppr)
 - [Talos Operations](../ai-context/talos-operations.md)
 

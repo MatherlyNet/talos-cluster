@@ -11,6 +11,7 @@
 ### What We Validated
 
 Comprehensive validation of two OIDC implementation guides:
+
 1. `docs/guides/kubectl-oidc-login-setup.md` - kubectl OIDC authentication
 2. `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md` - API Server OIDC configuration
 
@@ -19,10 +20,12 @@ Comprehensive validation of two OIDC implementation guides:
 ### What We Implemented
 
 **New OIDC RBAC Templates** for Kubernetes API Server authentication:
+
 - `templates/config/kubernetes/apps/kube-system/headlamp/app/oidc-rbac.yaml.j2`
 - Updated `templates/config/kubernetes/apps/kube-system/headlamp/app/kustomization.yaml.j2`
 
 Maps Keycloak realm roles to Kubernetes RBAC:
+
 - `admin` → `cluster-admin` (full access)
 - `operator` → `edit` (manage resources)
 - `developer` → `edit` (development workflows)
@@ -32,6 +35,7 @@ Maps Keycloak realm roles to Kubernetes RBAC:
 ### What We Updated
 
 **Skill Documentation**:
+
 - Enhanced `.claude/skills/oidc-integration/SKILL.md` with "Pattern 3: Kubernetes API Server OIDC"
 - Complete implementation guide with configuration, deployment, and testing procedures
 - Comparison table differentiating Gateway/Native/API Server OIDC patterns
@@ -124,6 +128,7 @@ kubectl get clusterrolebindings | grep oidc
 ### Configuration Validation ✅
 
 **API Server OIDC**:
+
 - ✅ Issuer URL: `https://sso.matherly.net/realms/matherlynet`
 - ✅ Client ID: `kubernetes`
 - ✅ Username claim: `email` with `oidc:` prefix
@@ -131,6 +136,7 @@ kubectl get clusterrolebindings | grep oidc
 - ✅ Signing algorithm: `RS256`
 
 **Keycloak Client**:
+
 - ✅ Client ID: `kubernetes`
 - ✅ Client secret: Matches cluster.yaml (verified via SOPS)
 - ✅ Redirect URIs: localhost:8000, localhost:18000 (kubectl oidc-login)
@@ -138,11 +144,13 @@ kubectl get clusterrolebindings | grep oidc
 - ✅ Protocol mappers: groups, email, roles
 
 **Headlamp Configuration**:
+
 - ✅ Template: Uses `kubernetes_oidc_client_id` variable
 - ✅ Template: Uses `kubernetes_oidc_client_secret` variable
 - ⚠️ Deployed secret: Out of sync (expected - will update after reconciliation)
 
 **RBAC Templates**:
+
 - ✅ Conditional logic: Double-gate (`headlamp_enabled` AND `kubernetes_oidc_enabled`)
 - ✅ Template delimiters: Correct (`#{ }#`, `#% %#`, `#| #|`)
 - ✅ Group prefixes: Uses configurable `kubernetes_oidc_groups_prefix`
@@ -152,12 +160,14 @@ kubectl get clusterrolebindings | grep oidc
 ### Pattern Compliance ✅
 
 **Followed established patterns**:
+
 - ✅ scaffold-flux-app skill - Directory structure, file organization
 - ✅ style_and_conventions memory - Delimiters, conditionals, YAML style
 - ✅ Existing RBAC pattern - Label structure, multi-document YAML
 - ✅ Co-location principle - RBAC with Headlamp (primary consumer)
 
 **Skill documentation alignment**:
+
 - ✅ oidc-integration skill enhanced with Pattern 3
 - ✅ Complete implementation guide added
 - ✅ References to validation documentation
@@ -301,6 +311,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
 | **API Server OIDC** | K8s API authentication | API Server validates | Kubernetes RBAC | kubectl, Headlamp, all K8s tools |
 
 **Implementation**: All three patterns are **independent and complementary**
+
 - Gateway OIDC: Hubble UI (via SecurityPolicy)
 - Native SSO: Grafana, LiteLLM, Langfuse, Obot (app config)
 - API Server OIDC: Headlamp, kubectl, K8s API access (API Server flags + RBAC)
@@ -367,17 +378,20 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
 ### Immediate (User Actions Required)
 
 1. **Run task configure**:
+
    ```bash
    task configure -y
    ```
 
 2. **Verify generated files**:
+
    ```bash
    ls -la kubernetes/apps/kube-system/headlamp/app/oidc-rbac.yaml
    grep oidc-rbac kubernetes/apps/kube-system/headlamp/app/kustomization.yaml
    ```
 
 3. **Git commit and push**:
+
    ```bash
    git add templates/ .claude/ docs/
    git commit -m "feat(rbac): add OIDC ClusterRoleBindings for K8s API Server auth"
@@ -385,6 +399,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
    ```
 
 4. **Flux reconciliation**:
+
    ```bash
    flux reconcile kustomization headlamp -n kube-system
    kubectl get clusterrolebindings | grep oidc
@@ -399,6 +414,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
    - Update status line
 
 2. **Move kubectl guide** to completed:
+
    ```bash
    mkdir -p docs/guides/completed
    mv docs/guides/kubectl-oidc-login-setup.md docs/guides/completed/
@@ -439,6 +455,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
 The OIDC implementation is **complete and ready for deployment**. All templates are created following established patterns, skill documentation is enhanced, and comprehensive validation/reflection documentation is provided.
 
 The implementation:
+
 - ✅ Follows all project conventions and patterns
 - ✅ Uses configurable variables with sensible defaults
 - ✅ Co-locates RBAC with its primary consumer (Headlamp)

@@ -46,6 +46,7 @@ task configure
 If you configured Proxmox credentials in cluster.yaml, `task configure` already initialized OpenTofu.
 
 **Prerequisites - Proxmox API Permissions:**
+
 ```bash
 # On Proxmox server - create role with required privileges
 pveum role add TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,SDN.Use,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.GuestAgent.Audit,VM.Migrate,VM.PowerMgmt"
@@ -55,6 +56,7 @@ pveum aclmod / -token 'root@pam!k8s-gitops' -role TerraformProv
 ```
 
 This automatically:
+
 - Downloads Talos ISO from Image Factory using your schematic IDs
 - Uploads ISO to Proxmox storage
 - Creates VMs with configured resources (cores, memory, disk)
@@ -73,6 +75,7 @@ task infra:verify-nodes
 ```
 
 **First-time setup (new state backend):**
+
 ```bash
 # Use -lock=false for initial plan/apply when no state exists
 task infra:plan -- -lock=false
@@ -81,6 +84,7 @@ task infra:apply -- -lock=false
 ```
 
 **Troubleshooting:**
+
 ```bash
 # If backend URL changed after initial setup
 task infra:init -- -reconfigure
@@ -110,6 +114,7 @@ kubectl get pods -A --watch
 Enable BGP peering between Cilium and your UniFi gateway for multi-VLAN routing:
 
 **1. Add to `cluster.yaml`:**
+
 ```yaml
 cilium_bgp_router_addr: "192.168.23.254"  # Gateway IP (VLAN gateway, NOT UDM management IP)
 cilium_bgp_router_asn: "64513"            # Gateway ASN (private: 64512-65534)
@@ -117,11 +122,13 @@ cilium_bgp_node_asn: "64514"              # Kubernetes ASN (must differ from gat
 ```
 
 **2. Regenerate templates:**
+
 ```bash
 task configure
 ```
 
 **3. Upload UniFi BGP configuration:**
+
 ```bash
 # Generated file: unifi/bgp.conf (gitignored - contains password)
 # Sample structure: unifi/bgp.conf.sample
@@ -129,6 +136,7 @@ task configure
 ```
 
 **4. Deploy and verify:**
+
 ```bash
 git add -A && git commit -m "feat: enable BGP peering" && git push
 task reconcile

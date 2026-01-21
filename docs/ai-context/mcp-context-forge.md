@@ -15,7 +15,7 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                       ai-system namespace                        │
+│                       ai-system namespace                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌──────────────────────┐  ┌─────────────────────────────────┐  │
 │  │  MCP Context Forge   │  │    CloudNativePG PostgreSQL     │  │
@@ -23,11 +23,11 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
 │  │  mcp-context-forge)  │  │       Port 5432                 │  │
 │  │     Port 4444        │  └─────────────────────────────────┘  │
 │  └──────────┬───────────┘                                       │
-│             │                                                    │
+│             │                                                   │
 │             │     ┌────────────────────────────────────────┐    │
 │             └────►│         Shared Infrastructure          │    │
 │                   │  cache/dragonfly, identity/keycloak    │    │
-│                   │       monitoring/tempo                  │    │
+│                   │       monitoring/tempo                 │    │
 │                   └────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
                                │
@@ -35,7 +35,7 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      network namespace                           │
+│                      network namespace                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  HTTPRoute: mcp.${cloudflare_domain} → mcp-context-forge:4444   │
 │  ReferenceGrant: Allow network → ai-system service access       │
@@ -50,7 +50,7 @@ MCP Context Forge is IBM's centralized MCP (Model Context Protocol) server regis
 ```yaml
 mcp_context_forge_enabled: true           # Enable MCP Context Forge deployment
 mcp_context_forge_subdomain: "mcp"        # Creates mcp.${cloudflare_domain}
-mcp_context_forge_version: "latest"        # Image tag (uses commit SHAs, not semver)
+mcp_context_forge_version: "latest"       # Image tag (uses commit SHAs, not semver)
 mcp_context_forge_replicas: 1             # Pod replicas
 ```
 

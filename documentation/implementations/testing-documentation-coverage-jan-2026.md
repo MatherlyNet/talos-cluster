@@ -45,6 +45,7 @@
 #### GitHub Actions Workflows
 
 **flux-local.yaml** (PR Testing)
+
 ```yaml
 Triggers: Pull requests to main (kubernetes/** changes only)
 Jobs:
@@ -65,6 +66,7 @@ Weaknesses:
 ```
 
 **e2e.yaml** (End-to-End Testing)
+
 ```yaml
 Triggers:
   - Manual workflow_dispatch
@@ -100,6 +102,7 @@ Weaknesses:
 **Location:** `.taskfiles/template/resources/`
 
 **cluster.schema.cue** - Validates 60+ configuration variables:
+
 - Network configuration (CIDR, IPs, DNS, NTP)
 - Cilium BGP (9 variables with constraints)
 - UniFi DNS integration (4 variables)
@@ -113,6 +116,7 @@ Weaknesses:
 - External Secrets (3 variables)
 
 **Validation Rules:**
+
 - IP uniqueness constraints (API, gateways)
 - CIDR non-overlap validation
 - Regex patterns for tokens, URLs, versions
@@ -120,17 +124,20 @@ Weaknesses:
 - Enum validation for modes, providers
 
 **nodes.schema.cue** - Validates node definitions:
+
 - Name, address, controller flag
 - Disk, MAC address, schematic ID
 - VM-specific overrides
 
 **Strengths:**
+
 - Comprehensive type safety
 - Prevents configuration errors at build time
 - Enforces IP uniqueness and CIDR isolation
 - Well-documented with inline comments
 
 **Weaknesses:**
+
 - Schema validation only runs during `task configure`
 - No dedicated CI job for schema-only testing
 - No validation of cross-field dependencies (e.g., BGP requires all 3 fields)
@@ -204,6 +211,7 @@ Weaknesses:
 #### Recommended Test Additions
 
 **High Priority:**
+
 ```yaml
 # .github/workflows/security-scan.yaml
 name: Security Scanning
@@ -220,6 +228,7 @@ jobs:
 ```
 
 **Medium Priority:**
+
 ```yaml
 # .github/workflows/lint.yaml
 name: Linting
@@ -234,6 +243,7 @@ jobs:
 ```
 
 **Low Priority:**
+
 ```yaml
 # .github/workflows/integration.yaml
 name: Integration Tests
@@ -271,16 +281,19 @@ jobs:
 ### Strengths
 
 #### 1. Concurrency Control
+
 ```yaml
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 ```
+
 - Prevents duplicate workflow runs
 - Saves CI resources
 - Reduces confusion from parallel executions
 
 #### 2. Efficiency Optimizations
+
 ```yaml
 pre-job:
   outputs:
@@ -289,29 +302,35 @@ test:
   needs: pre-job
   if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
 ```
+
 - Only runs tests when relevant files change
 - Skips unnecessary jobs with conditional execution
 
 #### 3. Security Best Practices
+
 ```yaml
 uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 ```
+
 - Pins actions to specific commit SHAs
 - Prevents supply chain attacks
 - Includes version comments for auditability
 
 #### 4. Matrix Testing
+
 ```yaml
 strategy:
   matrix:
     config-files: [public, private]
   fail-fast: false
 ```
+
 - Tests multiple scenarios in parallel
 - Continues testing even if one fails
 - Improves test coverage
 
 #### 5. PR Integration
+
 ```yaml
 - name: Add Comment
   uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc
@@ -322,6 +341,7 @@ strategy:
       ${{ steps.diff.outputs.diff }}
       ```
 ```
+
 - Adds diffs directly to PR comments
 - Improves review visibility
 - Enables inline discussion
@@ -331,6 +351,7 @@ strategy:
 #### 1. Trigger Condition Inconsistency
 
 **flux-local.yaml:**
+
 ```yaml
 on:
   pull_request:
@@ -346,6 +367,7 @@ pre-job:
 **Issue:** Template changes in `templates/` won't trigger flux-local testing, but will generate kubernetes/ files that need validation.
 
 **e2e.yaml:**
+
 ```yaml
 on:
   pull_request:
@@ -357,6 +379,7 @@ on:
 **Issue:** This seems inverted. E2E should test template rendering, which affects kubernetes/ output. Ignoring kubernetes/ means changes to generated files won't trigger validation of the generation process.
 
 **Recommendation:**
+
 ```yaml
 # flux-local.yaml
 on:
@@ -381,6 +404,7 @@ on:
 #### 2. No Security Scanning
 
 **Missing Scans:**
+
 - Container image vulnerabilities (Trivy, Grype, Snyk)
 - Kubernetes manifest security (kubesec, kube-score, polaris)
 - Infrastructure code security (tfsec, checkov, terrascan)
@@ -389,6 +413,7 @@ on:
 - SAST for scripts (shellcheck exists, but no Python/Go scanning)
 
 **Impact:**
+
 - No automated detection of CVEs in container images
 - No detection of security misconfigurations in Kubernetes
 - No detection of hardcoded secrets before they reach Git
@@ -397,12 +422,14 @@ on:
 #### 3. No Test Artifacts
 
 **Current State:**
+
 - Test results are only visible in GitHub Actions logs
 - No JUnit XML, TAP, or other structured output
 - No test result archiving
 - No trend analysis or metrics
 
 **Recommendation:**
+
 ```yaml
 - name: Run flux-local test
   id: flux-test
@@ -430,12 +457,14 @@ on:
 #### 4. Limited Error Reporting
 
 **Current State:**
+
 - Errors only visible in raw workflow logs
 - No structured error messages
 - No annotations on PRs for specific issues
 - No failure notifications beyond GitHub's default
 
 **Recommendation:**
+
 - Use problem matchers for better error surfacing
 - Add job summaries with markdown formatting
 - Create annotations for validation errors
@@ -444,6 +473,7 @@ on:
 #### 5. No OpenTofu Validation
 
 **Missing Workflows:**
+
 ```yaml
 # Recommended: .github/workflows/infra-validate.yaml
 name: Infrastructure Validation
@@ -478,11 +508,13 @@ jobs:
 #### 6. No Performance Testing
 
 **Impact:**
+
 - No baseline for cluster performance
 - No detection of performance regressions
 - No capacity planning data
 
 **Recommendation:**
+
 ```yaml
 # Future consideration: .github/workflows/performance.yaml
 # - Benchmark template rendering time
@@ -553,6 +585,7 @@ jobs:
 #### Specialized Documentation
 
 **AI Context (docs/ai-context/):**
+
 - README.md - Context overview
 - flux-gitops.md - Flux architecture
 - talos-operations.md - Talos workflows
@@ -561,6 +594,7 @@ jobs:
 - infrastructure-opentofu.md - IaC details
 
 **Implementation Guides (docs/guides/):**
+
 - bgp-unifi-cilium-implementation.md - BGP setup
 - opentofu-r2-state-backend.md - R2 backend
 - observability-stack-implementation.md - Monitoring
@@ -570,12 +604,14 @@ jobs:
 - gitops-components-implementation.md - GitOps architecture
 
 **Research Documentation (docs/research/):**
+
 - envoy-gateway-oidc-integration.md - OIDC research
 - envoy-gateway-examples-analysis.md - Gateway examples
 - k8s-at-home-patterns-research.md - Homelab patterns
 - Archive directory with implemented features
 
 **Infrastructure:**
+
 - templates/config/infrastructure/README.md - OpenTofu details
 - templates/config/infrastructure/IMPLEMENTATION.md - Implementation notes
 
@@ -627,6 +663,7 @@ jobs:
 **Gap:** docs/CLI_REFERENCE.md does not document `infra:*` tasks
 
 **Available Tasks (from `task --list`):**
+
 ```
 infra:apply               Apply OpenTofu plan
 infra:apply-auto          Apply with auto-approve
@@ -643,6 +680,7 @@ infra:validate            Validate configuration
 ```
 
 **Current CLI_REFERENCE.md sections:**
+
 - Core Tasks (init, configure, reconcile)
 - Bootstrap Tasks (bootstrap:talos, bootstrap:apps)
 - Talos Tasks (generate-config, apply-node, upgrade-node, upgrade-k8s, reset)
@@ -653,6 +691,7 @@ infra:validate            Validate configuration
 - cilium Reference
 
 **Recommendation:** Add Infrastructure Tasks section:
+
 ```markdown
 ### Infrastructure Tasks
 
@@ -675,6 +714,7 @@ infra:validate            Validate configuration
 #### 2. Application Documentation - Potential Gaps
 
 **Documented Applications (verified in APPLICATIONS.md):**
+
 - cilium, coredns, spegel, metrics-server, reloader
 - talos-ccm, talos-backup, tuppr
 - flux-operator, flux-instance
@@ -685,6 +725,7 @@ infra:validate            Validate configuration
 - echo (test app)
 
 **Applications in templates/ (32 directories found):**
+
 - All documented apps ✓
 - proxmox-csi - NOT documented
 - proxmox-ccm - NOT documented
@@ -750,6 +791,7 @@ parameters:
 ```
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n csi-proxmox get pods
 kubectl -n csi-proxmox logs -l app=proxmox-csi-controller
@@ -781,10 +823,12 @@ kubectl -n csi-proxmox logs -l app=proxmox-csi-controller
 **Recommendation:** Use separate API tokens for CSI and CCM following least-privilege principle.
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n kube-system logs ds/proxmox-cloud-controller-manager
 kubectl get nodes --show-labels | grep proxmox
 ```
+
 ```
 
 #### 3. Disaster Recovery Documentation
@@ -849,6 +893,7 @@ kubectl get nodes --show-labels | grep proxmox
    ```
 
    **Recovery:**
+
    1. Check node health: `talosctl health -n <node-ip>`
    2. If hardware failure: Replace node, re-bootstrap
    3. If software issue: `talosctl reset -n <node-ip> --graceful=false`
@@ -857,12 +902,14 @@ kubectl get nodes --show-labels | grep proxmox
 ### Scenario 2: Control Plane Quorum Loss
 
    **Detection:**
+
    ```bash
    kubectl get nodes  # Multiple control plane nodes NotReady
    talosctl etcd status  # Error: no leader
    ```
 
    **Recovery:**
+
    1. Identify healthy control plane node
    2. Check etcd members: `talosctl etcd members`
    3. Remove failed members: `talosctl etcd remove-member <id>`
@@ -871,6 +918,7 @@ kubectl get nodes --show-labels | grep proxmox
 ### Scenario 3: Complete Cluster Loss
 
    **Prerequisites:**
+
 - Latest etcd backup in S3
 - Git repository accessible
 - age.key for SOPS decryption
@@ -882,6 +930,7 @@ kubectl get nodes --show-labels | grep proxmox
    3. Restore secrets: Copy age.key to workstation
    4. Bootstrap Talos: `task bootstrap:talos`
    5. Restore etcd from backup:
+
       ```bash
       # Download backup from S3
       aws s3 cp s3://<bucket>/etcd-backup.snapshot ./
@@ -889,6 +938,7 @@ kubectl get nodes --show-labels | grep proxmox
       # Restore to control plane
       talosctl etcd snapshot restore etcd-backup.snapshot
       ```
+
    6. Bootstrap apps: `task bootstrap:apps`
    7. Verify cluster state
    8. Restore PVCs (if using VolSync)
@@ -896,12 +946,14 @@ kubectl get nodes --show-labels | grep proxmox
 ### Scenario 4: etcd Corruption
 
    **Detection:**
+
    ```bash
    talosctl etcd status  # Shows corruption error
    kubectl get pods -A   # Widespread failures
    ```
 
    **Recovery:**
+
    1. Stop API server: `talosctl service kube-apiserver stop`
    2. Download latest etcd backup from S3
    3. Restore snapshot: `talosctl etcd snapshot restore`
@@ -911,6 +963,7 @@ kubectl get nodes --show-labels | grep proxmox
 ## Backup Storage
 
 ### S3 Bucket Structure
+
    ```
    cluster-backups/
    ├── etcd/
@@ -923,6 +976,7 @@ kubectl get nodes --show-labels | grep proxmox
    ```
 
 ### Retention Policy
+
 - Daily backups: 7 days
 - Weekly backups: 4 weeks
 - Monthly backups: 3 months
@@ -930,6 +984,7 @@ kubectl get nodes --show-labels | grep proxmox
 ## Offline Backup Requirements
 
    **Critical Files to Back Up Offline:**
+
 - `age.key` - Master encryption key (store securely)
 - `github-deploy.key` - Git access key
 - `cloudflare-tunnel.json` - Tunnel credentials
@@ -937,9 +992,11 @@ kubectl get nodes --show-labels | grep proxmox
 - `nodes.yaml` - Node definitions
 
    **Storage Location:** Password manager, encrypted USB drive, or offline vault
+
    ```
 
 1. **Upgrade/Downgrade Guides**
+
    ```markdown
    # Upgrade and Migration Guide
 
@@ -971,6 +1028,7 @@ kubectl get nodes --show-labels | grep proxmox
       task talos:upgrade-node IP=<control-plane-2>
       # Continue for all nodes
       ```
+
    1. Verify cluster health: `kubectl get nodes`
 
    ## Kubernetes Version Upgrades
@@ -994,6 +1052,7 @@ kubectl get nodes --show-labels | grep proxmox
 ## Application Upgrades
 
    **HelmReleases (automatic via Renovate):**
+
 - Renovate creates PRs for Helm chart updates
 - Review diff in PR comments
 - Merge to deploy
@@ -1009,6 +1068,7 @@ kubectl get nodes --show-labels | grep proxmox
 ### Rollback Talos Upgrade
 
    **If upgrade fails:**
+
    ```bash
    # Revert to previous image
    talosctl upgrade --nodes <ip> --image ghcr.io/siderolabs/installer:v1.X.Y
@@ -1023,6 +1083,7 @@ kubectl get nodes --show-labels | grep proxmox
 ### Rollback Application
 
    **Via Git:**
+
    ```bash
    git revert <commit>
    git push
@@ -1034,10 +1095,12 @@ kubectl get nodes --show-labels | grep proxmox
 ### Migrating from k8s-gateway to UniFi DNS
 
    1. Add to cluster.yaml:
+
       ```yaml
       unifi_host: "https://192.168.1.1"
       unifi_api_key: "<api-key>"
       ```
+
    2. Run `task configure` (k8s-gateway automatically disabled)
    3. Commit and push
    4. Verify DNS records in UniFi Dashboard
@@ -1046,15 +1109,18 @@ kubectl get nodes --show-labels | grep proxmox
 ### Migrating from Talos CCM to Proxmox CCM
 
    1. Add to cluster.yaml:
+
       ```yaml
       proxmox_ccm_enabled: true
       proxmox_endpoint: "https://pve.example.com:8006"
       proxmox_ccm_token_id: "kubernetes-ccm@pve!ccm"
       proxmox_ccm_token_secret: "<secret>"
       ```
+
    2. Run `task configure` (Talos CCM automatically disabled)
    3. Commit and push
    4. Verify node labels: `kubectl get nodes --show-labels`
+
    ```
 
 #### 4. Security Documentation
@@ -1118,6 +1184,7 @@ kubectl get nodes --show-labels | grep proxmox
 ### Documentation Organization Assessment
 
 **Strengths:**
+
 - Clear hierarchy (README → QUICKSTART → detailed docs)
 - Comprehensive index (INDEX.md)
 - Specialized guides in docs/guides/
@@ -1125,6 +1192,7 @@ kubectl get nodes --show-labels | grep proxmox
 - Archived research maintains history
 
 **Weaknesses:**
+
 - No version-specific documentation
 - Some overlap between README and QUICKSTART
 - Research docs could be better integrated
@@ -1141,6 +1209,7 @@ kubectl get nodes --show-labels | grep proxmox
 **CUE Schema Variables: 60+ fields**
 
 **Verification Method:**
+
 ```bash
 # Compare CUE schema fields with cluster.sample.yaml
 diff <(grep -oP '^\s*\w+[?:]' .taskfiles/template/resources/cluster.schema.cue | sort) \
@@ -1150,6 +1219,7 @@ diff <(grep -oP '^\s*\w+[?:]' .taskfiles/template/resources/cluster.schema.cue |
 **Findings:**
 
 ✅ **Complete Match** - All schema fields present in cluster.sample.yaml:
+
 - Required fields (8): node_cidr, cluster_api_addr, cluster_gateway_addr, cluster_dns_gateway_addr, repository_name, cloudflare_domain, cloudflare_token, cloudflare_gateway_addr
 - Optional network (7): node_dns_servers, node_ntp_servers, node_default_gateway, node_vlan_tag, cluster_pod_cidr, cluster_svc_cidr, cluster_api_tls_sans
 - Repository (2): repository_branch, repository_visibility
@@ -1172,6 +1242,7 @@ diff <(grep -oP '^\s*\w+[?:]' .taskfiles/template/resources/cluster.schema.cue |
 #### CONFIGURATION.md Completeness
 
 **Documentation Sections:**
+
 1. Required Fields - 8 fields ✅
 2. Optional Fields - 7 network fields ✅
 3. Cilium BGP Configuration - 10 fields ✅
@@ -1184,6 +1255,7 @@ diff <(grep -oP '^\s*\w+[?:]' .taskfiles/template/resources/cluster.schema.cue |
 10. External Secrets Operator - 3 fields ✅
 
 **Missing from CONFIGURATION.md:**
+
 - Proxmox CSI Configuration (6 variables) ❌
 - Proxmox CCM Configuration (3 variables) ❌
 - Infrastructure (OpenTofu) variables (13 variables) ❌
@@ -1269,6 +1341,7 @@ OpenTofu manages Proxmox VM provisioning for automated cluster deployment.
 **CLI_REFERENCE.md coverage:** 16 tasks documented
 
 **Missing from CLI_REFERENCE.md:**
+
 ```
 infra:apply
 infra:apply-auto
@@ -1294,6 +1367,7 @@ infra:validate
 **APPLICATIONS.md Entries:** ~25 applications
 
 **Documented Apps:**
+
 - Core (5): cilium, coredns, spegel, metrics-server, reloader
 - Platform (5): talos-ccm, talos-backup, tuppr, flux-operator, flux-instance
 - Certificates (1): cert-manager
@@ -1303,6 +1377,7 @@ infra:validate
 - Test (1): echo
 
 **Missing from APPLICATIONS.md:**
+
 - **proxmox-csi** - CSI driver for Proxmox storage
 - **proxmox-ccm** - Cloud Controller Manager for Proxmox
 - **volsync** (if template exists) - PVC backup solution
@@ -1314,6 +1389,7 @@ infra:validate
 #### README.md vs. Actual Workflow
 
 **README.md Claims:**
+
 - 7-stage deployment workflow ✅ (verified in sections)
 - Stage timings provided ⚠️ (no validation data)
 - Prerequisites accurate ✅
@@ -1321,6 +1397,7 @@ infra:validate
 - Version numbers accurate ⚠️ (Talos 1.12.0, K8s 1.35.0 - need to verify against mise.toml)
 
 **Spot Check:**
+
 ```bash
 # README claims:
 task init                    # ✅ Exists in Taskfile.yaml
@@ -1399,6 +1476,7 @@ Spot check common variables:
    **Mitigation:** Generate CONFIGURATION.md from CUE schema comments
 
 **Recommended CI Check:**
+
 ```yaml
 # .github/workflows/docs-validation.yaml
 name: Documentation Validation
@@ -1457,11 +1535,13 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 #### Stage 1: Discovery (1-5 minutes)
 
 **Entry Points:**
+
 - GitHub repository README
 - onedr0p/cluster-template upstream
 - Discord/community recommendations
 
 **README.md First Impression:**
+
 - ✅ Clear feature list (8 bullet points)
 - ✅ Visual deployment stages table
 - ✅ Prerequisites section upfront
@@ -1470,6 +1550,7 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 - ❌ No "Is this for me?" section
 
 **Recommendation:** Add decision tree at top of README:
+
 ```markdown
 ## Is This Template Right for You?
 
@@ -1492,6 +1573,7 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Documentation Navigation:**
 
 **README → QUICKSTART workflow:**
+
 - ✅ README provides overview and context
 - ✅ QUICKSTART provides actionable steps
 - ✅ Cross-references to detailed docs
@@ -1511,11 +1593,13 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Total Learning Time Estimate:** 1.5-2.5 hours for complete understanding
 
 **Strengths:**
+
 - AI context files provide deep technical background
 - Implementation guides bridge concepts to practice
 - ASCII diagrams aid visual learners
 
 **Weaknesses:**
+
 - No video walkthroughs
 - No interactive tutorials
 - Steep learning curve for beginners
@@ -1526,12 +1610,14 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Hardware Planning (README Stage 1):**
 
 **Strengths:**
+
 - ✅ Clear hardware recommendations table
 - ✅ Minimum requirements per node type
 - ✅ Storage guidance (enterprise vs consumer)
 - ✅ Platform guidance (bare metal vs virtualization)
 
 **Weaknesses:**
+
 - ❌ No cost estimation
 - ❌ No sizing calculator for workloads
 - ❌ No power consumption estimates
@@ -1540,12 +1626,14 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Network Planning:**
 
 **cluster.yaml Planning:**
+
 - ✅ IP allocation clearly explained
 - ✅ CIDR non-overlap validation
 - ⚠️ No network diagram template
 - ❌ No IP address calculator/planner
 
 **Recommendation:** Add network planning worksheet:
+
 ```markdown
 ## Network Planning Worksheet
 
@@ -1588,6 +1676,7 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Workstation Setup (README Stage 3):**
 
 **mise Installation:**
+
 - ✅ Clear installation instructions
 - ✅ Tool versions managed consistently
 - ⚠️ mise is relatively unknown tool (explain why)
@@ -1596,6 +1685,7 @@ Discovery → Learning → Planning → Setup → Deployment → Validation → 
 **Error Scenarios:**
 
 **Scenario 1: mise install fails**
+
 ```
 Error: Failed to install talosctl: ...
 ```
@@ -1603,6 +1693,7 @@ Error: Failed to install talosctl: ...
 **Current Documentation:** None specific
 
 **Recommendation:** Add troubleshooting section in QUICKSTART:
+
 ```markdown
 ### Common Setup Issues
 
@@ -1627,6 +1718,7 @@ mise install --skip talosctl
 **Symptom:** `permission denied: /Users/jason/.local/share/mise`
 
 **Solution:**
+
 ```bash
 # Fix permissions
 chmod -R 755 ~/.local/share/mise
@@ -1635,6 +1727,7 @@ chmod -R 755 ~/.local/share/mise
 rm -rf ~/.local/share/mise
 curl https://mise.run | sh
 ```
+
 ```
 
 **Configuration Setup (README Stage 6):**
@@ -1668,6 +1761,7 @@ curl https://mise.run | sh
 ```
 
 **task configure experience:**
+
 - ✅ Single command renders everything
 - ✅ CUE validation catches config errors
 - ✅ SOPS encryption automatic
@@ -1676,6 +1770,7 @@ curl https://mise.run | sh
 - ❌ No summary of what was generated
 
 **Recommendation:** Add summary output:
+
 ```bash
 task configure
 
@@ -1707,6 +1802,7 @@ Ready to commit: git add -A && git commit -m "Initial configuration"
 **Bootstrap Talos (README Stage 7):**
 
 **task bootstrap:talos experience:**
+
 - ✅ Single command deploys entire cluster
 - ⚠️ Very long execution (10+ minutes)
 - ⚠️ Expected errors not clearly communicated
@@ -1714,6 +1810,7 @@ Ready to commit: git add -A && git commit -m "Initial configuration"
 - ❌ No --dry-run option for preview
 
 **README Warning:**
+
 ```markdown
 > Cluster setup takes 10+ minutes. You'll see errors like
 > "couldn't get current server API group list" - this is normal
@@ -1723,6 +1820,7 @@ Ready to commit: git add -A && git commit -m "Initial configuration"
 **Assessment:** Good warning, but could be better integrated into task output
 
 **Recommendation:** Add real-time progress output:
+
 ```bash
 task bootstrap:talos
 
@@ -1758,12 +1856,14 @@ Next step: task bootstrap:apps
 **Bootstrap Apps (README Stage 7):**
 
 **task bootstrap:apps experience:**
+
 - ✅ Deploys core infrastructure (Cilium, CoreDNS, Spegel, Flux)
 - ✅ Flux takes over after initial deployment
 - ⚠️ No visibility into what's being deployed
 - ❌ No estimated completion time
 
 **Recommendation:** Add detailed progress:
+
 ```bash
 task bootstrap:apps
 
@@ -1803,6 +1903,7 @@ Estimated time until all apps ready: 5-10 minutes
 **Post-Installation Verification (README):**
 
 **Provided Checks:**
+
 ```bash
 # 1. Cilium status
 cilium status
@@ -1824,6 +1925,7 @@ kubectl -n network describe certificates
 ```
 
 **Assessment:**
+
 - ✅ Comprehensive verification steps
 - ✅ Covers major components
 - ⚠️ No expected output examples
@@ -1831,6 +1933,7 @@ kubectl -n network describe certificates
 - ❌ No automated validation script
 
 **Recommendation:** Add verification script:
+
 ```bash
 # scripts/verify-cluster.sh
 #!/bin/bash
@@ -1897,6 +2000,7 @@ echo "🎉 Cluster health check complete!"
 ```
 
 Then add to Taskfile.yaml:
+
 ```yaml
 tasks:
   verify:
@@ -1910,12 +2014,14 @@ tasks:
 **TROUBLESHOOTING.md Effectiveness:**
 
 **Strengths:**
+
 - ✅ Diagnostic flowcharts (visual decision trees)
 - ✅ Organized by layer (nodes, pods, network, flux, certs)
 - ✅ Common issues with solutions
 - ✅ Quick reference commands
 
 **Weaknesses:**
+
 - ⚠️ Limited real-world scenarios
 - ❌ No "Known Issues" section
 - ❌ No community FAQ
@@ -1940,6 +2046,7 @@ tasks:
    - Solution: Add clear instructions for deploy key setup
 
 **Recommendation:** Add "Common Mistakes" section to QUICKSTART.md:
+
 ```markdown
 ## Common Mistakes (and How to Avoid Them)
 
@@ -1955,9 +2062,11 @@ cat ~/secure-backup/cluster-age.key
 ```
 
 ### ❌ Reusing IPs for virtual IPs
+
 **Problem:** `task configure` fails with validation error
 
 **Solution:** All these must be different:
+
 - cluster_api_addr
 - cluster_gateway_addr
 - cluster_dns_gateway_addr
@@ -1966,9 +2075,11 @@ cat ~/secure-backup/cluster-age.key
 Use a spreadsheet or the network planning worksheet.
 
 ### ❌ Missing Cloudflare tunnel before configure
+
 **Problem:** `task configure` fails encrypting cloudflare-tunnel secret
 
 **Solution:** Always create tunnel first:
+
 ```bash
 cloudflared tunnel login
 cloudflared tunnel create --credentials-file cloudflare-tunnel.json kubernetes
@@ -1977,14 +2088,17 @@ task configure
 ```
 
 ### ❌ Private repo without deploy key
+
 **Problem:** Flux shows authentication errors
 
 **Solution:** Add public key to GitHub deploy keys:
+
 ```bash
 cat github-deploy.key.pub
 # Copy and paste into GitHub Settings → Deploy Keys
 # ✅ Allow write access
 ```
+
 ```
 
 ### Onboarding Metrics
@@ -2150,29 +2264,35 @@ With the recommended improvements, this project can achieve **90%+ coverage acro
 ### Workflow Files
 
 ```
+
 .github/workflows/
 ├── flux-local.yaml    - Flux manifest testing (PR on kubernetes/**)
 ├── e2e.yaml           - End-to-end testing (PR on templates/**)
 ├── release.yaml       - Monthly release automation
 ├── labeler.yaml       - PR auto-labeling
 └── label-sync.yaml    - Label management
+
 ```
 
 ### Test Fixtures
 
 ```
+
 .github/tests/
 ├── nodes.yaml         - Test node configuration
 ├── private.yaml       - Private repo test config
 └── public.yaml        - Public repo test config
+
 ```
 
 ### Validation Schemas
 
 ```
+
 .taskfiles/template/resources/
 ├── cluster.schema.cue - Cluster config validation (60+ variables)
 └── nodes.schema.cue   - Node config validation
+
 ```
 
 ## Appendix B: Documentation Inventory
@@ -2180,6 +2300,7 @@ With the recommended improvements, this project can achieve **90%+ coverage acro
 ### Core Documentation
 
 ```
+
 ./
 ├── README.md                  (535 lines) - Main entry point
 ├── CLAUDE.md                 (220 lines) - AI assistant context
@@ -2193,11 +2314,13 @@ With the recommended improvements, this project can achieve **90%+ coverage acro
     ├── TROUBLESHOOTING.md    (480 lines) - Diagnostic guide
     ├── OPERATIONS.md         (280 lines) - Day-2 operations
     └── DIAGRAMS.md           (300 lines) - ASCII diagrams
+
 ```
 
 ### Specialized Guides
 
 ```
+
 docs/
 ├── ai-context/
 │   ├── README.md
@@ -2218,6 +2341,7 @@ docs/
     ├── envoy-gateway-oidc-integration.md
     ├── envoy-gateway-examples-analysis.md
     └── k8s-at-home-patterns-research.md
+
 ```
 
 ## Appendix C: Application Catalog

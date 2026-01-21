@@ -67,12 +67,14 @@ All changes follow GitOps principles and are implemented via Jinja2 templates.
 ```
 
 **Why Shared Client:**
+
 1. ✅ **Token validation requirement:** API Server only accepts tokens with `aud: ["kubernetes"]`
 2. ✅ **Headlamp architecture:** Headlamp passes OIDC tokens directly to Kubernetes API for all operations
 3. ✅ **Audience claim consistency:** All users (web + CLI) use same client, ensuring consistent token validation
 4. ✅ **Multiple redirect URIs:** Single client supports both localhost (CLI) and Headlamp web (browser) flows
 
 **Benefits:**
+
 - ✅ All tokens have correct `aud: ["kubernetes"]` claim for API Server validation
 - ✅ No 401 Unauthorized errors from audience claim mismatches
 - ✅ Simplified configuration with single client for all K8s access
@@ -101,6 +103,7 @@ All changes follow GitOps principles and are implemented via Jinja2 templates.
 ### Why This Matters
 
 **Security Benefits:**
+
 - Audit trail for login/logout/admin events
 - Compliance requirements (SOC2, ISO 27001)
 - Troubleshooting authentication failures
@@ -261,6 +264,7 @@ By default, Keycloak retains events indefinitely. To configure retention:
 ### Why This Matters
 
 **Organizational Benefits:**
+
 - Industry-standard RBAC pattern (groups → roles)
 - Easier bulk user management
 - Clearer access control policies
@@ -553,6 +557,7 @@ kubectl exec -n identity keycloak-0 -- \
 ### Why This Matters
 
 **Security Benefits:**
+
 - Explicit egress rules (defense-in-depth)
 - Prevents unauthorized external connections
 - Documents allowed network paths
@@ -969,6 +974,7 @@ task reconcile
 ### Architecture Correction (January 13, 2026)
 
 **Previous (INCORRECT) Documentation:**
+
 ```yaml
 # Headlamp uses separate dedicated client (WRONG)
 clientID: headlamp_oidc_client_id
@@ -976,6 +982,7 @@ clientSecret: headlamp_oidc_client_secret
 ```
 
 **Current (CORRECT) Implementation:**
+
 ```yaml
 # Headlamp uses SHARED kubernetes client (CORRECT)
 clientID: kubernetes_oidc_client_id
@@ -995,6 +1002,7 @@ clientSecret: kubernetes_oidc_client_secret
 ## References
 
 ### Documentation
+
 - [Keycloak Events Documentation](https://www.keycloak.org/docs/latest/server_admin/#auditing-and-events)
 - [Keycloak Groups and Roles](https://www.keycloak.org/docs/latest/server_admin/#groups)
 - [Cilium Network Policy](https://docs.cilium.io/en/stable/security/policy/)
@@ -1002,12 +1010,14 @@ clientSecret: kubernetes_oidc_client_secret
 - **NEW:** [Headlamp OIDC Configuration](https://headlamp.dev/docs/latest/installation/in-cluster/keycloak/)
 
 ### Project Files
+
 - Security Analysis Report (January 12, 2026)
 - [Obot OIDC Remediation](../research/obot-keycloak-oidc-remediation-jan-2026.md)
 - [Split-Path OIDC Implementation](./completed/native-oidc-securitypolicy-implementation.md)
 - **NEW:** [Kubernetes API Server OIDC Authentication](../research/kubernetes-api-server-oidc-authentication-jan-2026.md)
 
 ### External Resources
+
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [NIST Digital Identity Guidelines](https://pages.nist.gov/800-63-3/)
 - [CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes)
@@ -1027,6 +1037,7 @@ clientSecret: kubernetes_oidc_client_secret
 ## Support
 
 For issues or questions:
+
 1. Review [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
 2. Check Keycloak logs: `kubectl logs -n identity -l app.kubernetes.io/instance=keycloak`
 3. Verify Flux reconciliation: `flux get ks -A`

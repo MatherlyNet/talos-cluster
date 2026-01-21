@@ -1,4 +1,5 @@
 # Research Report: Headlamp & Keycloak Configuration-as-Code Implementation
+
 **Date:** January 12, 2026
 **Research Focus:** Headlamp v0.39.0 readOnlyRootFilesystem fix + keycloak-config-cli automation
 **Status:** Complete - Ready for Implementation
@@ -6,10 +7,12 @@
 ## Executive Summary
 
 This research validates the implementation approach for:
+
 1. **Headlamp Filesystem Fix**: Adding proper volumeMounts for readOnlyRootFilesystem security context
 2. **Keycloak Config Automation**: Implementing keycloak-config-cli v6.4.0 with Keycloak 26.5.x
 
 **Key Findings:**
+
 - ✅ keycloak-config-cli v6.4.0 (released Feb 21, 2025) fully supports Keycloak 26.x
 - ✅ Headlamp requires `/home/headlamp/.config` directory mount for plugin management
 - ✅ Keycloak OIDC protocol mappers confirmed for realm-roles and groups claims
@@ -22,6 +25,7 @@ This research validates the implementation approach for:
 ### Problem Analysis
 
 **Error Log:**
+
 ```json
 {"level":"error","source":"/headlamp/backend/pkg/config/config.go","line":501,
  "error":"mkdir /home/headlamp/.config: read-only file system",
@@ -32,6 +36,7 @@ This research validates the implementation approach for:
 ```
 
 **Root Cause:**
+
 - Helm chart configured with `readOnlyRootFilesystem: true` for security hardening
 - Headlamp needs writable `/home/headlamp/.config` directory for plugin management
 - Current configuration only mounts `/tmp` as emptyDir
@@ -41,6 +46,7 @@ This research validates the implementation approach for:
 #### 1. Security Best Practices (December 2024)
 
 From [Headlamp blog](https://headlamp.dev/blog/2024/12/20/enhancing-the-security-of-headlamp-helm-chart/):
+
 - Recent Headlamp Helm chart enhancements include security context improvements
 - `readOnlyRootFilesystem: true` is recommended but requires proper volume mounts
 - emptyDir volumes should be used for directories requiring write access
@@ -48,6 +54,7 @@ From [Headlamp blog](https://headlamp.dev/blog/2024/12/20/enhancing-the-security
 #### 2. Helm Chart Pattern
 
 From [Headlamp values.yaml](https://github.com/kubernetes-sigs/headlamp/blob/main/charts/headlamp/values.yaml):
+
 - Chart supports `volumeMounts` and `volumes` for custom mounts
 - Plugin directory can be configured via `config.pluginsDir`
 - Modern approach uses `config.pluginsManager` for declarative plugin management
@@ -55,6 +62,7 @@ From [Headlamp values.yaml](https://github.com/kubernetes-sigs/headlamp/blob/mai
 #### 3. Volume Mount Pattern for readOnlyRootFilesystem
 
 Standard Kubernetes pattern for read-only root filesystem:
+
 ```yaml
 volumeMounts:
   - name: tmp
@@ -73,11 +81,13 @@ volumes:
 **File:** `templates/config/kubernetes/apps/kube-system/headlamp/app/helmrelease.yaml.j2`
 
 **Changes Required:**
+
 1. Add `config` emptyDir volume
 2. Mount `/home/headlamp/.config` in container
 3. Maintain existing `/tmp` mount
 
 **Implementation:**
+
 ```yaml
 volumeMounts:
   - name: tmp
@@ -92,6 +102,7 @@ volumes:
 ```
 
 **Impact:**
+
 - ✅ Resolves plugin directory creation errors
 - ✅ Maintains security posture (readOnlyRootFilesystem: true)
 - ✅ Enables future plugin management if needed
@@ -106,19 +117,23 @@ volumes:
 #### 1. keycloak-config-cli Version Compatibility
 
 **Latest Version:** v6.4.0 (Released February 21, 2025)
+
 - [Release page](https://github.com/adorsys/keycloak-config-cli/releases/tag/v6.4.0)
 - [Docker Hub](https://hub.docker.com/r/adorsys/keycloak-config-cli/tags)
 
 **Keycloak 26.x Support:**
+
 - [Issue #1160](https://github.com/adorsys/keycloak-config-cli/issues/1160): Keycloak 26 compatibility confirmed
 - Initial incompatibility in v6.1.5 (October 2024) resolved in v6.3.0+
 - v6.4.0 includes fixes for "403 Forbidden errors in CI/CD for Keycloak 26.x"
 
 **Latest Keycloak Version:**
+
 - Keycloak 26.5.0 released January 6, 2026
 - [Release announcement](https://www.keycloak.org/2026/01/keycloak-2650-released)
 
 **Recommended Docker Tag:** `adorsys/keycloak-config-cli:6.4.0-26.1.4`
+
 - CLI version: 6.4.0
 - Keycloak compatibility: 26.1.4
 - Note: Research doc used `6.4.0-26.1.0` - update to latest patch version
@@ -126,11 +141,13 @@ volumes:
 #### 2. OIDC Protocol Mappers for Headlamp RBAC
 
 **Realm Roles Mapper:**
+
 - Protocol mapper type: `oidc-usermodel-realm-role-mapper`
 - [API Documentation](https://www.keycloak.org/docs-api/latest/javadocs/org/keycloak/protocol/oidc/mappers/UserRealmRoleMappingMapper.html)
 - Configuration structure validated
 
 **Example Configuration (from [OAuth2 Proxy docs](https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc/)):**
+
 ```json
 {
   "name": "realm roles",
@@ -148,6 +165,7 @@ volumes:
 ```
 
 **Groups Mapper:**
+
 - Protocol mapper type: `oidc-group-membership-mapper`
 - Requires Client Scope named "groups"
 - [Server Admin Guide](https://www.keycloak.org/docs/latest/server_admin/)
@@ -156,6 +174,7 @@ volumes:
 
 **Username/Groups Claims:**
 From [Headlamp OIDC docs](https://headlamp.dev/docs/latest/installation/in-cluster/oidc/):
+
 - Headlamp supports `--oidc-groups-claim=groups` configuration
 - Default username paths: `preferred_username,upn,username,name`
 - Default email paths: `email`
@@ -163,12 +182,14 @@ From [Headlamp OIDC docs](https://headlamp.dev/docs/latest/installation/in-clust
 
 **RBAC Pattern:**
 From [Medium article](https://medium.com/@imansoorali/deploying-headlamp-in-kubernetes-with-oidc-authentication-part-ii-37a834c0e260):
+
 - Headlamp respects Kubernetes RBAC automatically
 - OIDC groups map to Kubernetes groups via ClusterRoleBindings
 - Example: `oidc-admin-group` → ClusterRole binding
 
 **Token Type Consideration (2026):**
 From [soapfault.com](https://soapfault.com/2025/03/01/azure-aks-entra-oidc-rbac-headlamp/):
+
 - Headlamp uses id-token in Authorization header by default
 - For Azure Entra ID, access-token may be required
 - Configuration: Headlamp can be instructed to use access-token instead
@@ -187,15 +208,18 @@ From [soapfault.com](https://soapfault.com/2025/03/01/azure-aks-entra-oidc-rbac-
 ### Environment Variable Substitution
 
 **Research Doc Pattern:** Hybrid approach
+
 1. **Jinja2** (`#{ }#`) - Template-time substitution for non-sensitive values
 2. **keycloak-config-cli** (`$(env:VAR)`) - Runtime substitution for secrets
 
 **Validation:**
+
 - [Configuration docs](https://adorsys.github.io/keycloak-config-cli/) confirm `$(env:VAR)` syntax
 - Environment variable naming: `IMPORT_VARSUBSTITUTION_ENABLED` (no underscore between VAR and SUBSTITUTION)
 - Secrets mounted via `envFrom.secretRef` in Job spec
 
 **Example Pattern:**
+
 ```yaml
 # realm-config.yaml (ConfigMap - plain)
 clients:
@@ -222,10 +246,12 @@ envFrom:
 **File Modified:** `templates/config/kubernetes/apps/kube-system/headlamp/app/helmrelease.yaml.j2`
 
 **Changes:**
+
 1. Add `config` emptyDir volume to `volumes` array
 2. Add `/home/headlamp/.config` volumeMount
 
 **Testing:**
+
 ```bash
 # After deployment
 kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp | grep -i "error.*config"
@@ -239,6 +265,7 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp | grep -i "error.
 ### Phase 2: Implement keycloak-config-cli (Strategic)
 
 **Directory Structure (from research doc):**
+
 ```
 templates/config/kubernetes/apps/identity/keycloak/
 ├── ks.yaml.j2                     # Add 3rd Kustomization
@@ -253,6 +280,7 @@ templates/config/kubernetes/apps/identity/keycloak/
 **Key Components:**
 
 #### 1. config-job.yaml.j2
+
 ```yaml
 image: adorsys/keycloak-config-cli:6.4.0-26.1.4  # UPDATED version
 env:
@@ -268,6 +296,7 @@ envFrom:
 ```
 
 #### 2. realm-config.yaml.j2 (Headlamp Client Addition)
+
 ```yaml
 clients:
   # ... existing clients ...
@@ -317,6 +346,7 @@ clients:
 ```
 
 #### 3. secrets.sops.yaml.j2
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -332,6 +362,7 @@ stringData:
 ```
 
 #### 4. ks.yaml.j2 (Third Kustomization)
+
 ```yaml
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -387,12 +418,14 @@ spec:
 ## Testing Strategy
 
 ### Headlamp Fix Testing
+
 1. Deploy updated HelmRelease
 2. Verify pods start without errors
 3. Check logs for config directory errors
 4. Verify OIDC flow still works
 
 ### keycloak-config-cli Testing
+
 1. Deploy keycloak-config structure
 2. Verify Job completes successfully
 3. Check Keycloak admin console for Headlamp client
@@ -405,6 +438,7 @@ spec:
 ## Updated Configuration Variables
 
 **cluster.yaml additions:**
+
 ```yaml
 # keycloak-config-cli version
 keycloak_config_cli_version: "6.4.0-26.1.4"  # UPDATED from research doc
@@ -419,6 +453,7 @@ headlamp_oidc_client_secret: "<value>"
 ## Sources
 
 ### Headlamp Research
+
 - [Headlamp v0.39.0 Release](https://github.com/kubernetes-sigs/headlamp/releases/tag/v0.39.0)
 - [Enhancing Security in Headlamp Helm Chart](https://headlamp.dev/blog/2024/12/20/enhancing-the-security-of-headlamp-helm-chart/)
 - [Headlamp Helm Chart values.yaml](https://github.com/kubernetes-sigs/headlamp/blob/main/charts/headlamp/values.yaml)
@@ -427,12 +462,14 @@ headlamp_oidc_client_secret: "<value>"
 - [Azure AKS, Entra OIDC and Headlamp](https://soapfault.com/2025/03/01/azure-aks-entra-oidc-rbac-headlamp/)
 
 ### keycloak-config-cli Research
+
 - [keycloak-config-cli v6.4.0 Release](https://github.com/adorsys/keycloak-config-cli/releases/tag/v6.4.0)
 - [keycloak-config-cli Docker Hub](https://hub.docker.com/r/adorsys/keycloak-config-cli/tags)
 - [Keycloak 26 Compatibility Issue #1160](https://github.com/adorsys/keycloak-config-cli/issues/1160)
 - [keycloak-config-cli Documentation](https://adorsys.github.io/keycloak-config-cli/)
 
 ### Keycloak OIDC Research
+
 - [Keycloak 26.5.0 Release](https://www.keycloak.org/2026/01/keycloak-2650-released)
 - [Keycloak Server Administration Guide](https://www.keycloak.org/docs/latest/server_admin/)
 - [UserRealmRoleMappingMapper API](https://www.keycloak.org/docs-api/latest/javadocs/org/keycloak/protocol/oidc/mappers/UserRealmRoleMappingMapper.html)
@@ -446,6 +483,7 @@ headlamp_oidc_client_secret: "<value>"
 **Research Status:** ✅ COMPLETE
 
 **Validation Results:**
+
 1. ✅ Headlamp v0.39.0 volumeMount pattern validated
 2. ✅ keycloak-config-cli v6.4.0 confirmed compatible with Keycloak 26.5.0
 3. ✅ OIDC protocol mapper configuration validated
@@ -453,6 +491,7 @@ headlamp_oidc_client_secret: "<value>"
 5. ✅ Minor version update required: 6.4.0-26.1.0 → 6.4.0-26.1.4
 
 **Recommendation:** Proceed with Option C implementation
+
 - Priority 1: Fix Headlamp filesystem (15-30 min)
 - Priority 2: Implement keycloak-config-cli (2-4 hours)
 
@@ -484,6 +523,7 @@ headlamp_oidc_client_secret: "<value>"
 Before implementing keycloak-config-cli, validate the following:
 
 #### 1. Keycloak Deployment Status
+
 ```bash
 # Check if Keycloak is deployed
 kubectl get keycloak -n identity
@@ -499,11 +539,13 @@ kubectl get pods -n identity -l app=keycloak
 ```
 
 **Result:**
+
 - [ ] Keycloak deployed and healthy
 - [ ] Keycloak service accessible at `keycloak-service.identity.svc.cluster.local:8080`
 - [ ] Keycloak admin credentials secret exists
 
 #### 2. Existing Realm Configuration Review
+
 ```bash
 # Check if realm-import exists
 ls -la templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
@@ -513,11 +555,13 @@ ls -la templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.
 ```
 
 **Analysis Required:**
+
 - [ ] Document existing OIDC clients (envoy-gateway, grafana, etc.)
 - [ ] Identify which clients to migrate to keycloak-config-cli
 - [ ] Determine if Headlamp client already exists
 
 #### 3. Docker Tag Availability Verification
+
 ```bash
 # Verify the exact tag is available
 docker pull adorsys/keycloak-config-cli:6.4.0-26.1.4
@@ -527,11 +571,13 @@ curl -s https://hub.docker.com/v2/repositories/adorsys/keycloak-config-cli/tags?
 ```
 
 **Acceptable Tags:**
+
 - `6.4.0-26.1.4` (recommended)
 - `6.4.0-26.1.3`
 - `6.4.0` (latest for v6.4.0)
 
 #### 4. cluster.yaml Schema Validation
+
 ```bash
 # Check if cluster.yaml has keycloak section
 grep -A 10 "keycloak_enabled" cluster.yaml
@@ -541,6 +587,7 @@ task template:validate-schema
 ```
 
 **Required Fields:**
+
 ```yaml
 # Must exist or be added:
 keycloak_enabled: true
@@ -576,11 +623,13 @@ Migrating to keycloak-config-cli enables incremental updates without destroying 
 **IMPORTANT:** This is a **greenfield-friendly migration** since the research doc notes "no existing realm data to preserve."
 
 #### Option A: Clean Migration (Recommended if Keycloak just deployed)
+
 1. Deploy keycloak-config-cli structure
 2. Remove `realm-import.sops.yaml.j2` from kustomization
 3. Verify realm configuration matches expected state
 
 #### Option B: Preserve-and-Extend (If existing users/data)
+
 1. Export current realm configuration from Keycloak UI
 2. Merge exported config with realm-config.yaml.j2 template
 3. Deploy keycloak-config-cli
@@ -590,6 +639,7 @@ Migrating to keycloak-config-cli enables incremental updates without destroying 
 ### Migration Steps
 
 #### Step 1: Backup Current Configuration
+
 ```bash
 # If Keycloak has live data, export realm
 kubectl exec -n identity deployment/keycloak -- \
@@ -602,6 +652,7 @@ kubectl cp identity/keycloak-pod:/tmp/realm-export.json ./realm-backup-$(date +%
 ```
 
 #### Step 2: Deploy keycloak-config-cli Structure
+
 ```bash
 # Create directory structure
 mkdir -p templates/config/kubernetes/apps/identity/keycloak/config
@@ -615,12 +666,14 @@ mkdir -p templates/config/kubernetes/apps/identity/keycloak/config
 ```
 
 #### Step 3: Update ks.yaml.j2
+
 ```bash
 # Add third Kustomization for keycloak-config
 # See Part 3, Phase 2, Section 4 for complete example
 ```
 
 #### Step 4: Test in Development First
+
 ```bash
 # Generate templates
 task configure -y
@@ -635,6 +688,7 @@ git push
 ```
 
 #### Step 5: Monitor Job Execution
+
 ```bash
 # Watch Job creation
 watch -n 2 'kubectl get jobs -n identity'
@@ -648,6 +702,7 @@ kubectl get job keycloak-config-apply -n identity -o jsonpath='{.status.conditio
 ```
 
 #### Step 6: Validate Realm Configuration
+
 ```bash
 # Check Keycloak admin console
 # Browse to: https://sso.${DOMAIN}/admin/master/console/#/matherlynet/clients
@@ -659,6 +714,7 @@ kubectl get job keycloak-config-apply -n identity -o jsonpath='{.status.conditio
 ```
 
 #### Step 7: Remove Old KeycloakRealmImport (Optional)
+
 ```bash
 # Only after verifying keycloak-config-cli works
 # Remove from kustomization.yaml.j2:
@@ -685,6 +741,7 @@ rm templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml
 ### Common Issues and Solutions
 
 #### Issue 1: Job Fails with "Keycloak not available"
+
 ```bash
 # Check Keycloak health
 kubectl get keycloak -n identity
@@ -696,11 +753,13 @@ kubectl exec -n identity -it <job-pod> -- \
 ```
 
 **Solutions:**
+
 - Increase `KEYCLOAK_AVAILABILITYCHECK_TIMEOUT` from 120s to 180s
 - Verify Keycloak service name matches (keycloak-service, not keycloak)
 - Check CiliumNetworkPolicy allows Job egress
 
 #### Issue 2: Job Fails with "403 Forbidden"
+
 ```bash
 # Verify admin credentials
 kubectl get secret keycloak-admin-credentials -n identity -o yaml
@@ -715,11 +774,13 @@ kubectl run -it --rm debug --image=curlimages/curl -n identity -- \
 ```
 
 **Solutions:**
+
 - Verify admin user has `realm-admin` role
 - Check secret name matches `keycloak-admin-credentials`
 - Ensure password doesn't contain special characters that need escaping
 
 #### Issue 3: Environment Variable Substitution Not Working
+
 ```bash
 # Check Job pod environment
 kubectl describe pod -n identity <job-pod>
@@ -733,11 +794,13 @@ kubectl get configmap keycloak-realm-config -n identity -o yaml | grep "clientId
 ```
 
 **Solutions:**
+
 - Verify `IMPORT_VARSUBSTITUTION_ENABLED=true` in Job env
 - Check secret name matches `keycloak-realm-secrets`
 - Ensure $(env:VAR) syntax (not ${VAR} or $VAR)
 
 #### Issue 4: Network Policy Blocks Job
+
 ```bash
 # Check if Job pod has network connectivity
 kubectl exec -n identity <job-pod> -- nslookup keycloak-service.identity.svc.cluster.local
@@ -747,11 +810,13 @@ kubectl get ciliumnetworkpolicy -n identity keycloak-config-cli -o yaml
 ```
 
 **Solutions:**
+
 - Ensure CiliumNetworkPolicy exists in config/ kustomization
 - Verify FQDN matches Keycloak service
 - Check endpointSelector matches Job pod labels
 
 #### Issue 5: Headlamp Client Not Created
+
 ```bash
 # Check Job logs for errors
 kubectl logs -n identity -l app.kubernetes.io/name=keycloak-config-cli | grep -i error
@@ -762,11 +827,13 @@ yamllint /tmp/realm-config.yaml
 ```
 
 **Solutions:**
+
 - Validate YAML syntax in realm-config.yaml.j2
 - Check Jinja2 template rendering with `task configure`
 - Verify $(env:VAR) variables are defined in secrets.sops.yaml
 
 #### Issue 6: OIDC Login Fails with "Invalid Redirect URI"
+
 ```bash
 # Check actual redirect URI in Keycloak
 # Admin Console → Clients → headlamp → Settings → Valid Redirect URIs
@@ -776,6 +843,7 @@ kubectl get helmrelease headlamp -n kube-system -o yaml | grep issuerURL
 ```
 
 **Solutions:**
+
 - Verify redirect URI matches: `https://headlamp.${DOMAIN}/oidc-callback`
 - Check cluster.yaml cloudflare_domain value
 - Ensure Flux postBuild substitution working (${SECRET_DOMAIN})
@@ -815,6 +883,7 @@ echo "<token>" | jq -R 'split(".") | .[1] | @base64d | fromjson'
 **Scenario:** Headlamp pods failing after volumeMount changes
 
 **Immediate Rollback:**
+
 ```bash
 # 1. Revert template file
 git revert <commit-hash>
@@ -835,6 +904,7 @@ kubectl rollout status deployment/headlamp -n kube-system
 ```
 
 **Emergency Manual Rollback:**
+
 ```bash
 # If Git revert not possible, manually edit HelmRelease
 kubectl edit helmrelease headlamp -n kube-system
@@ -844,6 +914,7 @@ kubectl edit helmrelease headlamp -n kube-system
 ```
 
 **Verification:**
+
 ```bash
 # Check pods are Running
 kubectl get pods -n kube-system -l app.kubernetes.io/name=headlamp
@@ -857,6 +928,7 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp | grep -i error
 **Scenario:** Job fails or creates incorrect configuration
 
 **Step 1: Stop Job Execution**
+
 ```bash
 # Delete the Job to stop retries
 kubectl delete job keycloak-config-apply -n identity
@@ -866,6 +938,7 @@ flux suspend kustomization keycloak-config -n flux-system
 ```
 
 **Step 2: Restore KeycloakRealmImport (if removed)**
+
 ```bash
 # If you deleted realm-import.sops.yaml.j2, restore from Git
 git checkout HEAD~1 -- templates/config/kubernetes/apps/identity/keycloak/app/realm-import.sops.yaml.j2
@@ -887,6 +960,7 @@ flux resume kustomization keycloak -n flux-system
 ```
 
 **Step 3: Manual Realm Cleanup (if needed)**
+
 ```bash
 # If keycloak-config-cli created unwanted configuration:
 
@@ -900,6 +974,7 @@ open https://sso.${DOMAIN}/admin
 ```
 
 **Step 4: Remove keycloak-config-cli Structure**
+
 ```bash
 # Delete config/ directory
 rm -rf templates/config/kubernetes/apps/identity/keycloak/config/
@@ -917,6 +992,7 @@ git push
 ```
 
 **Verification:**
+
 ```bash
 # Verify KeycloakRealmImport is active
 kubectl get keycloakrealmimport -n identity
@@ -964,6 +1040,7 @@ kubectl wait --for=condition=Ready keycloak/keycloak -n identity --timeout=600s
 Use this checklist to track implementation progress:
 
 ### Pre-Implementation
+
 - [ ] Read original research doc (`docs/research/.../keycloak-configuration-as-code-gitops-jan-2026.md`)
 - [ ] Complete all pre-flight checks (Step 0)
 - [ ] Review existing Keycloak configuration
@@ -971,6 +1048,7 @@ Use this checklist to track implementation progress:
 - [ ] Update cluster.yaml schema if needed
 
 ### Phase 1: Headlamp Filesystem Fix
+
 - [ ] Edit `templates/config/kubernetes/apps/kube-system/headlamp/app/helmrelease.yaml.j2`
 - [ ] Add `config` volumeMount for `/home/headlamp/.config`
 - [ ] Add `config` emptyDir volume
@@ -984,6 +1062,7 @@ Use this checklist to track implementation progress:
 - [ ] Verify OIDC flow still works (if Keycloak deployed)
 
 ### Phase 2: keycloak-config-cli Implementation
+
 - [ ] Create directory: `templates/config/kubernetes/apps/identity/keycloak/config/`
 - [ ] Create `kustomization.yaml.j2` with 5 resources
 - [ ] Create `config-job.yaml.j2` with image `6.4.0-26.1.4`
@@ -1007,6 +1086,7 @@ Use this checklist to track implementation progress:
 - [ ] (Optional) Remove old `realm-import.sops.yaml.j2`
 
 ### Post-Implementation Validation
+
 - [ ] Document any issues encountered
 - [ ] Update troubleshooting guide if needed
 - [ ] Verify Kubernetes RBAC works with OIDC user
@@ -1060,10 +1140,12 @@ Use this checklist to track implementation progress:
 ## Sources - Reflection Analysis
 
 ### Methodology
+
 - Serena MCP Reflection Tools - Task adherence and completion validation
 - Sequential Thinking MCP - Multi-hop reasoning and analysis
 
 ### Original Research Documents
+
 - [Keycloak Configuration as Code - GitOps Integration (January 2026)](../../research/archive/completed/keycloak-configuration-as-code-gitops-jan-2026.md) - Lines 1-1164
 
 ---

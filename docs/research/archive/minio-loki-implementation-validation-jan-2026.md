@@ -30,6 +30,7 @@ The following aspects of the research document are **confirmed correct** and sho
 **Validated:** The MinIO Operator approach is the recommended production pattern for Kubernetes deployments.
 
 **Evidence:**
+
 - MinIO official documentation recommends Operator for production ([MinIO Kubernetes Docs](https://min.io/docs/minio/kubernetes/upstream/index.html))
 - Operator v7.1.1 (April 2025) provides automated lifecycle management
 - Tenant CR enables declarative bucket and user provisioning
@@ -40,6 +41,7 @@ The following aspects of the research document are **confirmed correct** and sho
 **Validated:** Single MinIO Tenant with separate buckets per service is appropriate for this cluster scale.
 
 **Rationale:**
+
 - Simpler operational model than multi-tenant
 - Bucket-level IAM policies provide sufficient isolation
 - Lower resource overhead
@@ -50,6 +52,7 @@ The following aspects of the research document are **confirmed correct** and sho
 **Validated:** Migration from SingleBinary to SimpleScalable resolves dashboard compatibility and improves scalability.
 
 **Evidence:**
+
 - GitHub Issue [#11390](https://github.com/grafana/loki/issues/11390) confirms job label mismatch in SingleBinary
 - SimpleScalable produces correct labels: `job=~"loki-read"`, `job=~"loki-write"`, `job=~"loki-backend"`
 - Scalability improvement: ~50GB/day (SingleBinary) → ~1TB/day (SimpleScalable)
@@ -75,6 +78,7 @@ loki:
 **Validated:** Disabling TLS for internal cluster traffic is acceptable.
 
 **Rationale:**
+
 - All traffic is within cluster network (10.43.0.0/16)
 - Cilium provides network-level encryption option if needed
 - Reduces certificate management complexity
@@ -181,6 +185,7 @@ loki:
 **Problem:** The proposed directory structure doesn't match project patterns.
 
 **Research Document Proposes:**
+
 ```
 storage/minio/
 ├── ks.yaml.j2
@@ -191,6 +196,7 @@ storage/minio/
 ```
 
 **Project Pattern Requires:**
+
 ```
 storage/
 ├── namespace.yaml.j2                    # MISSING
@@ -210,6 +216,7 @@ storage/
 ```
 
 **Rationale:**
+
 - Separating operator and tenant allows independent health checks
 - Clear dependency ordering (tenant `dependsOn` operator)
 - Matches project pattern (kube-prometheus-stack vs loki separation)
@@ -222,6 +229,7 @@ storage/
 **Missing Files:**
 
 **`storage/namespace.yaml.j2`:**
+
 ```yaml
 #% if minio_enabled | default(false) %#
 ---
@@ -239,6 +247,7 @@ metadata:
 ```
 
 **`storage/kustomization.yaml.j2`:**
+
 ```yaml
 #% if minio_enabled | default(false) %#
 ---
@@ -257,6 +266,7 @@ resources:
 ```
 
 **Top-level `apps/kustomization.yaml.j2` integration:**
+
 ```yaml
 resources:
   - ./cert-manager
@@ -300,10 +310,12 @@ else:
 **Issue:** Document references older image tags.
 
 **Current Stable Versions (January 2026):**
+
 - MinIO Operator: v7.1.1
 - MinIO Server: RELEASE.2025-01-xx (verify latest)
 
 **Required Changes:**
+
 1. Update Operator Helm chart reference
 2. Verify Tenant CR schema compatibility with v7.x
 3. Remove references to deprecated `spec.features` section (removed in v7.0.0)
@@ -313,6 +325,7 @@ else:
 **Issue:** Need to verify MinIO Helm chart OCI location.
 
 **Verified URLs:**
+
 ```yaml
 # MinIO Operator (verify current version)
 url: oci://quay.io/minio/operator
@@ -327,6 +340,7 @@ url: https://operator.min.io
 **Issue:** Research document lacks Flux Kustomization health check patterns.
 
 **Add to `minio-operator/ks.yaml.j2`:**
+
 ```yaml
 spec:
   healthChecks:
@@ -343,6 +357,7 @@ spec:
 ```
 
 **Add to `minio-tenant/ks.yaml.j2`:**
+
 ```yaml
 spec:
   healthChecks:
@@ -357,6 +372,7 @@ spec:
 **Issue:** Loki needs to depend on MinIO Tenant being ready.
 
 **Update `monitoring/loki/ks.yaml.j2`:**
+
 ```yaml
 #% if minio_enabled | default(false) %#
 spec:
@@ -520,6 +536,7 @@ spec:
 ## Part 6: Implementation Checklist
 
 ### Phase 1: Infrastructure Setup
+
 - [ ] Add MinIO configuration section to `cluster.sample.yaml`
 - [ ] Update `templates/scripts/plugin.py` with derived variables
 - [ ] Create `templates/config/kubernetes/apps/storage/` directory structure
@@ -527,27 +544,32 @@ spec:
 - [ ] Add `storage/kustomization.yaml.j2`
 
 ### Phase 2: MinIO Operator
+
 - [ ] Create `storage/minio-operator/ks.yaml.j2`
 - [ ] Create `storage/minio-operator/app/kustomization.yaml.j2`
 - [ ] Create `storage/minio-operator/app/ocirepository.yaml.j2`
 - [ ] Create `storage/minio-operator/app/helmrelease.yaml.j2`
 
 ### Phase 3: MinIO Tenant
+
 - [ ] Create `storage/minio-tenant/ks.yaml.j2`
 - [ ] Create `storage/minio-tenant/app/kustomization.yaml.j2`
 - [ ] Create `storage/minio-tenant/app/tenant.yaml.j2` (with buckets and users)
 - [ ] Create `storage/minio-tenant/app/secret.sops.yaml.j2`
 
 ### Phase 4: Loki Integration
+
 - [ ] Update `monitoring/loki/app/helmrelease.yaml.j2` with conditional S3 config
 - [ ] Add `monitoring/loki/app/secret.sops.yaml.j2` for S3 credentials
 - [ ] Update `monitoring/loki/ks.yaml.j2` with MinIO dependency
 
 ### Phase 5: Top-Level Integration
+
 - [ ] Update `templates/config/kubernetes/apps/kustomization.yaml.j2`
 - [ ] Update documentation (CLAUDE.md, CONFIGURATION.md)
 
 ### Phase 6: Validation
+
 - [ ] Run `task configure`
 - [ ] Verify generated files in `kubernetes/apps/storage/`
 - [ ] Deploy to cluster
@@ -574,6 +596,7 @@ spec:
 The research document provides a **solid architectural foundation** for MinIO shared storage and Loki SimpleScalable migration. The core decisions are validated and recommended for implementation.
 
 **Key Actions Required:**
+
 1. Replace Helm hook Job with declarative Tenant CR buckets/users
 2. Restructure templates to match project patterns
 3. Add missing namespace infrastructure files

@@ -619,7 +619,9 @@ class Plugin(makejinja.plugin.Plugin):
             data.setdefault("obot_storage_size", "20Gi")
             data.setdefault("obot_workspace_provider", "directory")
             data.setdefault("obot_s3_bucket", "obot-workspaces")
-            data.setdefault("obot_s3_endpoint", "http://rustfs-svc.storage.svc.cluster.local:9000")
+            data.setdefault(
+                "obot_s3_endpoint", "http://rustfs-svc.storage.svc.cluster.local:9000"
+            )
             data.setdefault("obot_s3_region", "us-east-1")
             data.setdefault("obot_encryption_provider", "custom")
             data.setdefault("obot_allowed_email_domains", "*")
@@ -664,7 +666,9 @@ class Plugin(makejinja.plugin.Plugin):
             # Obot tool registries (default: fork's embedded tools)
             # Comma-separated list of gptscript tool repositories
             # Default uses jrmatherly/obot-entraid fork's embedded tools at /obot-tools/tools
-            obot_tool_registries = data.get("obot_tool_registries", ["/obot-tools/tools"])
+            obot_tool_registries = data.get(
+                "obot_tool_registries", ["/obot-tools/tools"]
+            )
             data["obot_tool_registries"] = obot_tool_registries
 
             # Obot default MCP catalog (default: none)
@@ -700,7 +704,9 @@ class Plugin(makejinja.plugin.Plugin):
             # Derive full hostname from subdomain + cloudflare_domain
             mcp_context_forge_subdomain = data.get("mcp_context_forge_subdomain", "mcp")
             cloudflare_domain = data.get("cloudflare_domain", "")
-            mcp_context_forge_hostname = f"{mcp_context_forge_subdomain}.{cloudflare_domain}"
+            mcp_context_forge_hostname = (
+                f"{mcp_context_forge_subdomain}.{cloudflare_domain}"
+            )
             data["mcp_context_forge_hostname"] = mcp_context_forge_hostname
 
             # Default settings
@@ -726,7 +732,9 @@ class Plugin(makejinja.plugin.Plugin):
 
             # Keycloak integration - derive URLs for native SSO
             # Uses Keycloak OIDC with KEYCLOAK_* env vars in deployment
-            if data.get("mcp_context_forge_keycloak_enabled") and data.get("keycloak_enabled"):
+            if data.get("mcp_context_forge_keycloak_enabled") and data.get(
+                "keycloak_enabled"
+            ):
                 keycloak_realm = data.get("keycloak_realm", "matherlynet")
                 keycloak_hostname = data.get("keycloak_hostname")
                 # External issuer URL (matches Keycloak's returned issuer)
@@ -754,25 +762,34 @@ class Plugin(makejinja.plugin.Plugin):
             mcp_context_forge_monitoring_enabled = data.get(
                 "monitoring_enabled", False
             ) and data.get("mcp_context_forge_monitoring_enabled", False)
-            data["mcp_context_forge_monitoring_enabled"] = mcp_context_forge_monitoring_enabled
+            data["mcp_context_forge_monitoring_enabled"] = (
+                mcp_context_forge_monitoring_enabled
+            )
 
             # Tracing enabled when both flags set
-            mcp_context_forge_tracing_enabled = data.get("tracing_enabled", False) and data.get(
-                "mcp_context_forge_tracing_enabled", False
+            mcp_context_forge_tracing_enabled = data.get(
+                "tracing_enabled", False
+            ) and data.get("mcp_context_forge_tracing_enabled", False)
+            data["mcp_context_forge_tracing_enabled"] = (
+                mcp_context_forge_tracing_enabled
             )
-            data["mcp_context_forge_tracing_enabled"] = mcp_context_forge_tracing_enabled
             data.setdefault("mcp_context_forge_tracing_sample_rate", "0.1")
 
             # Internal observability (built-in database-backed tracing with Admin UI)
             data.setdefault("mcp_context_forge_internal_observability_enabled", True)
-            data.setdefault("mcp_context_forge_internal_observability_sample_rate", "0.1")
+            data.setdefault(
+                "mcp_context_forge_internal_observability_sample_rate", "0.1"
+            )
 
             # Plugins (MCP server extensions)
             data.setdefault("mcp_context_forge_plugins_enabled", True)
 
             # Header passthrough (forward headers to MCP servers for tracing/auth context)
             data.setdefault("mcp_context_forge_passthrough_enabled", False)
-            data.setdefault("mcp_context_forge_passthrough_headers", '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]')
+            data.setdefault(
+                "mcp_context_forge_passthrough_headers",
+                '["X-Trace-Id", "X-Span-Id", "X-Request-Id"]',
+            )
             data.setdefault("mcp_context_forge_passthrough_source", "env")
         else:
             data["mcp_context_forge_keycloak_enabled"] = False

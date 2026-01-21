@@ -197,6 +197,7 @@ user <username> on ><password> ~<key-pattern> +<commands>
 ```
 
 **Components:**
+
 - `user <username>` - Username for authentication
 - `on` - Enable the user
 - `><password>` - Plaintext password (prefixed with `>`)
@@ -245,11 +246,13 @@ dragonfly_langfuse_password: "langfuse-password-encrypted"  # SOPS
 ```
 
 **Generate Passwords:**
+
 ```bash
 openssl rand -base64 24  # For each user
 ```
 
 **Encrypt with SOPS:**
+
 ```bash
 sops cluster.yaml  # Edit and encrypt
 ```
@@ -261,6 +264,7 @@ sops cluster.yaml  # Edit and encrypt
 ### LiteLLM Connection
 
 **Environment Variables:**
+
 ```yaml
 env:
   - name: REDIS_HOST
@@ -275,12 +279,14 @@ env:
 ```
 
 **Connection String:**
+
 ```
 redis://litellm:<password>@dragonfly.cache.svc.cluster.local:6379/0
 ```
 
 **Key Prefixing:**
 LiteLLM automatically prefixes keys with `litellm:` namespace:
+
 - `litellm:cache:model_gpt-4_user_123`
 - `litellm:rate_limit:user_456`
 
@@ -289,6 +295,7 @@ LiteLLM automatically prefixes keys with `litellm:` namespace:
 ### Langfuse Connection
 
 **Environment Variables:**
+
 ```yaml
 env:
   - name: REDIS_URL
@@ -297,6 +304,7 @@ env:
 
 **Key Prefixing:**
 Langfuse uses session and cache keys with `langfuse:` prefix:
+
 - `langfuse:session:abc123`
 - `langfuse:cache:trace_xyz`
 
@@ -355,15 +363,18 @@ kubectl exec -n cache deploy/dragonfly -- \
 ### Issue: "NOAUTH Authentication required"
 
 **Symptoms:**
+
 - Application can't connect to Dragonfly
 - Logs show authentication errors
 
 **Causes:**
+
 1. ACL secret not created
 2. Password incorrect in application secret
 3. Username not specified in connection string
 
 **Resolution:**
+
 ```bash
 # 1. Verify ACL secret exists
 kubectl get secret -n cache dragonfly-acl -o yaml
@@ -381,15 +392,18 @@ kubectl get secret -n <namespace> <app>-dragonfly-secret -o jsonpath='{.data.pas
 ### Issue: "NOPERM" Key Access Denied
 
 **Symptoms:**
+
 - Application can connect but operations fail
 - Logs show permission errors on specific keys
 
 **Causes:**
+
 1. Key prefix doesn't match ACL pattern
 2. Application not prefixing keys correctly
 3. ACL rule typo
 
 **Resolution:**
+
 ```bash
 # 1. Check actual keys being accessed
 kubectl exec -n cache deploy/dragonfly -- \
@@ -409,15 +423,18 @@ kubectl exec -n cache deploy/dragonfly -- \
 ### Issue: ACL Changes Not Applied
 
 **Symptoms:**
+
 - Updated ACL secret but users still have old permissions
 - New users not recognized
 
 **Causes:**
+
 1. Dragonfly not reloaded ACL
 2. Secret update not propagated
 3. Operator not reconciling
 
 **Resolution:**
+
 ```bash
 # 1. Force Dragonfly pod restart to reload ACL
 kubectl rollout restart statefulset/dragonfly -n cache
@@ -478,5 +495,6 @@ kubectl logs -n dragonfly-operator-system deploy/dragonfly-operator-controller-m
 **Tested With:** Dragonfly v1.24.0, Dragonfly Operator v1.1.9
 
 ### Version History
+
 - **v1.1.0** (2026-01-14): Added Mermaid diagrams for multi-tenant visualization
 - **v1.0.0** (2026-01-14): Initial pattern extraction

@@ -22,6 +22,7 @@
 This document analyzes approaches to automate Proxmox VM provisioning for Talos Linux clusters, extending our GitOps workflow from "VMs ready and booted" to "bare metal/hypervisor to production cluster."
 
 **Current Gap:** The project automates everything *after* VMs exist. Users must manually:
+
 1. Upload Talos ISO to Proxmox
 2. Create VMs with proper specifications
 3. Boot VMs into Talos maintenance mode
@@ -108,6 +109,7 @@ Based on the requirement to **avoid Terraform/OpenTofu state management complexi
 Cluster API (CAPI) is a Kubernetes-native approach to infrastructure management. Instead of Terraform state files, **Kubernetes etcd IS the state store**.
 
 **Key Benefits:**
+
 - **No separate state files** - Kubernetes manages desired vs actual state
 - **GitOps-native** - Cluster definitions are YAML manifests
 - **Multi-team friendly** - Uses Kubernetes RBAC and namespaces
@@ -167,6 +169,7 @@ Two Proxmox providers exist for Cluster API:
 ### Talos Integration
 
 Use the Talos-specific CAPI providers:
+
 - **CABPT** (Cluster API Bootstrap Provider Talos) - Generates Talos machine configs
 - **CACPPT** (Cluster API Control Plane Provider Talos) - Manages control plane lifecycle
 
@@ -175,6 +178,7 @@ Use the Talos-specific CAPI providers:
 1. **Management Cluster** - A small K3s or Kind cluster to run CAPI controllers
 2. **Proxmox VM Template** - Talos nocloud image as Proxmox template
 3. **CAPI Components**:
+
    ```bash
    clusterctl init \
      --infrastructure proxmox \
@@ -263,6 +267,7 @@ spec:
 ### Pros and Cons
 
 **Pros:**
+
 - No external state files
 - True GitOps workflow
 - Self-healing infrastructure
@@ -270,6 +275,7 @@ spec:
 - Multi-team via RBAC
 
 **Cons:**
+
 - Requires management cluster (chicken-egg problem for first cluster)
 - More complex initial setup
 - CAPMOX still v1alpha1 (API may change)
@@ -312,6 +318,7 @@ The management cluster can be bootstrapped using several strategies:
 **Recommended: K3s Management Cluster on Proxmox**
 
 1. **Use Ansible to create a single K3s VM:**
+
    ```yaml
    # infrastructure/ansible/playbooks/mgmt-cluster.yaml
    - name: Create K3s management cluster VM
@@ -323,6 +330,7 @@ The management cluster can be bootstrapped using several strategies:
    ```
 
 2. **Install CAPI components:**
+
    ```bash
    clusterctl init \
      --infrastructure proxmox \
@@ -335,6 +343,7 @@ The management cluster can be bootstrapped using several strategies:
    - CAPI creates Talos VMs automatically
 
 4. **(Optional) Pivot CAPI to workload cluster:**
+
    ```bash
    clusterctl move --to-kubeconfig workload-kubeconfig
    ```
@@ -348,6 +357,7 @@ The management cluster can be bootstrapped using several strategies:
 Ansible is **truly stateless** - it determines current state at runtime and applies changes idempotently. No state files, no locking, no remote backends.
 
 **Key Benefits:**
+
 - **Zero state management** - Each run checks current state
 - **Idempotent by design** - Safe to run repeatedly
 - **Simple integration** - Works naturally with go-task
@@ -509,6 +519,7 @@ tasks:
 ### Pros and Cons
 
 **Pros:**
+
 - Truly stateless - no state files ever
 - Idempotent by design
 - Simple to understand and debug
@@ -517,6 +528,7 @@ tasks:
 - Works with existing nodes.yaml
 
 **Cons:**
+
 - Not declarative like Kubernetes (imperative playbooks)
 - No built-in drift detection (only on run)
 - Talos doesn't support SSH (limited post-boot config)
@@ -547,6 +559,7 @@ Crossplane is a Kubernetes-native IaC framework that manages infrastructure via 
 ### Future Consideration
 
 When Crossplane Proxmox providers mature, they could offer:
+
 - Kubernetes-native VM management without CAPI complexity
 - Integration with broader Crossplane ecosystem
 - Simpler composition patterns
@@ -560,6 +573,7 @@ When Crossplane Proxmox providers mature, they could offer:
 [Kubemox](https://github.com/alperencelik/kubemox) is a Kubernetes operator for managing Proxmox resources.
 
 **Status:** Under active development, not production-ready
+
 - No CRD versioning stability
 - Limited feature coverage
 - Missing cloud-init support
@@ -597,6 +611,7 @@ These operators are not mature enough for production use. Monitor their developm
 ### For This Project: Ansible (Short-Term) → Cluster API (Long-Term)
 
 Given the requirements:
+
 1. **Multi-team environment** - No state locking issues
 2. **GitOps alignment** - Declarative, version-controlled
 3. **Minimize complexity** - Pragmatic approach
@@ -604,6 +619,7 @@ Given the requirements:
 ### Phase 1: Ansible (Immediate)
 
 Start with Ansible for VM provisioning:
+
 - Zero state management
 - Simple go-task integration
 - Works with existing nodes.yaml
@@ -613,6 +629,7 @@ Start with Ansible for VM provisioning:
 ### Phase 2: Cluster API (Future)
 
 Migrate to Cluster API when:
+
 - Management cluster is already running
 - Self-healing/scaling is needed
 - Multiple clusters are managed
@@ -671,6 +688,7 @@ Migrate to Cluster API when:
 > "Ensure nodes are booted from Talos ISO, then..."
 
 This requires:
+
 1. **Download Talos ISO** from factory.talos.dev with correct schematic
 2. **Upload to Proxmox** storage (local or shared)
 3. **Create VMs** with specific hardware configuration:
@@ -904,11 +922,13 @@ customization:
 ```
 
 **Image URL Pattern:**
+
 ```
 https://factory.talos.dev/image/29d123fd0e746fccd5ff52d37c0cdbd2d653e10ae29c39276b6edb9ffbd56cf4/v1.12.0/nocloud-amd64-secureboot.iso
 ```
 
 **To generate a new schematic ID:**
+
 ```bash
 curl -s -X POST https://factory.talos.dev/schematics \
   -H "Content-Type: application/json" \
@@ -1338,6 +1358,7 @@ proxmox_endpoint: ENC[AES256_GCM,data:...,type:str]
 ```
 
 **Create and encrypt:**
+
 ```bash
 # Create plaintext file
 cat > infrastructure/secrets.yaml <<EOF
@@ -1354,6 +1375,7 @@ rm infrastructure/secrets.yaml
 ```
 
 **Usage in Taskfile:**
+
 ```yaml
 tasks:
   provision:
@@ -1384,6 +1406,7 @@ export TF_VAR_proxmox_api_token="terraform@pve!tofu=your-secret-token"
 | **Network Isolation** | Restrict API access to management network/VLAN |
 
 **Recommended ACL Setup:**
+
 ```bash
 # Create dedicated user and role with minimal permissions
 pveum user add automation@pve
@@ -1464,11 +1487,13 @@ community.proxmox.proxmox_kvm:
 ### MAC Address Strategy
 
 Static MAC addresses enable:
+
 1. **Consistent VM identification** across recreations
 2. **DHCP reservation fallback** if cloud-init fails
 3. **Network policy enforcement** based on MAC
 
 Define MAC addresses in `nodes.yaml`:
+
 ```yaml
 nodes:
   - name: k8s-cp-1
@@ -1513,47 +1538,56 @@ talos_template: "talos-1.12.0"
 ### Cluster API (CAPMOX/CAPPX)
 
 **When to Consider:**
+
 - Already running a management cluster
 - Need Kubernetes-native VM lifecycle
 - Want to use GitOps for infrastructure (ArgoCD/Flux managing VMs)
 
 **Providers:**
+
 - [IONOS CAPMOX](https://github.com/ionos-cloud/cluster-api-provider-proxmox) - More active development, v0.7.x supports CAPI 1.9
 - [k8s-proxmox CAPPX](https://github.com/k8s-proxmox/cluster-api-provider-proxmox) - Claims longer maturity
 
 **Talos Integration:**
+
 - Use [CABPT](https://github.com/siderolabs/cluster-api-bootstrap-provider-talos) (Talos Bootstrap Provider)
 - Use [CACPPT](https://github.com/siderolabs/cluster-api-control-plane-provider-talos) (Talos Control Plane Provider)
 
 **Challenges:**
+
 - Requires management cluster first
 - More complex setup (CRDs, controllers)
 - Talos nocloud image required (not bare-metal)
 - VIP handling needs Talos built-in solution
 
 **Resources:**
+
 - [Cluster API + Talos + Proxmox Guide](https://a-cup-of.coffee/blog/talos-capi-proxmox/)
 - [talos-proxmox-kaas](https://github.com/kubebn/talos-proxmox-kaas)
 
 ### Sidero Omni
 
 **When to Consider:**
+
 - Want managed/SaaS experience
 - Multiple clusters across locations
 - Bare-metal server management with IPMI/Redfish
 
 **Features:**
+
 - PXE boot → Talos → Cluster in one flow
 - Multi-datacenter support via SideroLink tunnel
 - UI for cluster management
 - GPU/accelerator support
 
 **Limitations:**
+
 - Commercial product (pricing tiers)
 - Less control over provisioning details
 - May be overkill for single-cluster homelab
 
 **Resources:**
+
 - [Sidero Omni](https://www.siderolabs.com/omni/)
 - [Bare Metal Infrastructure Provider](https://docs.siderolabs.com/omni/omni-cluster-setup/setting-up-the-bare-metal-infrastructure-provider)
 
@@ -1564,12 +1598,14 @@ talos_template: "talos-1.12.0"
 ### Phase 1: Foundation (Week 1)
 
 1. **Add tools to mise**
+
    ```toml
    "aqua:opentofu/opentofu" = "1.11.2"
    "aqua:hashicorp/packer" = "1.12.0"
    ```
 
 2. **Create directory structure**
+
    ```
    infrastructure/
    ├── packer/
@@ -1592,6 +1628,7 @@ talos_template: "talos-1.12.0"
 1. **Download Arch Linux ISO** to Proxmox
 
 2. **Configure and run Packer**
+
    ```bash
    task infrastructure:packer:build
    ```
@@ -1605,6 +1642,7 @@ talos_template: "talos-1.12.0"
 2. **Update makejinja.toml** to include infrastructure templates
 
 3. **Test plan/apply cycle**
+
    ```bash
    task configure
    task infrastructure:plan
@@ -1623,6 +1661,7 @@ talos_template: "talos-1.12.0"
    - CLI_REFERENCE.md
 
 4. **Test full workflow**
+
    ```bash
    task bootstrap:full
    ```
@@ -1654,6 +1693,7 @@ flux get ks -A
 ## QEMU Guest Agent Verification
 
 The QEMU guest agent is **critical** for:
+
 - Proxmox UI displaying VM IP addresses
 - Terraform/Ansible detecting when VMs are ready
 - Graceful VM shutdown/reboot from Proxmox
@@ -1661,12 +1701,14 @@ The QEMU guest agent is **critical** for:
 ### Verification Steps
 
 **1. Verify extension is installed on Talos nodes:**
+
 ```bash
 talosctl get extensions -n <node-ip>
 # Should show: siderolabs/qemu-guest-agent
 ```
 
 **2. Verify QEMU agent is enabled in Proxmox VM options:**
+
 ```bash
 # Via API
 pvesh get /nodes/{node}/qemu/{vmid}/config | grep agent
@@ -1676,6 +1718,7 @@ pvesh get /nodes/{node}/qemu/{vmid}/config | grep agent
 ```
 
 **3. Verify agent is running and reporting:**
+
 ```bash
 # Check if Proxmox can communicate with agent
 pvesh get /nodes/{node}/qemu/{vmid}/agent/info
@@ -1687,6 +1730,7 @@ pvesh get /nodes/{node}/qemu/{vmid}/agent/network-get-interfaces
 ```
 
 **4. Verify IP is visible in Proxmox UI:**
+
 - Navigate to Datacenter → Node → VM → Summary
 - IP address should be displayed under "IPs"
 
@@ -1749,27 +1793,32 @@ community.proxmox.proxmox_kvm:
 ## Sources
 
 ### Primary References
+
 - [terraform-proxmox-talos](https://github.com/rgl/terraform-proxmox-talos) - Reference implementation with bpg provider
 - [proxmox-talos-opentofu](https://github.com/max-pfeiffer/proxmox-talos-opentofu) - OpenTofu + Talos + FluxCD
 - [h3m](https://github.com/hiimluck3r/h3m) - Homelab with OpenTofu, Talos, FluxCD
 - [bpg/proxmox provider](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) - Official documentation
 
 ### Tutorials & Guides
+
 - [TechDufus - Building a Talos Kubernetes Homelab](https://techdufus.com/tech/2025/06/30/building-a-talos-kubernetes-homelab-on-proxmox-with-terraform.html) - June 2025
 - [Stonegarden - Talos on Proxmox with OpenTofu](https://blog.stonegarden.dev/articles/2024/08/talos-proxmox-tofu/) - Comprehensive guide
 - [Suraj Remanan - Packer + Terraform + Talos](https://surajremanan.com/posts/automating-talos-installation-on-proxmox-with-packer-and-terraform/) - August 2025
 - [JYSK Tech - Packer and Talos Image Factory](https://jysk.tech/packer-and-talos-image-factory-on-proxmox-76d95e8dc316) - February 2025
 
 ### Cluster API Resources
+
 - [IONOS CAPMOX](https://github.com/ionos-cloud/cluster-api-provider-proxmox) - Active Proxmox CAPI provider
 - [Cluster API + Talos + Proxmox](https://a-cup-of.coffee/blog/talos-capi-proxmox/) - Integration guide
 - [talos-proxmox-kaas](https://github.com/kubebn/talos-proxmox-kaas) - Kubernetes-as-a-Service on Proxmox
 
 ### Provider Comparisons
+
 - [Proxmox Forum - Best Terraform Provider](https://forum.proxmox.com/threads/best-terraform-provider.116152/) - bpg vs Telmate
 - [Virtualization Howto - Best Terraform Modules 2025](https://www.virtualizationhowto.com/2025/10/best-terraform-modules-for-home-labs-in-2025/)
 
 ### Sidero/Omni
+
 - [Sidero Labs Omni](https://www.siderolabs.com/omni/) - Commercial offering
 - [Omni Infrastructure Providers](https://www.siderolabs.com/blog/introducing-omni-infrastructure-providers/)
 

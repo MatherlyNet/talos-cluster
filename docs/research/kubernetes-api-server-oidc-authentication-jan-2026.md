@@ -20,6 +20,7 @@ This document provides a comprehensive implementation guide for configuring Kube
 ### Root Cause
 
 Headlamp uses a two-phase authentication flow:
+
 1. **Phase 1** (Browser): User authenticates with Keycloak → Gets authorization code ✅ Works
 2. **Phase 2** (API Access): Headlamp exchanges code for ID token → Uses token to access Kubernetes API ❌ **Fails**
 
@@ -68,6 +69,7 @@ The Kubernetes API Server **rejects the ID token** because it has no OIDC config
 ### Why API Server OIDC Configuration Is Required
 
 When a user authenticates:
+
 1. Headlamp receives an **ID token** from Keycloak (JWT format)
 2. Headlamp sends Kubernetes API requests with: `Authorization: Bearer <id_token>`
 3. API Server must:
@@ -399,6 +401,7 @@ talosctl -n 192.168.22.101 logs controller-runtime | grep oidc
 ```
 
 Expected output should show:
+
 ```
 --oidc-issuer-url=https://sso.matherly.net/realms/matherlynet
 --oidc-client-id=kubernetes
@@ -425,6 +428,7 @@ kubectl exec -n identity keycloak-0 -- \
 ```
 
 Expected output:
+
 ```json
 {
   "clientId": "kubernetes",
@@ -508,6 +512,7 @@ subjects:
 ```
 
 Apply and test:
+
 ```bash
 kubectl apply -f test-rolebinding.yaml
 # Log in via Headlamp as user with "admin" group
@@ -560,6 +565,7 @@ Example ID token claims after successful authentication:
 ```
 
 Mapped to Kubernetes:
+
 - **Username**: `oidc:user@matherly.net` (from `email` claim)
 - **Groups**: `["oidc:admin", "oidc:operators"]` (from `groups` claim)
 
@@ -605,6 +611,7 @@ subjects:
 ### 5. User Prefixes
 
 Using `oidc:` prefix for usernames and groups prevents conflicts with:
+
 - Kubernetes system users (`system:*`)
 - Service accounts (`system:serviceaccount:*`)
 - Node identities (`system:node:*`)
@@ -617,6 +624,7 @@ Using `oidc:` prefix for usernames and groups prevents conflicts with:
 **Symptom**: Headlamp redirects to `/oidc-callback?code=...` but shows "invalid request"
 
 **Diagnosis**:
+
 ```bash
 # Check Headlamp logs
 kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100
@@ -626,6 +634,7 @@ talosctl -n 192.168.22.101 logs controller-runtime | grep -i "oidc\|authenticati
 ```
 
 **Common Causes**:
+
 1. API Server OIDC not configured → **Implement this guide**
 2. Wrong client ID in token audience → Verify `oidc-client-id` matches token `aud`
 3. Token expired → Check token expiration (`exp` claim)
@@ -636,11 +645,13 @@ talosctl -n 192.168.22.101 logs controller-runtime | grep -i "oidc\|authenticati
 **Symptom**: kube-apiserver pods CrashLoopBackOff
 
 **Diagnosis**:
+
 ```bash
 talosctl -n 192.168.22.101 logs controller-runtime | grep -i error
 ```
 
 **Common Causes**:
+
 1. Invalid `oidc-issuer-url` → Must be HTTPS, accessible from control plane
 2. JWKS endpoint unreachable → API Server must reach `{issuer}/.well-known/openid-configuration`
 3. Syntax error in extraArgs → Verify YAML formatting
@@ -652,6 +663,7 @@ talosctl -n 192.168.22.101 logs controller-runtime | grep -i error
 **Symptom**: kubectl or Headlamp shows 401 Unauthorized
 
 **Diagnosis**:
+
 ```bash
 # Decode token to inspect claims
 echo "<token>" | cut -d. -f2 | base64 -d | jq
@@ -667,6 +679,7 @@ jq -r '.exp' | xargs -I{} date -r {}
 ```
 
 **Common Causes**:
+
 1. Issuer mismatch → `iss` claim ≠ `--oidc-issuer-url`
 2. Audience mismatch → `aud` claim ≠ `--oidc-client-id`
 3. Token expired → `exp` claim in past
@@ -677,6 +690,7 @@ jq -r '.exp' | xargs -I{} date -r {}
 **Symptom**: Authentication succeeds but "Forbidden" on all operations
 
 **Diagnosis**:
+
 ```bash
 # Check user identity
 kubectl auth whoami
@@ -707,6 +721,7 @@ subjects:
 **Symptom**: User authenticated but groups not applied to RBAC
 
 **Diagnosis**:
+
 ```bash
 # Check token groups claim
 echo "<token>" | cut -d. -f2 | base64 -d | jq -r '.groups'
@@ -716,6 +731,7 @@ talosctl -n 192.168.22.101 get manifests | grep oidc-groups-claim
 ```
 
 **Common Causes**:
+
 1. `groups` not in token → Verify Keycloak client has groups scope
 2. Wrong claim name → Check `--oidc-groups-claim` matches token claim
 3. Missing protocol mapper → Add groups mapper to Keycloak client

@@ -25,6 +25,7 @@ This guide implements **CloudNativePG (CNPG)** as a shared PostgreSQL operator f
 ### Shared Resource Pattern
 
 Like RustFS, CNPG is deployed as a **shared cluster resource**:
+
 - Single operator in `cnpg-system` namespace
 - Cluster CRs deployed per-application in their respective namespaces
 - Centralized operator management, distributed data ownership
@@ -566,6 +567,7 @@ Create this policy in RustFS Console → **Identity** → **Policies** → **Cre
 | Bucket location | `s3:GetBucketLocation` | Barman Cloud SDK compatibility |
 
 **Why Not Built-in `readwrite`:**
+
 - The `readwrite` policy grants access to **ALL** buckets
 - The custom `database-storage` policy scopes access to only `cnpg-backups` bucket
 - This protects other buckets (loki-chunks, etcd-backups, etc.) from database backup access (principle of least privilege)
@@ -618,6 +620,7 @@ The CNPG IAM structure mirrors Loki and Talos Backup:
 | **Permissions** | Full CRUD on loki-* | Full CRUD on etcd-backups | Full CRUD on cnpg-backups |
 
 This pattern ensures:
+
 - **Principle of least privilege**: Each service only accesses its own buckets
 - **Audit trail**: User/group structure enables access tracking
 - **Scalability**: Future PostgreSQL clusters can share the same credentials or have dedicated users in the `databases` group
@@ -935,6 +938,7 @@ CNPG automatically creates PodMonitors when `monitoring.enablePodMonitor: true`.
 ### Grafana Dashboards
 
 Import the official CNPG Grafana dashboard:
+
 - Dashboard ID: `20417` (CloudNativePG)
 - Source: grafana.com/grafana/dashboards/20417
 
@@ -1022,6 +1026,7 @@ kubectl run mc-test --rm -it --image=minio/mc -- \
 ### Pod Security
 
 CNPG enforces restricted pod security by default:
+
 - Runs as non-root user `postgres`
 - Read-only root filesystem
 - No privilege escalation
@@ -1030,6 +1035,7 @@ CNPG enforces restricted pod security by default:
 ### TLS
 
 All connections use TLS by default:
+
 - Client-to-PostgreSQL (port 5432)
 - Operator-to-instance (port 8000)
 - Replication between nodes
@@ -1317,6 +1323,7 @@ postgresql:
 To upgrade pgvector versions:
 
 1. **Update image reference** in Cluster spec:
+
    ```yaml
    extensions:
      - name: pgvector
@@ -1325,6 +1332,7 @@ To upgrade pgvector versions:
    ```
 
 2. **Update Database extension version**:
+
    ```yaml
    extensions:
      - name: vector
@@ -1368,6 +1376,7 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 ## References
 
 ### External Documentation
+
 - [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 - [CloudNativePG GitHub](https://github.com/cloudnative-pg/cloudnative-pg)
 - [Helm Chart Repository](https://github.com/cloudnative-pg/charts)
@@ -1378,6 +1387,7 @@ kubectl -n cnpg-system logs -l app.kubernetes.io/name=cloudnative-pg | grep -i e
 - [CNPG Recipe 23](https://www.gabrielebartolini.it/articles/2025/12/cnpg-recipe-23-managing-extensions-with-imagevolume-in-cloudnativepg/) - ImageVolume extension tutorial
 
 ### Project Documentation
+
 - [Keycloak Implementation](./keycloak-implementation.md) - Primary CNPG consumer
 - [RustFS Implementation](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md) - Backup storage
 - [Talos Backup with RustFS](../talos-backup-rustfs-implementation.md) - IAM pattern reference

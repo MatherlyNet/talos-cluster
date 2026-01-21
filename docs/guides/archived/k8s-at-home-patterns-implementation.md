@@ -1066,10 +1066,12 @@ templates/config/kubernetes/apps/
 ### Phase 4: Optional Enhancements
 
 **bjw-s App Template:**
+
 - [ ] Add OCIRepository to flux/cluster/repositories
 - [ ] Use for first simple application
 
 **External Secrets:**
+
 - [ ] Set up secret provider (1Password/Bitwarden/Vault)
 - [ ] Create `external-secrets` namespace templates
 - [ ] Create External Secrets Operator templates

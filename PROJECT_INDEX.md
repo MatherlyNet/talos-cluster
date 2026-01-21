@@ -9,6 +9,7 @@
 A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bare-metal deployments. Based on [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template).
 
 **Core Stack:**
+
 - **OS:** Talos Linux (immutable Kubernetes-native OS)
 - **GitOps:** Flux CD with SOPS encryption
 - **CNI:** Cilium (kube-proxy replacement, BGP Control Plane v2 optional)
@@ -19,6 +20,7 @@ A **Talos Linux Kubernetes cluster** template using **Flux GitOps** for home/bar
 - **IaC:** OpenTofu v1.11+ with Cloudflare R2 state backend
 
 **Optional Features (Jan 2026):**
+
 - Cilium BGP Control Plane v2 for multi-VLAN routing
 - CiliumNetworkPolicies for zero-trust network segmentation (audit/enforce modes)
 - UniFi DNS Integration via external-dns webhook
@@ -204,11 +206,13 @@ flux get ks -A
 ## Template Structure
 
 Templates use custom Jinja2 delimiters:
+
 - Block: `#% ... %#`
 - Variable: `#{ ... }#`
 - Comment: `#| ... #|`
 
 Key template paths:
+
 - `templates/config/kubernetes/apps/` - Application manifests
 - `templates/config/talos/` - Talos machine config
 - `templates/config/bootstrap/` - Bootstrap resources
@@ -225,6 +229,7 @@ Key template paths:
 ## Key Directories (Post-Configure)
 
 Generated after `task configure`:
+
 - `kubernetes/` - Rendered K8s manifests
 - `talos/` - Rendered Talos configs
 - `bootstrap/` - Rendered bootstrap resources
@@ -253,6 +258,7 @@ templates/config/infrastructure/     # Source templates
 ```
 
 **Features:**
+
 - State stored in Cloudflare R2 via tfstate-worker HTTP backend with locking
 - Automated Proxmox VM provisioning (ISO download, upload, VM creation)
 - Talos Image Factory integration for schematic IDs

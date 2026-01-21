@@ -3,6 +3,7 @@
 **Date**: January 12, 2026
 **Validation Target**: Kubernetes API Server OIDC Authentication
 **Related Guides**:
+
 - `docs/guides/kubectl-oidc-login-setup.md`
 - `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md`
 
@@ -37,6 +38,7 @@ The Kubernetes API Server OIDC authentication implementation has been **successf
 **Status**: ✅ Correctly implemented
 
 **Configuration**:
+
 ```yaml
 cluster:
   apiServer:
@@ -51,6 +53,7 @@ cluster:
 ```
 
 **Validation**:
+
 - All flags match research guide recommendations (lines 13-19)
 - Issuer URL correctly points to Keycloak external endpoint
 - Client ID set to `kubernetes` as specified
@@ -68,6 +71,7 @@ cluster:
 **Status**: ✅ Correctly configured
 
 **Configuration** (lines 1028-1068):
+
 ```yaml
 kubernetes_oidc_enabled: true
 kubernetes_oidc_client_id: "kubernetes"
@@ -80,6 +84,7 @@ kubernetes_oidc_signing_algs: "RS256"
 ```
 
 **Validation**:
+
 - Feature flag enabled
 - Client ID and secret defined
 - All claim mappings configured
@@ -96,6 +101,7 @@ kubernetes_oidc_signing_algs: "RS256"
 **Status**: ✅ Kubernetes client properly configured
 
 **Configuration** (lines 272-299):
+
 ```yaml
 - clientId: "$(env:KUBERNETES_CLIENT_ID)"
   name: "Kubernetes API Server"
@@ -116,12 +122,14 @@ kubernetes_oidc_signing_algs: "RS256"
 ```
 
 **Validation**:
+
 - Client uses environment variable substitution (properly templated)
 - Redirect URIs support kubectl oidc-login plugin (localhost:8000, localhost:18000)
 - Groups scope included in default scopes (critical for RBAC)
 - Protocol mappers configured for groups, email, roles
 
 **Secrets Validation**:
+
 ```bash
 # Decrypted secrets show:
 KUBERNETES_CLIENT_ID: kubernetes
@@ -139,6 +147,7 @@ KUBERNETES_CLIENT_SECRET: 840480f0e9446b2254967e4fdbf773d8afc46192d921298be7a7cb
 **Status**: ⚠️ Template correct, but deployment out of sync
 
 **Template Configuration** (lines 59-62):
+
 ```yaml
 config:
   oidc:
@@ -147,6 +156,7 @@ config:
 ```
 
 **Deployed Configuration**:
+
 ```bash
 $ kubectl get secret -n kube-system headlamp-oidc -o jsonpath='{.data.clientID}' | base64 -d
 headlamp
@@ -157,11 +167,13 @@ headlamp
 **Root Cause**: Configuration not regenerated after implementing kubernetes_oidc variables
 
 **Impact**:
+
 - Headlamp authentication may still work if `headlamp` client exists
 - However, token audience (`aud`) claim will not match API Server expectations
 - Could cause "Unable to authenticate the request" errors when Headlamp tries to access K8s API
 
 **Remediation Required**:
+
 ```bash
 # 1. Regenerate configurations
 task configure -y
@@ -181,6 +193,7 @@ kubectl get secret -n kube-system headlamp-oidc -o jsonpath='{.data.clientID}' |
 **Status**: ❌ Missing - No RBAC bindings for OIDC users
 
 **Current State**:
+
 ```bash
 $ kubectl get clusterrolebindings -o json | jq -r '.items[] | select(.subjects[]?.name? | contains("oidc"))'
 # No output - no OIDC RBAC bindings exist
@@ -189,6 +202,7 @@ $ kubectl get clusterrolebindings -o json | jq -r '.items[] | select(.subjects[]
 **Finding**: ❌ **Critical gap - OIDC users have no permissions**
 
 **Impact**:
+
 - Users can authenticate via OIDC successfully
 - API Server will validate tokens correctly
 - However, authenticated users will receive "Forbidden" errors on all operations
@@ -201,6 +215,7 @@ The research guide provides RBAC examples (lines 496-515), but these were never 
 **Required Actions**:
 
 1. **Create Admin ClusterRoleBinding**:
+
    ```yaml
    apiVersion: rbac.authorization.k8s.io/v1
    kind: ClusterRoleBinding
@@ -217,6 +232,7 @@ The research guide provides RBAC examples (lines 496-515), but these were never 
    ```
 
 2. **Create Operator ClusterRoleBinding** (if applicable):
+
    ```yaml
    apiVersion: rbac.authorization.k8s.io/v1
    kind: ClusterRoleBinding
@@ -233,6 +249,7 @@ The research guide provides RBAC examples (lines 496-515), but these were never 
    ```
 
 3. **Create Viewer ClusterRoleBinding**:
+
    ```yaml
    apiVersion: rbac.authorization.k8s.io/v1
    kind: ClusterRoleBinding
@@ -251,6 +268,7 @@ The research guide provides RBAC examples (lines 496-515), but these were never 
 **Recommended Implementation Path**:
 
 Create RBAC manifest in the cluster:
+
 - Location: `kubernetes/apps/kube-system/headlamp/rbac/oidc-rbac.yaml`
 - Add to Kustomization: `kubernetes/apps/kube-system/headlamp/rbac/kustomization.yaml`
 
@@ -265,6 +283,7 @@ This follows the project pattern of co-locating RBAC with related applications.
 **Validation**: ✅ Kubernetes API Server OIDC aligns with split-path architecture
 
 Key observations:
+
 - API Server OIDC is **separate** from Envoy Gateway OIDC (SecurityPolicy)
 - Headlamp can use **either**:
   - Native OIDC (configured) - tokens validated by API Server
@@ -301,6 +320,7 @@ Key observations:
 ### Priority 1: Critical - Fix Headlamp Client ID
 
 **Steps**:
+
 ```bash
 cd /Users/jason/dev/IaC/matherlynet-talos-cluster
 
@@ -325,6 +345,7 @@ kubectl get secret -n kube-system headlamp-oidc -o jsonpath='{.data.clientID}' |
 ```
 
 **Validation**:
+
 ```bash
 # Check Headlamp logs for OIDC configuration
 kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50 | grep -i oidc
@@ -384,11 +405,13 @@ EOF
 **Option B: GitOps Approach** (Recommended)
 
 1. Create directory structure:
+
    ```bash
    mkdir -p kubernetes/apps/kube-system/headlamp/rbac
    ```
 
 2. Create RBAC manifest:
+
    ```bash
    cat > kubernetes/apps/kube-system/headlamp/rbac/oidc-rbac.yaml <<'EOF'
    ---
@@ -437,6 +460,7 @@ EOF
    ```
 
 3. Create Kustomization:
+
    ```bash
    cat > kubernetes/apps/kube-system/headlamp/rbac/kustomization.yaml <<'EOF'
    ---
@@ -448,12 +472,14 @@ EOF
    ```
 
 4. Update parent Kustomization:
+
    ```bash
    # Add to kubernetes/apps/kube-system/headlamp/ks.yaml
    # Under spec.path, ensure it includes rbac/ subdirectory
    ```
 
 5. Commit and push:
+
    ```bash
    git add kubernetes/apps/kube-system/headlamp/rbac/
    git commit -m "feat(rbac): add OIDC group-based ClusterRoleBindings for K8s API Server auth"
@@ -461,11 +487,13 @@ EOF
    ```
 
 6. Reconcile:
+
    ```bash
    flux reconcile kustomization headlamp -n kube-system
    ```
 
 **Validation**:
+
 ```bash
 # Verify ClusterRoleBindings created
 kubectl get clusterrolebindings | grep oidc
@@ -483,6 +511,7 @@ kubectl describe clusterrolebinding oidc-cluster-admins
 Edit `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md`:
 
 Add to top of file (after line 1):
+
 ```markdown
 ---
 **STATUS**: ✅ IMPLEMENTATION COMPLETE
@@ -492,6 +521,7 @@ Add to top of file (after line 1):
 ```
 
 Change line 4:
+
 ```markdown
 **Status**: Implementation Complete (RBAC pending)
 ```
@@ -511,6 +541,7 @@ mv docs/guides/kubectl-oidc-login-setup.md docs/guides/completed/
 **Action 3**: Add implementation completion note to kubectl guide
 
 Edit `docs/guides/completed/kubectl-oidc-login-setup.md` (after line 1):
+
 ```markdown
 ---
 **STATUS**: ✅ READY FOR USE
@@ -538,11 +569,13 @@ Edit `docs/guides/completed/kubectl-oidc-login-setup.md` (after line 1):
 **Test 2: kubectl oidc-login Plugin**
 
 1. Install kubectl oidc-login plugin:
+
    ```bash
    kubectl krew install oidc-login
    ```
 
 2. Configure kubeconfig:
+
    ```bash
    ISSUER_URL="https://sso.matherly.net/realms/matherlynet"
    CLIENT_ID="kubernetes"
@@ -559,6 +592,7 @@ Edit `docs/guides/completed/kubectl-oidc-login-setup.md` (after line 1):
    ```
 
 3. Test authentication:
+
    ```bash
    kubectl --user=oidc-user get nodes
    ```
@@ -568,26 +602,32 @@ Edit `docs/guides/completed/kubectl-oidc-login-setup.md` (after line 1):
 **Test 3: RBAC Validation**
 
 1. Check user identity:
+
    ```bash
    kubectl --user=oidc-user auth whoami
    ```
+
    **Expected output**:
+
    ```
    Username: oidc:user@matherly.net
    Groups:   [oidc:admin system:authenticated]
    ```
 
 2. Test permissions:
+
    ```bash
    kubectl --user=oidc-user auth can-i get pods --all-namespaces
    kubectl --user=oidc-user auth can-i create deployment -n default
    kubectl --user=oidc-user auth can-i delete namespace
    ```
+
    **Expected**: Permissions match assigned group role
 
 **Test 4: Token Inspection**
 
 1. Get token:
+
    ```bash
    TOKEN=$(kubectl --user=oidc-user oidc-login get-token \
      --oidc-issuer-url="${ISSUER_URL}" \
@@ -596,6 +636,7 @@ Edit `docs/guides/completed/kubectl-oidc-login-setup.md` (after line 1):
    ```
 
 2. Decode claims:
+
    ```bash
    echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
    ```

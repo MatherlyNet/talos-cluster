@@ -46,6 +46,7 @@ This guide implements **Keycloak** as the OIDC provider for the cluster, enablin
 | **Raw Manifests** | Full control | Manual updates, no lifecycle management | Not recommended |
 
 **Recommendation:** Use the **Keycloak Operator** for this project because:
+
 1. **Version alignment**: Operator releases match Keycloak versions exactly (26.5.0)
 2. **Official support**: Maintained by the Keycloak team, not third-party
 3. **Kubernetes-native**: Uses CRDs (`Keycloak`, `KeycloakRealmImport`) for declarative configuration
@@ -780,6 +781,7 @@ spec:
 ```
 
 **Notes:**
+
 - The realm is created automatically when Keycloak is enabled (no separate toggle required)
 - KeycloakRealmImport only creates new realms; it cannot update existing ones
 - For updates to existing realms, use the Admin Console or Admin API
@@ -966,6 +968,7 @@ keycloak_db_mode: "cnpg"  # CloudNativePG for database HA
 ```
 
 The Keycloak Operator automatically configures:
+
 - Pod anti-affinity across nodes and zones
 - Infinispan distributed cache for session clustering
 - JGroups DNS-based discovery via headless service
@@ -975,6 +978,7 @@ The Keycloak Operator automatically configures:
 When `keycloak_db_mode: "cnpg"`, use the shared CloudNativePG operator. See the **[CloudNativePG Implementation Guide](./cnpg-implementation.md)** for full operator deployment.
 
 **Prerequisites:**
+
 - Deploy CNPG operator first: `cnpg_enabled: true` in cluster.yaml
 - The CNPG guide includes a complete Keycloak Cluster CR example
 
@@ -1202,11 +1206,13 @@ kubectl -n identity logs -l cnpg.io/cluster=keycloak-postgres -c postgres | grep
 The Keycloak operator requires specific RBAC permissions. If you see 403 errors in logs, ensure these are configured:
 
 **ClusterRole requirements:**
+
 - `apiextensions.k8s.io/customresourcedefinitions` - get, list, watch (for ServiceMonitor CRD detection)
 - `k8s.keycloak.org/*` - full CRUD for Keycloak CRs
 - `""/namespaces` - get, list
 
 **Namespace Role requirements:**
+
 - `""/configmaps, secrets, services` - full CRUD
 - `""/pods` - list
 - `""/pods/log` - get
@@ -1273,6 +1279,7 @@ Keycloak 26.5.0 includes full OpenTelemetry support for distributed tracing, all
 3. **Keycloak 26.5.0+** (already the default version)
 
 Verify Tempo is available:
+
 ```bash
 kubectl get svc tempo -n monitoring
 # Expected: tempo ClusterIP with ports including:
@@ -1412,6 +1419,7 @@ Keycloak OpenTelemetry traces include:
 ### Grafana Dashboard
 
 Create a Keycloak-specific dashboard with:
+
 - Authentication latency percentiles
 - Token operations per second
 - Error rates by operation type
@@ -1420,6 +1428,7 @@ Create a Keycloak-specific dashboard with:
 ### Troubleshooting
 
 **Traces not appearing in Tempo:**
+
 ```bash
 # Verify Tempo is receiving traces
 kubectl -n monitoring logs tempo-0 | grep -i "keycloak"
@@ -1458,6 +1467,7 @@ If you see warnings like "tracing-resource-attributes: Available only when Traci
 ### Network Security
 
 When network policies are enabled, Keycloak needs:
+
 - Ingress from Envoy Gateway pods
 - Egress to PostgreSQL
 - Egress to external IdPs (if federated)
@@ -1487,6 +1497,7 @@ Key features available in this version:
 ## References
 
 ### External Documentation
+
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 - [Keycloak Operator Installation](https://www.keycloak.org/operator/installation)
 - [Keycloak Operator Basic Deployment](https://www.keycloak.org/operator/basic-deployment)
@@ -1497,6 +1508,7 @@ Key features available in this version:
 - [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 
 ### Project Documentation
+
 - [CloudNativePG Implementation](./cnpg-implementation.md) - PostgreSQL operator for production
 - [JWT SecurityPolicy Implementation](./jwt-securitypolicy-implementation.md)
 - [Native OIDC SecurityPolicy Implementation](./native-oidc-securitypolicy-implementation.md)

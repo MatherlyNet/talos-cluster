@@ -282,7 +282,7 @@ INFO (Ticket for follow-up)
 Time: 0s        30s       60s       90s       120s      150s      180s
       │         │         │         │         │         │         │
       ▼         ▼         ▼         ▼         ▼         ▼         ▼
-      
+
 ┌─────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────────┐
 │                    Prometheus Scrape Cycle                           │
 │                    (every 30 seconds)                                │

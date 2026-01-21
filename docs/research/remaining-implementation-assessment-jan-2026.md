@@ -5,6 +5,7 @@
 > **Last Updated:** January 7, 2026
 > **Status:** Living Document
 > **Sources:**
+>
 > - [k8s-at-home-remaining-implementation.md](../guides/k8s-at-home-remaining-implementation.md)
 > - [gitops-components-implementation.md](../guides/gitops-components-implementation.md)
 > - [envoy-gateway-observability-security.md](../guides/envoy-gateway-observability-security.md)
@@ -12,6 +13,7 @@
 > - [envoy-gateway-oidc-integration.md](./envoy-gateway-oidc-integration.md)
 >
 > **Implementation Guides:**
+>
 > - [VolSync with RustFS](../guides/volsync-rustfs-implementation.md)
 > - [Talos Backup with RustFS](../guides/talos-backup-rustfs-implementation.md)
 > - [JWT SecurityPolicy](../guides/completed/jwt-securitypolicy-implementation.md)
@@ -23,6 +25,7 @@
 > - [CloudNativePG Operator](../guides/completed/cnpg-implementation.md)
 >
 > **Shared Infrastructure (Deploy First):**
+>
 > - CloudNativePG → Keycloak (database dependency)
 > - Keycloak → JWT SecurityPolicy, OIDC SecurityPolicy (OIDC provider dependency)
 
@@ -53,6 +56,7 @@ This document tracks **remaining work only**. Completed components are documente
 **Status:** Templates do not exist. Variables defined in `cluster.yaml` but commented out.
 
 **Required Work:**
+
 1. Create `templates/config/kubernetes/apps/storage/volsync/` directory structure
 2. Create template files per implementation guide:
    - `ks.yaml.j2` - Flux Kustomization
@@ -87,6 +91,7 @@ This document tracks **remaining work only**. Completed components are documente
 | RustFS connectivity | ✅ | Internal endpoint via `.svc.cluster.local` |
 
 **Implementation Completed:**
+
 - ✅ All talos-backup templates wrapped with `talos_backup_enabled` conditional
 - ✅ HelmRelease supports internal RustFS (`S3_FORCE_PATH_STYLE`, `S3_USE_SSL`)
 - ✅ Kustomization depends on RustFS when `backup_s3_internal` is true
@@ -126,6 +131,7 @@ This document tracks **remaining work only**. Completed components are documente
 | Cache Duration | ✅ | 300s JWKS cache |
 
 **Configuration in cluster.yaml:**
+
 ```yaml
 oidc_issuer_url: "https://sso.matherly.net/realms/matherlynet"
 oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs"
@@ -157,6 +163,7 @@ oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-conn
 | Logs | ✅ | No errors, reconciling successfully |
 
 **Notes:**
+
 - ServiceMonitor not created despite `enabled: true` - chart issue (non-blocking)
 - Upgrade automation ready for next version bump in `cluster.yaml`
 
@@ -183,6 +190,7 @@ oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-conn
 | PostgreSQL Clusters | ✅ | `keycloak-postgres` running in identity namespace (1/1 Ready) |
 
 **Implementation Completed:**
+
 - ✅ All cnpg-system templates created with `cnpg_enabled` conditional
 - ✅ Derived variables added to `plugin.py`: `cnpg_enabled`, `cnpg_backup_enabled`, `cnpg_pgvector_enabled`
 - ✅ Root kustomization updated to include cnpg-system
@@ -200,6 +208,7 @@ oidc_jwks_uri: "https://sso.matherly.net/realms/matherlynet/protocol/openid-conn
   - `dashboard-configmap.yaml.j2` - Grafana dashboard (auto-provisioned via sidecar)
 
 **cluster.yaml variables:**
+
 ```yaml
 cnpg_enabled: true                     # Enable operator deployment
 cnpg_postgres_image: "ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie"
@@ -236,6 +245,7 @@ cnpg_control_plane_only: true          # Schedule operator on control-plane
 | OIDC SSO | ✅ | `oidc-sso` SecurityPolicy protecting Grafana, Hubble, RustFS |
 
 **Configuration in cluster.yaml:**
+
 ```yaml
 keycloak_enabled: true
 keycloak_subdomain: "sso"              # Creates sso.matherly.net
@@ -247,11 +257,13 @@ oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
 ```
 
 **Protected Applications:**
+
 - Grafana (`grafana.matherly.net`)
 - Hubble UI (`hubble.matherly.net`)
 - RustFS Console (`rustfs.matherly.net`)
 
 **Optional Enhancement: OpenTelemetry Tracing**
+
 - Keycloak 26.5.0 has full OpenTelemetry support (graduated from preview)
 - Can export traces to existing Tempo deployment (`tempo.monitoring.svc:4317`)
 - New variables: `keycloak_tracing_enabled`, `keycloak_tracing_sample_rate`
@@ -272,6 +284,7 @@ oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
 **Use Case:** Native gRPC traffic management via Gateway API GRPCRoute (GA since v1.1.0).
 
 **Key Features:**
+
 - Service/method-level routing matching
 - Traffic splitting for canary deployments
 - Request mirroring for shadow testing
@@ -279,7 +292,9 @@ oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
 - JWT authentication works; OIDC (session-based) does NOT work for gRPC
 
 **Required Work (When First gRPC Service Deployed):**
+
 1. Add gRPC listener to internal Gateway:
+
    ```yaml
    - name: grpc
      protocol: HTTPS
@@ -289,10 +304,12 @@ oidc_sso_enabled: true                 # OIDC SSO SecurityPolicy active
        kinds:
          - kind: GRPCRoute
    ```
+
 2. Create GRPCRoute per service following template pattern
 3. (Optional) Configure cluster-level variables
 
 **cluster.yaml variables (optional):**
+
 ```yaml
 grpc_gateway_enabled: false            # Enable gRPC listener on Gateway
 grpc_hostname: "grpc.matherly.net"     # gRPC services hostname
@@ -300,6 +317,7 @@ grpc_default_port: 50051               # Default gRPC port
 ```
 
 **Per-Service Template Pattern:**
+
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute

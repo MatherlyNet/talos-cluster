@@ -469,12 +469,14 @@ kubectl get securitypolicy -n network
 ### Test Authentication
 
 1. **Access protected route:**
+
    ```bash
    curl -v https://app.matherly.net/
    # Should redirect to OAuth2-Proxy → IdP login
    ```
 
 2. **Check headers after auth:**
+
    ```bash
    # In your backend application, log incoming headers
    # Should see X-Auth-Request-* headers
@@ -542,11 +544,13 @@ OAuth2-Proxy automatically skips auth for `/health` via `skip-auth-regex`.
 ## References
 
 ### External Documentation
+
 - [OAuth2-Proxy Documentation](https://oauth2-proxy.github.io/oauth2-proxy/)
 - [Envoy Gateway External Authorization](https://gateway.envoyproxy.io/latest/tasks/security/ext-auth/)
 - [OAuth2-Proxy Helm Chart](https://github.com/oauth2-proxy/manifests)
 
 ### Project Documentation
+
 - [Native OIDC SecurityPolicy](./completed/native-oidc-securitypolicy-implementation.md) - Simpler SSO alternative
 - [JWT SecurityPolicy](./envoy-gateway-observability-security.md) - API token validation
 

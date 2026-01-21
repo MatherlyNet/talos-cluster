@@ -26,6 +26,7 @@ This comprehensive review analyzed the matherlynet-talos-cluster GitOps Kubernet
 ### Strategic Assessment
 
 This repository represents a **best-in-class GitOps reference implementation** with:
+
 - Zero critical security vulnerabilities
 - Strong architectural foundations
 - Comprehensive documentation
@@ -39,6 +40,7 @@ This repository represents a **best-in-class GitOps reference implementation** w
 **Score: 85/100**
 
 ### Strengths
+
 - Consistent template structure across 100+ Jinja2 templates
 - Well-organized directory hierarchy
 - Clear separation between templates and generated output
@@ -50,6 +52,7 @@ This repository represents a **best-in-class GitOps reference implementation** w
 #### HIGH Priority
 
 **1. Redundant Conditional Patterns** (50+ instances)
+
 - **Location:** Multiple `*.yaml.j2` files
 - **Issue:** Pattern `#% if X is defined and X %#` is redundant
 - **Impact:** Code verbosity, potential maintenance issues
@@ -64,6 +67,7 @@ This repository represents a **best-in-class GitOps reference implementation** w
 ```
 
 **2. Exit Code Handling in kubeconform.sh**
+
 - **Location:** `.taskfiles/template/scripts/kubeconform.sh`
 - **Issue:** Subshell in while loop masks exit codes
 - **Impact:** Build may succeed despite validation failures
@@ -90,19 +94,23 @@ done
 #### MEDIUM Priority
 
 **3. Inconsistent Default Value Usage**
+
 - Some templates use `| default(value)` while others rely on undefined behavior
 - Standardize on explicit defaults for all optional variables
 
 **4. Complex Nested Conditionals in talconfig.yaml.j2**
+
 - Deep nesting reduces readability
 - Consider extracting to partial templates
 
 **5. Credential Export Duplication**
+
 - **Location:** `.taskfiles/infrastructure/Taskfile.yaml`
 - Multiple tasks repeat same credential export pattern
 - Extract to shared function or task dependency
 
 **6. Missing BGP Cross-Field Validation in CUE Schema**
+
 - BGP fields (router_addr, router_asn, node_asn) should validate together
 - Add cross-field validation constraint
 
@@ -122,6 +130,7 @@ done
 **Score: 92/100**
 
 ### Strengths
+
 - Well-structured bootstrap flow with proper dependency ordering
 - Helmfile dependency chain for CRD installation
 - OCI repository pattern for all Helm charts
@@ -134,6 +143,7 @@ done
 #### HIGH Priority
 
 **1. Missing Explicit `dependsOn` in Post-Bootstrap Kustomizations**
+
 - **Components Affected:** cilium, coredns, envoy-gateway
 - **Issue:** No explicit dependency declarations
 - **Impact:** Potential reconciliation failures during cluster bootstrap
@@ -155,15 +165,18 @@ spec:
 #### MEDIUM Priority
 
 **2. Inconsistent Health Check Patterns**
+
 - Some HelmReleases define `healthChecks`, others rely on defaults
 - Standardize health check configuration across all releases
 
 **3. CRD Handling Inconsistency**
+
 - Envoy Gateway uses `skip: true` for CRDs
 - Other charts use implicit CRD installation
 - Document rationale for each approach
 
 **4. Plugin.py Missing Configuration Validation**
+
 - No validation of cluster.yaml structure before rendering
 - Add pre-render validation for required fields
 
@@ -205,6 +218,7 @@ spec:
 **Score: 84/100**
 
 ### Strengths
+
 - SOPS/Age encryption for all secrets
 - Proper `.gitignore` for sensitive files
 - GitHub deploy key with read-only permissions
@@ -222,6 +236,7 @@ No critical security vulnerabilities identified.
 #### HIGH Priority
 
 **1. Pod Security Admission Not Configured**
+
 - **Impact:** No cluster-wide pod security enforcement
 - **Recommendation:** Enable PSA with `restricted` policy
 
@@ -237,6 +252,7 @@ metadata:
 ```
 
 **2. No Container Image Scanning in CI/CD**
+
 - **Impact:** Vulnerabilities may deploy to production
 - **Recommendation:** Add Trivy scanning to workflows
 
@@ -251,6 +267,7 @@ metadata:
 ```
 
 **3. Supply Chain Security Gaps**
+
 - No image signing (cosign/Sigstore)
 - No SBOM generation
 - No SLSA compliance attestation
@@ -258,14 +275,17 @@ metadata:
 #### MEDIUM Priority
 
 **4. No Network Policies Defined**
+
 - Relying on Cilium default behavior
 - Add explicit CiliumNetworkPolicies for namespace isolation
 
 **5. TLS Version Not Enforced**
+
 - No documented minimum TLS version
 - Ensure TLS 1.2+ enforcement
 
 **6. Kubernetes Audit Logging Not Configured**
+
 - No audit log aggregation
 - Enable audit logging in Talos patches
 
@@ -286,6 +306,7 @@ metadata:
 **Score: 88/100**
 
 ### Strengths
+
 - VictoriaMetrics (10x more memory efficient than Prometheus)
 - Cilium native routing mode (no encapsulation overhead)
 - DSR mode for LoadBalancer (preserves source IP, lower latency)
@@ -297,6 +318,7 @@ metadata:
 #### HIGH Priority - Quick Wins
 
 **1. OCI Repository Polling Too Frequent**
+
 - **Current:** 15m interval
 - **Impact:** 80 registry polls/hour
 - **Recommendation:** Increase to 30m for stable charts
@@ -308,6 +330,7 @@ spec:
 ```
 
 **2. No retryInterval on Kustomizations**
+
 - **Impact:** 1h wait on reconciliation failures
 - **Recommendation:** Add `retryInterval: 30s`
 
@@ -318,6 +341,7 @@ spec:
 ```
 
 **3. Cache File Reads in plugin.py**
+
 - **Location:** `templates/scripts/plugin.py`
 - **Impact:** 20-30% template render improvement
 
@@ -333,15 +357,18 @@ def _read_file_cached(file_path: str) -> str:
 #### MEDIUM Priority
 
 **4. Bootstrap Operations Sequential**
+
 - Namespace creation is sequential
 - Secret application is sequential
 - Parallelize where possible for 2-3x faster bootstrap
 
 **5. Missing Health Checks**
+
 - Only 2 explicit health probes found
 - Add liveness/readiness probes to critical apps
 
 **6. Envoy Gateway Missing CPU Limit**
+
 - Could starve other workloads
 - Add CPU limit (500m-1000m)
 
@@ -377,6 +404,7 @@ def _read_file_cached(file_path: str) -> str:
 **Score: 88/100**
 
 ### Strengths
+
 - Comprehensive flux-local validation in CI
 - E2E workflow tests full configuration
 - Matrix testing (public/private repos)
@@ -389,28 +417,34 @@ def _read_file_cached(file_path: str) -> str:
 #### HIGH Priority
 
 **1. CLI_REFERENCE.md Missing Infrastructure Tasks**
+
 - `infra:init`, `infra:plan`, `infra:apply` not documented
 - Add Infrastructure Tasks section
 
 **2. E2E Workflow Trigger Inverted**
+
 - Currently: `paths-ignore: kubernetes/**`
 - Should test templates/ changes
 
 **3. No Security Scanning in CI/CD**
+
 - Add Trivy for container scanning
 - Add tfsec for OpenTofu validation
 
 #### MEDIUM Priority
 
 **4. Missing Disaster Recovery Runbook**
+
 - No documented backup/restore procedures
 - No RTO/RPO expectations
 
 **5. No Upgrade/Migration Guides**
+
 - Missing Talos upgrade runbook
 - Missing Kubernetes upgrade checklist
 
 **6. Documentation Gaps**
+
 - proxmox-csi, proxmox-ccm need full APPLICATIONS.md entries
 - Missing volsync documentation (future feature)
 
@@ -545,6 +579,7 @@ def _read_file_cached(file_path: str) -> str:
 ## Appendix A: Files Reviewed
 
 ### Core Configuration
+
 - `cluster.sample.yaml`
 - `nodes.sample.yaml`
 - `makejinja.toml`
@@ -552,23 +587,27 @@ def _read_file_cached(file_path: str) -> str:
 - `.sops.yaml`
 
 ### Templates (100+ files)
+
 - `templates/config/kubernetes/apps/**/*.yaml.j2`
 - `templates/config/talos/**/*.yaml.j2`
 - `templates/config/bootstrap/**/*.yaml.j2`
 - `templates/config/infrastructure/**/*.j2`
 
 ### Automation
+
 - `Taskfile.yaml`
 - `.taskfiles/**/*.yaml`
 - `scripts/bootstrap-apps.sh`
 - `scripts/lib/common.sh`
 
 ### CI/CD
+
 - `.github/workflows/flux-local.yaml`
 - `.github/workflows/e2e.yaml`
 - `.github/workflows/release.yaml`
 
 ### Documentation
+
 - `docs/*.md` (10 files)
 - `docs/ai-context/*.md` (5 files)
 - `docs/guides/*.md` (7 files)
@@ -579,12 +618,14 @@ def _read_file_cached(file_path: str) -> str:
 ## Appendix B: Review Methodology
 
 ### Phase 1: Static Analysis
+
 - Template syntax validation
 - Conditional logic review
 - Dependency chain analysis
 - CUE schema validation
 
 ### Phase 2: Security Assessment
+
 - SOPS encryption audit
 - RBAC configuration review
 - Network security analysis
@@ -592,24 +633,28 @@ def _read_file_cached(file_path: str) -> str:
 - OWASP Kubernetes Top 10 compliance
 
 ### Phase 3: Architecture Review
+
 - Bootstrap flow analysis
 - Dependency ordering verification
 - Health check coverage
 - CRD management patterns
 
 ### Phase 4: Performance Analysis
+
 - Reconciliation interval audit
 - Resource request/limit review
 - Bootstrap timing analysis
 - Network performance configuration
 
 ### Phase 5: Documentation Review
+
 - Completeness verification
 - Accuracy cross-check
 - CI/CD coverage analysis
 - Onboarding experience evaluation
 
 ### Phase 6: Standards Compliance
+
 - CNCF maturity model alignment
 - Kubernetes best practices verification
 - GitOps pattern compliance

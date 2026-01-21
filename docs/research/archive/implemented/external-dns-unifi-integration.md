@@ -78,12 +78,14 @@ spec:
 ```
 
 **How k8s_gateway Works:**
+
 1. Runs as a DNS server on a LoadBalancer IP (`cluster_dns_gateway_addr`)
 2. Watches HTTPRoutes and Services for hostnames
 3. Resolves DNS queries by looking up cluster resources
 4. Requires router/upstream DNS to conditionally forward queries
 
 **Limitations of k8s_gateway:**
+
 - Requires dedicated LoadBalancer IP
 - Requires split-DNS configuration on upstream router
 - DNS resolution depends on cluster availability
@@ -127,6 +129,7 @@ spec:
 ```
 
 **Key Configuration Points:**
+
 - Uses external-dns chart v1.19.0 from `ghcr.io/home-operations/charts-mirror/external-dns`
 - Sources: `crd` and `gateway-httproute`
 - Gateway filter: `envoy-external`
@@ -157,6 +160,7 @@ spec:
 | Helm Chart | 1.14.0 | **1.20.0** |
 
 **API Key Authentication (Recommended):**
+
 - Requires UniFi Network v9.0.0+ (current stable is 9.5.21)
 - Preferred over username/password
 - Created via UniFi Admin → Control Plane → Integrations
@@ -274,6 +278,7 @@ domainFilters: ["internal.example.com", "home.example.com"]
 ### Recommended Approach for This Project
 
 Use **Gateway Name Filter** since:
+
 - Already using Gateway API with Envoy
 - Clean separation of internal vs external routes
 - No annotation changes needed on existing resources
@@ -584,6 +589,7 @@ spec:
 ```
 
 When this HTTPRoute references `envoy-internal`:
+
 - **external-dns-unifi** (with `--gateway-name=envoy-internal`) will create the DNS record in UniFi
 - **cloudflare-dns** (with `--gateway-name=envoy-external`) will ignore it
 
@@ -594,6 +600,7 @@ When this HTTPRoute references `envoy-internal`:
 ### Phase 1: Deploy UniFi External-DNS (Parallel Operation)
 
 1. **Add cluster.yaml variables:**
+
    ```yaml
    unifi_host: "https://192.168.1.1"
    unifi_api_key: "your-api-key-here"
@@ -604,11 +611,13 @@ When this HTTPRoute references `envoy-internal`:
    - `templates/config/kubernetes/apps/network/unifi-dns/`
 
 3. **Run configuration:**
+
    ```bash
    task configure
    ```
 
 4. **Commit and push:**
+
    ```bash
    git add kubernetes/apps/network/unifi-dns/
    git commit -m "feat(dns): add external-dns UniFi webhook for internal DNS"
@@ -616,6 +625,7 @@ When this HTTPRoute references `envoy-internal`:
    ```
 
 5. **Verify deployment:**
+
    ```bash
    kubectl get pods -n network -l app.kubernetes.io/name=unifi-dns
    kubectl logs -n network -l app.kubernetes.io/name=unifi-dns -f
@@ -643,6 +653,7 @@ When this HTTPRoute references `envoy-internal`:
 ### Phase 4: Remove k8s_gateway
 
 1. **Comment out k8s_gateway in kustomization:**
+
    ```yaml
    # - ./k8s-gateway/ks.yaml
    ```
@@ -667,6 +678,7 @@ Failed to connect to plugin api: Get "http://localhost:8888"
 ```
 
 **Solution:** Ensure webhook sidecar is running and healthy:
+
 ```bash
 kubectl describe pod -n network -l app.kubernetes.io/name=unifi-dns
 ```
@@ -678,6 +690,7 @@ error: 401 Unauthorized
 ```
 
 **Solution:**
+
 - Verify API key is correct
 - Check UniFi Network version (API key requires v9.0.0+)
 - Try legacy username/password if older version
@@ -685,6 +698,7 @@ error: 401 Unauthorized
 **3. No DNS Records Created**
 
 **Checklist:**
+
 - [ ] HTTPRoute references correct gateway (`envoy-internal`)
 - [ ] Domain matches `domainFilters`
 - [ ] `sources` includes `gateway-httproute`
@@ -734,6 +748,7 @@ nslookup app.example.com 192.168.1.1
 ### When to Keep k8s_gateway
 
 Consider keeping k8s_gateway if:
+
 - Need wildcard DNS entries (UniFi dnsmasq doesn't support wildcards)
 - Don't have UniFi Network v8.2.93+ (current stable: 9.5.21)
 - Want DNS to update instantly (external-dns has sync interval, typically 1m)
@@ -744,6 +759,7 @@ Consider keeping k8s_gateway if:
 ## Sources
 
 ### Primary Documentation
+
 - [kashalls/external-dns-unifi-webhook](https://github.com/kashalls/external-dns-unifi-webhook) - Main repository (v0.8.0)
 - [External-DNS Documentation](https://kubernetes-sigs.github.io/external-dns/latest/) - Official docs (v0.20.0)
 - [External-DNS Helm Chart](https://artifacthub.io/packages/helm/external-dns/external-dns) - Chart v1.20.0
@@ -752,15 +768,18 @@ Consider keeping k8s_gateway if:
 - [Gateway API Sources](https://kubernetes-sigs.github.io/external-dns/v0.15.0/docs/sources/gateway/) - Gateway integration
 
 ### UniFi Documentation
+
 - [UniFi Network 9.5 Release](https://blog.ui.com/article/releasing-unifi-network-9-5) - Latest stable release
 - [UniFi Network Downloads](https://ui.com/download/releases/network-server) - Version downloads
 
 ### Community Examples
+
 - [HaynesLab External DNS](https://hayneslab.net/docs/funky-flux/external-dns/) - Dual external-dns with UniFi
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops) - Reference implementation
 - [Multiple Providers Issue #2568](https://github.com/kubernetes-sigs/external-dns/issues/2568) - Community discussion
 
 ### Related Project Documentation
+
 - [k8s-at-home-patterns-research.md](./k8s-at-home-patterns-research.md) - Dual external-dns pattern overview
 - [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template) - Template origin
 
@@ -818,12 +837,14 @@ Consider keeping k8s_gateway if:
 **Recommended Chart Update (1.19.0 → 1.20.0):**
 
 The external-dns Helm chart v1.20.0 (released January 2, 2025) includes:
+
 - New `annotationPrefix` customization option via values
 - RBAC updates for `networking.k8s.io/ingresses` and gloo-proxy sources
 - Fixed schema for webhook serviceMonitor configurations
 - Fixed topologySpreadConstraints selector label indentation
 
 **Update the OCIRepository template to:**
+
 ```yaml
 spec:
   ref:
@@ -840,6 +861,7 @@ spec:
 | **9.5.21** (Current) | API Key | Channel AI | Yes |
 
 **UniFi Network 9.x Features Relevant to DNS:**
+
 - Zone-Based Firewall Rules (9.0+) - Better security segmentation
 - Object Networking (9.4+) - Simplified traffic management
 - Native DNS record management remains unchanged
@@ -867,6 +889,7 @@ spec:
 ### Community Implementation Patterns
 
 **Verified from onedr0p/home-ops (January 2026):**
+
 - Dual external-dns deployment (UniFi + Cloudflare)
 - Ingress class separation (`internal` / `external`)
 - UniFi DNS for private records, Cloudflare for public
@@ -884,11 +907,13 @@ spec:
 ### Breaking Changes Check
 
 **v0.8.0 (external-dns-unifi-webhook):**
+
 - No breaking changes documented
 - Maintenance release with performance improvements
 - Enhanced metrics endpoint
 
 **v0.20.0 (external-dns):**
+
 - `--min-ttl` flag temporarily removed (to be restored)
 - CLI migrated from Kingpin to Cobra (backward compatible)
 - No breaking API changes
@@ -922,6 +947,7 @@ spec:
 ### Final Recommendation
 
 **Proceed with implementation** with the following adjustments:
+
 1. Use external-dns Helm chart v1.20.0 instead of 1.19.0
 2. Leverage UniFi Network 9.x API key authentication
 3. Follow the phased migration plan for safe rollout

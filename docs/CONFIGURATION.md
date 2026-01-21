@@ -7,16 +7,19 @@
 Both `cluster.yaml` and `nodes.yaml` support IDE schema validation for autocomplete and error checking.
 
 **Modeline Support:** Add this comment at the top of your YAML file for inline schema validation:
+
 ```yaml
 # yaml-language-server: $schema=./.taskfiles/template/resources/cluster.schema.json
 ---
 ```
 
 **VS Code Integration:** The `.vscode/settings.json` already configures schema associations for:
+
 - `cluster.yaml`, `cluster.sample.yaml` → `cluster.schema.json`
 - `nodes.yaml`, `nodes.sample.yaml` → `nodes.schema.json`
 
 **Schema Regeneration:** Schemas are auto-generated from CUE during `task configure`, or manually via:
+
 ```bash
 task template:schema
 ```
@@ -186,12 +189,14 @@ Zero-trust network segmentation with L3-L7 policy enforcement.
 | `network_policies_mode` | enum | `audit` | `audit` (observe only) or `enforce` (block traffic) |
 
 **Modes:**
+
 - `audit`: Policies deployed with `enableDefaultDeny: false` - traffic is observed via Hubble but not blocked
 - `enforce`: Policies deployed with `enableDefaultDeny: true` - non-matching traffic is actively blocked
 
 **Covered Namespaces:** cluster-policies, kube-system, monitoring, flux-system, cert-manager, network
 
 **Recommended Workflow:**
+
 1. Deploy with `network_policies_mode: "audit"`
 2. Monitor for 24-48 hours via `hubble observe --verdict AUDIT`
 3. Review traffic patterns and adjust policies as needed
@@ -216,6 +221,7 @@ Automated PVC backups with restic to S3-compatible storage.
 | `volsync_retain_monthly` | int | `3` | Monthly backup retention count |
 
 **Copy Method Selection:**
+
 - `Clone`: Works with any CSI driver supporting volume cloning (e.g., Proxmox CSI)
 - `Snapshot`: Requires CSI driver with VolumeSnapshot support (e.g., Longhorn, Rook-Ceph)
 
@@ -325,6 +331,7 @@ proxmox_vm_worker_defaults:
 ### IP Address Constraints
 
 All LoadBalancer IPs must be:
+
 - Within `node_cidr`
 - Unique (no overlapping)
 - Not assigned to any node
@@ -431,6 +438,7 @@ Per-node overrides for VM provisioning. Fallback chain: per-node → role-defaul
 ### Name Constraints
 
 Node names must:
+
 - Match pattern: `^[a-z0-9][a-z0-9\-]{0,61}[a-z0-9]$`
 - Not be reserved: `global`, `controller`, `worker`
 - Be unique across all nodes
@@ -610,6 +618,7 @@ Required for operations:
 | `SOPS_AGE_KEY_FILE` | `./age.key` | sops |
 
 Set automatically by:
+
 - Taskfile.yaml (`env:` block)
 - .mise.toml (`[env]` section)
 

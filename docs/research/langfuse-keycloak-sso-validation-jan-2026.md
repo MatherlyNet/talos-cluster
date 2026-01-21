@@ -3,11 +3,13 @@
 **Date:** January 2026
 **Status:** ✅ **FIX IMPLEMENTED** - Awaiting deployment verification via `task reconcile`
 **Related:**
+
 - `docs/research/archive/implemented/langfuse-seamless-sso-integration-jan-2026.md`
 - `docs/research/archive/implemented/langfuse-llm-observability-integration-jan-2026.md`
 
 > **Architecture Note:** Langfuse uses **native SSO** via NextAuth.js with Keycloak provider (`AUTH_KEYCLOAK_*` env vars).
 > This is different from gateway-level OIDC (Envoy SecurityPolicy) used by Hubble UI.
+>
 > - **Native SSO** (Langfuse, Obot, LiteLLM, Grafana): Application handles its own OAuth flow
 > - **Gateway OIDC** (Hubble UI): Envoy Gateway SecurityPolicy with split-path architecture
 > - For split-path architecture details, see: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
@@ -50,12 +52,14 @@ https://next-auth.js.org/errors#adapter_error_createuser Sign up is disabled. {
 | `langfuse_disable_signup` | `true` | ❌ **Blocks SSO user creation!** |
 
 When a user authenticates via Keycloak for the first time:
+
 1. Keycloak authenticates successfully
 2. Langfuse receives OAuth callback with user info
 3. NextAuth.js attempts to create user account
 4. **BLOCKED** by `AUTH_DISABLE_SIGNUP=true`
 
 **Why this wasn't caught:**
+
 - The headless init creates `admin@matherly.net`
 - This user CAN log in because they already exist
 - NEW users (different email) cannot be created
@@ -93,6 +97,7 @@ task reconcile
 ### Security Consideration
 
 Setting `langfuse_disable_signup: false` with `langfuse_disable_password_auth: true` is secure because:
+
 - The email/password signup form is **hidden** (AUTH_DISABLE_USERNAME_PASSWORD=true)
 - Only SSO authentication is available
 - Users can only be created through Keycloak authentication
@@ -103,6 +108,7 @@ Setting `langfuse_disable_signup: false` with `langfuse_disable_password_auth: t
 ### Why Grafana SSO Works
 
 Grafana uses a different approach:
+
 - `auto_login: true` - Auto-redirects to Keycloak
 - No equivalent to `disable_signup` - new OAuth users are always created
 - RBAC is handled via role mapping, not signup blocking
@@ -110,6 +116,7 @@ Grafana uses a different approach:
 ### Why Hubble SSO Works
 
 Hubble uses Gateway OIDC (Envoy SecurityPolicy with **split-path architecture**):
+
 - User is authenticated at the gateway level
 - No application-level user creation needed
 - Keycloak session is the only requirement

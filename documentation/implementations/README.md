@@ -5,6 +5,7 @@ This directory contains detailed implementation records for major features and e
 ## OIDC Authentication Implementation (January 2026)
 
 Comprehensive implementation of OIDC authentication across multiple patterns:
+
 1. **Gateway OIDC** - Envoy Gateway SecurityPolicy for application-level SSO
 2. **Native SSO** - Direct application integration with Keycloak
 3. **Kubernetes API Server OIDC** - kubectl/Headlamp authentication via OIDC
@@ -23,6 +24,7 @@ Comprehensive implementation of OIDC authentication across multiple patterns:
 **All OIDC Features:** ✅ IMPLEMENTED
 
 Verified in codebase:
+
 - ✅ Kubernetes API Server OIDC flags in `talos/patches/controller/cluster.yaml`
 - ✅ cluster.yaml OIDC variables (`kubernetes_oidc_enabled`, client ID/secret, claims)
 - ✅ Keycloak `kubernetes` OIDC client in realm config
@@ -32,6 +34,7 @@ Verified in codebase:
 ### RBAC Mappings
 
 Keycloak realm roles → Kubernetes ClusterRoles:
+
 - `admin` → `cluster-admin` (full access)
 - `operator` → `edit` (manage resources)
 - `developer` → `edit` (development workflows)
@@ -41,6 +44,7 @@ Keycloak realm roles → Kubernetes ClusterRoles:
 ### Cross-Reference
 
 For OIDC configuration guidance:
+
 - See `.claude/skills/oidc-integration/SKILL.md` for implementation patterns
 - See `docs/guides/keycloak-implementation.md` for setup procedures
 - See `docs/ai-context/cilium-networking.md` for OIDC integration details
@@ -49,6 +53,7 @@ For OIDC configuration guidance:
 ### Usage
 
 These records document the implementation journey and serve as reference for:
+
 - Understanding OIDC architecture decisions
 - Troubleshooting OIDC authentication issues
 - Implementing similar patterns in new applications

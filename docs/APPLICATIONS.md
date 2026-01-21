@@ -42,6 +42,7 @@
 **Template:** `templates/config/kubernetes/apps/kube-system/cilium/`
 
 **Key Features:**
+
 - Native routing (no overlay)
 - L2 load balancer announcements (MetalLB replacement)
 - kube-proxy replacement
@@ -59,6 +60,7 @@
 | `network_policies_mode` | `audit` (observe) or `enforce` (block) |
 
 **Helm Values Highlights:**
+
 ```yaml
 kubeProxyReplacement: true
 l2announcements:
@@ -70,6 +72,7 @@ routingMode: native
 ```
 
 **Troubleshooting:**
+
 ```bash
 cilium status
 cilium connectivity test
@@ -91,10 +94,12 @@ hubble observe --verdict AUDIT        # View audit events
 **Template:** `templates/config/kubernetes/apps/kube-system/coredns/`
 
 **Notes:**
+
 - Replaces Talos-bundled CoreDNS
 - Managed by Flux for consistent configuration
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n kube-system logs deploy/coredns
 kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
@@ -111,6 +116,7 @@ kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
 **Condition:** Only enabled when `nodes | length > 1`
 
 **Benefits:**
+
 - Reduces external registry bandwidth
 - Faster image pulls from peer nodes
 - Works with any OCI registry
@@ -124,6 +130,7 @@ kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
 **Template:** `templates/config/kubernetes/apps/kube-system/metrics-server/`
 
 **Usage:**
+
 ```bash
 kubectl top nodes
 kubectl top pods -A
@@ -138,6 +145,7 @@ kubectl top pods -A
 **Template:** `templates/config/kubernetes/apps/kube-system/reloader/`
 
 **Usage:** Add annotation to deployment:
+
 ```yaml
 metadata:
   annotations:
@@ -153,11 +161,13 @@ metadata:
 **Template:** `templates/config/kubernetes/apps/kube-system/talos-ccm/`
 
 **What it does:**
+
 - Labels nodes with Talos-specific metadata
 - Manages node lifecycle events
 - Provides cloud provider integration for Talos
 
 **Helm Values Highlights:**
+
 ```yaml
 logVerbosityLevel: 2
 useDaemonSet: true
@@ -170,6 +180,7 @@ tolerations:
 ```
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n kube-system logs ds/talos-cloud-controller-manager
 kubectl get nodes --show-labels | grep talos
@@ -186,6 +197,7 @@ kubectl get nodes --show-labels | grep talos
 **Condition:** Only enabled when `backup_s3_endpoint` AND `backup_s3_bucket` are defined in `cluster.yaml`
 
 **Requirements:**
+
 - S3-compatible storage (Cloudflare R2 recommended)
 - Age public key for encryption (same as cluster SOPS key)
 - Talos API access enabled via machine patch
@@ -201,12 +213,14 @@ kubectl get nodes --show-labels | grep talos
 | `backup_age_public_key` | Age encryption key | Yes |
 
 **How it works:**
+
 1. Runs as a CronJob in kube-system
 2. Uses Talos API to create etcd snapshots
 3. Encrypts snapshots with Age
 4. Uploads to S3-compatible storage
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n kube-system get cronjob talos-backup
 kubectl -n kube-system logs job/talos-backup-<timestamp>
@@ -223,6 +237,7 @@ kubectl -n kube-system logs job/talos-backup-<timestamp>
 **Condition:** Only enabled when `headlamp_enabled: true` in `cluster.yaml`
 
 **Requirements:**
+
 - Envoy Gateway (for HTTPRoute)
 - Keycloak (for OIDC authentication)
 
@@ -238,11 +253,13 @@ kubectl -n kube-system logs job/talos-backup-<timestamp>
 **Authentication Architecture:**
 
 Headlamp uses **Native OIDC** (application-level) authentication instead of Gateway OIDC to provide:
+
 - User identity claims (sub, email, name) for proper RBAC
 - Roles and groups claims for authorization
 - Kubernetes RBAC integration via OIDC identity
 
 **Network Access:**
+
 - **Internal Only**: Accessible via `envoy-internal` gateway (LAN/VPN access)
 - **HTTPRoute**: Centralized in `network` namespace
 - **ReferenceGrant**: Allows cross-namespace service access
@@ -297,6 +314,7 @@ subjects:
 ```
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n kube-system headlamp
 kubectl -n kube-system get pods -l app.kubernetes.io/name=headlamp
@@ -323,6 +341,7 @@ kubectl logs -n identity -l app.kubernetes.io/name=keycloak-config-cli --tail=50
 **Template:** `templates/config/kubernetes/apps/system-upgrade/tuppr/`
 
 **What it does:**
+
 - Manages Talos OS version upgrades via `TalosUpgrade` CRs
 - Manages Kubernetes version upgrades via `KubernetesUpgrade` CRs
 - Performs rolling upgrades with proper drain/cordon
@@ -356,12 +375,14 @@ spec:
 ```
 
 **Upgrade Workflow:**
+
 1. Update `talos_version` or `kubernetes_version` in `cluster.yaml`
 2. Run `task configure` to regenerate manifests
 3. Commit and push to Git
 4. tuppr detects CR changes and initiates rolling upgrade
 
 **Troubleshooting:**
+
 ```bash
 kubectl -n system-upgrade get talosupgrade
 kubectl -n system-upgrade get kubernetesupgrade
@@ -380,6 +401,7 @@ kubectl get nodes -o wide  # Check node versions
 **Template:** `templates/config/kubernetes/apps/flux-system/flux-operator/`
 
 **What it does:**
+
 - Installs Flux controllers
 - Manages Flux CRDs
 - Handles upgrades
@@ -393,6 +415,7 @@ kubectl get nodes -o wide  # Check node versions
 **Template:** `templates/config/kubernetes/apps/flux-system/flux-instance/`
 
 **Components:**
+
 - `GitRepository` - Points to your repo
 - `Receiver` - Webhook for push events
 - `HTTPRoute` - Exposes webhook externally
@@ -406,6 +429,7 @@ kubectl get nodes -o wide  # Check node versions
 | `repository_visibility` | public/private |
 
 **Secrets Required:**
+
 - `github-deploy-key.sops.yaml` - SSH key for Git access
 - `flux-instance` secret - Webhook token
 
@@ -420,6 +444,7 @@ kubectl get nodes -o wide  # Check node versions
 **Template:** `templates/config/kubernetes/apps/cert-manager/cert-manager/`
 
 **Features:**
+
 - Let's Encrypt ACME issuer
 - Cloudflare DNS-01 challenge
 - Wildcard certificate for domain
@@ -432,6 +457,7 @@ kubectl get nodes -o wide  # Check node versions
 | `cloudflare_token` | API token for DNS challenge |
 
 **ClusterIssuer:**
+
 ```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -451,6 +477,7 @@ spec:
 ```
 
 **Troubleshooting:**
+
 ```bash
 kubectl get certificates -A
 kubectl get certificaterequests -A
@@ -475,6 +502,7 @@ kubectl -n cert-manager logs deploy/cert-manager
 | `envoy-external` | `cloudflare_gateway_addr` | Public access (via tunnel) |
 
 **Usage - Creating HTTPRoute:**
+
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -494,16 +522,19 @@ spec:
 ```
 
 **TLS Certificate:**
+
 - Wildcard certificate: `*.cloudflare_domain`
 - Managed by cert-manager
 - Shared across all routes
 
 **Observability Features:**
+
 - **JSON Access Logging**: Always enabled, logs to stdout for Alloy/Loki collection
 - **Distributed Tracing**: Conditional on `tracing_enabled`, sends Zipkin spans to Tempo (port 9411)
 - **Prometheus Metrics**: PodMonitor scrapes Envoy metrics for Prometheus
 
 **Security Features (Optional):**
+
 - **JWT SecurityPolicy**: Enabled when `oidc_issuer_url` and `oidc_jwks_uri` are set
 - Targets HTTPRoutes with label `security: jwt-protected`
 - Extracts claims to X-User-* headers for backend services
@@ -519,6 +550,7 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Template:** `templates/config/kubernetes/apps/network/cloudflare-dns/`
 
 **How it works:**
+
 1. Watches HTTPRoutes with `envoy-external` parent
 2. Creates/updates Cloudflare DNS records
 3. Points to `cloudflare_gateway_addr` (tunnel ingress)
@@ -541,12 +573,14 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Condition:** Only enabled when `unifi_host` AND `unifi_api_key` are defined in `cluster.yaml`
 
 **How it works:**
+
 1. Watches HTTPRoutes with `envoy-internal` parent
 2. Creates/updates DNS records directly in UniFi controller
 3. Points to `cluster_gateway_addr` (internal LoadBalancer IP)
 4. Uses [external-dns-unifi-webhook](https://github.com/kashalls/external-dns-unifi-webhook) v0.8.0
 
 **Requirements:**
+
 - UniFi Network v9.0.0+ (for API key authentication)
 - API key created in UniFi Admin → Control Plane → Integrations
 
@@ -560,11 +594,13 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 | `unifi_external_controller` | `true` for Cloud Key/self-hosted | No |
 
 **Advantages over k8s-gateway:**
+
 - Native UniFi DNS integration (no split-DNS router config)
 - Persistent records (survives cluster restarts)
 - Visible in UniFi Dashboard
 
 **Limitations:**
+
 - No wildcard DNS support (UniFi uses dnsmasq)
 - No duplicate CNAME records
 
@@ -581,11 +617,13 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Condition:** Only enabled when `unifi_host` OR `unifi_api_key` are NOT defined
 
 **How it works:**
+
 1. Runs as DNS server on `cluster_dns_gateway_addr`
 2. Resolves `*.cloudflare_domain` to gateway IPs
 3. Home DNS forwards domain queries here
 
 **Configuration:**
+
 ```yaml
 # In your home router/Pi-hole/AdGuard:
 # Forward cloudflare_domain → cluster_dns_gateway_addr
@@ -602,11 +640,13 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Template:** `templates/config/kubernetes/apps/network/cloudflare-tunnel/`
 
 **How it works:**
+
 1. `cloudflared` connects outbound to Cloudflare
 2. Traffic flows: Internet → Cloudflare → Tunnel → `envoy-external`
 3. No inbound ports required
 
 **Required Files:**
+
 - `cloudflare-tunnel.json` - Tunnel credentials
 
 **Configuration Variables:**
@@ -629,6 +669,7 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Condition:** Only enabled when `monitoring_enabled: true` in `cluster.yaml`
 
 **Components:**
+
 - Prometheus Operator
 - Prometheus Server (metrics storage with remote write receiver for Tempo)
 - Grafana (visualization with pre-configured dashboards)
@@ -655,6 +696,7 @@ See `docs/guides/envoy-gateway-observability-security.md` for implementation det
 **Infrastructure Alerts:**
 
 When `monitoring_alerts_enabled: true` (default), PrometheusRules with 30+ alerts cover:
+
 - Node health (memory, CPU, disk, filesystem, network)
 - Control Plane (API server, scheduler, controller-manager)
 - etcd (membership, health, latency)
@@ -667,22 +709,26 @@ When `monitoring_alerts_enabled: true` (default), PrometheusRules with 30+ alert
 - Storage (PV usage)
 
 **Pre-configured Grafana Dashboards:**
+
 - **Infrastructure:** Kubernetes Global, Nodes, Pods, etcd, CoreDNS, Node Exporter, cert-manager
 - **Network:** Cilium Agent, Cilium Hubble, Envoy Gateway, Envoy Proxy
 - **GitOps:** Flux2
 
 **Integration with Loki/Tempo:**
 When `loki_enabled` or `tracing_enabled` are set, Grafana automatically includes datasources for:
+
 - Loki (log aggregation)
 - Tempo (distributed tracing with traces-to-logs/metrics correlation)
 
 **Talos Linux Specific Configuration:**
+
 - etcd scraping via explicit controller node endpoints (port 2381)
 - kubeControllerManager/kubeScheduler with `insecureSkipVerify: true`
 - kube-proxy disabled (Cilium replaces kube-proxy)
 - High-cardinality metric dropping for kubelet
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n monitoring kube-prometheus-stack
 kubectl -n monitoring get pods
@@ -704,6 +750,7 @@ kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana -- grafana-cli a
 **Condition:** Only enabled when `monitoring_enabled: true` AND `loki_enabled: true`
 
 **Features:**
+
 - SimpleScalable mode (read/write/backend separation)
 - Filesystem storage (no object storage required)
 - Grafana datasource auto-configured
@@ -717,6 +764,7 @@ kubectl -n monitoring exec deploy/kube-prometheus-stack-grafana -- grafana-cli a
 | `logs_storage_size` | PV size | `50Gi` |
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n monitoring loki
 kubectl -n monitoring get pods -l app.kubernetes.io/name=loki
@@ -736,11 +784,13 @@ kubectl -n monitoring logs -l app.kubernetes.io/name=loki-read
 **Note:** Alloy uses HelmRepository (not OCI) as the Grafana Helm chart doesn't support OCI registry.
 
 **Features:**
+
 - Collects logs from all pods
 - Discovers Kubernetes metadata
 - Forwards to Loki
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n monitoring alloy
 kubectl -n monitoring get pods -l app.kubernetes.io/name=alloy
@@ -760,6 +810,7 @@ kubectl -n monitoring logs ds/alloy
 **Note:** Tempo uses HelmRepository (not OCI) as the Grafana Helm chart doesn't support OCI registry.
 
 **Features:**
+
 - OTLP gRPC/HTTP receivers (ports 4317/4318)
 - Zipkin receiver (port 9411, for Envoy Gateway)
 - Metrics generation (RED metrics from traces)
@@ -796,6 +847,7 @@ overrides:
 | `cluster_name` | Cluster identifier | `matherlynet` |
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n monitoring tempo
 kubectl -n monitoring get pods -l app.kubernetes.io/name=tempo
@@ -821,6 +873,7 @@ kubectl exec -n monitoring tempo-0 -- wget -qO- http://localhost:3200/metrics-ge
 **Condition:** Only enabled when `hubble_enabled: true` in `cluster.yaml`
 
 **Components:**
+
 - Hubble Relay (aggregates flows from all nodes)
 - Hubble UI (optional, enabled with `hubble_ui_enabled: true`)
 - Hubble metrics (exported to Prometheus when monitoring enabled)
@@ -833,12 +886,14 @@ kubectl exec -n monitoring tempo-0 -- wget -qO- http://localhost:3200/metrics-ge
 | `hubble_ui_enabled` | Enable Hubble UI | `false` |
 
 **Features:**
+
 - Real-time network flow visibility
 - DNS query tracking
 - Drop reason analysis
 - TCP/HTTP flow metrics
 
 **Troubleshooting:**
+
 ```bash
 hubble status
 hubble observe --namespace default
@@ -863,6 +918,7 @@ kubectl -n kube-system port-forward svc/hubble-ui 12000:80
 **Condition:** Only enabled when `external_secrets_enabled: true` in `cluster.yaml`
 
 **Components:**
+
 - External Secrets Operator (controller)
 - Webhook (validation/mutation webhooks)
 - Cert Controller (certificate management)
@@ -876,6 +932,7 @@ kubectl -n kube-system port-forward svc/hubble-ui 12000:80
 | `onepassword_connect_host` | 1Password Connect URL | - |
 
 **Supported Providers:**
+
 - **1Password** - Via 1Password Connect server
 - **Bitwarden** - Via Bitwarden Secrets Manager
 - **HashiCorp Vault** - Direct Vault integration
@@ -883,6 +940,7 @@ kubectl -n kube-system port-forward svc/hubble-ui 12000:80
 **Usage - Creating an ExternalSecret:**
 
 1. First, create a SecretStore (cluster-scoped or namespace-scoped):
+
 ```yaml
 apiVersion: external-secrets.io/v1beta1
 kind: ClusterSecretStore
@@ -903,6 +961,7 @@ spec:
 ```
 
 1. Then create ExternalSecrets that sync from your provider:
+
 ```yaml
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -926,11 +985,13 @@ spec:
 
 **Integration with Monitoring:**
 When `monitoring_enabled: true`, ServiceMonitors are automatically created for:
+
 - Main controller metrics
 - Webhook metrics
 - Cert controller metrics
 
 **Troubleshooting:**
+
 ```bash
 flux get hr -n external-secrets external-secrets
 kubectl -n external-secrets get pods
@@ -953,10 +1014,12 @@ kubectl -n external-secrets logs deploy/external-secrets
 **Template:** `templates/config/kubernetes/apps/default/echo/`
 
 **Endpoints:**
+
 - Internal: `echo.cloudflare_domain` (via `envoy-internal`)
 - External: `echo.cloudflare_domain` (via `envoy-external` + tunnel)
 
 **Testing:**
+
 ```bash
 # Internal (from network with split DNS)
 curl https://echo.example.com

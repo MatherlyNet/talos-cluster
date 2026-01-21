@@ -90,12 +90,15 @@ The plugin.py provides extensive derived configuration logic:
 **Why Needed:** No existing automation for this. Every new app requires manually creating 4+ template files following specific patterns.
 
 **Activation Triggers:**
+
 - "add a new application", "create app", "deploy new app"
 - "add helmrelease", "scaffold app"
 
 **Workflow:**
+
 1. Gather info: namespace, app name, OCI chart source, chart version
 2. Create directory structure in `templates/config/kubernetes/apps/`:
+
    ```
    <namespace>/<app>/
    ├── ks.yaml.j2              # Flux Kustomization
@@ -104,11 +107,13 @@ The plugin.py provides extensive derived configuration logic:
        ├── helmrelease.yaml.j2
        └── ocirepository.yaml.j2
    ```
+
 3. Add to namespace `kustomization.yaml.j2` resources list
 4. Use project template delimiters (`#{ }#`, `#% %#`)
 5. Run `task configure` to validate
 
 **Resources to Include:**
+
 - `references/app-structure.md` - Complete template patterns
 - `assets/*.j2.template` - Boilerplate templates
 
@@ -123,11 +128,13 @@ The plugin.py provides extensive derived configuration logic:
 **Why Needed:** The plugin.py has 800+ lines of derived configuration logic. Understanding what `keycloak_enabled: true` triggers (and its prerequisites) requires reading complex Python code.
 
 **Activation Triggers:**
+
 - "what happens if I enable X"
 - "how do I enable X", "what does X need"
 - "prerequisites for", "dependencies for"
 
 **Workflow:**
+
 1. Identify the feature being queried
 2. Load relevant plugin.py logic understanding
 3. Explain:
@@ -138,6 +145,7 @@ The plugin.py provides extensive derived configuration logic:
 4. Provide example configuration
 
 **Feature Categories:**
+
 - **Core:** cilium_bgp_enabled, spegel_enabled, unifi_dns_enabled
 - **Storage:** rustfs_enabled, talos_backup_enabled
 - **Database:** cnpg_enabled, cnpg_backup_enabled, cnpg_pgvector_enabled
@@ -147,6 +155,7 @@ The plugin.py provides extensive derived configuration logic:
 - **Infrastructure:** infrastructure_enabled (Proxmox)
 
 **Resources to Include:**
+
 - `references/feature-matrix.md` - Feature dependencies and effects
 - Direct reference to plugin.py computed variables
 
@@ -159,17 +168,20 @@ The plugin.py provides extensive derived configuration logic:
 **Purpose:** Generate CiliumNetworkPolicy for applications.
 
 **Why Needed:** Network policies require understanding:
+
 - Application ports and protocols
 - Required egress (DNS, API server, external endpoints)
 - Inter-namespace communication
 - The audit vs enforce modes
 
 **Activation Triggers:**
+
 - "add network policy", "create networkpolicy"
 - "secure traffic for", "restrict access to"
 - "zero-trust for"
 
 **Workflow:**
+
 1. Identify application and namespace
 2. Analyze HelmRelease for service ports
 3. Determine required egress:
@@ -180,6 +192,7 @@ The plugin.py provides extensive derived configuration logic:
 6. Add to app directory
 
 **Resources to Include:**
+
 - `references/policy-patterns.md` - Common policy patterns
 - `references/common-ports.md` - Standard ports by service type
 - Reference to `docs/NETWORK-INVENTORY.md`
@@ -195,16 +208,19 @@ The plugin.py provides extensive derived configuration logic:
 **Purpose:** Configure OIDC/SSO for applications using project patterns.
 
 **Why Needed:** The project uses a **split-path OIDC architecture**:
+
 - External authorization endpoint (browser → Keycloak via Cloudflare)
 - Internal token endpoint (Envoy → Keycloak via K8s service)
 
 This pattern is documented but complex to implement correctly.
 
 **Activation Triggers:**
+
 - "add oidc to", "enable sso for"
 - "keycloak integration", "protect with authentication"
 
 **Workflow:**
+
 1. Determine integration pattern:
    - **Gateway OIDC** (SecurityPolicy) - Hubble UI pattern
    - **Native SSO** - Grafana, LiteLLM, Langfuse, Obot pattern
@@ -218,6 +234,7 @@ This pattern is documented but complex to implement correctly.
 4. Add required cluster.yaml variables
 
 **Resources to Include:**
+
 - `references/oidc-patterns.md` - Both patterns with examples
 - Reference to `docs/guides/completed/native-oidc-securitypolicy-implementation.md`
 
@@ -230,16 +247,19 @@ This pattern is documented but complex to implement correctly.
 **Purpose:** Provision CloudNativePG databases for applications.
 
 **Why Needed:** Database provisioning requires:
+
 - Correct Cluster CR structure
 - Backup configuration (barman + RustFS)
 - Credential secret management
 - PgBouncer pooler setup (optional)
 
 **Activation Triggers:**
+
 - "add database", "create postgres cluster"
 - "cnpg for", "postgresql for"
 
 **Workflow:**
+
 1. Verify `cnpg_enabled: true` in cluster.yaml
 2. Gather: database name, user, instances, storage size
 3. Generate Cluster CR following project patterns
@@ -248,6 +268,7 @@ This pattern is documented but complex to implement correctly.
 6. Provide connection string format
 
 **Resources to Include:**
+
 - `references/cnpg-patterns.md` - Cluster configurations
 - Keycloak, LiteLLM, Langfuse, Obot patterns as examples
 
@@ -260,15 +281,18 @@ This pattern is documented but complex to implement correctly.
 **Purpose:** Find OCI repository and values for Helm charts.
 
 **Why Needed:** Adding applications requires finding:
+
 - Correct OCI registry URL
 - Chart version/tag
 - Available values and their meanings
 
 **Activation Triggers:**
+
 - "find helm chart for", "what's the oci repo for"
 - "helm values for", "configure X chart"
 
 **Workflow:**
+
 1. Identify chart name and source
 2. Search common registries (ghcr.io/bjw-s, ghcr.io/onedr0p, etc.)
 3. Fetch values.yaml or schema
@@ -276,6 +300,7 @@ This pattern is documented but complex to implement correctly.
 5. Generate OCIRepository template
 
 **Resources to Include:**
+
 - `references/common-charts.md` - Frequently used charts
 - Registry patterns for ghcr.io, docker.io
 
@@ -292,11 +317,13 @@ This pattern is documented but complex to implement correctly.
 **Why Needed:** Debugging requires knowing which agent, command, and ai-context to load. Auto-detection speeds resolution.
 
 **Activation Triggers:**
+
 - "debug", "troubleshoot", "not working"
 - Error messages in conversation
 - "why is X failing"
 
 **Workflow:**
+
 1. Detect domain from context:
    - Flux errors → flux-expert + flux-gitops.md
    - Network/DNS → network-debugger + cilium-networking.md
@@ -316,16 +343,19 @@ This pattern is documented but complex to implement correctly.
 **Purpose:** Help configure new nodes correctly in nodes.yaml.
 
 **Why Needed:** Node configuration requires:
+
 - Correct schematic_id from Image Factory
 - Proper MAC address format
 - Disk device path
 - Optional VM overrides for Proxmox
 
 **Activation Triggers:**
+
 - "add node", "configure new node"
 - "nodes.yaml help"
 
 **Workflow:**
+
 1. Guide through required fields: name, address, controller, disk, mac_addr, schematic_id
 2. Explain optional fields: mtu, secureboot, encrypt_disk, vm_* overrides
 3. Validate format (MAC lowercase + colons, schematic_id 64 chars)
@@ -333,6 +363,7 @@ This pattern is documented but complex to implement correctly.
 5. Explain VM resource defaults for Proxmox
 
 **Resources to Include:**
+
 - `references/node-schema.md` - Complete field reference
 
 **Estimated Value:** Correct node configuration on first attempt.
@@ -440,12 +471,15 @@ resources:
 ```
 
 ### 4. Validate
+
 Run `task configure` to render and validate.
 
 ## Template Delimiters
+
 - Variable: `#{ variable }#`
 - Block: `#% if condition %# ... #% endif %#`
 - Comment: `#| comment #|`
+
 ```
 
 ---
@@ -496,13 +530,16 @@ Run `task configure` to render and validate.
 
 ### Template Delimiters
 ```
+
 Variable: #{ variable }#
 Block:    #% if/for %# ... #% endif/endfor %#
 Comment:  #| comment #|
+
 ```
 
 ### App Structure
 ```
+
 templates/config/kubernetes/apps/<namespace>/<app>/
 ├── ks.yaml.j2
 └── app/
@@ -510,6 +547,7 @@ templates/config/kubernetes/apps/<namespace>/<app>/
     ├── helmrelease.yaml.j2
     ├── ocirepository.yaml.j2
     └── secret.sops.yaml.j2  # (if secrets)
+
 ```
 
 ### Feature Enablement Pattern
@@ -524,6 +562,7 @@ feature_option_b: "value"
 ```
 
 ### Generated vs Source
+
 - **EDIT:** `templates/config/`
 - **NEVER EDIT:** `kubernetes/`, `talos/`, `bootstrap/`, `infrastructure/`
 

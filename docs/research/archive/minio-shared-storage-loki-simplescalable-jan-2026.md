@@ -83,6 +83,7 @@ This document provides a comprehensive implementation plan for deploying MinIO a
 ### Option A: MinIO Operator + Tenant (Recommended)
 
 **Pros:**
+
 - Kubernetes-native lifecycle management
 - Multi-tenant capable (future expansion)
 - Enterprise features (encryption, IAM, tiering)
@@ -90,6 +91,7 @@ This document provides a comprehensive implementation plan for deploying MinIO a
 - Production-grade patterns
 
 **Cons:**
+
 - More resources than standalone
 - Operator overhead
 
@@ -98,11 +100,13 @@ This document provides a comprehensive implementation plan for deploying MinIO a
 ### Option B: Standalone MinIO Helm Chart
 
 **Pros:**
+
 - Simpler deployment
 - Lower resource overhead
 - Good for small/homelab clusters
 
 **Cons:**
+
 - Manual lifecycle management
 - No operator for advanced features
 - Limited scaling options
@@ -112,10 +116,12 @@ This document provides a comprehensive implementation plan for deploying MinIO a
 ### Option C: Loki's Built-in MinIO Subchart
 
 **Pros:**
+
 - Zero additional configuration
 - Tightly integrated
 
 **Cons:**
+
 - Not shared with other services
 - Lifecycle tied to Loki
 - Can't use for Tempo/backups
@@ -143,6 +149,7 @@ minio_root_password: ""                # SOPS-encrypted root password
 ```
 
 **Derived Variables** (add to `plugin.py`):
+
 ```python
 # MinIO enabled when minio_enabled is true
 if data.get("minio_enabled"):

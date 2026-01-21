@@ -32,12 +32,14 @@
 <!-- For Renovate Bot PRs only - skip if not applicable -->
 
 ### Infrastructure Changes
+
 - [ ] If this PR modifies `templates/config/infrastructure/**`, run `task configure`
 - [ ] Verify generated files in `infrastructure/` are updated and committed
 - [ ] Run `task infra:plan` to preview infrastructure changes
 - [ ] Review Terraform/OpenTofu plan output
 
 ### Dependency Updates
+
 - [ ] Review changelog/release notes for breaking changes
 - [ ] Check if version constraint updates are needed
 - [ ] Verify compatibility with other dependencies

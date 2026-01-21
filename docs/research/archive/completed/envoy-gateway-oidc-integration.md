@@ -7,6 +7,7 @@
 >
 > [!NOTE]
 > **Implementation Complete (January 2026)** - The recommended "Approach 1: Native SecurityPolicy OIDC" has been fully implemented:
+>
 > - OIDC SecurityPolicy targeting HTTPRoutes with `security: oidc-protected` label
 > - JWT SecurityPolicy targeting HTTPRoutes with `security: jwt-protected` label
 > - Keycloak as OIDC provider with social IdP support (Google, GitHub, Microsoft)
@@ -78,6 +79,7 @@ kubernetes/apps/network/envoy-gateway/
 | cluster.yaml OIDC vars | ⏳ **DEFINED** | `oidc_issuer_url`, `oidc_jwks_uri` commented out |
 
 **Template Variables Available:**
+
 - `#{ cloudflare_domain }#` → Domain name
 - `#{ cloudflare_gateway_addr }#` → External gateway LoadBalancer IP
 - `#{ cluster_gateway_addr }#` → Internal gateway LoadBalancer IP
@@ -188,6 +190,7 @@ stringData:
 ### Targeting Patterns
 
 **Gateway-level (protect all routes):**
+
 ```yaml
 spec:
   targetRefs:
@@ -197,6 +200,7 @@ spec:
 ```
 
 **HTTPRoute-level (protect specific routes):**
+
 ```yaml
 spec:
   targetRefs:
@@ -440,6 +444,7 @@ spec:
 #### Phase 1: Native SecurityPolicy OIDC
 
 **Why start here:**
+
 - Minimal changes to existing cluster
 - Validates OIDC provider setup
 - Establishes patterns for secrets and policies
@@ -447,6 +452,7 @@ spec:
 **Implementation Steps:**
 
 1. **Add OIDC provider configuration to `cluster.yaml`:**
+
    ```yaml
    # OIDC Provider Configuration
    oidc_issuer_url: "https://auth.example.com/realms/matherlynet"
@@ -455,6 +461,7 @@ spec:
    ```
 
 2. **Create SecurityPolicy template:**
+
    ```
    templates/config/kubernetes/apps/network/envoy-gateway/app/
    ├── securitypolicy-oidc.yaml.j2
@@ -470,11 +477,13 @@ spec:
 #### Phase 2: Evaluate ext_authz (If Needed)
 
 **Triggers for Phase 2:**
+
 - Need to pass user claims to backend services
 - Require group-based authorization
 - Want unified logout across multiple apps
 
 **Implementation:**
+
 - Deploy OAuth2-Proxy in `auth` namespace
 - Create ext_authz SecurityPolicy
 - Gradually migrate routes from native OIDC
@@ -663,12 +672,14 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm --version v0.0.0-latest 
 **Status Update**: GEP-1494 (HTTP External Auth) achieved **EXPERIMENTAL** status in Gateway API v1.4.0 (October 6, 2025).
 
 **What This Means**:
+
 - Standard `ExternalAuth` filter now available in HTTPRoute
 - Uses Envoy's ext_authz protocol (community consensus from KubeCon London 2025)
 - API changes merged November 27, 2025 ([PR #4001](https://github.com/kubernetes-sigs/gateway-api/pull/4001))
 - Future: A Policy object for Gateway/HTTPRoute-level auth targeting
 
 **Implication for This Cluster**:
+
 - Current approach using Envoy Gateway's SecurityPolicy remains valid and recommended
 - Future option: Migrate to portable Gateway API `ExternalAuth` filter when it reaches stable status
 - Istio is also adding first-class support aligned with GEP-1494 semantics
@@ -689,6 +700,7 @@ helm install eg oci://docker.io/envoyproxy/gateway-helm --version v0.0.0-latest 
 #### Authentik with FluxCD
 
 Authentik has mature Flux/GitOps integration:
+
 - Official Helm chart at `charts.goauthentik.io`
 - Use `valuesFrom` for secret injection
 - Requires PostgreSQL (deploy separately or use operator)
@@ -703,21 +715,25 @@ Reference: [Setting up Authentik with FluxCD](https://timvw.be/2025/03/17/settin
 > ⚠️ **CRITICAL: Minimum Version Requirement - v7.11.0+**
 
 **CVE-2025-54576** (CVSS 9.1 - CRITICAL): Authentication bypass vulnerability via query parameter manipulation.
+
 - Affects versions ≤ 7.10.0
 - `skip_auth_routes` regex patterns incorrectly match against full URI including query parameters
 - Attackers can bypass authentication by crafting query parameters that trigger regex matches
 - **Fixed in v7.11.0** - [Security Advisory](https://securityonline.info/critical-oauth2-proxy-flaw-cve-2025-54576-cvss-9-1-allows-authentication-bypass-via-query-parameters/)
 
 **Mitigation if patching is delayed:**
+
 - Audit all `skip_auth_routes` for overly permissive patterns
 - Replace wildcards with exact path matches
 - Anchor regex patterns with `^` and `$`
 
 **CVE-2025-64484** (GHSA-vjrc-mh2v-45x6): Request header smuggling vulnerability.
+
 - Fixed by stripping all normalized header variants
 - **Fixed in v7.11.0**
 
 **Session Validation Change**:
+
 - Now uses `access_token` (not `id_token`) for validating refreshed sessions
 - Aligns with OIDC specification
 - Future releases may remove `id_token` validation entirely
@@ -753,6 +769,7 @@ spec:
 ```
 
 **When to Use This Instead of OAuth2-Proxy**:
+
 - Only need specific claims forwarded (not full token)
 - Want to avoid additional deployment
 - JWT validation is sufficient (no session management needed)

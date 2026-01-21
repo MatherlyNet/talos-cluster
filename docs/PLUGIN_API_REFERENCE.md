@@ -11,6 +11,7 @@
 The template plugin provides custom Jinja2 filters and functions for use in makejinja templates. It handles cluster configuration computation, file operations, and dynamic variable derivation.
 
 **Usage in Templates:**
+
 ```jinja2
 #| Example: Get the 10th IP in the node CIDR |#
 cluster_api_addr: #{ node_cidr | nthhost(10) }#
@@ -35,12 +36,15 @@ Filters are applied to values using the pipe (`|`) syntax.
 Remove the `.j2` extension from a file path and return the stem.
 
 **Parameters:**
+
 - `value` (str): File path to process
 
 **Returns:**
+
 - str: Filename without `.j2` extension
 
 **Example:**
+
 ```jinja2
 #| Input: "templates/config/cluster.yaml.j2" |#
 #{ "templates/config/cluster.yaml.j2" | basename }#
@@ -56,14 +60,17 @@ Remove the `.j2` extension from a file path and return the stem.
 Get the nth IP address from a CIDR range.
 
 **Parameters:**
+
 - `value` (str): CIDR network (e.g., `192.168.1.0/24`)
 - `query` (int): Zero-based index of desired IP
 
 **Returns:**
+
 - str: IP address at the specified index
 - bool: `False` if index is out of range or invalid CIDR
 
 **Examples:**
+
 ```jinja2
 #| Get the 1st IP (gateway) |#
 gateway: #{ node_cidr | nthhost(1) }#
@@ -75,6 +82,7 @@ cluster_api_addr: #{ node_cidr | nthhost(10) }#
 ```
 
 **Edge Cases:**
+
 - Index 0 is the network address
 - Last index is the broadcast address
 - Raises `ValueError` for invalid CIDR notation
@@ -93,13 +101,16 @@ Functions are called directly in templates.
 Extract Age encryption keys from the Age key file.
 
 **Parameters:**
+
 - `key_type` (str): Type of key to extract (`"public"` or `"private"`)
 - `file_path` (str, optional): Path to Age key file. Default: `"age.key"`
 
 **Returns:**
+
 - str: Public key (format: `age1...`) or private key (format: `AGE-SECRET-KEY-...`)
 
 **Examples:**
+
 ```jinja2
 #| Public key for SOPS |#
 age_public_key: #{ age_key('public') }#
@@ -109,6 +120,7 @@ age_private_key: #{ age_key('private') }#
 ```
 
 **Errors:**
+
 - `FileNotFoundError`: Age key file not found
 - `ValueError`:
   - Invalid key type (not "public" or "private")
@@ -124,18 +136,22 @@ age_private_key: #{ age_key('private') }#
 Extract the Tunnel ID from Cloudflare Tunnel credentials file.
 
 **Parameters:**
+
 - `file_path` (str, optional): Path to Cloudflare Tunnel JSON file. Default: `"cloudflare-tunnel.json"`
 
 **Returns:**
+
 - str: Cloudflare Tunnel ID (UUID format)
 
 **Example:**
+
 ```jinja2
 tunnel_id: #{ cloudflare_tunnel_id() }#
 #| Output: "abc123de-f456-7890-abcd-ef1234567890" |#
 ```
 
 **Errors:**
+
 - `FileNotFoundError`: Tunnel credentials file not found
 - `json.JSONDecodeError`: Invalid JSON file
 - `KeyError`: Missing `TunnelID` key in JSON
@@ -150,12 +166,15 @@ tunnel_id: #{ cloudflare_tunnel_id() }#
 Generate Cloudflare Tunnel token from credentials file.
 
 **Parameters:**
+
 - `file_path` (str, optional): Path to Cloudflare Tunnel JSON file. Default: `"cloudflare-tunnel.json"`
 
 **Returns:**
+
 - str: Base64-encoded tunnel token (TUNNEL_TOKEN format)
 
 **Example:**
+
 ```jinja2
 tunnel_token: #{ cloudflare_tunnel_secret() }#
 #| Output: "eyJhIjoiYWNjb3VudC10YWciLCJ0IjoidHVubmVsLWlkIiwicyI6InR1bm5lbC1zZWNyZXQifQ==" |#
@@ -163,11 +182,13 @@ tunnel_token: #{ cloudflare_tunnel_secret() }#
 
 **Format:**
 The token is a base64-encoded JSON object with keys transformed:
+
 - `AccountTag` → `a`
 - `TunnelID` → `t`
 - `TunnelSecret` → `s`
 
 **Errors:**
+
 - `FileNotFoundError`: Tunnel credentials file not found
 - `json.JSONDecodeError`: Invalid JSON file
 - `KeyError`: Missing required keys (`AccountTag`, `TunnelID`, `TunnelSecret`)
@@ -182,17 +203,21 @@ The token is a base64-encoded JSON object with keys transformed:
 Read the GitHub deploy key for Flux Git access.
 
 **Parameters:**
+
 - `file_path` (str, optional): Path to deploy key file. Default: `"github-deploy.key"`
 
 **Returns:**
+
 - str: SSH private key contents
 
 **Example:**
+
 ```jinja2
 deploy_key: #{ github_deploy_key() }#
 ```
 
 **Errors:**
+
 - `FileNotFoundError`: Deploy key file not found
 - `RuntimeError`: Unexpected processing error
 
@@ -205,17 +230,21 @@ deploy_key: #{ github_deploy_key() }#
 Read the GitHub push token for Flux webhooks.
 
 **Parameters:**
+
 - `file_path` (str, optional): Path to push token file. Default: `"github-push-token.txt"`
 
 **Returns:**
+
 - str: GitHub personal access token
 
 **Example:**
+
 ```jinja2
 push_token: #{ github_push_token() }#
 ```
 
 **Errors:**
+
 - `FileNotFoundError`: Push token file not found
 - `RuntimeError`: Unexpected processing error
 
@@ -228,13 +257,16 @@ push_token: #{ github_push_token() }#
 List Talos patch files for the specified category.
 
 **Parameters:**
+
 - `value` (str): Patch category (`"global"` or `"controller"`)
 
 **Returns:**
+
 - list[str]: Sorted list of patch file paths
 - list[str]: Empty list if directory doesn't exist
 
 **Example:**
+
 ```jinja2
 #% for patch in talos_patches('global') %#
   - #{ patch }#
@@ -247,6 +279,7 @@ List Talos patch files for the specified category.
 ```
 
 **Patch Categories:**
+
 - `global`: Applied to all nodes (controller + worker)
 - `controller`: Applied only to controller nodes
 
@@ -259,12 +292,15 @@ List Talos patch files for the specified category.
 Check if Proxmox infrastructure provisioning is configured.
 
 **Parameters:**
+
 - `data` (dict): Cluster configuration dictionary
 
 **Returns:**
+
 - bool: `True` if both `proxmox_api_url` and `proxmox_node` are set
 
 **Example:**
+
 ```jinja2
 #% if infrastructure_enabled(data) %#
   #| Proxmox infrastructure is enabled |#
@@ -273,6 +309,7 @@ Check if Proxmox infrastructure provisioning is configured.
 ```
 
 **Required Variables:**
+
 - `proxmox_api_url`: Proxmox API endpoint (e.g., `https://pve.local:8006/api2/json`)
 - `proxmox_node`: Proxmox node name (e.g., `pve`)
 
@@ -287,6 +324,7 @@ Check if Proxmox infrastructure provisioning is configured.
 Main plugin class that processes cluster configuration and computes derived variables.
 
 **Constructor:**
+
 ```python
 def __init__(self, data: dict[str, Any]):
     self._data = data
@@ -299,9 +337,11 @@ def __init__(self, data: dict[str, Any]):
 Process cluster configuration and compute all derived variables.
 
 **Returns:**
+
 - dict: Enhanced configuration with computed values
 
 **Processing Steps:**
+
 1. Set network defaults (`node_default_gateway`, `node_dns_servers`, `node_ntp_servers`)
 2. Set Kubernetes defaults (`cluster_pod_cidr`, `cluster_svc_cidr`)
 3. Set Git defaults (`repository_branch`, `repository_visibility`)
@@ -341,6 +381,7 @@ Process cluster configuration and compute all derived variables.
 Return list of Jinja2 filters.
 
 **Returns:**
+
 - list: `[basename, nthhost]`
 
 **Source:** Line 812
@@ -352,6 +393,7 @@ Return list of Jinja2 filters.
 Return list of Jinja2 functions.
 
 **Returns:**
+
 - list: `[age_key, cloudflare_tunnel_id, cloudflare_tunnel_secret, github_deploy_key, github_push_token, talos_patches, infrastructure_enabled]`
 
 **Source:** Line 815

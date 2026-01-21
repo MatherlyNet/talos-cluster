@@ -81,6 +81,7 @@ Talos Linux is an immutable, API-driven OS designed specifically for Kubernetes:
 | **API-driven** | Configured via `talosctl` and YAML patches |
 
 **Configuration Flow:**
+
 ```
 talconfig.yaml → talhelper genconfig → clusterconfig/*.yaml → talosctl apply
 ```
@@ -98,6 +99,7 @@ Cilium provides advanced networking with eBPF:
 | **BGP** | Optional (cilium_bgp_enabled) |
 
 **Key IPs:**
+
 - `cluster_gateway_addr` → envoy-internal LB
 - `cloudflare_gateway_addr` → envoy-external LB
 - `cluster_dns_gateway_addr` → k8s-gateway or unifi-dns LB
@@ -233,6 +235,7 @@ creation_rules:
 ```
 
 **Encryption Flow:**
+
 ```
 plaintext → sops encrypt → *.sops.yaml → git push → Flux → sops decrypt → Kubernetes Secret
 ```
@@ -307,17 +310,20 @@ Forward `cloudflare_domain` queries to `cluster_dns_gateway_addr`.
 ## Upgrade Paths
 
 ### Talos Version Upgrade
+
 ```bash
 task talos:upgrade-node IP=192.168.1.10
 ```
 
 ### Kubernetes Version Upgrade
+
 ```bash
 # Update talenv.yaml: kubernetesVersion
 task talos:upgrade-k8s
 ```
 
 ### Application Upgrades
+
 ```yaml
 # Managed by Renovate PRs
 # Merge PR → Flux auto-reconciles

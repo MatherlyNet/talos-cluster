@@ -11,6 +11,7 @@
 Enhance the project's documentation infrastructure to incorporate best practices from previous AI assistant recommendations while maintaining expert-mode's token efficiency.
 
 **Previous Session Recommendations**:
+
 - **Strengths to Maintain**: Evidence-based analysis, specific line refs, copy-paste ready code, validation commands, visual elements
 - **Areas for Enhancement**: CI/CD impact, failure modes, automated testing
 
@@ -26,6 +27,7 @@ Instead of bloating expert-mode with comprehensive standards (which would defeat
 **Tier 2 (On-Demand)**: Comprehensive documentation following full standards
 
 This approach achieves:
+
 - ✅ Maintains expert-mode efficiency
 - ✅ Incorporates all recommended standards
 - ✅ Provides progressive context loading
@@ -40,6 +42,7 @@ This approach achieves:
 **Purpose**: Comprehensive documentation standards tailored to this Talos/Kubernetes GitOps project
 
 **Content**:
+
 - **9 Core Standards** (5 MUST + 4 SHOULD apply when relevant)
 - **Project-Specific Examples**: makejinja templates, SOPS, Flux, Talos, Cilium
 - **Validation Command Reference**: Task commands, talosctl, kubectl, flux, cilium
@@ -49,6 +52,7 @@ This approach achieves:
 - **Application Workflow**: Step-by-step process for creating docs
 
 **Key Adaptations from AI Monorepo**:
+
 - Replaced Go-specific patterns with Talos/K8s/GitOps patterns
 - Added makejinja template delimiter guidance (critical for this project)
 - Included SOPS encryption examples
@@ -56,6 +60,7 @@ This approach achieves:
 - Documented template vs generated file distinction
 
 **Evidence Trail Example**:
+
 ```markdown
 | Finding | Evidence Method | Verification Command |
 |---------|----------------|----------------------|
@@ -69,6 +74,7 @@ This approach achieves:
 **Purpose**: Token optimization guide with decision trees for progressive context loading
 
 **Content**:
+
 - **Token Cost Reference**: All project docs with approximate token counts
 - **Decision Tree**: Task-based context loading patterns
 - **8 Loading Patterns**: Quick queries → Implementation → Documentation
@@ -88,6 +94,7 @@ This approach achieves:
 | Documentation | expert-mode + DOCUMENTATION_STANDARDS + domain | ~25K |
 
 **Decision Tree Logic**:
+
 ```
 User Request → Assess Complexity → Load Minimal Context →
 Progressive Expansion (if needed) → Monitor Token Budget
@@ -102,6 +109,7 @@ Progressive Expansion (if needed) → Monitor Token Budget
 **Changes**: Added two minimal sections without sacrificing efficiency
 
 **Added Section 1: Documentation Standards** (3 lines + reference)
+
 ```markdown
 ## Documentation Standards
 
@@ -116,6 +124,7 @@ When creating comprehensive documentation, apply standards from `docs/DOCUMENTAT
 ```
 
 **Added Section 2: Context Loading Strategy** (7 lines + reference)
+
 ```markdown
 ## Context Loading Strategy
 
@@ -131,6 +140,7 @@ See `docs/ai-context/context-loading-strategy.md` for decision tree and best pra
 ```
 
 **Token Impact**:
+
 - **Before**: ~3K tokens
 - **After**: ~3.2K tokens
 - **Increase**: ~6-7% (well within acceptable range)
@@ -143,9 +153,11 @@ See `docs/ai-context/context-loading-strategy.md` for decision tree and best pra
 **Changes**: Added references to new documentation
 
 **Added to AI Context Documentation Section**:
+
 - `context-loading-strategy.md` - Context optimization domain
 
 **New Section: Documentation Standards**:
+
 ```markdown
 ### Documentation Standards
 
@@ -163,9 +175,11 @@ For creating high-quality documentation:
 **Changes**: Added documentation standards reference
 
 **Added to Domain Documentation Section**:
+
 - `context-loading-strategy.md` reference
 
 **New Section: Documentation Standards**:
+
 ```markdown
 ### Documentation Standards
 
@@ -290,6 +304,7 @@ cilium status           # Check CNI
 ### Phase 2: Enhance Existing ai-context Docs
 
 Apply documentation standards to existing domain docs:
+
 - `flux-gitops.md` - Add validation commands, failure modes
 - `talos-operations.md` - Add failure catalog, automated tests
 - `cilium-networking.md` - Add OIDC troubleshooting, network policy failures
@@ -302,6 +317,7 @@ Apply documentation standards to existing domain docs:
 ### Phase 3: Automated Validation Scripts
 
 Create `scripts/` directory with copy-paste ready validation tools:
+
 - `health-check.sh` - ✅ Already documented in DOCUMENTATION_STANDARDS.md
 - `validate-templates.sh` - ✅ Already documented
 - `sops-audit.sh` - Verify all secrets encrypted
@@ -331,6 +347,7 @@ Create `scripts/` directory with copy-paste ready validation tools:
 The documentation standards enhancement successfully integrates all recommendations from the previous AI assistant session while maintaining expert-mode's core efficiency advantage.
 
 **Key Achievements**:
+
 1. ✅ Created comprehensive, project-specific documentation standards
 2. ✅ Implemented token-efficient context loading strategy
 3. ✅ Maintained expert-mode efficiency (only ~6% token increase)
@@ -340,12 +357,14 @@ The documentation standards enhancement successfully integrates all recommendati
 7. ✅ Adapted AI monorepo patterns to Talos/Kubernetes/GitOps context
 
 **Impact**:
+
 - AI assistants now have clear standards for creating comprehensive documentation
 - Token budget optimization through intelligent context loading
 - Improved documentation quality through evidence-based, verifiable patterns
 - Backward compatible - existing workflows unchanged
 
 **Token Efficiency Maintained**:
+
 - Quick tasks: 3K tokens (unchanged)
 - Documentation tasks: 25K tokens (well within budget)
 - Complex implementations: 45K tokens (leaves 150K+ for actual work)

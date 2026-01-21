@@ -59,6 +59,7 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 > **⚠️ IMPORTANT LIMITATION:** RustFS does **NOT** support Prometheus pull-based metrics like MinIO. It uses OpenTelemetry (OTLP) push mode instead. The dashboard ConfigMap is deployed but will not show data without additional OTEL collector configuration.
 >
 > **References:**
+>
 > - [GitHub Issue #1228](https://github.com/rustfs/rustfs/issues/1228) - Confirms OTLP-only metrics
 > - [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability) - Reference configuration
 
@@ -79,6 +80,7 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 > **Note:** The **Keycloak Operator automatically creates a ServiceMonitor** when `metrics-enabled: "true"` is set in the Keycloak CR's `additionalOptions`. We do NOT need to create a separate ServiceMonitor template.
 >
 > The operator-created ServiceMonitor:
+>
 > - Scrapes the management interface (port 9000)
 > - Uses path `/metrics`
 > - Has proper label selectors for Keycloak service
@@ -86,6 +88,7 @@ This guide implements **conditional Grafana dashboards** for Keycloak and RustFS
 **No template required** - the ServiceMonitor is managed by the Keycloak Operator.
 
 **Verify the operator-created ServiceMonitor:**
+
 ```bash
 kubectl get servicemonitor -n identity keycloak -o yaml
 ```
@@ -190,6 +193,7 @@ resources:
 > **⚠️ IMPORTANT:** Unlike MinIO, RustFS does **NOT** support Prometheus pull-based metrics via `/minio/v2/metrics/cluster`. RustFS uses OpenTelemetry (OTLP) push mode exclusively.
 >
 > **Current Status:** The RustFS dashboard ConfigMap is deployed but will show no data until an OTEL collector is configured to:
+>
 > 1. Receive OTLP metrics from RustFS (ports 4317 gRPC / 4318 HTTP)
 > 2. Export to Prometheus via a Prometheus exporter (typically port 8889)
 >
@@ -447,6 +451,7 @@ To enable RustFS metrics in Prometheus, you need:
    - Prometheus exporter on port 8889
 
 2. **Configure RustFS environment variables:**
+
    ```yaml
    RUSTFS_OBS_METRIC_ENDPOINT: "http://otel-collector:4318/v1/metrics"
    OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
@@ -457,6 +462,7 @@ To enable RustFS metrics in Prometheus, you need:
 ### Current Status (IMPLEMENTED - PENDING VERIFICATION)
 
 The RustFS OTLP metrics integration has been implemented:
+
 - ✅ Alloy extended with OTLP metrics receiver and Prometheus pipeline
 - ✅ RustFS configured with `RUSTFS_OBS_METRIC_ENDPOINT` environment variable
 - ⏳ Pending: `task configure -y` to render templates
@@ -467,6 +473,7 @@ The RustFS OTLP metrics integration has been implemented:
 ### Current RustFS Metrics Available
 
 Per [GitHub Discussion #601](https://github.com/orgs/rustfs/discussions/601), RustFS currently exports basic metrics via OpenTelemetry:
+
 - cpu usage, cpu util percent, io read, io write
 - memory usage, virtual memory, network io
 - process status, request body len, request total
@@ -621,12 +628,14 @@ kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:909
 ### RustFS Official Dashboard
 
 Monitor [GitHub Discussion #601](https://github.com/orgs/rustfs/discussions/601) for:
+
 - Official RustFS Grafana dashboard
 - Additional metrics (disk usage, bucket/object counts)
 
 ### Keycloak Event Dashboard
 
 Consider creating a custom dashboard for:
+
 - Failed login attempts by IP
 - User registration trends
 - Token refresh patterns
@@ -637,30 +646,36 @@ Consider creating a custom dashboard for:
 ## References
 
 ### Keycloak
+
 - [Keycloak Metrics Documentation](https://www.keycloak.org/observability/configuration-metrics)
 - [Keycloak Grafana Dashboards](https://www.keycloak.org/observability/grafana-dashboards)
 - [keycloak-grafana-dashboard Repository](https://github.com/keycloak/keycloak-grafana-dashboard)
 
 ### RustFS
+
 - [RustFS Logging Documentation](https://docs.rustfs.com/features/logging/)
 - [RustFS GitHub Discussions](https://github.com/orgs/rustfs/discussions/601)
 - [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability)
 
 ### MinIO (RustFS-compatible)
+
 - [MinIO Dashboard v3](https://github.com/FedericoAntoniazzi/minio-grafana-dashboard-metrics-v3)
 - [MinIO Grafana Integration](https://grafana.com/docs/grafana-cloud/monitor-infrastructure/integrations/integration-reference/integration-minio/)
 
 ### Loki
+
 - [Loki Stack Monitoring Dashboard (14055)](https://grafana.com/grafana/dashboards/14055-loki-stack-monitoring-promtail-loki/)
 - [Loki Helm Chart Monitoring](https://grafana.com/docs/loki/latest/setup/install/helm/monitor-and-alert/)
 - [Loki Mixin Dashboards](https://grafana.com/docs/loki/latest/operations/meta-monitoring/mixins/)
 
 ### CoreDNS
+
 - [kube-prometheus-stack CoreDNS Dashboard](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/templates/grafana/dashboards-1.14/k8s-coredns.yaml)
 - [dotdc Modern CoreDNS Dashboard (15762)](https://grafana.com/grafana/dashboards/15762-kubernetes-system-coredns/)
 - [CoreDNS Metrics Plugin](https://coredns.io/plugins/metrics/)
 
 ### Project Documentation
+
 - [Keycloak Implementation Guide](./completed/keycloak-implementation.md) - Keycloak deployment and tracing configuration
 - [CNPG Implementation Guide](./completed/cnpg-implementation.md) - Dashboard ConfigMap pattern reference
 - [Envoy Gateway Observability](./envoy-gateway-observability-security.md) - Gateway metrics integration
@@ -688,6 +703,7 @@ Consider creating a custom dashboard for:
 ### Large ConfigMap Sizes
 
 The Keycloak troubleshooting dashboard JSON is ~204KB, which:
+
 - Exceeds typical ConfigMap "best practice" of <1MB (still well within limits)
 - May cause slow Git operations if many changes
 - Alternative: Use `gnetId` references when dashboards are published to Grafana.net
@@ -713,6 +729,7 @@ loki_monitoring_enabled: true       # Loki stack monitoring dashboard
 ### Derived Variables (plugin.py)
 
 The following are computed automatically:
+
 - `keycloak_monitoring_enabled` - true when `monitoring_enabled` AND `keycloak_monitoring_enabled` both true
 - `rustfs_monitoring_enabled` - true when `monitoring_enabled` AND `rustfs_monitoring_enabled` both true
 - `loki_monitoring_enabled` - true when `monitoring_enabled` AND `loki_monitoring_enabled` both true

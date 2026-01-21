@@ -294,6 +294,7 @@ Following the same IAM pattern used for CNPG and other database backups, create 
 #### Step 1: Create RustFS Bucket
 
 **Option A:** Via RustFS Console UI:
+
 1. Navigate to **Buckets** → **Create Bucket**
 2. **Name:** `mcpgateway-postgres-backups`
 3. Click **Create Bucket**
@@ -354,6 +355,7 @@ Navigate to RustFS Console → **Identity** → **Policies** → **Create Policy
 | Bucket location | `s3:GetBucketLocation` | Barman Cloud SDK compatibility |
 
 **Why Not Built-in `readwrite`:**
+
 - The `readwrite` policy grants access to **ALL** buckets
 - The custom `mcp-context-forge-storage` policy scopes access to only `mcpgateway-postgres-backups` bucket
 - This protects other buckets (cnpg-backups, etcd-backups, etc.) from MCP Context Forge access (principle of least privilege)
@@ -361,11 +363,13 @@ Navigate to RustFS Console → **Identity** → **Policies** → **Create Policy
 #### Step 3: Assign to Group (Recommended) or Create New Group
 
 **Option A:** Reuse existing `databases` group (if CNPG is enabled):
+
 1. Navigate to **Identity** → **Groups** → `databases`
 2. **Add Policy:** `mcp-context-forge-storage`
 3. Click **Save**
 
 **Option B:** Create dedicated group:
+
 1. Navigate to **Identity** → **Groups** → **Create Group**
 2. **Name:** `ai-system-backups`
 3. **Assign Policies:** `mcp-context-forge-storage`
@@ -414,6 +418,7 @@ The MCP Context Forge IAM structure mirrors other database backup patterns:
 | **Permissions** | Full CRUD on cnpg-backups | Full CRUD on mcpgateway-postgres-backups |
 
 This pattern ensures:
+
 - **Principle of least privilege**: MCP Context Forge only accesses its own backup bucket
 - **Audit trail**: User/group structure enables access tracking
 - **Scalability**: Future ai-system databases can share the group with dedicated policies
@@ -1568,6 +1573,7 @@ dragonfly_mcpgateway_password: "..."  # Generate: openssl rand -base64 24
 ```
 
 MCP Context Forge requires broad Redis access for:
+
 - **Leader election**: `gateway_service_leader` key (configurable via `REDIS_LEADER_KEY`)
 - **Cache keys**: `mcpgw:*` prefix (configurable via `CACHE_PREFIX`)
 - **Pub/Sub events**: Tool, prompt, resource, and gateway event channels

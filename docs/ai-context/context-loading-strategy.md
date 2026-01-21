@@ -78,11 +78,13 @@ Quick reference for planning context loads:
 ### Pattern 1: Quick Information Queries
 
 **Examples**:
+
 - "What version of Talos is this cluster running?"
 - "How many nodes are in the cluster?"
 - "What's the command to force Flux reconciliation?"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K tokens)
 ```
@@ -96,11 +98,13 @@ Quick reference for planning context loads:
 ### Pattern 2: Simple Configuration Changes
 
 **Examples**:
+
 - "Add a new simple application"
 - "Update an existing HelmRelease version"
 - "Create a new namespace"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ APPLICATIONS.md (~8K) - if adding/modifying apps
@@ -110,6 +114,7 @@ Quick reference for planning context loads:
 **Total**: ~3-20K tokens (progressive loading)
 
 **Workflow**:
+
 1. Start with expert-mode only
 2. If user asks about app patterns → load APPLICATIONS.md
 3. If user asks about specific commands → load CLI_REFERENCE.md
@@ -119,11 +124,13 @@ Quick reference for planning context loads:
 ### Pattern 3: Complex Configuration (Network/Security/OIDC)
 
 **Examples**:
+
 - "Configure OIDC authentication for new app"
 - "Set up Cilium network policies"
 - "Add Gateway API route with TLS"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ Relevant ai-context doc (~8K):
@@ -137,6 +144,7 @@ Quick reference for planning context loads:
 **Total**: ~20-30K tokens
 
 **Decision Logic**:
+
 - **Network/OIDC issues** → cilium-networking.md
 - **Template questions** → template-system.md
 - **Flux issues** → flux-gitops.md
@@ -148,12 +156,14 @@ Quick reference for planning context loads:
 ### Pattern 4: Troubleshooting
 
 **Examples**:
+
 - "Flux kustomization failing to reconcile"
 - "Pods not starting in namespace X"
 - "Network policy blocking traffic"
 - "SOPS decryption errors"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ TROUBLESHOOTING.md (~12K) - diagnostic flowcharts
@@ -167,6 +177,7 @@ Quick reference for planning context loads:
 **Total**: ~20-30K tokens
 
 **Progressive Loading**:
+
 1. Start with expert-mode + TROUBLESHOOTING.md
 2. If issue domain-specific → load relevant ai-context doc
 3. If architecture understanding needed → load DIAGRAMS.md
@@ -176,11 +187,13 @@ Quick reference for planning context loads:
 ### Pattern 5: New Feature Implementation
 
 **Examples**:
+
 - "Implement a new database-backed application"
 - "Add monitoring for custom metrics"
 - "Create multi-tenant namespace isolation"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ ARCHITECTURE.md (~15K) - understand system design
@@ -200,11 +213,13 @@ Quick reference for planning context loads:
 ### Pattern 6: Documentation Creation
 
 **Examples**:
+
 - "Document the OIDC implementation"
 - "Create troubleshooting guide for database issues"
 - "Write implementation guide for new feature"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ DOCUMENTATION_STANDARDS.md (~8K) - CRITICAL
@@ -221,11 +236,13 @@ Quick reference for planning context loads:
 ### Pattern 7: Infrastructure Changes (OpenTofu/Proxmox)
 
 **Examples**:
+
 - "Modify Proxmox VM configuration"
 - "Update R2 backend settings"
 - "Add new infrastructure resources"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ infrastructure-opentofu.md (~8K)
@@ -240,11 +257,13 @@ Quick reference for planning context loads:
 ### Pattern 8: Template System Work
 
 **Examples**:
+
 - "Fix makejinja template rendering error"
 - "Add new computed variable in plugin.py"
 - "Create new app template following project patterns"
 
 **Context to Load**:
+
 ```
 ✅ expert-mode.md (~3K)
 ✅ template-system.md (~8K)
@@ -259,11 +278,13 @@ Quick reference for planning context loads:
 ## 🔄 Progressive Loading Workflow
 
 **Step 1: Always Start Minimal**
+
 ```
 Load: expert-mode.md (~3K)
 ```
 
 **Step 2: Assess Task Complexity**
+
 ```
 if simple_query:
     proceed with expert-mode only
@@ -278,6 +299,7 @@ elif documentation:
 ```
 
 **Step 3: Expand Context As Needed**
+
 ```
 # User asks follow-up question needing deeper context
 if additional_context_needed:
@@ -286,6 +308,7 @@ if additional_context_needed:
 ```
 
 **Step 4: Monitor Token Budget**
+
 ```
 # Approaching limits
 if tokens_used > 150K:
@@ -341,6 +364,7 @@ if tokens_used > 150K:
 **User**: "What's the command to upgrade Talos?"
 
 **Context Loaded**:
+
 - expert-mode.md (3K)
 
 **Response**: Check expert-mode quick reference → `task talos:upgrade-node IP=<ip>`
@@ -354,6 +378,7 @@ if tokens_used > 150K:
 **User**: "My HelmRelease isn't reconciling, getting 'chart not found' error"
 
 **Context Loaded (Progressive)**:
+
 1. expert-mode.md (3K)
 2. *Assess: Flux issue, need troubleshooting*
 3. TROUBLESHOOTING.md (12K)
@@ -371,6 +396,7 @@ if tokens_used > 150K:
 **User**: "I want to implement PostgreSQL database for new application with OIDC authentication"
 
 **Context Loaded**:
+
 1. expert-mode.md (3K)
 2. *Assess: Complex implementation*
 3. ARCHITECTURE.md (15K)
@@ -390,6 +416,7 @@ if tokens_used > 150K:
 **User**: "Getting Jinja2 syntax error when running task configure"
 
 **Context Loaded**:
+
 1. expert-mode.md (3K)
 2. *Assess: Template system issue*
 3. template-system.md (8K)
@@ -416,6 +443,7 @@ if tokens_used > 150K:
 ## 📈 Success Metrics
 
 **Efficient Context Loading** achieves:
+
 - < 20K tokens for simple tasks
 - < 50K tokens for complex implementations
 - > 150K tokens remaining for actual work
@@ -423,6 +451,7 @@ if tokens_used > 150K:
 - High relevance of loaded context
 
 **Warning Signs of Inefficiency**:
+
 - Loading > 50K tokens before starting work
 - Loading multiple full guides when only one relevant
 - Re-loading same docs multiple times

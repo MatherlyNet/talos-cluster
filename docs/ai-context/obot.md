@@ -3,6 +3,7 @@
 ## Overview
 
 Obot is an AI agent platform with Model Context Protocol (MCP) server hosting capabilities. It enables:
+
 - Building and deploying AI agents with tool integrations
 - Hosting MCP servers in isolated Kubernetes namespaces
 - Keycloak SSO authentication via custom auth provider
@@ -50,6 +51,7 @@ Obot is an AI agent platform with Model Context Protocol (MCP) server hosting ca
 ## Configuration Variables
 
 ### Enable/Disable
+
 ```yaml
 obot_enabled: true           # Enable Obot deployment
 obot_subdomain: "obot"       # Creates obot.${cloudflare_domain}
@@ -58,6 +60,7 @@ obot_replicas: 1             # Pod replicas
 ```
 
 ### Resource Configuration
+
 ```yaml
 obot_cpu_request: "500m"     # Obot CPU request
 obot_cpu_limit: "2000m"      # Obot CPU limit
@@ -68,6 +71,7 @@ obot_memory_limit: "4Gi"     # Obot memory limit
 Configure resource requests and limits for the Obot pod. Defaults are suitable for development/small production deployments. Increase for high-concurrency production workloads.
 
 ### Database (CloudNativePG with pgvector)
+
 ```yaml
 obot_db_password: "..."            # SOPS-encrypted PostgreSQL password
 obot_postgres_user: "obot"         # Database username
@@ -81,6 +85,7 @@ obot_storage_class: ""             # Optional override (defaults to global stora
 **Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### Workspace Provider Configuration
+
 ```yaml
 obot_workspace_provider: "directory"  # "directory" or "s3"
 obot_s3_bucket: "obot-workspaces"     # S3 bucket for workspace storage
@@ -91,15 +96,18 @@ obot_workspace_s3_secret_key: "..."   # SOPS-encrypted (required for S3 mode)
 ```
 
 **Workspace Provider Options:**
+
 - **`directory`** (default): Single PVC storage, requires `updateStrategy: Recreate` and `replicas: 1`
 - **`s3`**: S3-compatible storage, enables multi-replica deployments with `RollingUpdate` strategy
 
 **When to use S3 mode:**
+
 - Multi-replica deployments for high availability
 - Shared workspace state across pod restarts
 - Large-scale deployments with many concurrent users
 
 ### Encryption & Bootstrap
+
 ```yaml
 obot_encryption_provider: "custom"  # Options: custom, aws, gcp, azure
 obot_encryption_key: "..."          # Base64 32 bytes (for "custom" mode), generate: openssl rand -base64 32
@@ -111,6 +119,7 @@ obot_bootstrap_token: "..."         # Optional, hex 32 bytes, generate: openssl 
 The bootstrap token is used for initial API authentication before OIDC is configured.
 
 ### Authentication & Access Control
+
 ```yaml
 obot_admin_emails: "admin@example.com"     # Comma-separated admin email addresses
 obot_owner_emails: "owner@example.com"     # Comma-separated owner email addresses
@@ -118,11 +127,13 @@ obot_allowed_email_domains: "*"            # Allowed domains or "*" for all
 ```
 
 **Access Levels:**
+
 - **Admin**: Full platform access for administrative tasks
 - **Owner**: Highest privilege level with ownership capabilities
 - **Email Domains**: Restrict authentication to specific email domains (e.g., `"example.com,company.org"`)
 
 ### Keycloak SSO (requires keycloak_enabled)
+
 ```yaml
 obot_keycloak_enabled: true
 obot_keycloak_client_id: "obot"
@@ -134,10 +145,12 @@ obot_allowed_email_domains: "*"       # Email domain restrictions (default: all)
 ```
 
 Uses custom Keycloak auth provider from jrmatherly/obot-entraid fork with two env var patterns:
+
 - `OBOT_KEYCLOAK_AUTH_PROVIDER_*` - Keycloak-specific vars (URL, REALM, CLIENT_ID, CLIENT_SECRET)
 - `OBOT_AUTH_PROVIDER_*` - Shared auth provider vars (COOKIE_SECRET, EMAIL_DOMAINS)
 
 ### Entra ID (Azure AD) SSO - Alternative to Keycloak
+
 ```yaml
 obot_entra_tenant_id: "..."     # Azure AD tenant ID
 obot_entra_client_id: "..."     # OIDC client ID (SOPS-encrypted)
@@ -147,11 +160,13 @@ obot_entra_client_secret: "..." # OIDC client secret (SOPS-encrypted)
 **NOTE:** Use either Keycloak OR Entra ID authentication, not both. When `obot_entra_tenant_id` is set, `OBOT_SERVER_AUTH_PROVIDER` will be configured as `entra-id`.
 
 **Use Cases:**
+
 - Organizations already using Azure AD/Entra ID
 - Microsoft 365 integration scenarios
 - Enterprise deployments with Azure infrastructure
 
 ### Tool Registry Configuration (Optional)
+
 ```yaml
 obot_tool_registries:
   - "github.com/obot-platform/tools"      # Official tools
@@ -164,6 +179,7 @@ Specify additional gptscript tool registries. Supports GitHub repos, HTTP URLs, 
 **Default:** `["/obot-tools/tools"]` (jrmatherly/obot-entraid fork embedded tools)
 
 **Use Cases:**
+
 - Add custom tool repositories (GitHub, GitLab, etc.)
 - Include organization-specific gptscript tools
 - Enable beta/experimental tool registries for testing
@@ -171,6 +187,7 @@ Specify additional gptscript tool registries. Supports GitHub repos, HTTP URLs, 
 **Security:** Only add registries from trusted sources - accessible to all authenticated users
 
 ### MCP Catalog Configuration (Optional)
+
 ```yaml
 obot_default_mcp_catalog: "https://github.com/obot-platform/mcp-catalog"
 # or use custom catalog:
@@ -182,6 +199,7 @@ Provides a default MCP server catalog accessible to all users for tool discovery
 **Default:** `""` (no default catalog)
 
 **Use Cases:**
+
 - Pre-populate MCP server catalog for all users
 - Point to organization-specific MCP catalog repository
 - Enable curated tool discovery experience
@@ -190,6 +208,7 @@ Provides a default MCP server catalog accessible to all users for tool discovery
 **Supported Formats:** GitHub repo URL, HTTP(S) URL, or local path
 
 ### MCP Namespace Resource Quotas
+
 ```yaml
 obot_mcp_namespace: "obot-mcp"        # Namespace for MCP servers
 obot_mcp_cpu_requests_quota: "4"      # Total CPU requests
@@ -200,6 +219,7 @@ obot_mcp_max_pods: "20"               # Maximum MCP server pods
 ```
 
 ### MCP Container Defaults
+
 ```yaml
 obot_mcp_default_cpu_request: "100m"
 obot_mcp_default_cpu_limit: "500m"
@@ -210,6 +230,7 @@ obot_mcp_max_memory: "1Gi"
 ```
 
 ### PostgreSQL Backups (requires rustfs_enabled)
+
 ```yaml
 obot_s3_access_key: "..."    # Create via RustFS Console
 obot_s3_secret_key: "..."    # SOPS-encrypted
@@ -217,6 +238,7 @@ obot_s3_secret_key: "..."    # SOPS-encrypted
 ```
 
 ### Audit Log Export (requires rustfs_enabled)
+
 ```yaml
 obot_audit_s3_access_key: "..."    # Create via RustFS Console
 obot_audit_s3_secret_key: "..."    # SOPS-encrypted
@@ -230,6 +252,7 @@ Audit log export allows you to automatically export Obot platform audit logs to 
 **Bucket:** `obot-postgres-backups` (auto-created by RustFS setup job)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
 - `s3:GetObject` - PITR restore
 - `s3:PutObject` - Base backups and WAL segments
@@ -238,6 +261,7 @@ Audit log export allows you to automatically export Obot platform audit logs to 
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+
 1. Creating `obot-storage` policy scoped to `obot-postgres-backups`
 2. Creating service account user
 3. Updating `cluster.yaml` with `obot_s3_access_key` and `obot_s3_secret_key`
@@ -248,6 +272,7 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Cons
 **Bucket:** `obot-audit-logs` (auto-created by RustFS setup job when `obot_audit_logs_enabled: true`)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - Browse audit logs
 - `s3:GetObject` - Download audit logs for analysis
 - `s3:PutObject` - Upload audit log exports
@@ -256,6 +281,7 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Cons
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+
 1. Creating `obot-audit-storage` policy scoped to `obot-audit-logs`
 2. Creating service account user
 3. Updating `cluster.yaml` with `obot_audit_s3_access_key` and `obot_audit_s3_secret_key`
@@ -263,6 +289,7 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Cons
 **Configure in Obot UI:**
 
 After deployment, enable audit log export in Obot:
+
 1. Navigate to **Admin Settings** → **Audit Logs** → **Export Audit Logs**
 2. Select **Custom S3 Compatible** as the storage provider
 3. Configure:
@@ -276,6 +303,7 @@ After deployment, enable audit log export in Obot:
 > **Note:** The endpoint uses the internal cluster DNS name for RustFS. If accessing from outside the cluster, use `https://rustfs.<cloudflare_domain>` instead.
 
 ### Observability
+
 ```yaml
 obot_monitoring_enabled: true   # ServiceMonitor + Grafana dashboard
 obot_tracing_enabled: true      # OTLP traces to Tempo
@@ -334,6 +362,7 @@ The Keycloak URL configured in Obot MUST be the **external URL** (`https://sso.m
 3. **Token exchange**: Obot contacts Keycloak directly (not via Envoy Gateway) for token validation
 
 **Traffic flow:**
+
 ```
 User Browser → Cloudflare Tunnel → envoy-external → Keycloak (login)
                                           ↓
@@ -371,6 +400,7 @@ stringData:
 > **REF:** See `docs/research/obot-keycloak-oidc-remediation-jan-2026.md` for hairpin NAT solution.
 
 ### Client Configuration
+
 When `obot_keycloak_enabled: true`, a Keycloak client is created in realm-import.yaml.j2:
 
 ```yaml
@@ -391,13 +421,16 @@ attributes:
 ## MCP Namespace Security
 
 ### Pod Security Standards
+
 The obot-mcp namespace enforces `restricted` Pod Security Standard:
+
 - `runAsNonRoot: true`
 - `allowPrivilegeEscalation: false`
 - `seccompProfile: RuntimeDefault`
 - `capabilities.drop: ["ALL"]`
 
 ### ResourceQuota Enforcement
+
 ```yaml
 apiVersion: v1
 kind: ResourceQuota
@@ -414,6 +447,7 @@ spec:
 ```
 
 ### LimitRange Defaults
+
 ```yaml
 apiVersion: v1
 kind: LimitRange
@@ -435,13 +469,16 @@ spec:
 ```
 
 ### Network Isolation
+
 CiliumNetworkPolicy for obot-mcp namespace:
+
 - **Ingress:** Only from Obot pods in ai-system namespace
 - **Egress:** DNS (kube-dns:53) only, no internet access
 
 ## LiteLLM Integration
 
 When `obot_litellm_enabled: true`:
+
 - Obot routes LLM requests through internal LiteLLM proxy
 - Uses `http://litellm.ai-system.svc.cluster.local:4000` as base URL
 - Inherits LiteLLM's model routing, caching, and cost tracking
@@ -476,11 +513,13 @@ https://obot.<domain>/
 ## Troubleshooting
 
 ### Obot CrashLoopBackOff
+
 - Verify PostgreSQL is ready: `kubectl get clusters -n ai-system obot-postgresql`
 - Check secrets are mounted: `kubectl exec -n ai-system <pod> -- env | grep OBOT`
 - Verify encryption key format (64 hex chars)
 
 ### Keycloak Auth Fails
+
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches in both secrets and realm-import
 - Verify pod can reach Keycloak **externally**: `kubectl exec -n ai-system <pod> -- wget -qO- https://sso.matherly.net/health`
@@ -488,11 +527,13 @@ https://obot.<domain>/
 - Check CiliumNetworkPolicy allows egress to Keycloak FQDN on port 443
 
 ### MCP Servers Not Starting
+
 - Check ResourceQuota: `kubectl describe resourcequota -n obot-mcp`
 - Verify NetworkPolicy allows Obot→MCP traffic
 - Check RBAC permissions: `kubectl auth can-i create pods --as=system:serviceaccount:ai-system:obot -n obot-mcp`
 
 ### Database Connection Issues
+
 - Verify pgvector extension loaded: `kubectl exec -n ai-system obot-postgresql-1 -- psql -U obot -c "SELECT extname FROM pg_extension"`
 - Check connection pooler: `kubectl get pods -n ai-system -l cnpg.io/cluster=obot-postgresql`
 
@@ -534,6 +575,7 @@ avoiding hairpin NAT issues with internal LoadBalancer IPs.
 | PostgreSQL RO | `obot-postgresql-ro.ai-system.svc.cluster.local` | 5432 |
 
 ### Derived Variables (computed in plugin.py)
+
 - `obot_enabled` - true when obot_enabled is explicitly set
 - `obot_hostname` - `${obot_subdomain}.${cloudflare_domain}`
 - `obot_keycloak_enabled` - true when keycloak + obot_keycloak_enabled + client_secret

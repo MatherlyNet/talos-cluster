@@ -5,6 +5,7 @@
 **Complexity:** Medium-High
 **Dependencies:** Langfuse, Keycloak, Optional: Keycloak Webhook Plugin
 **Related:**
+
 - `docs/research/langfuse-keycloak-sso-validation-jan-2026.md`
 - `docs/ai-context/langfuse.md`
 
@@ -13,6 +14,7 @@
 This document provides a comprehensive implementation plan for synchronizing Keycloak roles to Langfuse using the SCIM API. Since Langfuse does not natively support role mapping from OIDC claims, we must implement an external synchronization mechanism.
 
 **Key Finding:** Langfuse's Keycloak integration handles authentication only, not authorization. Role assignment requires either:
+
 1. Manual assignment via UI
 2. Static defaults via environment variables (current approach)
 3. **SCIM API automation** (this document's focus)
@@ -112,10 +114,12 @@ Base URL: `https://langfuse.matherly.net/api/public`
 ### Authentication
 
 **SCIM/Admin API:** HTTP Basic Auth
+
 - Username: Organization Public Key
 - Password: Organization Secret Key
 
 API keys are created via:
+
 1. Langfuse UI: Organization Settings → API Keys
 2. Instance Management API (requires `ADMIN_API_KEY` env var)
 
@@ -126,6 +130,7 @@ API keys are created via:
 ### Option A: Kubernetes CronJob Sync (Recommended)
 
 **Architecture:**
+
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Keycloak   │────▶│   CronJob   │────▶│   Langfuse  │
@@ -140,23 +145,27 @@ API keys are created via:
 ```
 
 **Flow:**
+
 1. CronJob runs periodically (e.g., every 5 minutes)
 2. Fetches users from Keycloak Admin API
 3. Fetches users from Langfuse SCIM API
 4. Compares roles and updates Langfuse via SCIM PATCH
 
 **Pros:**
+
 - Simple deployment (single CronJob)
 - No Keycloak modifications required
 - Uses existing Keycloak Admin API
 - Easy to debug and monitor
 
 **Cons:**
+
 - Not real-time (5-15 minute delay)
 - Polling overhead
 - Requires Keycloak service account
 
 **Implementation Files:**
+
 ```
 kubernetes/apps/ai-system/langfuse/sync/
 ├── cronjob.yaml           # Kubernetes CronJob
@@ -168,6 +177,7 @@ kubernetes/apps/ai-system/langfuse/sync/
 ### Option B: Keycloak Webhook Event Listener
 
 **Architecture:**
+
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Keycloak   │────▶│  Webhook    │────▶│   Langfuse  │
@@ -181,22 +191,26 @@ kubernetes/apps/ai-system/langfuse/sync/
 ```
 
 **Flow:**
+
 1. User logs in or role changes in Keycloak
 2. Keycloak fires webhook to receiver service
 3. Receiver extracts user info and roles
 4. Updates Langfuse via SCIM API
 
 **Pros:**
+
 - Real-time sync
 - Only syncs on changes (efficient)
 - Event-driven architecture
 
 **Cons:**
+
 - Requires Keycloak plugin installation
 - Additional service to maintain
 - More complex debugging
 
 **Keycloak Plugin Options:**
+
 1. [vymalo/keycloak-webhook](https://github.com/vymalo/keycloak-webhook) - Most feature-rich
 2. [p2-inc/keycloak-events](https://github.com/p2-inc/keycloak-events) - Includes webhook storage
 3. [jessylenne/keycloak-event-listener-http](https://github.com/jessylenne/keycloak-event-listener-http) - Simplest
@@ -204,6 +218,7 @@ kubernetes/apps/ai-system/langfuse/sync/
 ### Option C: Login-Time Sync (Custom Auth Proxy)
 
 **Architecture:**
+
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Browser   │────▶│ Auth Proxy  │────▶│   Langfuse  │
@@ -217,17 +232,20 @@ kubernetes/apps/ai-system/langfuse/sync/
 ```
 
 **Flow:**
+
 1. User authenticates via Keycloak
 2. Auth proxy intercepts callback
 3. Extracts roles from ID token
 4. Updates Langfuse via SCIM before redirect
 
 **Pros:**
+
 - Sync happens at login time
 - Uses existing OIDC flow
 - No polling or webhooks
 
 **Cons:**
+
 - Most complex to implement
 - Requires custom auth proxy
 - Adds latency to login
@@ -813,6 +831,7 @@ spec:
 ### Webhook Receiver Service
 
 Deploy a simple webhook receiver that:
+
 1. Receives LOGIN events from Keycloak
 2. Extracts user email and roles from event payload
 3. Calls Langfuse SCIM API to update role
@@ -830,6 +849,7 @@ Deploy a simple webhook receiver that:
 ### Audit Trail
 
 The sync script logs all role changes. Consider:
+
 - Sending logs to Loki for centralized monitoring
 - Adding Prometheus metrics for sync success/failure
 - Alerting on repeated failures
@@ -859,6 +879,7 @@ SYNC_DURATION = Gauge('langfuse_sync_duration_seconds', 'Sync duration')
 ### Grafana Dashboard
 
 Create dashboard showing:
+
 - Sync job success/failure rate
 - Number of users synced
 - Role distribution
@@ -893,28 +914,33 @@ Create dashboard showing:
 ## Implementation Checklist
 
 ### Phase 1: Prerequisites
+
 - [ ] Create Langfuse Organization API Key (UI: Settings → API Keys)
 - [ ] Add Langfuse roles to `keycloak_realm_roles` in cluster.yaml
 - [ ] Create Keycloak service account client for sync
 
 ### Phase 2: Configuration
+
 - [ ] Add SCIM sync variables to cluster.yaml
 - [ ] Update cluster.schema.cue with new variables
 - [ ] Update plugin.py with derived variable logic
 
 ### Phase 3: Templates
+
 - [ ] Create sync CronJob template
 - [ ] Create sync secret template
 - [ ] Create sync ConfigMap template
 - [ ] Add Keycloak sync client to realm-config
 
 ### Phase 4: Deployment
+
 - [ ] Run `task configure`
 - [ ] Verify generated manifests
 - [ ] Run `task reconcile`
 - [ ] Verify CronJob runs successfully
 
 ### Phase 5: Validation
+
 - [ ] Test with new SSO user
 - [ ] Test role change in Keycloak
 - [ ] Verify Langfuse role updates

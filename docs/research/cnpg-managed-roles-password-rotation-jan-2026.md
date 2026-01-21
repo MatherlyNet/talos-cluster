@@ -40,6 +40,7 @@ The secret **MUST** have the label `cnpg.io/reload: "true"` for CNPG to detect p
 ### Current Bootstrap Configuration
 
 All clusters use `bootstrap.initdb.secret` which:
+
 - Sets password **only at initial cluster creation**
 - Does **not** sync password changes afterward
 - Requires manual `ALTER USER` for rotation
@@ -136,6 +137,7 @@ managed:
 #### 1.1 Obot Secret (`secret.sops.yaml.j2`)
 
 **Before:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -149,6 +151,7 @@ stringData:
 ```
 
 **After:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -168,6 +171,7 @@ stringData:
 #### 1.2 LiteLLM Secret (`secret.sops.yaml.j2`)
 
 **Before:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -181,6 +185,7 @@ stringData:
 ```
 
 **After:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -202,6 +207,7 @@ stringData:
 Add the reload label:
 
 **Before:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -212,6 +218,7 @@ type: kubernetes.io/basic-auth
 ```
 
 **After:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -228,6 +235,7 @@ type: kubernetes.io/basic-auth
 #### 1.4 Keycloak Secret (`secret.sops.yaml.j2`)
 
 **Before:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -241,6 +249,7 @@ stringData:
 ```
 
 **After:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -343,12 +352,14 @@ Applications need the full DSN in SOPS-encrypted secrets, not plaintext HelmRele
 #### 3.1 Obot ✓ (Already Fixed)
 
 DSN moved to `obot-secret` with `OBOT_SERVER_DSN` and `OBOT_AUTH_PROVIDER_POSTGRES_CONNECTION_DSN` keys.
+
 - Location: `secret.sops.yaml.j2` lines 21-26
 - HelmRelease updated to remove plaintext DSN
 
 #### 3.2 LiteLLM ✓ (Already in SOPS)
 
 DSN is already in `litellm-secret` as `DATABASE_URL` (line 24 of `secret.sops.yaml.j2`).
+
 - Note: Uses `sslmode=disable` for internal cluster communication (Cilium provides encryption)
 
 #### 3.3 Langfuse ✓ (Verified)
@@ -366,6 +377,7 @@ Applications must be configured to restart when secrets change.
 #### 4.1 Obot HelmRelease
 
 Add to `helmrelease.yaml.j2`:
+
 ```yaml
 values:
   podAnnotations:
@@ -375,6 +387,7 @@ values:
 #### 4.2 LiteLLM HelmRelease
 
 Add to `helmrelease.yaml.j2`:
+
 ```yaml
 values:
   podAnnotations:
@@ -384,6 +397,7 @@ values:
 #### 4.3 Langfuse HelmRelease
 
 Add to `helmrelease.yaml.j2`:
+
 ```yaml
 values:
   server:
@@ -451,11 +465,13 @@ The `bootstrap.initdb.secret` is used **only at cluster creation**. After initia
 ### 2. Reconciliation Timing
 
 Password changes may not be immediate. CNPG reconciles on:
+
 - Secret change detection (requires `cnpg.io/reload` label)
 - Operator restart
 - Cluster spec changes
 
 If immediate rotation is required, trigger reconciliation:
+
 ```bash
 kubectl annotate cluster obot-postgresql -n ai-system \
   "force-reconcile=$(date +%s)" --overwrite
@@ -464,12 +480,14 @@ kubectl annotate cluster obot-postgresql -n ai-system \
 ### 3. Application Restart
 
 Applications using `envFrom` with secrets will need pod restart to pick up new passwords. Options:
+
 - Use [Reloader](https://github.com/stakater/Reloader) (already deployed in `kube-system` namespace)
 - Add annotation to trigger rollout: `reloader.stakater.com/auto: "true"`
 
 **IMPORTANT:** Currently, none of the CNPG-dependent applications (Obot, LiteLLM, Langfuse, Keycloak) have Reloader annotations. This must be added as part of Phase 4 implementation.
 
 Example for HelmRelease templates:
+
 ```yaml
 values:
   podAnnotations:
@@ -477,6 +495,7 @@ values:
 ```
 
 Or for specific secret watching:
+
 ```yaml
 values:
   podAnnotations:
@@ -486,12 +505,14 @@ values:
 ### 4. SCRAM-SHA-256 vs Plaintext
 
 For additional security, store pre-hashed passwords in secrets:
+
 ```yaml
 stringData:
   password: "SCRAM-SHA-256$4096:<salt>$<StoredKey>:<ServerKey>"
 ```
 
 Generate with:
+
 ```bash
 kubectl exec -n ai-system obot-postgresql-1 -- \
   psql -U postgres -c "SELECT 'SCRAM-SHA-256' || regexp_replace(
@@ -505,11 +526,13 @@ kubectl exec -n ai-system obot-postgresql-1 -- \
 **CRITICAL for existing clusters:** Kubernetes Secret `type` field is **immutable**. You cannot change an existing secret from `type: Opaque` to `type: kubernetes.io/basic-auth` via normal GitOps apply.
 
 **Symptom:**
+
 ```
 Secret "litellm-db-secret" is invalid: type: Invalid value: "kubernetes.io/basic-auth": field is immutable
 ```
 
 **Solution for existing deployments:**
+
 ```bash
 # Delete the secrets with wrong type (Flux will recreate with correct type)
 kubectl delete secret keycloak-db-secret -n identity
@@ -523,6 +546,7 @@ flux reconcile ks obot -n ai-system --with-source
 ```
 
 **Why this is safe:**
+
 - CNPG clusters remain healthy (they cache the connection)
 - Passwords are stored in SOPS-encrypted templates
 - Flux immediately recreates secrets with correct type
@@ -565,6 +589,7 @@ spec:
 ```
 
 This enables:
+
 - Automatic password generation in Vault
 - Scheduled rotation (e.g., every 24h)
 - CNPG auto-detects and syncs to PostgreSQL
@@ -633,16 +658,19 @@ The following validation was performed against actual project templates:
 ## References
 
 ### Official Documentation
+
 - [CloudNativePG Declarative Role Management](https://cloudnative-pg.io/docs/1.28/declarative_role_management/)
 - [CloudNativePG Security](https://cloudnative-pg.io/docs/1.28/security/)
 - [External Secrets with CNPG](https://cloudnative-pg.io/docs/1.28/cncf-projects/external-secrets/)
 
 ### GitHub Issues/Discussions
+
 - [Password rotation via secret update discussion](https://github.com/cloudnative-pg/cloudnative-pg/discussions/8062)
 - [Superuser password rotation issue #2658](https://github.com/cloudnative-pg/cloudnative-pg/issues/2658)
 - [Auto-generate password secrets feature request #3788](https://github.com/cloudnative-pg/cloudnative-pg/issues/3788)
 
 ### Project Documentation
+
 - [CNPG Implementation Guide](../guides/completed/cnpg-implementation.md)
 - [Barman Cloud Plugin Remediation](./barman-cloud-plugin-wal-archive-remediation-jan-2026.md)
 

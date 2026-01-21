@@ -12,6 +12,7 @@ This document presents the findings from a comprehensive validation of the Drago
 ### Validation Result: **PASSED**
 
 All phases from the implementation guide have been successfully completed:
+
 - Phase 1: Core Deployment
 - Phase 2: Monitoring Integration
 - Phase 3: S3 Backup Integration
@@ -40,6 +41,7 @@ All phases from the implementation guide have been successfully completed:
 | `dragonfly/app/networkpolicy.yaml.j2` | `templates/config/kubernetes/apps/cache/dragonfly/app/networkpolicy.yaml.j2` | **PASS** |
 
 **Additional Template** (not in guide but implemented):
+
 - `dragonfly/operator/namespace.yaml.j2` - Operator namespace with PSA labels (improvement over guide)
 
 ---
@@ -90,6 +92,7 @@ All phases from the implementation guide have been successfully completed:
 | Control Plane | Optional scheduling | Conditional nodeSelector/tolerations | **PASS** |
 
 **Note on ACL Implementation**: The guide suggested a ConfigMap approach with volume mount (`--aclfile=/etc/dragonfly/acl.conf`), but the implementation uses `aclFromSecret` which is actually **superior** because:
+
 1. ACL contains sensitive passwords - belongs in a Secret, not ConfigMap
 2. Uses official Dragonfly CRD field instead of manual volume mounts
 3. Simpler template with less error-prone configuration
@@ -194,11 +197,13 @@ All phases from the implementation guide have been successfully completed:
 **Location**: `kubernetes/apps/cache/dragonfly/app/acl-configmap.yaml`
 
 **Issue**: This file exists in generated output but:
+
 - No template generates it (no `acl-configmap.yaml.j2` exists)
 - Not referenced in `kustomization.yaml`
 - ACL is correctly implemented via `aclFromSecret` pattern in Secret
 
 **Recommendation**: Delete the orphan file after next `task configure` or manually remove it:
+
 ```bash
 rm kubernetes/apps/cache/dragonfly/app/acl-configmap.yaml
 ```

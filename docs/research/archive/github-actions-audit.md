@@ -59,10 +59,12 @@ All GitHub Actions workflows in this project are **up-to-date** as of January 20
 ### SHA Pinning (Best Practice)
 
 The project correctly uses SHA-pinned references for **all** GitHub Actions, which protects against:
+
 - Tag hijacking attacks
 - Supply chain compromises via tag modification
 
 **All Actions Are SHA-Pinned:**
+
 ```yaml
 # Core actions
 actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8       # v6.0.1
@@ -78,6 +80,7 @@ ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
 ```
 
 **Container Images:**
+
 ```yaml
 # e2e.yaml - SHA-pinned (excellent)
 docker://ghcr.io/allenporter/flux-local:v8.1.0@sha256:37c3c4309a351830b04f93c323adfcb0e28c368001818cd819cbce3e08828261
@@ -109,11 +112,13 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 **Purpose:** Runs end-to-end tests by configuring the cluster template with test configs
 
 **Components:**
+
 - `actions/checkout@v6.0.1` (SHA pinned) :white_check_mark:
 - `jdx/mise-action@v3.5.1` (SHA pinned) :white_check_mark:
 - `flux-local:v8.1.0` (SHA pinned) :white_check_mark:
 
 **Configuration:**
+
 - Configured to run on `MatherlyNet/talos-cluster` repository
 - Uses matrix strategy for `public` and `private` test configs
 - Proper concurrency control with cancel-in-progress
@@ -123,12 +128,14 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 **Purpose:** Tests Flux manifests and generates diffs for PRs
 
 **Components:**
+
 - `actions/checkout@v6.0.1` (SHA pinned) :white_check_mark:
 - `tj-actions/changed-files@v47.0.1` (SHA pinned) :white_check_mark:
 - `mshick/add-pr-comment@v2.8.2` (SHA pinned) :white_check_mark:
 - `flux-local:v8.1.0` :white_check_mark:
 
 **Notable Patterns:**
+
 - Pre-job optimization to skip if no kubernetes/ changes
 - Matrix strategy for helmrelease/kustomization diffs
 - Proper permissions scoped to minimum required
@@ -138,6 +145,7 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 **Purpose:** Synchronizes GitHub labels from configuration file
 
 **Components:**
+
 - `actions/checkout@v6.0.1` (SHA pinned) :white_check_mark:
 - `EndBug/label-sync@v2.3.3` (SHA pinned) :white_check_mark:
 
@@ -146,6 +154,7 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 **Purpose:** Automatically labels PRs based on changed file paths
 
 **Components:**
+
 - `actions/labeler@v6.0.1` (SHA pinned) :white_check_mark:
 
 **Note:** Uses `pull_request_target` trigger (runs in context of base branch for security)
@@ -155,6 +164,7 @@ docker://ghcr.io/allenporter/flux-local:v8.1.0
 **Purpose:** Creates GitHub releases
 
 **Components:**
+
 - `actions/github-script@v8.0.0` (SHA pinned) :white_check_mark:
 - `ncipollo/release-action@v1.20.0` (SHA pinned) :white_check_mark:
 

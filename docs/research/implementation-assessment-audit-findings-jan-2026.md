@@ -34,6 +34,7 @@ The `remaining-implementation-assessment-jan-2026.md` document is **significantl
 **Actual status:** **DEPLOYED AND OPERATIONAL**
 
 Evidence:
+
 ```bash
 $ kubectl get securitypolicy -n network jwt-auth
 NAME       AGE
@@ -41,6 +42,7 @@ jwt-auth   13h
 ```
 
 The SecurityPolicy is configured with:
+
 - Issuer: `https://sso.matherly.net/realms/matherlynet`
 - JWKS URI: `https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/certs`
 - Claims forwarded: sub, email, groups, preferred_username, realm_access.roles, resource_access.envoy-gateway.roles
@@ -56,6 +58,7 @@ The SecurityPolicy is configured with:
 **Actual status:** **DEPLOYED AND OPERATIONAL**
 
 Evidence:
+
 ```bash
 $ kubectl get pods -n identity
 NAME                                 READY   STATUS      RESTARTS      AGE
@@ -70,6 +73,7 @@ keycloak   96m
 ```
 
 Configuration in `cluster.yaml`:
+
 ```yaml
 keycloak_enabled: true
 keycloak_subdomain: "sso"  # Creates sso.matherly.net
@@ -91,6 +95,7 @@ google_idp_enabled: true   # Social login enabled
 **Actual status:** **DEPLOYED AND OPERATIONAL**
 
 Evidence:
+
 ```bash
 $ kubectl get securitypolicy -n network oidc-sso
 NAME       AGE
@@ -104,6 +109,7 @@ network     rustfs-console  ...
 ```
 
 Configuration in `cluster.yaml`:
+
 ```yaml
 oidc_sso_enabled: true
 oidc_client_id: "envoy-gateway"
@@ -121,6 +127,7 @@ oidc_client_secret: "***" # Configured
 **Actual status:** **Keycloak PostgreSQL cluster is running**
 
 Evidence:
+
 ```bash
 $ kubectl get clusters.postgresql.cnpg.io -A
 NAMESPACE   NAME                AGE   INSTANCES   READY   STATUS                     PRIMARY
@@ -148,6 +155,7 @@ Based on the audit, the following guides should be moved to `docs/guides/complet
 ### Research Documents - Ready for Archive
 
 The following research documents in `docs/research/archive/completed/` are correctly archived:
+
 - `envoy-gateway-keycloak-oidc-integration-jan-2026.md`
 - `envoy-gateway-oidc-integration.md`
 - `keycloak-social-identity-providers-integration-jan-2026.md`
@@ -204,11 +212,13 @@ The document should be updated to version 2.7.0 with:
 ### 2. Archive Implementation Guides
 
 Move these guides to `docs/guides/completed/`:
+
 - `keycloak-implementation.md`
 - `jwt-securitypolicy-implementation.md`
 - `cnpg-implementation.md`
 
 Each guide should have a completion header added:
+
 ```markdown
 > **STATUS:** Implementation Complete
 > **Deployed:** January 7, 2026
@@ -218,6 +228,7 @@ Each guide should have a completion header added:
 ### 3. Add OIDC SSO Documentation
 
 Create or update documentation to cover the OIDC SSO SecurityPolicy:
+
 - Configuration variables (`oidc_sso_enabled`, `oidc_client_*`)
 - HTTPRoute label (`security: oidc-protected`)
 - Protected applications (Grafana, Hubble UI, RustFS Console)
@@ -229,6 +240,7 @@ Create or update documentation to cover the OIDC SSO SecurityPolicy:
 ### 1. Grafana Native SSO Enhancement
 
 The `grafana-sso-authentication-integration-jan-2026.md` research document proposes three approaches for enhanced Grafana SSO. The recommended approach (Option 3: Grafana Native OAuth) would provide:
+
 - Full RBAC support with role mapping from Keycloak
 - Groups/teams mapping capability
 - Independent session management
@@ -240,6 +252,7 @@ The `grafana-sso-authentication-integration-jan-2026.md` research document propo
 ### 2. CNPG Backup Enablement
 
 CNPG backup infrastructure is templated but not enabled:
+
 ```yaml
 cnpg_backup_enabled: false  # Currently disabled
 ```
@@ -251,6 +264,7 @@ RustFS S3 credentials for CNPG backups need to be created and configured.
 ### 3. Additional OIDC-Protected Applications
 
 The following applications could benefit from OIDC protection:
+
 - AlertManager (if exposed externally)
 - Tempo Query UI (if deployed)
 - Any future internal dashboards
@@ -264,11 +278,13 @@ The following applications could benefit from OIDC protection:
 The `remaining-implementation-assessment-jan-2026.md` document requires significant updates to reflect the current deployed state. The cluster has progressed substantially since the document's last update (v2.6.0), with Keycloak, JWT SecurityPolicy, and OIDC SSO SecurityPolicy all deployed and operational.
 
 **Immediate Actions:**
+
 1. Update assessment document to v2.7.0
 2. Archive completed implementation guides
 3. Add completion headers to guide documents
 
 **Future Considerations:**
+
 1. Implement Grafana Native OAuth (Option 3) for enhanced RBAC
 2. Enable CNPG backups to RustFS
 3. Document OIDC SSO pattern for future applications

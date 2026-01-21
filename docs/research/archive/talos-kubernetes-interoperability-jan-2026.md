@@ -26,6 +26,7 @@ This research document validates the matherlynet-talos-cluster project configura
 ## 1. Host DNS Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/talos/v1.12/networking/host-dns.md
 
 ### Official Requirements
@@ -75,10 +76,12 @@ machine:
 ```
 
 This workaround adds the Talos host DNS IP to loopback, enabling eBPF host routing while maintaining DNS forwarding functionality. References:
+
 - https://github.com/cilium/cilium/issues/36761#issuecomment-3493689525
 - https://github.com/siderolabs/talos/pull/9200#issuecomment-2805269653
 
 **Verification Commands:**
+
 ```bash
 talosctl get resolvers
 talosctl get dnsupstream
@@ -90,11 +93,13 @@ talosctl logs dns-resolve-cache
 ## 2. DNS Resolvers Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/talos/v1.12/networking/configuration/resolvers.md
 
 ### Official Requirements
 
 Talos uses `8.8.8.8` and `1.1.1.1` by default. Custom resolvers can be configured via:
+
 - `machine.network.nameservers`
 - ResolverConfig document
 - DHCP/platform metadata
@@ -102,11 +107,13 @@ Talos uses `8.8.8.8` and `1.1.1.1` by default. Custom resolvers can be configure
 ### Project Configuration
 
 **cluster.yaml:**
+
 ```yaml
 node_dns_servers: ["192.168.1.254", "172.64.36.1", "172.64.36.2"]
 ```
 
 **machine-network.yaml.j2:**
+
 ```yaml
 machine:
   network:
@@ -128,6 +135,7 @@ machine:
 | Resolution order | Project DNS first | Correct priority |
 
 **Verification Commands:**
+
 ```bash
 talosctl get resolvers
 talosctl get resolverspec --namespace=network-config
@@ -138,6 +146,7 @@ talosctl get resolverspec --namespace=network-config
 ## 3. Cilium CNI Deployment
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium.md
 
 ### Official Requirements
@@ -154,18 +163,21 @@ talosctl get resolverspec --namespace=network-config
 | `k8sServicePort` | `7445` | KubePrism port |
 
 **Security Capabilities (ciliumAgent):**
+
 - CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID
 - Note: SYS_MODULE is **not allowed** on Talos
 
 ### Project Configuration
 
 **talconfig.yaml.j2:**
+
 ```yaml
 cniConfig:
   name: none
 ```
 
 **cluster.yaml.j2 (controller patch):**
+
 ```yaml
 cluster:
   proxy:
@@ -173,6 +185,7 @@ cluster:
 ```
 
 **cilium/helmrelease.yaml.j2:**
+
 ```yaml
 values:
   ipam:
@@ -223,6 +236,7 @@ values:
 | SYS_MODULE excluded | Not present | **OK** |
 
 **Additional Project Enhancements:**
+
 - `PERFMON` and `BPF` capabilities added (for eBPF observability)
 - BGP Control Plane v2 optional configuration
 - L2 announcements for non-BGP mode
@@ -233,6 +247,7 @@ values:
 ## 4. Time Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/talos/v1.12/networking/configuration/time.md
 
 ### Official Requirements
@@ -240,6 +255,7 @@ values:
 Default NTP server: `time.cloudflare.com`
 
 Custom NTP servers configured via:
+
 ```yaml
 apiVersion: v1alpha1
 kind: TimeSyncConfig
@@ -249,6 +265,7 @@ ntp:
 ```
 
 Or via machine config:
+
 ```yaml
 machine:
   time:
@@ -259,11 +276,13 @@ machine:
 ### Project Configuration
 
 **cluster.yaml:**
+
 ```yaml
 node_ntp_servers: ["162.159.200.1", "162.159.200.123"]
 ```
 
 **machine-time.yaml.j2:**
+
 ```yaml
 machine:
   time:
@@ -286,6 +305,7 @@ machine:
 Note: Using IP addresses instead of hostnames (`time.cloudflare.com`) avoids DNS resolution dependency during early boot.
 
 **Verification Commands:**
+
 ```bash
 talosctl get timeservers
 talosctl get timeserverspec --namespace=network-config
@@ -296,11 +316,13 @@ talosctl get timeserverspec --namespace=network-config
 ## 5. etcd Metrics Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/kubernetes-guides/monitoring-and-observability/etcd-metrics.md
 
 ### Official Requirements
 
 Enable etcd metrics via:
+
 ```yaml
 cluster:
   etcd:
@@ -313,6 +335,7 @@ cluster:
 ### Project Configuration
 
 **cluster.yaml.j2 (controller patch):**
+
 ```yaml
 cluster:
   etcd:
@@ -332,11 +355,13 @@ cluster:
 | Network restriction | `advertisedSubnets` set | **OK** (limits to node CIDR) |
 
 **Security Considerations:**
+
 - etcd metrics bound to all interfaces on port 2381
 - `advertisedSubnets` restricts etcd peer communication to `node_cidr`
 - Additional firewall rules recommended for production (see Ingress Firewall guide)
 
 **Verification Command:**
+
 ```bash
 curl "${CONTROL_PLANE_IP}:2381/metrics"
 ```
@@ -346,11 +371,13 @@ curl "${CONTROL_PLANE_IP}:2381/metrics"
 ## 6. Node Labels Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/kubernetes-guides/advanced-guides/node-labels.md
 
 ### Official Requirements
 
 Node labels configured via:
+
 ```yaml
 machine:
   nodeLabels:
@@ -359,11 +386,13 @@ machine:
 ```
 
 **Permitted Labels (NodeRestriction):**
+
 - `topology.kubernetes.io/region` and `topology.kubernetes.io/zone`
 - `kubernetes.io/hostname`, `kubernetes.io/arch`, `kubernetes.io/os`
 - Selected `node.kubernetes.io/*` labels
 
 **Restricted Labels:**
+
 - `node-role.kubernetes.io/*` (must be applied by cluster admin via kubectl)
 
 ### Project Configuration
@@ -393,6 +422,7 @@ machine:
 ```
 
 This would enable:
+
 - Pod topology spread constraints
 - CSI storage location awareness
 - Multi-zone scheduling strategies
@@ -404,6 +434,7 @@ This would enable:
 ## 7. Proxmox VM Configuration
 
 ### Documentation Reference
+
 - https://docs.siderolabs.com/talos/v1.11/platform-specific-installations/virtualized-platforms/proxmox.md
 
 ### Official Requirements
@@ -424,6 +455,7 @@ This would enable:
 ### Project Configuration
 
 **main.tf.j2:**
+
 ```hcl
 resource "proxmox_virtual_environment_vm" "talos_node" {
   bios    = var.vm_advanced.bios         # ovmf
@@ -455,6 +487,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 ```
 
 **cluster.yaml default values:**
+
 ```yaml
 # Controller: 4 cores, 8GB, 64GB disk
 # Worker: 8 cores, 16GB, 256GB disk
@@ -478,6 +511,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 | Worker resources | 8 cores, 24GB | **Exceeds min** |
 
 **Additional Project Enhancements:**
+
 - NUMA enabled for better memory performance
 - SSD emulation and TRIM/discard support
 - Multi-queue networking (`net_queues: 4`)
@@ -494,6 +528,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 The project correctly handles the CCM "chicken-egg" problem by adding tolerations for `node.cloudprovider.kubernetes.io/uninitialized`:
 
 **Components with toleration:**
+
 - Cilium Hubble Relay and UI
 - Flux Operator and Instance
 - Proxmox CCM
@@ -501,6 +536,7 @@ The project correctly handles the CCM "chicken-egg" problem by adding toleration
 - cert-manager (controller, cainjector, webhook, startupapicheck)
 
 This aligns with Kubernetes best practices for external cloud providers:
+
 - https://kubernetes.io/blog/2025/02/14/cloud-controller-manager-chicken-egg-problem/
 
 ### Cilium eBPF Host Routing Workaround

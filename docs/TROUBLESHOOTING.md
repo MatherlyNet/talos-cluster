@@ -33,6 +33,7 @@
 ### Symptom: Node Not Ready
 
 **Quick Check:**
+
 ```bash
 kubectl get nodes -o wide
 kubectl describe node <node-name> | grep -A5 Conditions
@@ -88,6 +89,7 @@ talosctl logs kubelet -n <node-ip>
 ### Symptom: Pods Not Running
 
 **Quick Check:**
+
 ```bash
 kubectl get pods -A | grep -v Running
 kubectl describe pod <pod-name> -n <namespace>
@@ -137,6 +139,7 @@ kubectl logs -n kube-system -l app.kubernetes.io/name=spegel | grep <image>
 ### Symptom: Service Not Reachable
 
 **Quick Check:**
+
 ```bash
 kubectl get svc -A | grep <service>
 kubectl get endpoints -n <namespace> <service>
@@ -198,6 +201,7 @@ arping -I <interface> <loadbalancer-ip>
 > **Note:** CiliumNetworkPolicies are optional. Skip this section if `network_policies_enabled: false`.
 
 **Quick Check:**
+
 ```bash
 hubble observe --verdict DROPPED
 hubble observe --verdict AUDIT
@@ -271,6 +275,7 @@ kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
 > **Note:** BGP is optional. Skip this section if you're using L2 announcements (default).
 
 **Quick Check:**
+
 ```bash
 cilium bgp peers
 kubectl get ciliumbgpclusterconfig -A
@@ -362,6 +367,7 @@ vtysh -c "show ip bgp neighbors <PEER_IP>"
 ### Symptom: Flux Not Syncing
 
 **Quick Check:**
+
 ```bash
 flux check
 flux get sources git -A
@@ -438,6 +444,7 @@ sops -d <file>.sops.yaml
 ### Symptom: Certificates Not Ready
 
 **Quick Check:**
+
 ```bash
 kubectl get certificates -A
 kubectl get certificaterequests -A
@@ -497,11 +504,13 @@ kubectl -n network logs deploy/external-dns
 ### Symptom: VM Boots from ISO After Talos Install (Proxmox)
 
 **Console shows:**
+
 ```
 [talos] task haltIfInstalled (1/1): Talos is already installed to disk but booted from another media and talos.halt_if_installed kernel parameter is set. Please reboot from the disk.
 ```
 
 **Quick Check:**
+
 ```bash
 # Check VM boot order in Proxmox
 qm config <VMID> | grep boot
@@ -525,6 +534,7 @@ The Proxmox VM was booting from the ISO (ide2) instead of the installed disk (sc
 
 **Fix Applied:**
 The `boot_order` configuration in `templates/config/infrastructure/tofu/main.tf.j2` ensures:
+
 1. Initial boot: Empty disk fails → falls back to ISO → Talos installs
 2. After install: Boots from disk automatically (Talos on scsi0)
 
@@ -533,6 +543,7 @@ boot_order = ["scsi0", "ide2"]
 ```
 
 **For Existing VMs (manual fix):**
+
 ```bash
 # Option 1: Change boot order
 qm set <VMID> -boot order=scsi0,ide2
@@ -552,11 +563,13 @@ Run `task configure` to regenerate infrastructure files with the boot_order fix,
 ### Symptom: Bootstrap Node Stuck in MAINTENANCE
 
 **Console/logs show:**
+
 ```
 Node still in MAINTENANCE stage after config apply
 ```
 
 **Quick Check:**
+
 ```bash
 # Check node stage
 talosctl get machineconfig -n <node-ip> --insecure
@@ -587,6 +600,7 @@ Node Stuck in MAINTENANCE
 The original `task bootstrap:talos` used semicolon-separated commands that continue even if individual nodes fail, causing silent failures.
 
 **Enhanced Bootstrap (Now Default):**
+
 ```bash
 # Full bootstrap with pre-flight checks, per-node retry, and verification
 task bootstrap:talos
@@ -598,6 +612,7 @@ task bootstrap:verify           # Confirm nodes transitioned
 ```
 
 **Recovery for Stuck Nodes:**
+
 ```bash
 # 1. Check which nodes failed
 talosctl get machineconfig -n <node-ip> --insecure
@@ -659,6 +674,7 @@ talosctl logs kube-apiserver -n <control-plane-ip>
 ### Talos Backup Issues
 
 **Quick Check:**
+
 ```bash
 kubectl -n kube-system get cronjob talos-backup
 kubectl -n kube-system get jobs -l job-name
@@ -697,6 +713,7 @@ Talos Backup Job Failed
 | Snapshot created but upload fails | Multiple issues | Check all env vars, credentials, endpoint |
 
 **Verify Correct Configuration:**
+
 ```bash
 # Check env vars are correct
 kubectl -n kube-system get cronjob talos-backup \
@@ -706,6 +723,7 @@ kubectl -n kube-system get cronjob talos-backup \
 ```
 
 > ⚠️ **Critical Bug:** talos-backup v0.1.0-beta.2 has **inverted logic** for `USE_PATH_STYLE`:
+>
 > - `USE_PATH_STYLE="false"` → **Enables** path-style URLs (required for RustFS/MinIO)
 > - `USE_PATH_STYLE="true"` → **Disables** path-style URLs (uses virtual-hosted style)
 

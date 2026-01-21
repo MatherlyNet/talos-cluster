@@ -210,6 +210,7 @@ subjects:
 ```
 
 Apply:
+
 ```bash
 kubectl apply -f rbac-oidc-admins.yaml
 ```
@@ -258,6 +259,7 @@ kubectl auth whoami
 ```
 
 Expected output:
+
 ```yaml
 ATTRIBUTE   VALUE
 Username    oidc:your-email@matherly.net
@@ -290,18 +292,22 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
 **Cause**: Token validation failed at API Server
 
 **Solution**:
+
 1. Verify API Server OIDC configuration:
+
    ```bash
    talosctl -n 192.168.22.101 logs controller-runtime | grep oidc
    ```
 
 2. Check issuer URL matches:
+
    ```bash
    echo "$TOKEN" | cut -d. -f2 | base64 -d | jq -r '.iss'
    # Should be: https://sso.matherly.net/realms/matherlynet
    ```
 
 3. Check audience matches:
+
    ```bash
    echo "$TOKEN" | cut -d. -f2 | base64 -d | jq -r '.aud'
    # Should be: kubernetes
@@ -330,6 +336,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d | jq
 **Cause**: ID tokens expire after 5 minutes by default (Keycloak setting)
 
 **Solution**: Token is automatically refreshed using refresh token. If refresh fails, re-authenticate:
+
 ```bash
 rm -rf ~/.kube/cache/oidc-login/
 kubectl get nodes  # Will trigger new login

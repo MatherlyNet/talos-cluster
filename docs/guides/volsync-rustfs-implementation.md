@@ -630,11 +630,13 @@ loki:      "0 4 * * *"   # 4 AM
 ## References
 
 ### External Documentation
+
 - [VolSync Documentation](https://volsync.readthedocs.io/en/stable/)
 - [Restic-based Backup](https://volsync.readthedocs.io/en/latest/usage/restic/)
 - [VolSync Helm Chart](https://github.com/backube/volsync)
 
 ### Project Documentation
+
 - [k8s-at-home Remaining Implementation](./k8s-at-home-remaining-implementation.md#phase-2-volsync-pvc-backup)
 - [RustFS Research](../research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md)
 

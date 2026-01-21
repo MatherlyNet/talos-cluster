@@ -40,12 +40,14 @@ network_policies_mode: "audit"    # "audit" or "enforce"
 ```
 
 **Audit Mode** (`audit`):
+
 - Policies are applied but NOT enforced
 - Traffic is observed via Hubble without blocking
 - Allows testing and validation before enforcement
 - `enableDefaultDeny: false` in CiliumNetworkPolicy specs
 
 **Enforce Mode** (`enforce`):
+
 - Policies are actively enforced
 - Unauthorized traffic is dropped
 - Production security posture
@@ -111,6 +113,7 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 | Keycloak | ✅ In identity namespace | ❌ No (is the IdP) | N/A |
 
 **Important Notes:**
+
 - Prometheus, Loki, Alloy, Tempo are NOT exposed externally (internal services only)
 - Dragonfly is NOT exposed externally (internal cache service)
 - OIDC protection is implemented via SecurityPolicy targeting HTTPRoutes with label `security: oidc-protected`
@@ -124,12 +127,14 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 **Risk:** Network observability dashboard exposed without network policy
 
 **Impact:**
+
 - Externally accessible via HTTPRoute
 - Can view ALL cluster network traffic flows
 - No ingress restrictions beyond gateway
 - No egress restrictions (can probe internal services)
 
 **Required Policy:**
+
 - Ingress: Allow only from Envoy Gateway (internal + external if exposed)
 - Egress: DNS, kube-apiserver, Hubble Relay (port 4245)
 - Optional: Prometheus metrics scraping
@@ -139,6 +144,7 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 **Risk:** S3-compatible storage management UI exposed without network policy
 
 **Impact:**
+
 - Externally accessible via HTTPRoute
 - Access to all S3 buckets and credentials
 - Can create/delete buckets and manage users
@@ -146,6 +152,7 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 - No egress restrictions
 
 **Required Policy:**
+
 - Ingress: Allow only from Envoy Gateway (internal + external if exposed)
 - Egress: DNS, RustFS backend service (port 9000)
 - Optional: Prometheus metrics scraping
@@ -173,12 +180,14 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 ### 1. Zero-Trust Networking (NIST SP 800-207)
 
 **Principles:**
+
 - Never trust, always verify
 - Assume breach - minimize blast radius
 - Least privilege access
 - Micro-segmentation
 
 **Implementation:**
+
 - Default-deny all ingress and egress
 - Explicitly allow only required traffic
 - Use namespace isolation
@@ -187,12 +196,14 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 ### 2. Defense in Depth (CISA Security Guidance)
 
 **Multiple Layers:**
+
 1. CiliumNetworkPolicy (L3-L7, FQDN-based egress)
 2. Standard NetworkPolicy (L3-L4, portable fallback)
 3. Gateway SecurityPolicy (OIDC/JWT authentication)
 4. Application-level authentication (native auth)
 
 **Why Both CiliumNetworkPolicy AND NetworkPolicy?**
+
 - **CiliumNetworkPolicy**: Advanced features (FQDN filtering, L7 rules, entities)
 - **NetworkPolicy**: Portability, fallback for non-Cilium CNI
 - Applications (LiteLLM, Langfuse, Keycloak) use both for maximum compatibility
@@ -200,11 +211,13 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 ### 3. Least Privilege Access
 
 **Ingress Rules:**
+
 - Specify exact source namespaces and labels
 - Use `fromEndpoints` (Cilium) or `podSelector`/`namespaceSelector` (NetworkPolicy)
 - Limit to specific ports and protocols
 
 **Egress Rules:**
+
 - DNS: Only to CoreDNS (`k8s-app: kube-dns`)
 - APIs: Only to kube-apiserver using `toEntities: [kube-apiserver]`
 - Databases: Only to specific cluster labels (`cnpg.io/cluster: <name>`)
@@ -213,6 +226,7 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 ### 4. Observable Security (Cilium Hubble)
 
 **Audit Mode Workflow:**
+
 1. Deploy policies in audit mode (`network_policies_mode: audit`)
 2. Monitor traffic via Hubble: `hubble observe --verdict DROPPED`
 3. Identify legitimate traffic patterns
@@ -221,6 +235,7 @@ All externally exposed components have HTTPRoutes configured in `templates/confi
 6. Monitor for unexpected drops
 
 **Hubble Commands:**
+
 ```bash
 # View all dropped traffic
 hubble observe --verdict DROPPED
@@ -238,6 +253,7 @@ hubble observe --from-namespace ai-system --to-namespace monitoring
 ### 5. GitOps Compliance
 
 **Requirements:**
+
 - All policies as Jinja2 templates
 - Version-controlled in Git
 - Automated deployment via Flux
@@ -249,17 +265,20 @@ hubble observe --from-namespace ai-system --to-namespace monitoring
 ### Pattern A: Infrastructure Components (Single CiliumNetworkPolicy)
 
 **Use Cases:**
+
 - System infrastructure (CoreDNS, Spegel)
 - Monitoring stack (Prometheus, Grafana, Loki, Alloy, Tempo)
 - Cache services (Dragonfly)
 
 **Characteristics:**
+
 - Single `CiliumNetworkPolicy` resource
 - Centralized in `<namespace>/network-policies/app/` directory
 - Uses `enableDefaultDeny` with mode-based enforcement
 - Leverages Cilium-specific features (entities, FQDN)
 
 **Directory Structure:**
+
 ```
 templates/config/kubernetes/apps/<namespace>/
 ├── network-policies/
@@ -271,6 +290,7 @@ templates/config/kubernetes/apps/<namespace>/
 ```
 
 **Template Example:**
+
 ```yaml
 #% if network_policies_enabled | default(false) and <component>_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -315,17 +335,20 @@ spec:
 ### Pattern B: Application Components (Triple Policy: Cilium + Standard + Database)
 
 **Use Cases:**
+
 - Database-backed applications (LiteLLM, Langfuse, Keycloak)
 - Applications requiring portability across CNIs
 - Applications with complex external dependencies
 
 **Characteristics:**
+
 - Multiple policy resources in single file
 - Located within app's directory (`<app>/app/networkpolicy.yaml.j2`)
 - Includes separate database policies when using CNPG PostgreSQL
 - Provides fallback for non-Cilium environments
 
 **Directory Structure:**
+
 ```
 templates/config/kubernetes/apps/<namespace>/<app>/
 └── app/
@@ -336,6 +359,7 @@ templates/config/kubernetes/apps/<namespace>/<app>/
 ```
 
 **Template Structure (networkpolicy.yaml.j2):**
+
 ```yaml
 #% if <app>_enabled | default(false) and network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -448,12 +472,14 @@ spec:
 ### 1. Naming Conventions
 
 **CiliumNetworkPolicy:**
+
 - Main app: `<component-name>` (e.g., `litellm`, `grafana`)
 - Database: `<component-name>-db-kube-api-egress`
 - FQDN egress: `<component-name>-<provider>-egress` (e.g., `litellm-azure-egress`)
 - ICMP egress: `<component-name>-icmp-egress`
 
 **NetworkPolicy:**
+
 - Main app: `<component-name>` (e.g., `litellm`, `grafana`)
 - Database: `<component-name>-db`
 
@@ -462,12 +488,14 @@ spec:
 **Every Policy MUST Include:**
 
 1. **Conditional Rendering:**
+
    ```yaml
    #% if <component>_enabled | default(false) and network_policies_enabled | default(false) %#
    #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
    ```
 
 2. **Descriptive Header Comments:**
+
    ```yaml
    #| ============================================================================= #|
    #| CiliumNetworkPolicy - Component Name                                         #|
@@ -477,6 +505,7 @@ spec:
    ```
 
 3. **Metadata with Description:**
+
    ```yaml
    metadata:
      name: component-name
@@ -489,6 +518,7 @@ spec:
    ```
 
 4. **Mode-Based Enforcement:**
+
    ```yaml
    enableDefaultDeny:
      egress: #{ enforce | lower }#
@@ -496,6 +526,7 @@ spec:
    ```
 
 5. **Inline Rule Comments:**
+
    ```yaml
    ingress:
      #| User access via envoy gateway #|
@@ -505,6 +536,7 @@ spec:
    ```
 
 6. **DNS Egress (Almost Universal):**
+
    ```yaml
    egress:
      #| DNS resolution #|
@@ -523,6 +555,7 @@ spec:
 #### Gateway API (Envoy Gateway)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 ingress:
   #| User access via envoy gateway (internal) #|
@@ -537,6 +570,7 @@ ingress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 ingress:
   #| Allow from Envoy Gateway (external access) #|
@@ -552,6 +586,7 @@ ingress:
 #### Prometheus Metrics Scraping
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 ingress:
   #| Prometheus scraping #|
@@ -566,6 +601,7 @@ ingress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 ingress:
   #| Allow Prometheus scraping #|
@@ -581,6 +617,7 @@ ingress:
 #### Inter-Component (Same Namespace)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 ingress:
   #| LiteLLM callbacks (trace ingestion) #|
@@ -595,6 +632,7 @@ ingress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 ingress:
   #| Allow from LiteLLM (trace ingestion) #|
@@ -612,6 +650,7 @@ ingress:
 #### Kubernetes API Server
 
 **CiliumNetworkPolicy (Preferred):**
+
 ```yaml
 egress:
   #| Kubernetes API access #|
@@ -628,6 +667,7 @@ egress:
 #### Database (CNPG PostgreSQL)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 egress:
   #| PostgreSQL (CNPG) - Application database #|
@@ -642,6 +682,7 @@ egress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 egress:
   #| Allow PostgreSQL connection to CloudNativePG cluster #|
@@ -657,6 +698,7 @@ egress:
 #### External HTTPS APIs (FQDN-Based)
 
 **CiliumNetworkPolicy (FQDN Support):**
+
 ```yaml
 egress:
   #| Azure OpenAI endpoints #|
@@ -670,6 +712,7 @@ egress:
 ```
 
 **NetworkPolicy (IP CIDR Fallback):**
+
 ```yaml
 egress:
   #| External LLM providers (cannot use FQDN, allow public IPs) #|
@@ -688,6 +731,7 @@ egress:
 #### Shared Cache (Dragonfly/Redis)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 egress:
   #| Redis (Dragonfly) - Queue and caching #|
@@ -702,6 +746,7 @@ egress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 egress:
   #| Dragonfly (Redis-compatible cache) #|
@@ -720,6 +765,7 @@ egress:
 #### S3 Storage (RustFS)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 egress:
   #| S3 (RustFS) - Blob storage #|
@@ -734,6 +780,7 @@ egress:
 ```
 
 **NetworkPolicy:**
+
 ```yaml
 egress:
   #| RustFS S3 storage #|
@@ -752,6 +799,7 @@ egress:
 #### Keycloak (OIDC SSO)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 egress:
   #| Keycloak (OIDC SSO) #|
@@ -770,6 +818,7 @@ egress:
 #### OpenTelemetry (Tempo Tracing)
 
 **CiliumNetworkPolicy:**
+
 ```yaml
 egress:
   #| OpenTelemetry (Tempo) - Trace export #|
@@ -790,6 +839,7 @@ egress:
 When using CloudNativePG, ALWAYS include separate policies for database pods.
 
 **Database Ingress Requirements:**
+
 ```yaml
 ingress:
   #| CNPG operator health checks on port 8000 #|
@@ -829,6 +879,7 @@ ingress:
 ```
 
 **Database Egress Requirements:**
+
 ```yaml
 egress:
   #| DNS resolution #|
@@ -877,6 +928,7 @@ egress:
 ```
 
 **Common Conditionals:**
+
 - `monitoring_enabled` - Prometheus scraping
 - `tracing_enabled` - Tempo OTLP export
 - `rustfs_enabled` - S3 storage egress
@@ -897,6 +949,7 @@ egress:
 **Priority:** CRITICAL - Externally exposed observability dashboard
 
 **Implementation:**
+
 ```yaml
 #% if hubble_enabled | default(false) and network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -948,6 +1001,7 @@ spec:
 ```
 
 **Validation:**
+
 ```bash
 # Apply in audit mode first
 task configure
@@ -966,6 +1020,7 @@ hubble observe --pod hubble-ui --verdict DROPPED
 **Priority:** CRITICAL - Externally exposed S3 management console
 
 **Implementation:**
+
 ```yaml
 #% if rustfs_enabled | default(false) and network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -1032,6 +1087,7 @@ spec:
 ```
 
 **Validation:**
+
 ```bash
 # Test S3 API access from applications
 kubectl -n ai-system exec -it langfuse-web-0 -- curl -I http://rustfs-svc.storage.svc.cluster.local:9000
@@ -1048,6 +1104,7 @@ hubble observe --namespace storage
 **File:** `templates/config/kubernetes/apps/kube-system/network-policies/app/kustomization.yaml.j2`
 
 Add Hubble UI policy:
+
 ```yaml
 resources:
   - ./coredns.yaml
@@ -1058,6 +1115,7 @@ resources:
 ```
 
 **File:** Create `templates/config/kubernetes/apps/storage/rustfs/app/kustomization.yaml.j2` if not exists:
+
 ```yaml
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -1076,6 +1134,7 @@ resources:
 **File:** `templates/config/kubernetes/apps/kube-system/network-policies/app/metrics-server.yaml.j2`
 
 **Implementation:**
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -1146,6 +1205,7 @@ spec:
 **Directory:** `templates/config/kubernetes/apps/cert-manager/network-policies/` (EXISTS)
 
 **File:** `templates/config/kubernetes/apps/cert-manager/network-policies/ks.yaml.j2`
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
 ---
@@ -1166,6 +1226,7 @@ spec:
 ```
 
 **File:** `templates/config/kubernetes/apps/cert-manager/network-policies/app/cert-manager.yaml.j2`
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -1231,6 +1292,7 @@ spec:
 > **Note:** Implementation uses centralized network-policies directory pattern, not per-app directory.
 
 **Implementation:**
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -1314,6 +1376,7 @@ Implementation follows Pattern A (single CiliumNetworkPolicy) with proper condit
 > **Note:** Implementation uses centralized network-policies directory pattern.
 
 **Implementation:**
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
 #% set enforce = network_policies_mode | default('audit') == 'enforce' %#
@@ -1369,19 +1432,23 @@ spec:
 **Examples:** Hubble UI, RustFS Console, Grafana
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (Pattern A)
 - ❌ Standard NetworkPolicy (infrastructure component)
 
 **Ingress Requirements:**
+
 - Envoy Gateway (internal and/or external)
 - Optional: Prometheus metrics scraping
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - Backend services (specific to component)
 - Optional: kube-apiserver (if needed for data)
 
 **Security Considerations:**
+
 - OIDC protection via SecurityPolicy (if supported by application)
 - Native authentication as fallback (RustFS)
 - Rate limiting via gateway
@@ -1391,15 +1458,18 @@ spec:
 **Examples:** LiteLLM, Langfuse, Keycloak
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (main app + database)
 - ✅ Standard NetworkPolicy (main app + database)
 
 **Ingress Requirements:**
+
 - Envoy Gateway (for web UI)
 - Optional: Inter-component (e.g., LiteLLM → Langfuse)
 - Optional: Prometheus metrics scraping
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - PostgreSQL database (CNPG cluster)
 - External APIs (FQDN-based in Cilium, IP CIDR in NetworkPolicy)
@@ -1409,10 +1479,12 @@ spec:
 - Optional: Tempo (OpenTelemetry tracing)
 
 **Database Policy Requirements:**
+
 - Ingress: App access, CNPG operator, inter-replica, metrics
 - Egress: DNS, inter-replica, S3 backups (optional)
 
 **Security Considerations:**
+
 - FQDN egress filtering (CiliumNetworkPolicy)
 - IP CIDR fallback (NetworkPolicy)
 - Database isolation (separate policies)
@@ -1423,15 +1495,18 @@ spec:
 **Examples:** Prometheus, Grafana, Loki, Alloy, Tempo
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (Pattern A)
 - ❌ Standard NetworkPolicy (infrastructure component)
 
 **Ingress Requirements:**
+
 - Component-specific (e.g., Grafana from gateway)
 - Inter-component (e.g., Grafana → Prometheus)
 - Prometheus scraping (for self-monitoring)
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - kube-apiserver (service discovery)
 - Cluster-wide scraping (toEntities: cluster)
@@ -1439,6 +1514,7 @@ spec:
 - Optional: External storage (S3 for Loki)
 
 **Special Cases:**
+
 - **Prometheus**: Broad cluster egress for metrics scraping
 - **Loki**: External S3 egress when using SimpleScalable mode
 - **Alloy**: Broad cluster ingress for log/metric collection
@@ -1448,19 +1524,23 @@ spec:
 **Examples:** CoreDNS, Spegel, cert-manager, external-dns
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (Pattern A)
 - ❌ Standard NetworkPolicy (infrastructure component)
 
 **Ingress Requirements:**
+
 - Component-specific (e.g., DNS queries for CoreDNS)
 - Optional: Prometheus metrics scraping
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - kube-apiserver (most infrastructure components)
 - External services (component-specific)
 
 **Special Cases:**
+
 - **CoreDNS**: Broad cluster ingress (`fromEntities: cluster`)
 - **cert-manager**: ACME challenge egress (Let's Encrypt)
 - **external-dns**: DNS provider API egress (Cloudflare, UniFi)
@@ -1470,18 +1550,22 @@ spec:
 **Examples:** Dragonfly
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (Pattern A)
 - ❌ Standard NetworkPolicy (infrastructure component)
 
 **Ingress Requirements:**
+
 - Authorized namespaces (identity, ai-system, default)
 - Prometheus metrics scraping
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - Optional: S3 backups (RustFS)
 
 **Security Considerations:**
+
 - Namespace isolation (only allow specific namespaces)
 - ACL-based multi-tenancy (separate credentials per app)
 - No external egress except backups
@@ -1491,21 +1575,25 @@ spec:
 **Examples:** LiteLLM PostgreSQL, Langfuse PostgreSQL, Keycloak PostgreSQL
 
 **Required Policies:**
+
 - ✅ CiliumNetworkPolicy (kube-apiserver + DNS)
 - ✅ Standard NetworkPolicy (full ingress/egress)
 
 **Ingress Requirements:**
+
 - Application access (port 5432)
 - CNPG operator health checks (port 8000)
 - Inter-replica replication (port 5432, 8000)
 - Prometheus metrics (port 9187)
 
 **Egress Requirements:**
+
 - DNS (CoreDNS)
 - Inter-replica replication (port 5432)
 - Optional: S3 backups (RustFS port 9000)
 
 **Security Considerations:**
+
 - Separate network policy from application
 - Use `cnpg.io/cluster` label for pod selection
 - CNPG operator requires access on port 8000
@@ -1655,12 +1743,14 @@ cat dropped-traffic-*.log | grep -E "DROPPED" | awk '{print $10,$12}' | sort | u
 #### Issue 1: Application Cannot Connect to Database
 
 **Symptoms:**
+
 ```bash
 kubectl -n ai-system logs litellm-0
 # Error: could not connect to server: Connection refused
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check if traffic is being dropped
 hubble observe --pod litellm-0 --verdict DROPPED
@@ -1672,6 +1762,7 @@ hubble observe --pod litellm-0 --verdict DROPPED
 **Solution:**
 
 Check NetworkPolicy allows database egress:
+
 ```yaml
 egress:
   #| Allow PostgreSQL connection to CloudNativePG cluster #|
@@ -1685,6 +1776,7 @@ egress:
 ```
 
 Verify database pod labels:
+
 ```bash
 kubectl -n ai-system get pods -l cnpg.io/cluster=litellm-postgresql --show-labels
 ```
@@ -1692,12 +1784,14 @@ kubectl -n ai-system get pods -l cnpg.io/cluster=litellm-postgresql --show-label
 #### Issue 2: External API Calls Failing
 
 **Symptoms:**
+
 ```bash
 kubectl -n ai-system logs litellm-0
 # Error: Failed to connect to api.openai.azure.com
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check for DNS resolution drops
 hubble observe --pod litellm-0 --protocol UDP --port 53
@@ -1709,6 +1803,7 @@ hubble observe --pod litellm-0 --verdict DROPPED --to-fqdn
 **Solution:**
 
 Ensure FQDN-based egress in CiliumNetworkPolicy:
+
 ```yaml
 egress:
   #| Azure OpenAI endpoints #|
@@ -1721,6 +1816,7 @@ egress:
 ```
 
 Ensure IP CIDR fallback in NetworkPolicy:
+
 ```yaml
 egress:
   #| External LLM providers #|
@@ -1739,6 +1835,7 @@ egress:
 #### Issue 3: Prometheus Cannot Scrape Metrics
 
 **Symptoms:**
+
 ```bash
 # Prometheus UI shows target down
 kubectl -n monitoring logs -l app.kubernetes.io/name=prometheus
@@ -1746,6 +1843,7 @@ kubectl -n monitoring logs -l app.kubernetes.io/name=prometheus
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check if Prometheus traffic is being dropped
 hubble observe --from-namespace monitoring --to-namespace ai-system --verdict DROPPED
@@ -1754,6 +1852,7 @@ hubble observe --from-namespace monitoring --to-namespace ai-system --verdict DR
 **Solution:**
 
 Ensure application policy allows Prometheus ingress:
+
 ```yaml
 #% if monitoring_enabled | default(false) %#
 ingress:
@@ -1769,6 +1868,7 @@ ingress:
 ```
 
 Verify namespace label:
+
 ```bash
 kubectl get namespace monitoring --show-labels
 # Should include: kubernetes.io/metadata.name=monitoring
@@ -1777,12 +1877,14 @@ kubectl get namespace monitoring --show-labels
 #### Issue 4: HTTP 503 from Gateway (Envoy)
 
 **Symptoms:**
+
 ```bash
 curl https://litellm.${SECRET_DOMAIN}
 # 503 Service Unavailable
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check if Envoy traffic is being dropped
 hubble observe --from-namespace network --to-namespace ai-system --verdict DROPPED
@@ -1794,6 +1896,7 @@ kubectl -n network logs -l gateway.networking.k8s.io/gateway-name=internal
 **Solution:**
 
 Ensure application policy allows Envoy ingress:
+
 ```yaml
 ingress:
   #| Allow from Envoy Gateway (external access) #|
@@ -1807,6 +1910,7 @@ ingress:
 ```
 
 Verify HTTPRoute backend port matches service:
+
 ```bash
 kubectl -n network get httproute litellm -o yaml | grep port
 kubectl -n ai-system get svc litellm -o yaml | grep port
@@ -1815,12 +1919,14 @@ kubectl -n ai-system get svc litellm -o yaml | grep port
 #### Issue 5: DNS Resolution Failing
 
 **Symptoms:**
+
 ```bash
 kubectl -n ai-system logs litellm-0
 # Error: no such host
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check DNS traffic
 hubble observe --pod litellm-0 --protocol UDP --port 53
@@ -1832,6 +1938,7 @@ kubectl -n ai-system exec -it litellm-0 -- nslookup rustfs-svc.storage.svc.clust
 **Solution:**
 
 Ensure DNS egress in EVERY policy:
+
 ```yaml
 egress:
   #| DNS resolution #|
@@ -1846,6 +1953,7 @@ egress:
 ```
 
 Verify CoreDNS pods are running:
+
 ```bash
 kubectl -n kube-system get pods -l k8s-app=kube-dns
 ```
@@ -1853,12 +1961,14 @@ kubectl -n kube-system get pods -l k8s-app=kube-dns
 #### Issue 6: Database Replication Failing (CNPG)
 
 **Symptoms:**
+
 ```bash
 kubectl cnpg status litellm-postgresql -n ai-system
 # Replica out of sync
 ```
 
 **Diagnosis:**
+
 ```bash
 # Check inter-replica traffic
 hubble observe --namespace ai-system --label cnpg.io/cluster=litellm-postgresql
@@ -1867,6 +1977,7 @@ hubble observe --namespace ai-system --label cnpg.io/cluster=litellm-postgresql
 **Solution:**
 
 Ensure database policy allows inter-replica communication:
+
 ```yaml
 ingress:
   #| Allow from other database replicas (replication and health checks) #|
@@ -1898,18 +2009,21 @@ egress:
 ### Debugging Commands Reference
 
 **View CiliumNetworkPolicy:**
+
 ```bash
 kubectl get ciliumnetworkpolicies -A
 kubectl describe ciliumnetworkpolicy litellm -n ai-system
 ```
 
 **View Standard NetworkPolicy:**
+
 ```bash
 kubectl get networkpolicies -A
 kubectl describe networkpolicy litellm -n ai-system
 ```
 
 **View Applied Policies on Pod:**
+
 ```bash
 kubectl -n ai-system exec -it litellm-0 -- env | grep POD
 cilium endpoint list | grep litellm
@@ -1917,6 +2031,7 @@ cilium endpoint get <endpoint-id>
 ```
 
 **Test Connectivity from Pod:**
+
 ```bash
 # TCP connectivity test
 kubectl -n ai-system exec -it litellm-0 -- nc -zv rustfs-svc.storage.svc.cluster.local 9000
@@ -1929,6 +2044,7 @@ kubectl -n ai-system exec -it litellm-0 -- curl -I http://rustfs-svc.storage.svc
 ```
 
 **Export Hubble Flows for Analysis:**
+
 ```bash
 # All flows
 hubble observe --output json > all-flows.json
@@ -1943,18 +2059,21 @@ hubble observe --namespace ai-system --output json > ai-system-flows.json
 ## References
 
 ### Industry Standards
+
 - [NIST SP 800-207 - Zero Trust Architecture](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-207.pdf)
 - [CISA Zero Trust Maturity Model](https://www.cisa.gov/zero-trust-maturity-model)
 - [Kubernetes Network Policies Best Practices](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 - [Cilium Network Policy Guide](https://docs.cilium.io/en/stable/security/policy/)
 
 ### Project Documentation
+
 - [Cilium Network Policies Research](../research/archive/cilium-network-policies-jan-2026.md)
 - [Architecture Overview](../ARCHITECTURE.md)
 - [Configuration Reference](../CONFIGURATION.md)
 - [Troubleshooting Guide](../TROUBLESHOOTING.md)
 
 ### Related Guides
+
 - [Observability Stack Implementation](./observability-stack-implementation-victoriametrics.md)
 - [BGP UniFi Cilium Implementation](../bgp-unifi-cilium-implementation.md)
 - [CNPG Implementation](../completed/cnpg-implementation.md)
@@ -1962,5 +2081,6 @@ hubble observe --namespace ai-system --output json > ai-system-flows.json
 ---
 
 **Document History:**
+
 - 2026-01-09: Comprehensive audit and validation - Updated current state analysis to reflect 22 implemented policies; marked Phase 2 and Phase 3 as COMPLETED; corrected gap analysis to show only Hubble UI and RustFS as remaining gaps
 - 2026-01-08: Initial version documenting current state and remediation plan

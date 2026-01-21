@@ -14,6 +14,7 @@
 Instead, please report security vulnerabilities by emailing the repository owner directly.
 
 Include the following information:
+
 - Type of vulnerability
 - Full path to the affected file(s)
 - Location of the affected source code (tag/branch/commit or direct URL)

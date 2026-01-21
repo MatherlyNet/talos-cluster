@@ -140,6 +140,7 @@ Layer on specific allow rules per component.
 ### 1. Monitoring Namespace Policies
 
 #### VictoriaMetrics vmsingle
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -180,6 +181,7 @@ spec:
 ```
 
 #### VMAgent
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -236,6 +238,7 @@ spec:
 ```
 
 #### Grafana
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -293,6 +296,7 @@ spec:
 ```
 
 #### Alloy (Log/Trace Collector)
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -351,6 +355,7 @@ spec:
 ### 2. Flux-System Namespace Policies
 
 #### Flux Controllers (source, kustomize, helm, notification)
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -413,6 +418,7 @@ spec:
 Based on [cert-manager best practices](https://cert-manager.io/docs/installation/best-practice/):
 
 #### cert-manager Controller
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -470,6 +476,7 @@ spec:
 ```
 
 #### cert-manager Webhook
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -518,6 +525,7 @@ spec:
 ### 4. Network Namespace Policies
 
 #### Cloudflare Tunnel (cloudflared)
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -569,6 +577,7 @@ spec:
 ```
 
 #### Envoy Gateway
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -637,6 +646,7 @@ spec:
 ```
 
 #### external-dns (Cloudflare)
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -688,6 +698,7 @@ spec:
 **Note**: kube-system requires careful policy design as it hosts critical cluster components.
 
 #### CoreDNS
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -739,6 +750,7 @@ spec:
 ```
 
 #### Metrics Server
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -914,6 +926,7 @@ hubble observe --namespace monitoring --verdict DROPPED
 ### 4. Rollback Plan
 
 Keep previous policy state in Git. If issues occur:
+
 ```bash
 git revert HEAD
 flux reconcile ks network-policies --with-source

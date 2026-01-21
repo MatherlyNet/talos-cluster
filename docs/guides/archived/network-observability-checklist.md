@@ -7,6 +7,7 @@
 ### Required Components
 
 - [ ] **kube-prometheus-stack CRDs installed**
+
   ```bash
   kubectl get crd prometheusrules.monitoring.coreos.com
   kubectl get crd servicemonitors.monitoring.coreos.com
@@ -18,6 +19,7 @@
   - Options: VictoriaMetrics or kube-prometheus-stack
 
 - [ ] **Grafana deployed** (optional but recommended)
+
   ```bash
   kubectl get deployment -n monitoring grafana
   ```
@@ -31,6 +33,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/kube-system/cilium/app/helmrelease.yaml.j2`
 
   Add after existing values (line 39):
+
   ```yaml
   hubble:
     enabled: true
@@ -64,6 +67,7 @@
 ### Optional: Expose Hubble UI
 
 - [ ] **Create:** `templates/config/kubernetes/apps/kube-system/cilium/app/httproute.yaml.j2`
+
   ```yaml
   #% if hubble_ui_enabled | default(false) %#
   ---
@@ -88,6 +92,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/kube-system/cilium/app/kustomization.yaml.j2`
 
   Add resource:
+
   ```yaml
   resources:
     - ./helmrelease.yaml
@@ -102,6 +107,7 @@
 - [ ] **Edit:** `cluster.yaml` (if exposing Hubble UI)
 
   Add variable:
+
   ```yaml
   # =============================================================================
   # OBSERVABILITY CONFIGURATION - Optional
@@ -120,24 +126,28 @@
 ### Verification
 
 - [ ] **Hubble Relay pod running**
+
   ```bash
   kubectl get pods -n kube-system -l k8s-app=hubble-relay
   # Expected: Running, 1/1 ready
   ```
 
 - [ ] **Hubble UI pod running** (if enabled)
+
   ```bash
   kubectl get pods -n kube-system -l k8s-app=hubble-ui
   # Expected: Running, 1/1 ready
   ```
 
 - [ ] **ServiceMonitors created**
+
   ```bash
   kubectl get servicemonitor -n kube-system -l app.kubernetes.io/name=cilium
   # Expected: cilium-agent, hubble-relay
   ```
 
 - [ ] **Prometheus scraping Hubble metrics**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/targets
@@ -145,6 +155,7 @@
   ```
 
 - [ ] **Metrics available**
+
   ```bash
   # Port-forward Hubble Relay
   kubectl port-forward -n kube-system svc/hubble-relay 4245:80
@@ -153,6 +164,7 @@
   ```
 
 - [ ] **Hubble CLI works** (optional)
+
   ```bash
   kubectl port-forward -n kube-system svc/hubble-relay 4245:80
   hubble status
@@ -166,6 +178,7 @@
 ### File Modifications
 
 - [ ] **Create:** `templates/config/kubernetes/apps/kube-system/coredns/app/servicemonitor.yaml.j2`
+
   ```yaml
   ---
   apiVersion: monitoring.coreos.com/v1
@@ -198,6 +211,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/kube-system/coredns/app/kustomization.yaml.j2`
 
   Add resource:
+
   ```yaml
   ---
   apiVersion: kustomize.config.k8s.io/v1beta1
@@ -216,12 +230,14 @@
 ### Verification
 
 - [ ] **ServiceMonitor created**
+
   ```bash
   kubectl get servicemonitor -n kube-system coredns
   # Expected: NAME=coredns, AGE=<time>
   ```
 
 - [ ] **Prometheus scraping CoreDNS**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/targets
@@ -229,6 +245,7 @@
   ```
 
 - [ ] **Metrics available**
+
   ```bash
   # Test metrics endpoint
   kubectl exec -n kube-system <coredns-pod> -- wget -qO- localhost:9153/metrics | head -20
@@ -236,6 +253,7 @@
   ```
 
 - [ ] **Query in Prometheus**
+
   ```promql
   # Prometheus UI: Query
   sum(rate(coredns_dns_requests_total[5m]))
@@ -251,6 +269,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/network/envoy-gateway/app/podmonitor.yaml.j2`
 
   Replace entire file:
+
   ```yaml
   ---
   apiVersion: monitoring.coreos.com/v1
@@ -289,12 +308,14 @@
 ### Verification
 
 - [ ] **PodMonitor updated**
+
   ```bash
   kubectl get podmonitor -n network envoy-proxy -o yaml | grep -A 10 relabelings
   # Expected: See gateway and namespace relabelings
   ```
 
 - [ ] **Prometheus scraping with labels**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/targets
@@ -302,6 +323,7 @@
   ```
 
 - [ ] **Query with labels**
+
   ```promql
   # Prometheus UI: Query
   sum by (gateway) (rate(envoy_http_downstream_rq_total[5m]))
@@ -317,6 +339,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/network/cloudflare-dns/app/helmrelease.yaml.j2`
 
   Add to values:
+
   ```yaml
   values:
     # ... existing values ...
@@ -335,6 +358,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/network/unifi-dns/app/helmrelease.yaml.j2` (if enabled)
 
   Add to values:
+
   ```yaml
   values:
     # ... existing values ...
@@ -358,12 +382,14 @@
 ### Verification
 
 - [ ] **ServiceMonitors created**
+
   ```bash
   kubectl get servicemonitor -n network
   # Expected: cloudflare-dns, unifi-dns (if enabled)
   ```
 
 - [ ] **Prometheus scraping external-dns**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/targets
@@ -394,12 +420,14 @@
 ### Verification
 
 - [ ] **PrometheusRule created**
+
   ```bash
   kubectl get prometheusrule -n monitoring network-infrastructure
   # Expected: NAME=network-infrastructure, AGE=<time>
   ```
 
 - [ ] **Rules loaded in Prometheus**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/rules
@@ -407,6 +435,7 @@
   ```
 
 - [ ] **Recording rules evaluating**
+
   ```promql
   # Prometheus UI: Query
   envoy:gateway:request_rate
@@ -414,6 +443,7 @@
   ```
 
 - [ ] **Alert rules configured**
+
   ```bash
   # Prometheus UI: Alerts
   # Expected: See alerts like CiliumAgentDown, CoreDNSHighErrorRate, etc.
@@ -436,6 +466,7 @@
 - [ ] **Create:** `templates/config/kubernetes/apps/monitoring/grafana/app/dashboards-network.yaml.j2`
 
   Create ConfigMaps for each dashboard:
+
   ```yaml
   ---
   apiVersion: v1
@@ -472,12 +503,14 @@
 ### Verification
 
 - [ ] **ConfigMaps created**
+
   ```bash
   kubectl get configmap -n monitoring | grep grafana-dashboard
   # Expected: grafana-dashboard-cilium-agent, grafana-dashboard-hubble, etc.
   ```
 
 - [ ] **Dashboards imported in Grafana**
+
   ```bash
   kubectl port-forward -n monitoring svc/grafana 3000:80
   # Open: http://localhost:3000
@@ -499,6 +532,7 @@
 - [ ] **Edit:** `templates/config/kubernetes/apps/kube-system/cilium/app/helmrelease.yaml.j2`
 
   Add debug logging (only if BGP enabled):
+
   ```yaml
   values:
     # ... existing values ...
@@ -518,12 +552,14 @@
 ### Verification
 
 - [ ] **BGP debug logs visible**
+
   ```bash
   kubectl -n kube-system logs ds/cilium | grep -i bgp
   # Expected: BGP peering logs, route advertisements
   ```
 
 - [ ] **Manual BGP status check**
+
   ```bash
   kubectl -n kube-system exec -it ds/cilium -- cilium bgp peers
   # Expected:
@@ -532,6 +568,7 @@
   ```
 
 - [ ] **BGP routes advertised**
+
   ```bash
   kubectl -n kube-system exec -it ds/cilium -- cilium bgp routes advertised ipv4 unicast
   # Expected: LoadBalancer IPs advertised to peer
@@ -548,6 +585,7 @@
 ### Complete Health Check
 
 - [ ] **All components running**
+
   ```bash
   kubectl get pods -n kube-system -l k8s-app=cilium
   kubectl get pods -n kube-system -l k8s-app=hubble-relay
@@ -556,12 +594,14 @@
   ```
 
 - [ ] **All ServiceMonitors/PodMonitors created**
+
   ```bash
   kubectl get servicemonitor -A | grep -E 'cilium|coredns|external-dns'
   kubectl get podmonitor -A | grep envoy
   ```
 
 - [ ] **Prometheus scraping all targets**
+
   ```bash
   kubectl port-forward -n monitoring svc/prometheus 9090:9090
   # Open: http://localhost:9090/targets
@@ -569,6 +609,7 @@
   ```
 
 - [ ] **Recording rules evaluating**
+
   ```promql
   # Test queries in Prometheus:
   envoy:gateway:request_rate
@@ -578,12 +619,14 @@
   ```
 
 - [ ] **Alert rules configured**
+
   ```bash
   # Prometheus UI: Alerts
   # Expected: All rules listed (may be green/inactive if no issues)
   ```
 
 - [ ] **Grafana dashboards populated**
+
   ```bash
   # Open each dashboard, verify data visible
   # Check time range selector works
@@ -593,6 +636,7 @@
 ### Generate Test Traffic
 
 - [ ] **Test Envoy metrics**
+
   ```bash
   # Generate HTTP traffic to gateway
   curl https://internal.example.com
@@ -603,6 +647,7 @@
   ```
 
 - [ ] **Test CoreDNS metrics**
+
   ```bash
   # Generate DNS queries
   kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup kubernetes.default.svc.cluster.local
@@ -613,6 +658,7 @@
   ```
 
 - [ ] **Test Hubble flows**
+
   ```bash
   # Port-forward Hubble Relay
   kubectl port-forward -n kube-system svc/hubble-relay 4245:80
@@ -626,6 +672,7 @@
 ### Alert Testing
 
 - [ ] **Test critical alert** (optional, destructive)
+
   ```bash
   # Scale down CoreDNS to trigger alert
   kubectl scale deployment -n kube-system coredns --replicas=0

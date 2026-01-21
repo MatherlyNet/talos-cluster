@@ -21,6 +21,7 @@ This document analyzes BGP integration between UniFi routers/gateways and Kubern
 | **Complexity** | Low | Medium |
 
 **Recommendation:** For home lab environments with a single subnet, L2 announcements are sufficient. BGP becomes valuable when:
+
 - Services need to be reachable across VLANs without NAT
 - Faster failover is required (with BFD)
 - Integration with existing BGP infrastructure exists
@@ -77,6 +78,7 @@ router bgp 64513
 ```
 
 **Key Configuration Points:**
+
 - **ASN 64513** (router) peers with **ASN 64514** (K8s nodes)
 - Uses private ASN range (64512-65534 for eBGP)
 - `no bgp ebgp-requires-policy` - **Critical:** Allows route exchange without explicit policies
@@ -194,6 +196,7 @@ bgpControlPlane:
 When BGP is enabled, `networks.yaml.j2` generates:
 
 #### CiliumLoadBalancerIPPool
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
@@ -210,6 +213,7 @@ spec:
 > **Note:** The current template uses a `matchExpressions` workaround to match all services. A cleaner approach uses explicit labels on services.
 
 **Current Template (matches all services):**
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
@@ -229,6 +233,7 @@ spec:
 ```
 
 **Recommended Approach (explicit labels):**
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
@@ -248,6 +253,7 @@ spec:
 ```
 
 With this approach, label your LoadBalancer services:
+
 ```yaml
 metadata:
   labels:
@@ -256,6 +262,7 @@ metadata:
 ```
 
 #### CiliumBGPPeerConfig
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumBGPPeerConfig
@@ -276,6 +283,7 @@ spec:
 ```
 
 #### CiliumBGPClusterConfig
+
 ```yaml
 apiVersion: cilium.io/v2
 kind: CiliumBGPClusterConfig
@@ -370,6 +378,7 @@ task configure
 ```
 
 This generates:
+
 - `unifi/bgp.conf` - UniFi FRR configuration with ECMP, route-map filtering, and all node IPs
 - `kubernetes/apps/kube-system/cilium/app/networks.yaml` - Cilium BGP CRDs
 - Optional: BGP authentication Secret (when `cilium_bgp_password` is set)
@@ -377,6 +386,7 @@ This generates:
 1. **Upload UniFi Config**
 
 Upload the generated `unifi/bgp.conf` to your UniFi gateway:
+
 - Navigate to **Settings → Routing → BGP**
 - Click **Add Configuration** and upload the file
 - Give it a descriptive name (e.g., "kubernetes-bgp")
@@ -392,18 +402,21 @@ task reconcile
 ### Phase 3: Verification
 
 1. **Check Cilium BGP Status**
+
 ```bash
 cilium bgp peers
 # Expected: Established sessions with router
 ```
 
 1. **Verify Route Advertisement**
+
 ```bash
 cilium bgp routes advertised ipv4 unicast
 # Should show LoadBalancer IPs
 ```
 
 1. **Check UniFi Learned Routes**
+
 ```bash
 ssh <unifi-gateway>
 vtysh -c "show ip bgp"
@@ -411,6 +424,7 @@ vtysh -c "show ip bgp"
 ```
 
 1. **Test Service Accessibility**
+
 ```bash
 # From a client on a different VLAN
 curl http://<loadbalancer-ip>
@@ -475,13 +489,16 @@ BFD enables sub-second failure detection (vs ~9s with tuned BGP timers). However
 **Current Workarounds:**
 
 1. **Tune BGP timers** (minimum values):
+
    ```yaml
    cilium_bgp_hold_time: 3        # Minimum: 3 seconds
    cilium_bgp_keepalive_time: 1   # Minimum: 1 second
    ```
+
    This achieves ~9s failure detection vs default ~90s.
 
 2. **Enable Graceful Restart** for smoother failovers:
+
    ```yaml
    cilium_bgp_graceful_restart: true
    ```
@@ -489,6 +506,7 @@ BFD enables sub-second failure detection (vs ~9s with tuned BGP timers). However
 3. **BIRD (deprecated):** The legacy BIRD-based approach supports BFD but is deprecated in favor of native BGP Control Plane.
 
 **UniFi Side (for future use):**
+
 ```
 neighbor K8S bfd
 ```
@@ -498,6 +516,7 @@ neighbor K8S bfd
 ### Password Authentication
 
 **Cilium Side:**
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -510,12 +529,14 @@ data:
 ```
 
 Update CiliumBGPPeerConfig:
+
 ```yaml
 spec:
   authSecretRef: bgp-auth-secret
 ```
 
 **UniFi Side:**
+
 ```
 neighbor K8S password <your-password>
 ```
@@ -523,6 +544,7 @@ neighbor K8S password <your-password>
 ### Graceful Restart
 
 **Cilium Side** (CiliumBGPPeerConfig):
+
 ```yaml
 spec:
   gracefulRestart:
@@ -530,6 +552,7 @@ spec:
 ```
 
 **UniFi Side:**
+
 ```
 neighbor K8S graceful-restart
 neighbor K8S graceful-restart-helper
@@ -540,6 +563,7 @@ neighbor K8S graceful-restart-helper
 For load balancing across multiple paths:
 
 **UniFi Side:**
+
 ```
 bgp bestpath as-path multipath-relax
 maximum-paths 3
@@ -557,11 +581,13 @@ spec:
 ```
 
 **Behavior:**
+
 - Only nodes with matching pods advertise the service route
 - Client source IP is preserved (visible in `RemoteAddr`)
 - If the pod moves to a non-BGP node, the service becomes unreachable
 
 **Without this setting** (default `Cluster`):
+
 - All BGP nodes advertise the route
 - Traffic is forwarded between nodes
 - Original client IP is replaced with pod network IP
@@ -580,6 +606,7 @@ l2announcements:
 ```
 
 This works by:
+
 1. Cilium responds to ARP requests for LoadBalancer IPs
 2. Traffic is directed to the responding node
 3. Works within a single broadcast domain
@@ -594,6 +621,7 @@ l2announcements:
 ```
 
 This adds:
+
 1. Routes advertised to upstream router via BGP
 2. Router installs routes to its routing table
 3. Traffic can cross VLAN boundaries via routing
@@ -611,12 +639,14 @@ This adds:
 ## Sources
 
 ### Primary References
+
 - [waifulabs/infrastructure](https://github.com/waifulabs/infrastructure) - Reference implementation
 - [UniFi BGP Documentation](https://help.ui.com/hc/en-us/articles/16271338193559-UniFi-Border-Gateway-Protocol-BGP) - Official Ubiquiti docs
 - [Cilium BGP Control Plane](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane/) - Cilium documentation
 - [BGP with Cilium and UniFi](https://blog.stonegarden.dev/articles/2025/11/bgp-cilium-unifi/) - Comprehensive community guide (stonegarden.dev)
 
 ### Additional Resources
+
 - [UniFi UDM Pro BGP Configuration](https://gibsonvirt.com/2025/01/14/unifi-udm-pro-bgp-configuration/) - Configuration examples
 - [BGP with MetalLB and Cloud Gateway Ultra](https://dglloyd.net/2025/07/04/bgp-with-metallb-and-a-cloud-gateway-ultra/) - Alternative approach
 - [Isovalent BGP Labs](https://isovalent.com/labs/cilium-bgp/) - Hands-on Cilium BGP learning
@@ -624,6 +654,7 @@ This adds:
 - [Packetswitch BGP Guide](https://www.packetswitch.co.uk/bgp/) - BGP fundamentals
 
 ### Community Implementations
+
 - [Gerard Samuel](https://gerardsamuel.me/posts/homelab/howto-setup-kubernetes-cilium-bgp-with-unifi-v4.1-router/) - Cilium BGP with UniFi v4.1
 - [Sander Sneekes](https://sneekes.app/posts/advanced-kubernetes-networking-bgp-with-cilium-and-udm-pro/) - Advanced K8s networking with BGP
 - [Raj Singh](https://rajsingh.info/p/cilium-unifi/) - Cilium + UniFi integration

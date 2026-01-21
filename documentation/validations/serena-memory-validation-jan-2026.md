@@ -12,6 +12,7 @@
 Cross-referenced **8 Serena memory files** against actual project configuration. Overall accuracy: **~95%**. Identified **1 critical version discrepancy** and **3 minor documentation gaps**.
 
 **Key Findings:**
+
 - ✅ Architecture patterns are accurate and current
 - ✅ Template conventions match makejinja.toml configuration
 - ✅ Authentication architecture documentation is comprehensive
@@ -29,6 +30,7 @@ Cross-referenced **8 Serena memory files** against actual project configuration.
 **Status:** ✅ Accurate with 1 version update needed
 
 **Validated Against:**
+
 - `.mise.toml` (tool versions)
 - `cluster.yaml` (configuration structure)
 - `templates/config/kubernetes/apps/` (application list)
@@ -36,6 +38,7 @@ Cross-referenced **8 Serena memory files** against actual project configuration.
 **Findings:**
 
 #### ✅ **Accurate Information:**
+
 - Tech stack correctly documented: Talos Linux, Kubernetes 1.35.0, Flux CD 2.7.5
 - Optional features list is current (BGP, UniFi DNS, Observability, etc.)
 - Deployment workflow (7 stages) matches actual bootstrap process
@@ -85,6 +88,7 @@ The following applications are deployed but not documented in memory:
 **Status:** ✅ Comprehensive and accurate
 
 **Validated Against:**
+
 - `templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy.yaml.j2`
 - `templates/config/kubernetes/apps/identity/keycloak/app/keycloak-cr.yaml.j2`
 - `templates/scripts/plugin.py` (OIDC variable computation)
@@ -109,6 +113,7 @@ The following applications are deployed but not documented in memory:
    - Memory documentation matches implementation ✅
 
 #### ✅ **Split-Path Architecture:**
+
 - Memory correctly documents hairpin NAT avoidance using internal `tokenEndpoint`
 - Implementation confirmed in SecurityPolicy templates
 - Diagram in memory accurately represents the flow
@@ -122,6 +127,7 @@ The following applications are deployed but not documented in memory:
 **Status:** ✅ Accurate with current patterns
 
 **Validated Against:**
+
 - `templates/config/kubernetes/apps/**/ks.yaml.j2` (Kustomization templates)
 - Actual dependency chains in deployed applications
 
@@ -132,11 +138,13 @@ The following applications are deployed but not documented in memory:
 1. **Cross-Namespace Dependencies**
    - Pattern: `dependsOn` in Flux Kustomizations
    - Example validated: Keycloak depends on CloudNativePG operator
+
    ```yaml
    dependsOn:
      - name: cloudnative-pg
        namespace: cnpg-system
    ```
+
    - Memory documentation matches implementation ✅
 
 2. **CRD Installation Order**
@@ -158,6 +166,7 @@ The following applications are deployed but not documented in memory:
 **Status:** ✅ Perfect match with configuration
 
 **Validated Against:**
+
 - `makejinja.toml` (template delimiters)
 - `templates/config/kubernetes/apps/` (directory structure)
 - SOPS encryption patterns
@@ -178,7 +187,9 @@ The following applications are deployed but not documented in memory:
 **Source:** `makejinja.toml` lines 13-19
 
 #### ✅ **Directory Structure:**
+
 - Memory documents standard app template structure:
+
   ```
   templates/config/kubernetes/apps/<namespace>/<app>/
   ├── ks.yaml.j2
@@ -188,9 +199,11 @@ The following applications are deployed but not documented in memory:
       ├── ocirepository.yaml.j2
       └── secret.sops.yaml.j2
   ```
+
 - Validated against 38 applications - all follow this pattern ✅
 
 #### ✅ **Secret Management:**
+
 - SOPS Age encryption documented correctly
 - Pattern: `*.sops.yaml.j2` files encrypted post-render
 - Memory matches actual implementation ✅
@@ -204,6 +217,7 @@ The following applications are deployed but not documented in memory:
 **Status:** ✅ Accurate with actual Taskfile
 
 **Validated Against:**
+
 - `Taskfile.yaml`
 - `.taskfiles/bootstrap/Taskfile.yaml`
 - `.taskfiles/talos/Taskfile.yaml`
@@ -246,6 +260,7 @@ The following tasks exist but are not documented in memory:
 **Status:** ✅ Workflows match actual patterns
 
 **Validated Against:**
+
 - Template modification workflows
 - Bootstrap sequence in scripts
 - Application scaffolding patterns
@@ -275,6 +290,7 @@ The following tasks exist but are not documented in memory:
 **Status:** ✅ Research remains valid
 
 **Validated Against:**
+
 - `templates/config/kubernetes/apps/kube-system/headlamp/app/helmrelease.yaml.j2`
 - Current Headlamp implementation
 
@@ -293,6 +309,7 @@ The following tasks exist but are not documented in memory:
    - Source: `helmrelease.yaml.j2` line 99
 
 #### ℹ️ **Note:**
+
 Research document identified that AI Assistant plugin cannot be configured via `values.yaml` annotation (requires ConfigMap after install). This is correctly documented in the corrections file.
 
 **Recommendation:** Research remains valid; no updates needed
@@ -304,6 +321,7 @@ Research document identified that AI Assistant plugin cannot be configured via `
 **Status:** ✅ Corrections accurately documented
 
 **Validated Against:**
+
 - Headlamp HelmRelease implementation
 - Plugin configuration patterns
 
@@ -358,6 +376,7 @@ Research document identified that AI Assistant plugin cannot be configured via `
 ### Immediate Updates (Priority 1)
 
 1. **Update project_overview.md:**
+
    ```markdown
    # Version updates
    - Talos Linux: 1.12.0 → 1.12.1
@@ -369,6 +388,7 @@ Research document identified that AI Assistant plugin cannot be configured via `
    ```
 
 2. **Update suggested_commands.md:**
+
    ```markdown
    # Add new infrastructure tasks
    task infra:secrets-edit   # Edit encrypted secrets (rotation)
@@ -417,6 +437,7 @@ The Serena memory files are **highly accurate** (~95%) and provide excellent pro
 **Memory Quality Grade:** A- (Excellent)
 
 **Action Items:**
+
 1. ✅ Update Talos version to 1.12.1
 2. ✅ Update talhelper version to 3.1.0
 3. ✅ Add Headlamp and Barman Cloud Plugin to application list

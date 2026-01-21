@@ -7,6 +7,7 @@
 **Talos Linux v1.12.1** is an immutable, API-driven Kubernetes OS. There is no SSH, no shell, and no package manager. All configuration is done via the Talos API using `talosctl`.
 
 **Key Facts:**
+
 - **Talos Version**: v1.12.1 (talenv.yaml)
 - **Kubernetes Version**: v1.35.0
 - **Config Generator**: talhelper v3.1.0
@@ -30,6 +31,7 @@
 ### Control Plane Scheduling
 
 Control plane nodes are configured with `allowSchedulingOnControlPlanes: false` by default. This means:
+
 - Workloads will NOT be scheduled on control plane nodes
 - Dedicated worker nodes are required for running applications
 - Configurable via `templates/config/talos/patches/controller/cluster.yaml.j2`
@@ -47,6 +49,7 @@ The cluster includes platform components for Talos lifecycle management:
 ### tuppr (Talos Upgrade Controller)
 
 Located in `kubernetes/apps/system-upgrade/tuppr/`:
+
 - Manages Talos OS upgrades via `TalosUpgrade` CRs
 - Manages Kubernetes upgrades via `KubernetesUpgrade` CRs
 - Enables GitOps-driven upgrades without manual talosctl commands
@@ -54,6 +57,7 @@ Located in `kubernetes/apps/system-upgrade/tuppr/`:
 ### talos-ccm (Cloud Controller Manager)
 
 Located in `kubernetes/apps/kube-system/talos-ccm/`:
+
 - Manages node lifecycle (registration, status updates)
 - Integrates Talos nodes with Kubernetes control plane
 - Always deployed (no conditional flag)
@@ -61,6 +65,7 @@ Located in `kubernetes/apps/kube-system/talos-ccm/`:
 ### talos-backup
 
 Located in `kubernetes/apps/kube-system/talos-backup/`:
+
 - Automated etcd snapshots to S3-compatible storage
 - Age encryption for backup data
 - Conditional: Enabled when `backup_s3_endpoint` and `backup_s3_bucket` configured
@@ -139,6 +144,7 @@ templates/config/talos/patches/
 ### Common Patches
 
 **Cluster Configuration** (controller):
+
 ```yaml
 cluster:
   allowSchedulingOnControlPlanes: false
@@ -149,6 +155,7 @@ cluster:
 ```
 
 **CNI Configuration** (talconfig.yaml):
+
 ```yaml
 # Disable built-in CNI to use Cilium
 cniConfig:
@@ -159,6 +166,7 @@ clusterSvcNets: ["10.43.0.0/16"]
 ```
 
 **Machine Configuration** (global):
+
 ```yaml
 machine:
   kubelet:
@@ -169,13 +177,13 @@ machine:
     nodeIP:
       validSubnets:
         - <node_cidr>
-  
+
   features:
     hostDNS:
       enabled: true                    # Local DNS caching at 127.0.0.53
       forwardKubeDNSToHost: true       # Forward CoreDNS queries
       resolveMemberNames: true         # Hostname resolution (e.g., talos-cp-001)
-  
+
   network:
     disableSearchDomain: true
     nameservers:
@@ -184,7 +192,7 @@ machine:
       - interface: lo
         addresses:
           - 169.254.116.108/32         # Cilium eBPF workaround
-  
+
   time:
     disabled: false
     servers:
@@ -226,6 +234,7 @@ task talos:apply-node IP=<ip> MODE=auto
 ### Upgrades
 
 **Talos Version:**
+
 ```bash
 # 1. Update talenv.yaml
 talosVersion: v1.x.y
@@ -239,6 +248,7 @@ task talos:upgrade-node IP=192.168.1.11
 ```
 
 **Kubernetes Version:**
+
 ```bash
 # 1. Update talenv.yaml
 kubernetesVersion: v1.x.y
@@ -286,6 +296,7 @@ nodes:
 ```
 
 Requires:
+
 - UEFI Secure Boot enabled
 - Talos Secure Boot image
 
@@ -308,6 +319,7 @@ talosctl health -n <ip>
 ```
 
 Shows:
+
 - etcd health
 - API server health
 - Controller manager health
@@ -320,6 +332,7 @@ talosctl services -n <ip>
 ```
 
 Key services:
+
 - `apid` - Talos API
 - `etcd` - etcd (controllers only)
 - `kubelet` - Kubernetes kubelet
@@ -385,6 +398,7 @@ Internal RustFS automatically sets `S3_FORCE_PATH_STYLE=true` and `S3_USE_SSL=fa
 ### IAM for RustFS
 
 When using internal RustFS, create credentials via Console UI:
+
 1. Create `backup-storage` policy (Identity → Policies)
 2. Create `backups` group with policy attached
 3. Create user in group, generate access key
@@ -445,7 +459,7 @@ Set automatically by Taskfile and mise.
 
 ---
 
-**Last Updated:** January 13, 2026  
-**Talos Version:** v1.12.1  
-**Kubernetes Version:** v1.35.0  
+**Last Updated:** January 13, 2026
+**Talos Version:** v1.12.1
+**Kubernetes Version:** v1.35.0
 **talhelper Version:** v3.1.0

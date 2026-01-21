@@ -41,6 +41,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Adding a New Node
 
 1. **Prepare Hardware**
+
    ```bash
    # Flash Talos ISO to USB, boot node
    # Get node info while in maintenance mode:
@@ -49,6 +50,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 2. **Update Configuration**
+
    ```yaml
    # Edit nodes.yaml, add new entry:
    nodes:
@@ -62,6 +64,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 3. **Apply Configuration**
+
    ```bash
    task configure
    task talos:generate-config
@@ -69,6 +72,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 4. **Verify**
+
    ```bash
    kubectl get nodes
    ```
@@ -76,12 +80,14 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Upgrading Talos Version
 
 1. **Update Version**
+
    ```yaml
    # Edit talos/talenv.yaml:
    talosVersion: "v1.8.0"  # New version
    ```
 
 2. **Regenerate and Apply** (one node at a time)
+
    ```bash
    task talos:generate-config
    task talos:upgrade-node IP=192.168.1.10
@@ -95,12 +101,14 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Upgrading Kubernetes Version
 
 1. **Update Version**
+
    ```yaml
    # Edit talos/talenv.yaml:
    kubernetesVersion: "v1.30.0"  # New version
    ```
 
 2. **Apply Upgrade**
+
    ```bash
    task talos:upgrade-k8s
    ```
@@ -113,6 +121,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    - Specific node: `templates/config/talos/patches/<node-name>/*.yaml.j2`
 
 2. **Apply Changes**
+
    ```bash
    task configure
    task talos:generate-config
@@ -122,6 +131,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Adding a New Application
 
 1. **Create Directory Structure**
+
    ```
    templates/config/kubernetes/apps/<namespace>/<app-name>/
    ├── ks.yaml.j2
@@ -132,6 +142,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 2. **Add to Namespace Kustomization**
+
    ```yaml
    # templates/config/kubernetes/apps/<namespace>/kustomization.yaml.j2
    resources:
@@ -140,6 +151,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 3. **Render and Deploy**
+
    ```bash
    task configure
    git add -A && git commit -m "Add <app-name>" && git push
@@ -149,12 +161,14 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Rotating Secrets
 
 1. **Generate New Secret**
+
    ```bash
    # Example: new Age key
    age-keygen -o age.key.new
    ```
 
 2. **Re-encrypt All Secrets**
+
    ```bash
    # Update .sops.yaml with new public key
    # Re-encrypt each secret:
@@ -162,6 +176,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
    ```
 
 3. **Deploy**
+
    ```bash
    git add -A && git commit -m "Rotate secrets" && git push
    ```
@@ -173,6 +188,7 @@ All operations use [go-task](https://taskfile.dev/). Run `task --list` for avail
 ### Flux Issues
 
 **Check Flux Status**
+
 ```bash
 flux check
 flux get sources git -A
@@ -181,6 +197,7 @@ flux get hr -A
 ```
 
 **Force Reconciliation**
+
 ```bash
 task reconcile
 # Or for specific resource:
@@ -189,6 +206,7 @@ flux reconcile hr -n network envoy-gateway
 ```
 
 **View Flux Logs**
+
 ```bash
 kubectl -n flux-system logs deploy/source-controller
 kubectl -n flux-system logs deploy/kustomize-controller
@@ -207,6 +225,7 @@ kubectl -n flux-system logs deploy/helm-controller
 ### Talos Issues
 
 **Check Node Status**
+
 ```bash
 talosctl health -n <node-ip>
 talosctl services -n <node-ip>
@@ -214,12 +233,14 @@ talosctl dmesg -n <node-ip>
 ```
 
 **Etcd Issues**
+
 ```bash
 talosctl etcd status -n <control-plane-ip>
 talosctl etcd members -n <control-plane-ip>
 ```
 
 **Reset Stuck Node**
+
 ```bash
 talosctl reset --nodes <node-ip> --graceful=false
 ```
@@ -227,18 +248,21 @@ talosctl reset --nodes <node-ip> --graceful=false
 ### Cilium Issues
 
 **Check Cilium Status**
+
 ```bash
 cilium status
 cilium connectivity test
 ```
 
 **Debug Networking**
+
 ```bash
 kubectl -n kube-system exec -it ds/cilium -- cilium status
 kubectl -n kube-system exec -it ds/cilium -- cilium bpf lb list
 ```
 
 **L2 Announcements Not Working**
+
 ```bash
 # Check CiliumL2AnnouncementPolicy
 kubectl get ciliuml2announcementpolicy -A
@@ -248,6 +272,7 @@ kubectl get ciliumbgpnodeconfigoverride -A
 ### Certificate Issues
 
 **Check cert-manager**
+
 ```bash
 kubectl get certificates -A
 kubectl get certificaterequests -A
@@ -256,6 +281,7 @@ kubectl get challenges -A
 ```
 
 **Debug Certificate**
+
 ```bash
 kubectl -n network describe certificate wildcard
 kubectl -n cert-manager logs deploy/cert-manager
@@ -264,6 +290,7 @@ kubectl -n cert-manager logs deploy/cert-manager
 ### DNS Issues
 
 **Internal DNS (CoreDNS)**
+
 ```bash
 kubectl -n kube-system logs deploy/coredns
 # Test from pod:
@@ -271,6 +298,7 @@ kubectl run -it --rm debug --image=busybox -- nslookup kubernetes
 ```
 
 **Split DNS (k8s-gateway) - Default**
+
 ```bash
 kubectl -n network logs deploy/k8s-gateway
 # Test from outside cluster:
@@ -278,6 +306,7 @@ dig @<cluster_dns_gateway_addr> echo.<cloudflare_domain>
 ```
 
 **Split DNS (unifi-dns) - When UniFi configured**
+
 ```bash
 kubectl -n network logs deploy/unifi-dns-external-dns
 # Check UniFi controller for DNS records
@@ -285,6 +314,7 @@ kubectl -n network logs deploy/unifi-dns-external-dns
 ```
 
 **External DNS (cloudflare-dns)**
+
 ```bash
 kubectl -n network logs deploy/cloudflare-dns-external-dns
 # Verify Cloudflare DNS records via dashboard or API
@@ -351,11 +381,13 @@ kubectl get secrets -A -o yaml > secrets-backup.yaml
 ### Recovery from Git
 
 1. **Full Cluster Reset**
+
    ```bash
    task talos:reset  # Destructive!
    ```
 
 2. **Re-bootstrap**
+
    ```bash
    task bootstrap:talos
    task bootstrap:apps

@@ -178,6 +178,7 @@ spec:
 The implementation uses dual network policies:
 
 1. **CiliumNetworkPolicy** - FQDN-based egress to LLM providers:
+
 ```yaml
 egress:
   - toFQDNs:
@@ -359,6 +360,7 @@ litellm_settings:
 ```
 
 **Span Attributes (v1.81.0+):**
+
 - Request/response attached to parent "Received Proxy Server Request" span
 - Supports privacy controls (`mask_input`, `mask_output`)
 
@@ -380,6 +382,7 @@ litellm_settings:
 ### Grafana Dashboard
 
 LiteLLM provides maintained Grafana dashboards:
+
 - Repository: `github.com/BerriAI/litellm/tree/main/cookbook/litellm_proxy_server/grafana_dashboard`
 
 Deployment via ConfigMap with `grafana_dashboard: "1"` label.
@@ -401,6 +404,7 @@ env:
 ```
 
 **Benefits over direct integration:**
+
 - Standardized OpenTelemetry protocol
 - All metadata fields supported as span attributes (prefixed with `langfuse.`)
 - Better tracing correlation with Tempo
@@ -447,6 +451,7 @@ general_settings:
 ### PostgreSQL Cluster
 
 LiteLLM requires PostgreSQL for:
+
 - Virtual key management
 - User/team data
 - Spend tracking
@@ -750,6 +755,7 @@ guardrails:
 ```
 
 **Considerations:**
+
 - Presidio containers add ~200MB memory overhead
 - Multi-language support: English, Spanish, German, French
 - Custom entity recognizers via JSON configuration
@@ -1742,6 +1748,7 @@ LANGFUSE_SECRET_KEY: "<encrypted>"
 ### LLM Provider Costs
 
 LiteLLM tracks costs automatically per user/team/key. Consider:
+
 - Setting budget limits per API key
 - Enabling cost alerts
 - Using Enterprise for detailed reporting
@@ -1890,6 +1897,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 #### First Reflection Cycle - Architecture & Conventions
 
 **Validation Performed:**
+
 1. ✅ Task adherence verified against original research objectives
 2. ✅ Information completeness assessed - 17 feature areas documented
 3. ✅ Cross-referenced with project conventions:
@@ -1899,6 +1907,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 4. ✅ Compared against Keycloak implementation patterns (postgres-cnpg.yaml.j2, secret.sops.yaml.j2, ks.yaml.j2)
 
 **Updates Applied:**
+
 - Added resource limits to CNPG configuration (matching Keycloak pattern)
 - Added conditional affinity rules for HA deployments
 - Added complete secret.sops.yaml.j2 template following project conventions
@@ -1909,6 +1918,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 #### Second Reflection Cycle - Model Configuration Analysis
 
 **Validation Performed:**
+
 1. ✅ Analyzed old cluster ConfigMap (`configmap.yaml.j2` - 865 lines)
 2. ✅ Documented all 26 models across 4 providers:
    - Azure OpenAI US East: 7 models (GPT-4.1 series)
@@ -1919,6 +1929,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 4. ✅ Validated special model configurations (health check exceptions, reasoning modes)
 
 **Updates Applied:**
+
 - Updated Required Variables to match multi-region Azure pattern (US East + US East2)
 - Added Azure Cohere credentials to Optional Variables
 - Documented credential list pattern with 3 Azure credentials
@@ -1929,6 +1940,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 - Added 3 new risks to Risk Assessment
 
 **Critical Patterns Preserved:**
+
 - `disable_background_health_check: true` for 5 non-standard models
 - `cache_control_injection_points` for prompt caching optimization
 - `thinking` and `merge_reasoning_content_in_choices` for reasoning models
@@ -1948,6 +1960,7 @@ LiteLLM tracks costs automatically per user/team/key. Consider:
 | Model access groups | ✅ Documented | May need renaming for new cluster |
 
 #### Remaining Considerations
+
 - No CRD split pattern needed (bjw-s app-template is standard Helm)
 - Keycloak client must be added to realm-import.yaml.j2 during implementation
 - RustFS bucket creation requires manual Console UI step (documented in checklist)

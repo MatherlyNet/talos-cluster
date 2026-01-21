@@ -9,6 +9,7 @@
 
 > [!NOTE]
 > **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+>
 > - OIDC SecurityPolicy template (`securitypolicy-oidc.yaml.j2`) with dynamic redirect URL support
 > - JWT SecurityPolicy template (`securitypolicy-jwt.yaml.j2`) with claim-to-header extraction
 > - Keycloak realm-import with auto-bootstrapped OIDC client and social IdP support
@@ -22,6 +23,7 @@
 This research document provides a comprehensive guide for integrating Envoy Gateway's SecurityPolicy with Keycloak as the OIDC provider, enabling social identity provider authentication (Google, GitHub, Microsoft Entra ID) for all protected applications.
 
 **Key Findings:**
+
 - Envoy Gateway supports two distinct security approaches: **OIDC Authentication** (browser-based SSO) and **JWT Authentication** (API/programmatic access)
 - The current cluster implementation already has both SecurityPolicy types configured correctly
 - Social IdP integration happens at the **Keycloak layer**, not the Envoy Gateway layer
@@ -31,6 +33,7 @@ This research document provides a comprehensive guide for integrating Envoy Gate
 **Validation Status:** ✅ All configurations validated against official Envoy Gateway documentation and source code (January 7, 2026)
 
 **Architecture Overview:**
+
 ```
 User Browser
      │
@@ -114,6 +117,7 @@ Envoy Gateway provides multiple security mechanisms via SecurityPolicy CRD. Base
 **Reference:** [Envoy Gateway OIDC Authentication](https://gateway.envoyproxy.io/latest/tasks/security/oidc/)
 
 Handles complete browser-based authentication flow:
+
 - Redirects unauthenticated users to identity provider
 - Manages OAuth2 authorization code flow
 - Stores tokens in secure HTTP-only cookies
@@ -126,6 +130,7 @@ Handles complete browser-based authentication flow:
 **Reference:** [Envoy Gateway JWT Authentication](https://gateway.envoyproxy.io/latest/tasks/security/jwt-authentication/)
 
 Validates pre-existing JWT tokens:
+
 - Extracts bearer token from Authorization header
 - Validates signature against JWKS
 - Extracts claims to headers for backend services
@@ -138,6 +143,7 @@ Validates pre-existing JWT tokens:
 **Reference:** [Envoy Gateway JWT Claim Authorization](https://gateway.envoyproxy.io/latest/tasks/security/jwt-claim-authorization/)
 
 Enables fine-grained access control based on JWT claims:
+
 - Role-based access control via claim inspection
 - Scope validation for specific permissions
 - Default deny with explicit allow rules
@@ -149,6 +155,7 @@ Enables fine-grained access control based on JWT claims:
 **Reference:** [Envoy Gateway External Auth](https://gateway.envoyproxy.io/latest/tasks/security/ext-auth/)
 
 Delegates authorization decisions to external service:
+
 - HTTP or gRPC backend for custom logic
 - Flexible policy evaluation
 - Custom header propagation
@@ -277,6 +284,7 @@ Since this cluster uses `v0.0.0-latest`, the following features are available bu
 ### Breaking Change Alert: refreshToken
 
 **v1.6 changed default behavior:**
+
 ```yaml
 # OLD behavior (v1.5 and earlier): No automatic token refresh
 # NEW behavior (v1.6+): Auto-refresh enabled by default
@@ -381,6 +389,7 @@ cookieDomain: "#{ oidc_cookie_domain }#"
 ```
 
 **Required cluster.yaml setting:**
+
 ```yaml
 oidc_cookie_domain: ".matherly.net"
 ```
@@ -444,11 +453,13 @@ From documentation: "OIDC will not work in a plaintext HTTP listener environment
 ### Token Storage
 
 Envoy Gateway manages three cookies:
+
 - `OauthHMAC` - Token verification
 - `OauthExpires` - Token lifetime tracking
 - `IdToken` - The actual JWT
 
 All cookies are:
+
 - HttpOnly (no JavaScript access)
 - Secure (HTTPS only)
 - SameSite=Lax (CSRF protection)
@@ -473,6 +484,7 @@ Your cluster already manages this via `secret-oidc.sops.yaml`.
 ### Logout Considerations
 
 The `logoutPath` configuration triggers OAuth2 filter cleanup, but for complete logout:
+
 1. Envoy Gateway clears its cookies
 2. User should also be logged out of Keycloak (RP-initiated logout)
 3. Optionally, logout from upstream IdP (Google, etc.)
@@ -495,9 +507,11 @@ The current implementation handles #1. Full federated logout may require additio
 1. **Clear all browser cookies** for `*.matherly.net`
 
 2. **Navigate to first protected app:**
+
    ```
    https://hubble.matherly.net
    ```
+
    - Should redirect to `sso.matherly.net`
    - Should show login options (local + configured social IdPs)
 
@@ -507,16 +521,20 @@ The current implementation handles #1. Full federated logout may require additio
    - Should redirect back to Hubble UI
 
 4. **Test SSO (without logging out):**
+
    ```
    https://grafana.matherly.net
    ```
+
    - Should NOT show login page
    - Should be automatically authenticated
 
 5. **Test another app:**
+
    ```
    https://rustfs.matherly.net
    ```
+
    - Should also be automatically authenticated
 
 6. **Test logout:**
@@ -548,6 +566,7 @@ curl -s https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/cert
 ## Sources
 
 ### Official Documentation (Validated January 2026)
+
 - [Envoy Gateway OIDC Authentication](https://gateway.envoyproxy.io/latest/tasks/security/oidc/)
 - [Envoy Gateway JWT Authentication](https://gateway.envoyproxy.io/latest/tasks/security/jwt-authentication/)
 - [Envoy Gateway JWT Claim Authorization](https://gateway.envoyproxy.io/latest/tasks/security/jwt-claim-authorization/)
@@ -556,6 +575,7 @@ curl -s https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/cert
 - [Compatibility Matrix](https://gateway.envoyproxy.io/news/releases/matrix/) - **Critical for K8s version support**
 
 ### Release Notes (Version Research)
+
 - [v1.6.0 Release Notes](https://gateway.envoyproxy.io/news/releases/notes/v1.6.0/) - refreshToken breaking change
 - [v1.5.0 Release Notes](https://gateway.envoyproxy.io/news/releases/notes/v1.5.0/) - SameSite, RP-initiated logout
 - [v1.3.0 Release Notes](https://gateway.envoyproxy.io/news/releases/notes/v1.3.0/) - API Key auth, cookieDomain docs
@@ -563,12 +583,14 @@ curl -s https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/cert
 - [GitHub Releases](https://github.com/envoyproxy/gateway/releases)
 
 ### Community Resources
+
 - [Jimmy Song - Envoy Gateway OIDC Tutorial](https://jimmysong.io/blog/envoy-gateway-oidc/)
 - [JBW - Integrating Keycloak OIDC with Envoy Gateway](https://www.jbw.codes/blog/Integrating-Keycloak-OIDC-with-Envoy-API-Gateway)
 - [Envoy Gateway OIDC Demo by Zhaohuabing](https://www.zhaohuabing.com/post/2025-04-20-envoy-gateway-oidc-demo/)
 - [Authelia - Envoy Gateway OIDC Integration](https://www.authelia.com/integration/openid-connect/clients/envoy-gateway/)
 
 ### GitHub Discussions
+
 - [OIDC authentication using Entra ID](https://github.com/envoyproxy/gateway/discussions/4686)
 - [Envoy Gateway Self-Signed Certificate Issue](https://github.com/envoyproxy/gateway/issues/4838)
 - [Combining OIDC and JWT authentication](https://github.com/envoyproxy/gateway/discussions/2425)
@@ -698,6 +720,7 @@ The previous document's section on "Native Grafana OAuth + Gateway" is correct b
 ### No Corrections Needed
 
 The core content of the previous research document is accurate:
+
 - Identity provider configuration in Keycloak
 - Token exchange capabilities
 - Security considerations

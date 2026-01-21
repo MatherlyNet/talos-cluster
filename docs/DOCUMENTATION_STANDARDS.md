@@ -3,6 +3,7 @@
 **Purpose**: Establish consistent, high-quality documentation standards for all AI assistants working with this Talos/Kubernetes GitOps cluster.
 
 **Scope**: These standards MUST be applied when creating:
+
 - Comprehensive analysis documents
 - Validation reports
 - Implementation guides
@@ -12,6 +13,7 @@
 - Any documentation intended for reference or production use
 
 **Trigger Conditions**: Apply these standards automatically when:
+
 - User requests "document", "analyze", "report", "validate", "assess"
 - Creating .md files in `docs/` or `documentation/` directories
 - Producing comprehensive technical documentation
@@ -30,6 +32,7 @@
 **SHOULD**: Provide verification commands so readers can independently reproduce findings.
 
 **Pattern**:
+
 ```markdown
 ## Evidence Trail
 
@@ -39,6 +42,7 @@
 ```
 
 **Project-Specific Examples**:
+
 ```markdown
 | Finding | Evidence Method | Verification Command |
 |---------|----------------|----------------------|
@@ -60,6 +64,7 @@
 **SHOULD**: Provide a Quick Navigation Index for documents > 200 lines.
 
 **Pattern**:
+
 ```markdown
 ## Quick Navigation Index
 
@@ -69,6 +74,7 @@
 ```
 
 **Project-Specific Examples**:
+
 ```markdown
 ✅ CORRECT: Reference template source
 Issue in `templates/config/kubernetes/apps/network/envoy-gateway/app/helmrelease.yaml.j2:42`
@@ -94,6 +100,7 @@ Reference `cluster.yaml` lines or `templates/scripts/plugin.py` for computed val
 **SHOULD**: Use correct **makejinja delimiters** for templates.
 
 **Template Delimiters (Critical)**:
+
 ```
 Block:    #% ... %#
 Variable: #{ ... }#
@@ -101,6 +108,7 @@ Comment:  #| ... #|  (SYMMETRICAL - both ends use #|)
 ```
 
 **Pattern**:
+
 ```markdown
 ### 💾 COPY-PASTE READY: [Description]
 
@@ -151,6 +159,7 @@ spec:
 ```
 
 **Validation**:
+
 ```bash
 # Render templates
 task configure
@@ -185,6 +194,7 @@ sops --encrypt --in-place kubernetes/flux/vars/my-secret.sops.yaml
 ```
 
 **Validation**:
+
 ```bash
 # Verify encryption
 head -n 10 kubernetes/flux/vars/my-secret.sops.yaml
@@ -206,6 +216,7 @@ sops -d kubernetes/flux/vars/my-secret.sops.yaml
 **SHOULD**: Show expected output and failure indicators.
 
 **Pattern**:
+
 ```markdown
 ## Validation Command Reference
 
@@ -237,6 +248,7 @@ sops -d kubernetes/flux/vars/my-secret.sops.yaml
 **SHOULD**: Include Mermaid diagrams for complex relationships (see `docs/DIAGRAMS.md` for examples).
 
 **SHOULD**: Use emoji consistently:
+
 - ✅ Success/Correct
 - ❌ Error/Missing/Critical
 - ⚠️ Warning/Caution
@@ -251,6 +263,7 @@ sops -d kubernetes/flux/vars/my-secret.sops.yaml
 - 🛡️ Security
 
 **Pattern**:
+
 ```markdown
 | Status | Item | Details |
 |--------|------|---------|
@@ -259,6 +272,7 @@ sops -d kubernetes/flux/vars/my-secret.sops.yaml
 ```
 
 **Mermaid Diagram Example (GitOps Flow)**:
+
 ```mermaid
 graph LR
     A[Git Commit] --> B[Flux Detects Change]
@@ -277,12 +291,14 @@ graph LR
 **SHOULD**: Document how recommendations affect automation pipelines when relevant.
 
 **When to Apply**:
+
 - Configuration changes affecting `task configure`
 - Infrastructure modifications (OpenTofu)
 - Template system changes
 - SOPS encryption changes
 
 **Pattern**:
+
 ```markdown
 ## CI/CD Impact
 
@@ -300,6 +316,7 @@ graph LR
 ```
 
 **Project-Specific Example**:
+
 ```markdown
 ## CI/CD Impact
 
@@ -327,12 +344,14 @@ Use `task reconcile` to force immediate sync.
 **SHOULD**: Document Talos-specific and Kubernetes-specific patterns unique to this cluster.
 
 **When to Apply**:
+
 - Talos configuration changes
 - Kubernetes resource creation
 - Helm chart deployment
 - Network policy creation
 
 **Pattern**:
+
 ```markdown
 ## Talos Patterns
 
@@ -368,11 +387,13 @@ Use `task reconcile` to force immediate sync.
 **SHOULD**: Provide step-by-step debugging procedures.
 
 **When to Apply**:
+
 - Troubleshooting guides
 - Implementation documentation
 - Configuration guides
 
 **Pattern**:
+
 ```markdown
 ## Failure Mode Catalog
 
@@ -404,6 +425,7 @@ Use `task reconcile` to force immediate sync.
 **Scenario**: Running `task configure` fails with Jinja2 syntax error
 
 **Error Message**:
+
 ```
 jinja2.exceptions.TemplateSyntaxError: unexpected char '#' at 42
 ```
@@ -411,11 +433,13 @@ jinja2.exceptions.TemplateSyntaxError: unexpected char '#' at 42
 **Root Cause**: Incorrect makejinja delimiters used (e.g., `{{ }}` instead of `#{ }#`)
 
 **Debug Steps**:
+
 1. Check error message for file path and line number
 2. Inspect template file at specified line
 3. Verify delimiter syntax: `#% %#` for blocks, `#{ }#` for variables, `#| |#` for comments
 
 **Fix**:
+
 ```bash
 # Correct the template delimiters
 # WRONG: {{ cluster_name }}
@@ -430,6 +454,7 @@ task configure
 **Scenario**: Flux cannot reconcile kustomization
 
 **Error Message**:
+
 ```
 kustomization 'flux-system/cluster' reconciliation failed:
 kustomize build failed: accumulating resources:
@@ -440,12 +465,14 @@ evalsymlink failure on '/helmrelease.yaml'
 **Root Cause**: Invalid Kustomization resources list or missing file
 
 **Debug Steps**:
+
 1. Check kustomization status: `flux get ks -A`
 2. Inspect kustomization events: `kubectl describe ks <name> -n flux-system`
 3. Verify all files listed in `kustomization.yaml` exist
 4. Test kustomize build locally: `kustomize build kubernetes/apps/<ns>/<app>/app/`
 
 **Fix**:
+
 ```bash
 # Verify kustomization.yaml resources list
 cat kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
@@ -463,6 +490,7 @@ flux reconcile ks <name> -n flux-system
 **Scenario**: Flux cannot decrypt SOPS-encrypted secrets
 
 **Error Message**:
+
 ```
 Failed to decrypt: no key could decrypt the data
 ```
@@ -470,12 +498,14 @@ Failed to decrypt: no key could decrypt the data
 **Root Cause**: Age key not available to Flux or incorrect SOPS configuration
 
 **Debug Steps**:
+
 1. Verify Age key secret exists: `kubectl get secret sops-age -n flux-system`
 2. Check secret has correct key: `kubectl get secret sops-age -n flux-system -o yaml`
 3. Verify `.sops.yaml` configuration matches Age public key
 4. Test local decryption: `sops -d <file>.sops.yaml`
 
 **Fix**:
+
 ```bash
 # Verify Age key is correct
 cat .sops.yaml
@@ -500,11 +530,13 @@ flux reconcile ks cluster --with-source
 **SHOULD**: Include validation scripts for common tasks.
 
 **When to Apply**:
+
 - Creating validation procedures
 - Implementation guides with testable outcomes
 - Configuration guides
 
 **Pattern**:
+
 ```markdown
 ## Automated Testing
 
@@ -569,6 +601,7 @@ echo "✅ Health check complete"
 ```
 
 **Usage**:
+
 ```bash
 chmod +x scripts/health-check.sh
 ./scripts/health-check.sh
@@ -620,6 +653,7 @@ echo "✅ Validation complete"
 ```
 
 **Usage**:
+
 ```bash
 chmod +x scripts/validate-templates.sh
 ./scripts/validate-templates.sh
@@ -632,6 +666,7 @@ chmod +x scripts/validate-templates.sh
 Before finalizing documentation, verify:
 
 ### Core Standards (MUST)
+
 - [ ] All claims validated through evidence (Standard 1)
 - [ ] Specific line references to **template files** (Standard 2)
 - [ ] Code examples are copy-paste ready with correct delimiters (Standard 3)
@@ -639,12 +674,14 @@ Before finalizing documentation, verify:
 - [ ] Visual elements used appropriately (Standard 5)
 
 ### Enhanced Standards (SHOULD - when relevant)
+
 - [ ] CI/CD impact documented if applicable (Standard 6)
 - [ ] Talos/Kubernetes patterns documented (Standard 7)
 - [ ] Failure modes documented with debugging steps (Standard 8)
 - [ ] Automated testing provided when possible (Standard 9)
 
 ### Quality Checks
+
 - [ ] Document renders correctly in markdown viewer
 - [ ] All code blocks have proper syntax highlighting
 - [ ] All commands tested and produce expected output
@@ -655,6 +692,7 @@ Before finalizing documentation, verify:
 - [ ] File paths reference templates/, not generated files
 
 ### Project-Specific Checks
+
 - [ ] makejinja delimiters correct: `#% %#`, `#{ }#`, `#| |#`
 - [ ] SOPS encryption verified for secrets
 - [ ] Flux kustomization references validated

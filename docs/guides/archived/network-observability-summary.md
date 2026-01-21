@@ -11,6 +11,7 @@ Comprehensive network observability for your Talos/Cilium/Envoy Gateway infrastr
 ## Quick Start (Recommended Order)
 
 ### Phase 1: Enable Hubble (Highest Priority)
+
 **Impact:** Network flow visibility at L3/L4/DNS level
 
 ```yaml
@@ -36,6 +37,7 @@ hubble:
 ---
 
 ### Phase 2: CoreDNS Monitoring
+
 **Impact:** DNS resolution health tracking
 
 ```yaml
@@ -59,6 +61,7 @@ spec:
 ---
 
 ### Phase 3: Enhance Envoy Metrics
+
 **Impact:** Gateway-level RED metrics (Rate, Errors, Duration)
 
 ```yaml
@@ -244,6 +247,7 @@ Create a single **Infrastructure Network Health** dashboard with:
 ### Workaround: Log-Based + CLI
 
 1. **Enable BGP debug logging:**
+
    ```yaml
    # cilium helmrelease.yaml.j2
    debug:
@@ -252,11 +256,13 @@ Create a single **Infrastructure Network Health** dashboard with:
    ```
 
 2. **Manual verification:**
+
    ```bash
    kubectl -n kube-system exec -it ds/cilium -- cilium bgp peers
    ```
 
 3. **Log-based alert (requires Loki):**
+
    ```yaml
    - alert: CiliumBGPPeerDown
      expr: count_over_time({app="cilium"} |~ "BGP.*peer.*down" [5m]) > 0
@@ -288,34 +294,40 @@ Create a single **Infrastructure Network Health** dashboard with:
 ## Deployment Checklist
 
 ### Prerequisites
+
 - [ ] kube-prometheus-stack CRDs installed (`kubectl get crd prometheusrules.monitoring.coreos.com`)
 - [ ] Prometheus deployed and scraping
 - [ ] Grafana deployed (optional but recommended)
 
 ### Phase 1: Hubble
+
 - [ ] Update Cilium HelmRelease with Hubble config
 - [ ] Run `task configure && task reconcile`
 - [ ] Verify: `kubectl get pods -n kube-system -l k8s-app=hubble-relay`
 - [ ] Verify metrics: Port-forward and check `http://localhost:4245/metrics`
 
 ### Phase 2: CoreDNS
+
 - [ ] Create ServiceMonitor for CoreDNS
 - [ ] Update kustomization.yaml.j2
 - [ ] Run `task configure && task reconcile`
 - [ ] Verify: `kubectl get servicemonitor -n kube-system coredns`
 
 ### Phase 3: Envoy
+
 - [ ] Update PodMonitor with relabelings
 - [ ] Run `task configure && task reconcile`
 - [ ] Verify: `kubectl get podmonitor -n network envoy-proxy -o yaml`
 
 ### Phase 4: PrometheusRules
+
 - [ ] Create rules-network.yaml.j2 with alerts
 - [ ] Run `task configure && task reconcile`
 - [ ] Verify: `kubectl get prometheusrule -n monitoring network-infrastructure`
 - [ ] Check Prometheus UI: Status → Rules
 
 ### Phase 5: Grafana Dashboards
+
 - [ ] Download dashboard JSONs from Grafana.com
 - [ ] Create ConfigMaps with `grafana_dashboard: "1"` label
 - [ ] Apply to cluster
@@ -326,6 +338,7 @@ Create a single **Infrastructure Network Health** dashboard with:
 ## Quick Troubleshooting
 
 ### No Hubble flows visible
+
 ```bash
 # Check Hubble Relay
 kubectl get pods -n kube-system -l k8s-app=hubble-relay
@@ -338,6 +351,7 @@ hubble observe
 ```
 
 ### Envoy metrics not in Prometheus
+
 ```bash
 # Check PodMonitor
 kubectl get podmonitor -n network envoy-proxy -o yaml
@@ -347,6 +361,7 @@ kubectl exec -n network <envoy-pod> -- wget -qO- localhost:19001/stats/prometheu
 ```
 
 ### CoreDNS metrics missing
+
 ```bash
 # Check ServiceMonitor
 kubectl get servicemonitor -n kube-system coredns -o yaml
@@ -356,6 +371,7 @@ kubectl exec -n kube-system <coredns-pod> -- wget -qO- localhost:9153/metrics | 
 ```
 
 ### BGP peer not establishing
+
 ```bash
 # Check Cilium logs
 kubectl -n kube-system logs ds/cilium | grep -i bgp

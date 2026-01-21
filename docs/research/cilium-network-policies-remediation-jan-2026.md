@@ -40,16 +40,19 @@ Both components are exposed via HTTPRoute through Envoy Gateway. Hubble UI suppo
 ### 1.1 Component Analysis
 
 **Labels (from Cilium HelmRelease):**
+
 ```yaml
 k8s-app: hubble-ui        # UI frontend
 k8s-app: hubble-relay     # gRPC relay to Hubble agents
 ```
 
 **Ports:**
+
 - Hubble UI: TCP/80 (HTTP frontend)
 - Hubble Relay: TCP/4245 (gRPC)
 
 **Traffic Flows:**
+
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  Envoy Gateway  │────▶│   Hubble UI     │────▶│  Hubble Relay   │
@@ -77,6 +80,7 @@ Per NIST SP 800-207 Zero Trust principles:
 **File**: `templates/config/kubernetes/apps/kube-system/network-policies/app/hubble-ui.yaml.j2`
 
 > **CRITICAL CORRECTIONS APPLIED:**
+>
 > 1. Gateway label corrected: `gateway.networking.k8s.io/gateway-name` (not `gateway.envoyproxy.io/owning-gateway-name`)
 > 2. Added `enableDefaultDeny` with mode-based enforcement per codebase convention
 > 3. Added namespace label for DNS egress (`io.kubernetes.pod.namespace: kube-system`)
@@ -214,6 +218,7 @@ spec:
 **File**: `templates/config/kubernetes/apps/kube-system/network-policies/app/kustomization.yaml.j2`
 
 Add to resources list:
+
 ```yaml
 #% if hubble_enabled | default(false) %#
   - ./hubble-ui.yaml
@@ -237,16 +242,19 @@ Add to resources list:
 ### 2.1 Component Analysis
 
 **Labels (from HelmRelease):**
+
 ```yaml
 app.kubernetes.io/name: rustfs
 app.kubernetes.io/instance: rustfs
 ```
 
 **Ports:**
+
 - S3 API: TCP/9000
 - Console UI: TCP/9001
 
 **Traffic Flows:**
+
 ```
 ┌─────────────────┐         ┌─────────────────┐
 │  Envoy Gateway  │────────▶│     RustFS      │
@@ -280,6 +288,7 @@ Per NIST SP 800-207 and MinIO/S3 security best practices:
 **File**: `templates/config/kubernetes/apps/storage/rustfs/app/networkpolicy.yaml.j2`
 
 > **CRITICAL CORRECTIONS APPLIED:**
+>
 > 1. Gateway label corrected: `gateway.networking.k8s.io/gateway-name` (not `gateway.envoyproxy.io/owning-gateway-name`)
 > 2. Added `enableDefaultDeny` with mode-based enforcement per codebase convention
 > 3. Fixed label selector patterns (combined `io.kubernetes.pod.namespace` + app labels)
@@ -484,6 +493,7 @@ spec:
 **File**: `templates/config/kubernetes/apps/storage/rustfs/app/kustomization.yaml.j2`
 
 Add to resources list:
+
 ```yaml
 #% if network_policies_enabled | default(false) %#
   - ./networkpolicy.yaml
@@ -581,6 +591,7 @@ Both components use the dual policy pattern where applicable:
 ### 6.2 Patterns Validated Against Codebase
 
 Reference files analyzed:
+
 - `cache/dragonfly/app/networkpolicy.yaml.j2` - Audit/enforce mode pattern
 - `ai-system/litellm/app/networkpolicy.yaml.j2` - Multi-policy pattern, CNPG labels
 - `monitoring/network-policies/app/grafana.yaml.j2` - Gateway label verification

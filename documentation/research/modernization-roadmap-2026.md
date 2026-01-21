@@ -20,6 +20,7 @@ This roadmap defines a phased approach to modernize the matherlynet-talos-cluste
 **Objective:** Enforce Kubernetes Pod Security Standards (restricted mode)
 
 **Implementation Plan:**
+
 ```yaml
 # 1. Create audit ConfigMap with policy rules
 apiVersion: admissionregistration.k8s.io/v1
@@ -45,6 +46,7 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Policy definition and testing
 - Day 1: Deployment to staging
 - Week 1: Monitor audit logs for violations
@@ -52,6 +54,7 @@ spec:
 - Week 3: Full enforcement across cluster
 
 **Success Criteria:**
+
 - Zero audit violations in critical namespaces
 - All workloads pass policy validation
 - Documentation updated with policy details
@@ -67,6 +70,7 @@ spec:
 **Implementation Plan:**
 
 **Step 1: Add Trivy scanning to e2e workflow (Day 1)**
+
 ```yaml
 name: "Container Security Scan"
 
@@ -93,6 +97,7 @@ jobs:
 ```
 
 **Step 2: Integrate with Flux Image Automation (Day 2)**
+
 ```yaml
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageScanPolicy
@@ -106,6 +111,7 @@ spec:
 ```
 
 **Step 3: Alert on vulnerabilities (Day 2)**
+
 ```yaml
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
@@ -121,6 +127,7 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Trivy CI/CD integration
 - Day 1: Test with sample vulnerabilities
 - Day 2: Flux Image Automation setup
@@ -129,6 +136,7 @@ spec:
 - Week 2: Documentation and runbooks
 
 **Success Criteria:**
+
 - Scans run on every container image
 - CRITICAL vulnerabilities block deployment
 - Alerts route to security team
@@ -137,6 +145,7 @@ spec:
 **Effort:** 1-2 days (1-2 engineers)
 
 **Tools Required:**
+
 - Trivy (aquasecurity/trivy-action)
 - Flux image-reflector-controller
 - Flux image-automation-controller
@@ -148,23 +157,27 @@ spec:
 **Objective:** Add liveness, readiness, and startup probes to all deployments
 
 **Phase 1: Critical Services (Day 1)**
+
 - Cilium daemon set
 - CoreDNS deployment
 - Envoy Gateway deployment
 - Flux controllers (source, kustomize, helm)
 
 **Phase 2: Observability (Day 2)**
+
 - VictoriaMetrics
 - Prometheus/AlertManager
 - Loki
 - Grafana
 
 **Phase 3: Network Services (Day 2)**
+
 - cloudflare-tunnel
 - external-dns
 - k8s-gateway
 
 **Template:**
+
 ```yaml
 # Add to helmrelease.yaml values
 livenessProbe:
@@ -196,6 +209,7 @@ startupProbe:
 ```
 
 **Timeline:**
+
 - Day 1: Critical services probes
 - Day 2: Observability stack probes
 - Day 2: Network services probes
@@ -204,6 +218,7 @@ startupProbe:
 - Week 2: Fine-tune thresholds
 
 **Success Criteria:**
+
 - All deployments have at least readinessProbe
 - Critical services have liveness + readiness
 - Slow-starting apps have startup probes
@@ -218,6 +233,7 @@ startupProbe:
 **Objective:** Guarantee high-availability for critical services during node disruptions
 
 **Services to protect:**
+
 1. Cilium daemon set (at least 2 available)
 2. Flux controllers (at least 1 available)
 3. CoreDNS (at least 1 available)
@@ -225,6 +241,7 @@ startupProbe:
 5. Monitoring (AlertManager: 2, Prometheus: 1)
 
 **Template:**
+
 ```yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -240,12 +257,14 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: PDB creation for all services
 - Day 1: Testing with kubectl drain
 - Day 2: Validation and monitoring
 - Week 1: Documentation
 
 **Success Criteria:**
+
 - PDBs prevent eviction of critical pods
 - Cluster remains healthy during node drain
 - Monitoring shows PDB enforcement
@@ -263,6 +282,7 @@ spec:
 **Implementation:**
 
 **Step 1: Setup Sigstore credentials (Day 1)**
+
 ```bash
 # Use GitHub OIDC for keyless signing
 export COSIGN_EXPERIMENTAL=1
@@ -270,6 +290,7 @@ export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
 ```
 
 **Step 2: Sign images in release workflow (Day 1)**
+
 ```yaml
 - name: Install cosign
   uses: sigstore/cosign-installer@v3
@@ -286,6 +307,7 @@ export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
 ```
 
 **Step 3: Verify in cluster (Day 2)**
+
 ```yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
@@ -301,12 +323,14 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Sigstore setup and image signing
 - Day 1: Verification in test environment
 - Day 2: Cluster policy enforcement
 - Week 1: Monitoring and rollback procedures
 
 **Success Criteria:**
+
 - All images signed with cosign
 - Signatures verifiable with public key
 - Cluster enforces signature verification
@@ -321,6 +345,7 @@ spec:
 **Objective:** Generate Software Bill of Materials for all releases
 
 **Implementation:**
+
 ```yaml
 - name: Generate SBOM
   uses: cyclonedx/gh-action@v3
@@ -339,10 +364,12 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: SBOM generation workflow
 - Week 1: Include in all releases
 
 **Success Criteria:**
+
 - SBOM generated for every release
 - SBOM attached to container images
 - Publicly accessible via release artifacts
@@ -356,6 +383,7 @@ spec:
 **Objective:** Implement SLSA framework for artifact provenance
 
 **Implementation:**
+
 ```yaml
 # Track artifact provenance
 - name: Generate SLSA provenance
@@ -376,12 +404,14 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: SLSA provenance generation setup
 - Day 1: Provenance verification testing
 - Day 2: Cluster policy for provenance verification
 - Week 1: Documentation
 
 **Success Criteria:**
+
 - SLSA provenance generated for each release
 - Provenance includes build details
 - Cluster verifies provenance before deployment
@@ -391,6 +421,7 @@ spec:
 ---
 
 **Phase 1 Summary:**
+
 - Effort: 8-12 days
 - Risk: LOW (non-breaking changes, audit mode initially)
 - Impact: CRITICAL (security posture improvement)
@@ -404,6 +435,7 @@ spec:
 **Objective:** Scale monitoring components for production reliability
 
 **Target HA Architecture:**
+
 ```
 Prometheus/VictoriaMetrics: 3 replicas
 AlertManager: 3 replicas (with clustering)
@@ -415,6 +447,7 @@ Tempo: 3 replicas
 **Implementation Plan:**
 
 **Step 1: Configure HA for each component (Day 1)**
+
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -442,6 +475,7 @@ spec:
 ```
 
 **Step 2: AlertManager clustering (Day 2)**
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: AlertmanagerConfig
@@ -458,11 +492,13 @@ spec:
 ```
 
 **Step 3: Distributed storage backend (Day 2-3)**
+
 - Configure S3-compatible backend for metrics/logs
 - Implement distributed cache
 - Add load balancer for HA access
 
 **Timeline:**
+
 - Day 1: Prometheus/VictoriaMetrics HA
 - Day 2: AlertManager clustering
 - Day 2: Grafana HA (database backend)
@@ -471,6 +507,7 @@ spec:
 - Week 2: Documentation
 
 **Success Criteria:**
+
 - Each component has 3 replicas
 - Pod anti-affinity prevents co-location
 - Services remain available during pod failure
@@ -485,6 +522,7 @@ spec:
 **Objective:** Define and track Service Level Objectives for critical services
 
 **Phase 1: Define SLOs (Day 1)**
+
 ```
 Kubernetes API Server:
   - Availability: 99.9% (allowing 8.6 hours/month downtime)
@@ -509,6 +547,7 @@ Application Services:
 ```
 
 **Phase 2: Implement SLI metrics (Day 2)**
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -542,6 +581,7 @@ spec:
 ```
 
 **Phase 3: SLO alerts and dashboards (Day 3)**
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -563,6 +603,7 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: SLO definition and documentation
 - Day 2: SLI metric implementation
 - Day 3: Alert and dashboard creation
@@ -570,6 +611,7 @@ spec:
 - Week 2: SLO reporting
 
 **Success Criteria:**
+
 - SLOs defined for all critical services
 - SLI metrics tracked continuously
 - Dashboards show SLO compliance
@@ -615,6 +657,7 @@ spec:
    - Storage usage trends
 
 **Template:**
+
 ```yaml
 apiVersion: grafana.com/v1beta1
 kind: Dashboard
@@ -634,12 +677,14 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Operations + Security dashboards
 - Day 2: App + GitOps dashboards
 - Day 3: Cost + custom dashboards
 - Week 1: Testing and refinement
 
 **Success Criteria:**
+
 - Dashboards load in < 2 seconds
 - Useful for different roles (ops, dev, security)
 - Proactive alerting capability
@@ -649,6 +694,7 @@ spec:
 ---
 
 **Phase 2 Summary:**
+
 - Effort: 6-9 days
 - Risk: LOW
 - Impact: HIGH (operational visibility improvement)
@@ -708,6 +754,7 @@ deny[msg] {
 ```
 
 **Timeline:**
+
 - Day 1: OPA/Gatekeeper installation
 - Day 1: Policy development and testing
 - Day 2: Audit mode deployment
@@ -715,6 +762,7 @@ deny[msg] {
 - Week 2: Enforce policies
 
 **Success Criteria:**
+
 - Policies enforce organization standards
 - Audit logs show compliance
 - Non-compliant resources blocked
@@ -787,6 +835,7 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Chaos Mesh installation
 - Day 1: Experiment design
 - Day 2: Experiment implementation
@@ -795,6 +844,7 @@ spec:
 - Week 1: Automated runs
 
 **Success Criteria:**
+
 - Chaos experiments run without issue
 - System recovers from disruptions
 - Alerts trigger as expected
@@ -809,11 +859,13 @@ spec:
 **Objective:** Add automated validation to CI/CD
 
 **Tools:**
+
 - kube-score (deployment quality)
 - kubeval (schema validation)
 - conftest (policy validation)
 
 **CI/CD Integration:**
+
 ```yaml
 - name: Validate Kubernetes manifests
   run: |
@@ -834,11 +886,13 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Tool setup and testing
 - Day 1: CI/CD integration
 - Week 1: Monitoring
 
 **Success Criteria:**
+
 - All manifests pass schema validation
 - Deployment quality scores improve
 - Policy violations detected early
@@ -848,6 +902,7 @@ spec:
 ---
 
 **Phase 3 Summary:**
+
 - Effort: 6-9 days
 - Risk: MEDIUM (chaos engineering requires careful scheduling)
 - Impact: HIGH (reliability and policy enforcement)
@@ -889,6 +944,7 @@ spec:
    - Pod remediation
 
 **Template:**
+
 ```markdown
 # Runbook: [Service] Failure
 
@@ -921,11 +977,13 @@ spec:
 ```
 
 **Timeline:**
+
 - Day 1: Node + Cluster API + etcd runbooks
 - Day 2: Network + Storage runbooks
 - Day 3: Testing and refinement
 
 **Success Criteria:**
+
 - Runbooks documented and tested
 - Team trained on procedures
 - Response time < 30 minutes
@@ -963,11 +1021,13 @@ spec:
    - Custom applications
 
 **Timeline:**
+
 - Days 1-2: Planning and storyboarding
 - Days 3-4: Recording and editing
 - Days 5-6: Publishing and documentation
 
 **Success Criteria:**
+
 - Videos clear and concise
 - Topics follow learning curve
 - Examples runnable by audience
@@ -1003,9 +1063,11 @@ spec:
    - Tag requirements
 
 **Timeline:**
+
 - Day 1: Document creation and review
 
 **Success Criteria:**
+
 - Guidelines clear and complete
 - Enforced in CI/CD
 - Community adoption
@@ -1015,6 +1077,7 @@ spec:
 ---
 
 **Phase 4 Summary:**
+
 - Effort: 7-10 days
 - Risk: LOW
 - Impact: MEDIUM (knowledge preservation and community engagement)
@@ -1046,6 +1109,7 @@ Q2 2026:
 | **Total** | **10d** | **8d** | **9d** | **10d** | **37d** |
 
 ### Cost Estimate (assuming $150/hour fully-loaded)
+
 - Total hours: 296 hours (37 days × 8 hours)
 - Estimated cost: $44,400
 - **ROI**: Enables production-grade platform serving 100+ users
@@ -1067,6 +1131,7 @@ Q2 2026:
 | Pod Failure Detection | 2min | 30sec | Q2 2026 |
 
 ### Qualitative Targets
+
 - ✓ Industry-leading reference implementation
 - ✓ Community-validated patterns
 - ✓ Production-grade reliability (99.95% uptime)
@@ -1078,21 +1143,25 @@ Q2 2026:
 ## Risk Management
 
 ### Risk 1: Implementation Complexity
+
 - **Probability:** MEDIUM
 - **Impact:** HIGH
 - **Mitigation:** Phase-based approach, small team focus
 
 ### Risk 2: Performance Impact
+
 - **Probability:** LOW
 - **Impact:** MEDIUM
 - **Mitigation:** Staging environment testing, gradual rollout
 
 ### Risk 3: Compatibility Issues
+
 - **Probability:** MEDIUM
 - **Impact:** MEDIUM
 - **Mitigation:** Comprehensive testing, quick rollback plans
 
 ### Risk 4: Resource Constraints
+
 - **Probability:** HIGH
 - **Impact:** MEDIUM
 - **Mitigation:** Parallel work streams, clear prioritization
@@ -1102,18 +1171,21 @@ Q2 2026:
 ## Decision Points & Milestones
 
 ### Q1 2026 Checkpoint (Week 4)
+
 - [ ] Pod Security Admission fully enforced
 - [ ] Image scanning integrated and operational
 - [ ] Health probes comprehensive
 - [ ] **Decision:** Proceed to Phase 2 or adjust?
 
 ### Q2 2026 Checkpoint (Week 12)
+
 - [ ] Observability stack HA deployed
 - [ ] SLO/SLI tracking active
 - [ ] OPA policies enforced
 - [ ] **Decision:** Full production adoption?
 
 ### Q3 2026 Checkpoint (Week 16)
+
 - [ ] Chaos engineering operational
 - [ ] Runbooks tested and validated
 - [ ] Documentation complete
@@ -1145,6 +1217,7 @@ Q2 2026:
 This modernization roadmap provides a **clear, phased path** to achieving **95/100 compliance** with 2026 best practices. By following this plan, the matherlynet-talos-cluster will become a **gold-standard reference implementation** suitable for production deployments at scale.
 
 **Key Benefits:**
+
 - Security posture improvement by 40%
 - Operational reliability improvement by 25%
 - Time-to-resolution improvement by 50%

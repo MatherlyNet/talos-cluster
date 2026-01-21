@@ -7,6 +7,7 @@
 >
 > [!NOTE]
 > **Implementation Complete (January 2026)** - All components from this research have been fully implemented:
+>
 > - Alloy OTLP receiver with metrics pipeline (`otelcol.receiver.otlp` → `otelcol.processor.batch` → `otelcol.exporter.prometheus` → `prometheus.remote_write`)
 > - Alloy Service extraPorts for OTLP (4317 gRPC, 4318 HTTP)
 > - RustFS HelmRelease postRenderer patch for `RUSTFS_OBS_METRIC_ENDPOINT` env var
@@ -27,6 +28,7 @@ RustFS does **NOT** support Prometheus pull-based metrics like MinIO. It exclusi
 3. No pipeline exists to convert OTLP metrics to Prometheus format
 
 **References:**
+
 - [GitHub Issue #1228](https://github.com/rustfs/rustfs/issues/1228) - Confirms OTLP-only metrics
 - [GitHub Issue #796](https://github.com/rustfs/rustfs/issues/796) - Community request for Prometheus metrics
 - [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability)
@@ -86,6 +88,7 @@ The existing Alloy HelmRelease (`templates/config/kubernetes/apps/monitoring/all
 - **Logs pipeline** to Loki
 
 However:
+
 - **Service only exposes port 12345** (metrics endpoint), not OTLP ports
 - **No metrics output** from OTLP receiver (only traces)
 
@@ -260,6 +263,7 @@ Use Flux HelmRelease `postRenderers` to patch the Deployment with the OTLP env v
 ### Phase 3: Update Documentation
 
 Update `docs/guides/grafana-dashboards-implementation.md`:
+
 - Mark RustFS metrics as "IMPLEMENTED"
 - Document the Alloy-based OTLP pipeline
 - Update troubleshooting section
@@ -301,6 +305,7 @@ kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:909
 ### 5. Verify Dashboard Data
 
 Open Grafana → Storage folder → RustFS Storage dashboard
+
 - Panels should now display metrics
 
 ---
@@ -310,6 +315,7 @@ Open Grafana → Storage folder → RustFS Storage dashboard
 If the Alloy approach proves problematic, Prometheus 2.47+ supports native OTLP ingestion:
 
 **Prometheus Configuration:**
+
 ```yaml
 prometheus:
   prometheusSpec:
@@ -319,6 +325,7 @@ prometheus:
 ```
 
 **RustFS Environment:**
+
 ```yaml
 RUSTFS_OBS_METRIC_ENDPOINT: "http://kube-prometheus-stack-prometheus.monitoring.svc:9090/api/v1/otlp/v1/metrics"
 ```
@@ -332,12 +339,14 @@ RUSTFS_OBS_METRIC_ENDPOINT: "http://kube-prometheus-stack-prometheus.monitoring.
 ### Network Policy Impact
 
 If `network_policies_enabled: true`, ensure:
+
 - RustFS pods can reach Alloy service (storage → monitoring namespace)
 - Alloy pods can reach Prometheus service (same namespace)
 
 ### Credential-Free Pipeline
 
 The OTLP pipeline uses cluster-internal HTTP:
+
 - No authentication required (internal cluster traffic)
 - No TLS required (internal cluster traffic)
 - Network policies provide access control
@@ -369,22 +378,26 @@ The OTLP pipeline uses cluster-internal HTTP:
 ## References
 
 ### RustFS
+
 - [RustFS Issue #1228](https://github.com/rustfs/rustfs/issues/1228) - OTLP metrics confirmation
 - [RustFS Issue #796](https://github.com/rustfs/rustfs/issues/796) - Prometheus metrics request
 - [RustFS Discussion #601](https://github.com/orgs/rustfs/discussions/601) - Available metrics
 - [RustFS Observability Stack](https://github.com/rustfs/rustfs/tree/main/.docker/observability)
 
 ### Alloy
+
 - [Grafana Alloy Documentation](https://grafana.com/docs/alloy/latest/)
 - [otelcol.receiver.otlp](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.otlp/)
 - [prometheus.remote_write](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.remote_write/)
 - [Alloy Helm Chart](https://github.com/grafana/alloy/blob/main/operations/helm/charts/alloy/values.yaml)
 
 ### Prometheus
+
 - [Prometheus OTLP Guide](https://prometheus.io/docs/guides/opentelemetry/)
 - [Remote Write Receiver](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
 
 ### OpenTelemetry
+
 - [OTLP Exporter Configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)
 
 ---

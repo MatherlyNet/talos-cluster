@@ -105,11 +105,13 @@ After Flux is running, all Kustomizations are deployed based on their `dependsOn
 **Problem:** Proxmox CCM may start before Cilium establishes cluster networking
 
 The Proxmox Cloud Controller Manager registers as a cloud provider and initializes node metadata. Without Cilium running, it cannot:
+
 - Communicate with the Kubernetes API properly
 - Set node conditions correctly
 - Process node lifecycle events
 
 **Recommendation:**
+
 ```yaml
 spec:
   dependsOn:
@@ -124,10 +126,12 @@ spec:
 **Problem:** CSI may schedule before CCM initializes nodes
 
 The CSI controller needs node topology labels that CCM provides. Without CCM:
+
 - Volume topology constraints may fail
 - Node-local volumes may be scheduled incorrectly
 
 **Recommendation:**
+
 ```yaml
 spec:
   dependsOn:
@@ -143,6 +147,7 @@ spec:
 **Problem:** cert-manager may fail to resolve ACME endpoints
 
 cert-manager needs DNS resolution to:
+
 - Contact Let's Encrypt ACME servers
 - Verify DNS-01 challenges
 - Resolve Cloudflare API endpoints
@@ -152,6 +157,7 @@ During bootstrap, if cert-manager starts before CoreDNS is ready, the ClusterIss
 **Note:** This is partially mitigated by the healthChecks on ClusterIssuer, which will retry, but adding an explicit dependency prevents initial failures.
 
 **Recommendation:**
+
 ```yaml
 spec:
   dependsOn:
@@ -166,10 +172,12 @@ spec:
 **Problem:** May start scraping before targets are reachable
 
 The monitoring stack should wait for:
+
 - CoreDNS (for service discovery)
 - Basic networking to be established
 
 **Recommendation:**
+
 ```yaml
 spec:
   dependsOn:
@@ -384,6 +392,7 @@ dependsOn:
 **Problem:** Flux server-side dry-run validates TalosUpgrade/KubernetesUpgrade CRs before HelmRelease installs CRDs
 
 **Error:**
+
 ```
 TalosUpgrade/system-upgrade/talos dry-run failed: no matches for kind "TalosUpgrade" in version "tuppr.home-operations.com/v1alpha1"
 ```
@@ -399,6 +408,7 @@ TalosUpgrade/system-upgrade/talos dry-run failed: no matches for kind "TalosUpgr
    - Deployed after tuppr is Ready
 
 **Directory Structure:**
+
 ```
 tuppr/
 ├── ks.yaml.j2              # Contains BOTH Kustomizations
@@ -421,12 +431,14 @@ This pattern follows [Helm CRD best practices](https://helm.sh/docs/v3/chart_bes
 **Problem:** PVCs created without storageClassName cannot bind when no default StorageClass exists
 
 **Error:**
+
 ```
 0/6 nodes are available: pod has unbound immediate PersistentVolumeClaims. not found
 no persistent volumes available for this claim and no storage class is set
 ```
 
 **Affected Components:**
+
 - Grafana (victoria-metrics-k8s-stack)
 - Loki
 - Tempo
@@ -441,6 +453,7 @@ persistence:
 ```
 
 **Files Fixed:**
+
 - `templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2` (Grafana)
 - `templates/config/kubernetes/apps/monitoring/loki/app/helmrelease.yaml.j2`
 - `templates/config/kubernetes/apps/monitoring/tempo/app/helmrelease.yaml.j2`
@@ -452,6 +465,7 @@ persistence:
 **Problem:** Chart disallows both `sidecar.dashboards.enabled: true` AND `grafana.dashboards` configuration
 
 **Error:**
+
 ```
 execution error at (victoria-metrics-k8s-stack/templates/grafana/dashboard.yaml:38:3):
 It is not possible to use both "grafana.sidecar.dashboards.enabled: true" and "grafana.dashboards" at the same time.
@@ -482,11 +496,13 @@ See [VictoriaMetrics K8s Stack Documentation](https://docs.victoriametrics.com/h
 **Problem:** Monitoring namespace had `baseline` PodSecurity which blocks node-exporter
 
 **Error:**
+
 ```
 pods "victoria-metrics-k8s-stack-prometheus-node-exporter-xxx" is forbidden: violates PodSecurity "baseline:latest": host namespaces (hostNetwork=true, hostPID=true), hostPath volumes (volumes "proc", "sys", "root"), hostPort (container "node-exporter" uses hostPort 9100)
 ```
 
 **Analysis:** Node-exporter legitimately requires:
+
 - `hostNetwork=true` - access to host network metrics
 - `hostPID=true` - access to host process metrics
 - `hostPath` volumes - access to `/proc`, `/sys`, `/` for system metrics
@@ -516,6 +532,7 @@ metadata:
 **Problem:** Loki chart 6.x requires explicit disabling of non-active deployment modes
 
 **Error:**
+
 ```
 execution error at (loki/templates/validate.yaml:31:4): You have more than zero replicas configured for both the single binary and simple scalable targets. If this was intentional change the deploymentMode to the transitional 'SingleBinary<->SimpleScalable' mode
 ```
@@ -566,11 +583,13 @@ values:
 **Problem:** Loki 6.x chart uses `storageClass` while most Helm charts use `storageClassName`
 
 **Error:**
+
 ```
 0/6 nodes are available: pod has unbound immediate PersistentVolumeClaims. not found
 ```
 
 **Analysis:** Even with persistence configuration set, the PVC was created without a storageClass because the parameter name was wrong:
+
 - **Most Helm charts:** `persistence.storageClassName`
 - **Loki 6.x chart:** `persistence.storageClass` (no "Name" suffix)
 - **Tempo chart:** `persistence.storageClassName` (standard)
@@ -601,6 +620,7 @@ persistence:
 **Problem:** Loki 6.x requires date values in schemaConfig to be explicitly quoted strings
 
 **Error:**
+
 ```
 failed parsing config: parsing time "2024-01-01T00:00:00Z": extra text: "T00:00:00Z"
 ```
@@ -632,6 +652,7 @@ schemaConfig:
 **Problem:** UniFi external-dns webhook returns 403 "No permission" when accessing static-dns API
 
 **Error:**
+
 ```
 API error during GET to https://192.168.23.254/proxy/network/v2/api/site/Matherly-UDM/static-dns/ (status 403): No permission
 ```
@@ -639,6 +660,7 @@ API error during GET to https://192.168.23.254/proxy/network/v2/api/site/Matherl
 **Analysis:** The UniFi API key may not have the correct permissions or the site name may be incorrect.
 
 **Diagnostic Commands:**
+
 ```bash
 # Test 1: Basic connectivity with default site
 curl -k -X GET \
@@ -652,11 +674,13 @@ curl -k -X GET \
 ```
 
 **Possible Causes:**
+
 1. API key lacks DNS management permissions
 2. Site name mismatch (configured `Matherly-UDM` vs actual site ID)
 3. UniFi Network version < v9.0.0 (API key auth requires v9.0.0+)
 
 **Solution:** Verify API key permissions and site name in UniFi Console:
+
 - Admin → Control Plane → API Keys → Create with "Full Management Access"
 - Check actual site ID in Settings → System → Network Application
 
@@ -669,10 +693,12 @@ curl -k -X GET \
 **Error:** Cloudflare Error 1033 when accessing `grafana.matherly.net`
 
 **Analysis:** The architecture uses two Envoy Gateways:
+
 - `envoy-external` (192.168.22.90): Public access via Cloudflare Tunnel
 - `envoy-internal` (192.168.22.80): Local network access via UniFi DNS + BGP
 
 The VictoriaMetrics Helm chart creates a legacy `Ingress` resource for Grafana. However:
+
 1. There's no Ingress controller (Envoy Gateway uses Gateway API)
 2. UniFi external-dns watches `gateway-httproute`, not `ingress`
 3. Result: No DNS record created, no routing available
@@ -739,6 +765,7 @@ grafana:
 ```
 
 **Configuration (cluster.yaml):**
+
 ```yaml
 # Grafana admin credentials
 grafana_admin_user: "admin"           # (OPTIONAL) / (DEFAULT: "admin")
@@ -765,6 +792,7 @@ flux reconcile hr victoria-metrics-k8s-stack -n monitoring
 **Problem:** Many Grafana dashboards use `${DS_PROMETHEUS}` variable which doesn't match our "VictoriaMetrics" datasource name
 
 **Symptoms:**
+
 - Dashboard dropdown selectors showing "datasource ${DS_PROMETHEUS} was not found"
 - "No data" in panels expecting Prometheus datasource
 
@@ -790,6 +818,7 @@ grafana:
 **Problem:** kube-controller-manager and kube-scheduler metrics scraping fails with TLS certificate errors
 
 **Error:**
+
 ```
 tls: failed to verify certificate: x509: certificate is valid for localhost, localhost, not kubernetes
 tls: failed to verify certificate: x509: certificate is valid for 127.0.0.1, not 192.168.22.101
@@ -874,6 +903,7 @@ kubeEtcd:
 **Problem:** flux-operator metrics endpoint (port 8080) times out while the pod is healthy
 
 **Error:**
+
 ```
 net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
 ```
@@ -906,12 +936,15 @@ From [Cilium L7 Protocol Visibility Documentation](https://docs.cilium.io/en/sta
 > L7 metrics such as HTTP are only emitted for pods that enable Layer 7 Protocol Visibility.
 
 **Metrics that work without L7 policies:**
+
 - `drop`, `tcp`, `flow`, `icmp`, `port-distribution`
 
 **Metrics that require L7 policies:**
+
 - `http`, `dns`
 
 **Example L7 Visibility Policy:**
+
 ```yaml
 apiVersion: "cilium.io/v2"
 kind: CiliumNetworkPolicy

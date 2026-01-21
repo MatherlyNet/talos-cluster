@@ -28,10 +28,12 @@ The Headlamp AI Assistant plugin (v0.1.0-alpha) has critical configuration limit
 ### Conclusion
 
 **There is NO combination of provider settings that allows:**
+
 - Custom baseURL (to point to LiteLLM) **AND**
 - API key authentication (to authenticate to LiteLLM)
 
 Without both capabilities, the plugin cannot be used with LiteLLM proxy and must connect directly to external API providers (OpenAI, Anthropic, etc.), which:
+
 - Incurs external API costs
 - Introduces latency
 - Raises privacy/data residency concerns
@@ -78,6 +80,7 @@ Azure OpenAI / Anthropic / Other LLM providers
 ### Configuration Variables
 
 #### cluster.yaml
+
 ```yaml
 # Headlamp AI Assistant API key for LiteLLM proxy (SOPS-encrypted)
 # Generate with: openssl rand -hex 32
@@ -86,6 +89,7 @@ headlamp_ai_assistant_api_key: "placeholder-will-be-encrypted-with-sops"
 ```
 
 #### Computed Variables (plugin.py)
+
 ```python
 # Headlamp AI Assistant enabled when:
 # - headlamp_enabled: true
@@ -103,6 +107,7 @@ headlamp_ai_assistant_provider: "openai"
 ### Kubernetes Resources
 
 #### ConfigMap Template
+
 **Location:** `templates/config/kubernetes/apps/kube-system/headlamp/app/ai-assistant-configmap.yaml.j2`
 
 ```yaml
@@ -123,9 +128,11 @@ data:
 The annotation `_headlamp.dev.settings-plugin/headlamp-ai-assistant` tells Headlamp to load this ConfigMap as settings for the AI Assistant plugin.
 
 #### Secret Template
+
 **Location:** `templates/config/kubernetes/apps/kube-system/headlamp/app/secret.sops.yaml.j2`
 
 Added to existing `headlamp-secret`:
+
 ```yaml
 stringData:
   oidc-client-secret: "..." # Existing
@@ -208,17 +215,21 @@ All AI Assistant integration attempts have been removed from the codebase:
 ## Verification
 
 ### Check LiteLLM Logs
+
 ```bash
 kubectl logs -n ai-system -l app.kubernetes.io/name=litellm --tail=50 -f
 ```
 
 ### Check Headlamp Logs
+
 ```bash
 kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp -c headlamp --tail=50 -f
 ```
 
 ### Test AI Assistant
+
 In Headlamp UI:
+
 1. Click AI Assistant icon
 2. Ask: "List all pods in kube-system namespace"
 3. Verify response (should query via LiteLLM)
@@ -226,6 +237,7 @@ In Headlamp UI:
 ## Troubleshooting
 
 ### "AI Assistant Setup Required" Message
+
 **Symptom**: After installing plugin, UI shows "AI Assistant Setup Required - To use the AI Assistant, please configure your AI provider credentials in the settings page."
 
 **Cause**: Plugin settings are not configured in browser localStorage.
@@ -233,35 +245,44 @@ In Headlamp UI:
 **Solution**: Follow the manual configuration steps above. This is expected behavior - there is no automatic/centralized configuration.
 
 ### API Authentication Failures
+
 **Symptom**: AI Assistant shows errors when sending queries.
 
 **Possible Causes**:
+
 1. Incorrect API key entered in Headlamp settings
 2. LiteLLM not configured to accept the API key
 3. Network connectivity issues
 
 **Solutions**:
+
 - Verify API key matches `headlamp_ai_assistant_api_key` in cluster.yaml
 - Check LiteLLM logs: `kubectl logs -n ai-system -l app.kubernetes.io/name=litellm --tail=50 -f`
 - Ensure LiteLLM is configured to accept the API key
 
 ### Network Connectivity Issues
+
 **Symptom**: Timeouts or connection errors when using AI Assistant.
 
 **Solutions**:
+
 - Verify Network Policy allows Headlamp → LiteLLM
 - Test connectivity from Headlamp pod:
+
   ```bash
   kubectl exec -n kube-system deployment/headlamp -- curl -v http://litellm.ai-system.svc.cluster.local:4000/health
   ```
+
 - Check Cilium policy status: `cilium policy get`
 
 ### Settings Lost After Browser Clear
+
 **Symptom**: AI Assistant requires reconfiguration after clearing browser data.
 
 **Cause**: Settings are stored in browser localStorage, not on server.
 
 **Solution**:
+
 - Re-enter configuration following manual steps
 - OR wait for distributed settings feature (Issue #3979)
 - OR consider custom plugin build with hardcoded settings
@@ -271,6 +292,7 @@ In Headlamp UI:
 ### Option 1: Wait for Plugin UI Improvements ⭐ **RECOMMENDED**
 
 **Track upstream issues:**
+
 - Request custom baseURL support for OpenAI provider
 - Request API key support for Local Models provider
 - OR use "Custom" provider that accepts both baseURL and API key
@@ -290,12 +312,14 @@ In Headlamp UI:
 ### Option 3: Custom Plugin Build (Advanced)
 
 **Approach**: Fork AI Assistant plugin and modify source code to:
+
 - Default baseURL to LiteLLM endpoint
 - Read API key from environment variable or Kubernetes Secret
 - Remove UI configuration requirement
 
 **Pros**: Would work today with LiteLLM
 **Cons**:
+
 - Requires maintaining fork
 - Must rebuild on every plugin update
 - Not officially supported
@@ -304,11 +328,13 @@ In Headlamp UI:
 ### Option 4: Headlamp Backend Proxy Modification (Advanced)
 
 **Approach**: Fork Headlamp backend to intercept AI Assistant HTTP requests and:
+
 - Rewrite `api.openai.com` URLs to LiteLLM endpoint
 - Inject LiteLLM API key from Kubernetes Secret
 
 **Pros**: Transparent to plugin, no plugin changes needed
 **Cons**:
+
 - Requires maintaining Headlamp fork
 - Complex Go backend modifications
 - High maintenance burden
@@ -346,6 +372,7 @@ When any of these features are implemented, this integration can be revisited.
 ## Schema Updates
 
 ### cluster.schema.cue
+
 ```cue
 // Headlamp AI Assistant API key for LiteLLM proxy (SOPS-encrypted)
 // Used when both headlamp_enabled and litellm_enabled are true
@@ -353,6 +380,7 @@ headlamp_ai_assistant_api_key?: string & !=""  // Generate with: openssl rand -h
 ```
 
 ### Test Files
+
 - `.github/tests/public.yaml`: Removed AI Assistant variable references
 - `.github/tests/private.yaml`: Removed AI Assistant variable references
 
@@ -366,6 +394,7 @@ headlamp_ai_assistant_api_key?: string & !=""  // Generate with: openssl rand -h
 - Settings stored in browser localStorage only ❌
 
 **Plugin has been removed from deployment** until upstream changes are made to support:
+
 1. Custom baseURL for OpenAI provider (or generic provider)
 2. API key authentication for local providers
 3. ConfigMap/Secret-based configuration
@@ -373,6 +402,7 @@ headlamp_ai_assistant_api_key?: string & !=""  // Generate with: openssl rand -h
 **Network policy remains configured** for future use when plugin capabilities improve.
 
 **Upstream issues to monitor**:
+
 - [Headlamp Distributed Settings #3979](https://github.com/kubernetes-sigs/headlamp/issues/3979)
 - [Headlamp Persistent Storage #4280](https://github.com/kubernetes-sigs/headlamp/issues/4280)
 - [AI Assistant Plugin Repository](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant)

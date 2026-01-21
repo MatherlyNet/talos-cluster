@@ -10,6 +10,7 @@
 > ---
 > **Implementation Validation Summary:**
 > All phases (1-5) have been implemented and validated against the codebase:
+>
 > - ✅ Phase 1: Core Deployment (ai-system namespace, Helm templates, CNPG, Dragonfly, RustFS)
 > - ✅ Phase 2: Keycloak SSO Integration (OIDC client in realm-config.yaml.j2)
 > - ✅ Phase 3: LiteLLM Integration (Langfuse callbacks, secrets, network policies)
@@ -252,16 +253,19 @@ spec:
 Langfuse requires Redis ≥7 with `maxmemory-policy=noeviction`. Use the shared Dragonfly instance from the cache namespace.
 
 **Critical Requirements:**
+
 - Version 7+ (Dragonfly is compatible)
 - `maxmemory-policy=noeviction` (already default in Dragonfly)
 
 **Connection Configuration:**
+
 ```yaml
 env:
   REDIS_CONNECTION_STRING: "redis://dragonfly.cache.svc.cluster.local:6379"
 ```
 
 **ACL Configuration (if using multi-tenant Dragonfly):**
+
 ```
 user langfuse on >#{ langfuse_redis_password }# ~langfuse:* +@all -@dangerous
 ```
@@ -279,6 +283,7 @@ Langfuse uses S3 for event blobs, media uploads, and batch exports.
 | `langfuse-exports` | Batch data exports | `LANGFUSE_S3_BATCH_EXPORT_BUCKET` |
 
 **S3 Environment Variables:**
+
 ```yaml
 env:
   #| Event storage (required) #|
@@ -503,16 +508,19 @@ langfuse_backup_s3_secret_key: "ENC[AES256_GCM,...]"
 ClickHouse is unique to Langfuse and not shared with other cluster components. Options:
 
 **Option 1: Bundled ClickHouse (Recommended for simplicity)**
+
 - Use Helm chart's bundled ClickHouse
 - Includes ZooKeeper for cluster coordination
 - Managed lifecycle with Langfuse deployment
 
 **Option 2: External ClickHouse**
+
 - Managed service (ClickHouse Cloud)
 - Separate Helm deployment
 - More operational overhead
 
 **Environment Variables:**
+
 ```yaml
 env:
   CLICKHOUSE_MIGRATION_URL: "clickhouse://langfuse-clickhouse:9000/default"
@@ -1177,6 +1185,7 @@ env:
 ### Account Linking
 
 Langfuse supports merging accounts with the same email across providers:
+
 - Set `AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING=true`
 - Users authenticated via Keycloak will be linked to existing email-based accounts
 
@@ -1202,6 +1211,7 @@ environment_variables:
 ### Trace Correlation
 
 LiteLLM automatically sends traces to Langfuse with:
+
 - Model name and provider
 - Token usage and latency
 - Request/response payloads
@@ -1210,11 +1220,13 @@ LiteLLM automatically sends traces to Langfuse with:
 ### LLM Connections in Langfuse
 
 Langfuse can also call LLMs for:
+
 - Playground testing
 - LLM-as-a-Judge evaluation
 - Prompt experiments
 
 Configure via Project Settings > LLM Connections:
+
 - Point to LiteLLM proxy as OpenAI-compatible endpoint
 - Base URL: `http://litellm.ai-system.svc.cluster.local:4000`
 
@@ -1354,6 +1366,7 @@ Or use Kubernetes volume snapshots for PVC-based backups.
 ### S3 Buckets
 
 RustFS data is inherently durable. For additional protection:
+
 - Enable cross-region replication (if using cloud provider)
 - Periodic sync to external storage
 
@@ -1483,6 +1496,7 @@ spec:
 ### Phase 1: Core Deployment
 
 **Scope:**
+
 - Create `ai-system` namespace template
 - Deploy Langfuse with bundled ClickHouse
 - Configure PostgreSQL via CNPG
@@ -1491,6 +1505,7 @@ spec:
 - Basic password authentication
 
 **Configuration:**
+
 ```yaml
 langfuse_enabled: true
 langfuse_nextauth_secret: "<generated>"
@@ -1503,6 +1518,7 @@ langfuse_s3_secret_key: "<from RustFS console>"
 ```
 
 **Files to Create:**
+
 - `templates/config/kubernetes/apps/ai-system/kustomization.yaml.j2`
 - `templates/config/kubernetes/apps/ai-system/namespace.yaml.j2`
 - `templates/config/kubernetes/apps/ai-system/langfuse/ks.yaml.j2`
@@ -1511,14 +1527,17 @@ langfuse_s3_secret_key: "<from RustFS console>"
 ### Phase 2: Keycloak SSO Integration
 
 **Scope:**
+
 - Configure Keycloak OIDC client
 - Enable SSO in Langfuse
 - Account linking support
 
 **Prerequisites:**
+
 - `keycloak_enabled: true`
 
 **Configuration:**
+
 ```yaml
 langfuse_sso_enabled: true
 langfuse_keycloak_client_secret: "<from Keycloak>"
@@ -1527,25 +1546,30 @@ langfuse_keycloak_client_secret: "<from Keycloak>"
 ### Phase 3: LiteLLM Integration
 
 **Scope:**
+
 - Configure Langfuse callback in LiteLLM
 - Bidirectional observability setup
 - LLM connection for Playground
 
 **Prerequisites:**
+
 - `litellm_enabled: true`
 
 ### Phase 4: Observability Stack
 
 **Scope:**
+
 - ServiceMonitor for Prometheus
 - OpenTelemetry export to Tempo
 - Grafana dashboard
 
 **Prerequisites:**
+
 - `monitoring_enabled: true`
 - `tracing_enabled: true`
 
 **Configuration:**
+
 ```yaml
 langfuse_trace_sampling_ratio: "0.1"
 ```
@@ -1553,15 +1577,18 @@ langfuse_trace_sampling_ratio: "0.1"
 ### Phase 5: Backup and Network Policies
 
 **Scope:**
+
 - PostgreSQL backups via CNPG barmanObjectStore
 - ClickHouse backups to S3
 - CiliumNetworkPolicy for zero-trust
 
 **Prerequisites:**
+
 - `rustfs_enabled: true`
 - `network_policies_enabled: true`
 
 **Configuration:**
+
 ```yaml
 langfuse_backup_enabled: true
 ```
@@ -1752,6 +1779,7 @@ The HelmRepository should be in the same namespace as the HelmRelease (ai-system
 #### Issue 4: Missing SOPS Component Reference
 
 The app kustomization should include the SOPS component for secret decryption:
+
 ```yaml
 components:
   - ../../../components/sops
@@ -1760,6 +1788,7 @@ components:
 #### Issue 5: Keycloak Client Configuration Location
 
 The document references adding a Keycloak client to `realm-import.yaml.j2`, but the project uses `keycloak-config-cli` with `realm-config.yaml.j2`. The correct file is:
+
 - `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`
 
 ### Enhancement Opportunities
@@ -1773,6 +1802,7 @@ user langfuse on >#{ langfuse_redis_password }# ~langfuse:* +@all -@dangerous
 ```
 
 Add to cluster.yaml schema:
+
 ```yaml
 # -- Langfuse Redis password for ACL mode
 #    (REQUIRED when dragonfly_acl_enabled: true)
@@ -1848,10 +1878,12 @@ During initial deployment, several issues were discovered and resolved. These le
 **Root Cause:** CNPG postgres-containers use a different naming convention than expected.
 
 **Solution:** Use the correct CNPG image tag format:
+
 - With barman backup support: `ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie`
 - Without backup support: `ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie`
 
 **Template Fix (postgresql.yaml.j2):**
+
 ```yaml
 #% if langfuse_backup_enabled | default(false) %#
   imageName: #{ cnpg_postgres_barman_image | default('ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie') }#
@@ -1871,6 +1903,7 @@ During initial deployment, several issues were discovered and resolved. These le
 **Solution:** Add explicit storageClass configuration for ZooKeeper persistence.
 
 **Template Fix (helmrelease.yaml.j2):**
+
 ```yaml
 clickhouse:
   deploy: true
@@ -1891,6 +1924,7 @@ clickhouse:
 **Solution:** Add `+@connection` to all Dragonfly ACL tenant users.
 
 **Template Fix (dragonfly secret.sops.yaml.j2):**
+
 ```
 user keycloak on >password ~keycloak:* +@read +@write +@connection -@dangerous
 user litellm on >password ~litellm:* +@read +@write +@connection -@dangerous
@@ -1905,6 +1939,7 @@ user litellm on >password ~litellm:* +@read +@write +@connection -@dangerous
 **Solution:** Allow all keys (`~*`) for the Langfuse user since Langfuse doesn't support configuring a key prefix.
 
 **Template Fix:**
+
 ```
 user langfuse on >password ~* +@read +@write +@connection -@dangerous
 ```
@@ -1918,6 +1953,7 @@ user langfuse on >password ~* +@read +@write +@connection -@dangerous
 **Solution:** Explicitly add `+INFO +CONFIG` after `-@dangerous` for the Langfuse user.
 
 **Template Fix:**
+
 ```
 user langfuse on >password ~* +@all -@dangerous +INFO +CONFIG
 ```
@@ -1931,6 +1967,7 @@ user langfuse on >password ~* +@all -@dangerous +INFO +CONFIG
 **Solution:** Add `--default_lua_flags=allow-undeclared-keys` to Dragonfly args.
 
 **Template Fix (dragonfly-cr.yaml.j2):**
+
 ```yaml
 args:
   - --default_lua_flags=allow-undeclared-keys
@@ -1983,29 +2020,34 @@ args:
 After deployment, verify the following:
 
 1. **PostgreSQL cluster healthy:**
+
    ```bash
    kubectl -n ai-system get clusters
    kubectl cnpg status langfuse-postgresql -n ai-system
    ```
 
 2. **ClickHouse and ZooKeeper running:**
+
    ```bash
    kubectl -n ai-system get pods -l app.kubernetes.io/name=clickhouse
    kubectl -n ai-system get pods -l app.kubernetes.io/name=zookeeper
    ```
 
 3. **Langfuse web and worker healthy:**
+
    ```bash
    kubectl -n ai-system get pods -l app.kubernetes.io/name=langfuse
    kubectl -n ai-system logs -l app.kubernetes.io/component=worker --tail=20
    ```
 
 4. **Dragonfly ACL correctly loaded:**
+
    ```bash
    kubectl -n cache exec -it dragonfly-0 -- redis-cli ACL LIST
    ```
 
 5. **Langfuse Redis authentication working:**
+
    ```bash
    kubectl -n cache run redis-test --rm -i --restart=Never --image=redis:7-alpine -- \
      redis-cli -h dragonfly.cache.svc.cluster.local --user langfuse -a PASSWORD INFO server
@@ -2020,6 +2062,7 @@ This appendix documents the implementation of Langfuse headless initialization a
 ### Headless Initialization Overview
 
 Headless initialization allows bootstrapping an initial admin account on first startup without using the UI. This is essential for:
+
 - GitOps-based deployments where UI interaction is not possible
 - Automated CI/CD pipelines deploying Langfuse to multiple environments
 - Reproducible infrastructure-as-code deployments
@@ -2045,6 +2088,7 @@ Headless initialization allows bootstrapping an initial admin account on first s
 The headless initialization credentials are stored in a SOPS-encrypted secret and injected as environment variables via the Helm chart's `additionalEnv` mechanism.
 
 **Secret Template (secret.sops.yaml.j2):**
+
 ```yaml
 #% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') %#
 ---
@@ -2063,6 +2107,7 @@ stringData:
 ```
 
 **HelmRelease Template (helmrelease.yaml.j2):**
+
 ```yaml
 langfuse:
   additionalEnv:
@@ -2108,6 +2153,7 @@ When using SSO (Keycloak), new users can be automatically provisioned with defau
 ### Security Recommendations
 
 1. **Initial Password**: Generate a strong initial password and change it via UI after first login
+
    ```bash
    openssl rand -base64 24 | tr -d '/+=' | head -c 24
    ```
@@ -2227,6 +2273,7 @@ LANGFUSE_S3_CONCURRENT_READS: 50    # Default: 50
 ### cluster.yaml
 
 Added new variables in the Langfuse section:
+
 - `langfuse_init_user_email` - Initial admin email
 - `langfuse_init_user_password` - Initial admin password (SOPS-encrypted)
 - `langfuse_init_user_name` - Initial admin display name
@@ -2238,6 +2285,7 @@ Added new variables in the Langfuse section:
 ### templates/config/kubernetes/apps/ai-system/langfuse/app/secret.sops.yaml.j2
 
 Added new secret for init credentials:
+
 ```yaml
 #% if langfuse_init_user_email | default('') and langfuse_init_user_password | default('') %#
 ---
@@ -2253,6 +2301,7 @@ metadata:
 ### templates/config/kubernetes/apps/ai-system/langfuse/app/helmrelease.yaml.j2
 
 Added `additionalEnv` section under `langfuse:` values:
+
 - LANGFUSE_INIT_USER_EMAIL (secretKeyRef)
 - LANGFUSE_INIT_USER_PASSWORD (secretKeyRef)
 - LANGFUSE_INIT_USER_NAME (secretKeyRef)
@@ -2264,6 +2313,7 @@ Added `additionalEnv` section under `langfuse:` values:
 ### templates/scripts/plugin.py
 
 Added default values for headless initialization:
+
 - `langfuse_init_user_name` → "Admin"
 - `langfuse_init_org_name` → cluster_name
 - `langfuse_disable_signup` → False
@@ -2271,5 +2321,6 @@ Added default values for headless initialization:
 ### CLAUDE.md
 
 Updated documentation with new sections:
+
 - "Optional Langfuse Headless Initialization"
 - "Optional Langfuse Auto-Provisioning"

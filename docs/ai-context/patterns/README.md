@@ -15,11 +15,13 @@
 **Components:** CloudNativePG Cluster, Application Pods, Reloader
 
 **When to Use:**
+
 - Quarterly password rotation for database credentials
 - Troubleshooting authentication errors after credential changes
 - Setting up new CloudNativePG-backed applications
 
 **Key Features:**
+
 - ✅ Zero-downtime rotation via managed roles
 - ✅ Automatic sync from secrets to PostgreSQL
 - ✅ Graceful pod restart via Reloader
@@ -33,11 +35,13 @@
 **Components:** RustFS (S3-compatible), Application Pods
 
 **When to Use:**
+
 - Configuring S3 storage for new applications (LiteLLM, Langfuse, Obot, Loki)
 - Troubleshooting "Access Denied" or S3 authentication errors
 - Implementing least-privilege storage policies
 
 **Key Features:**
+
 - ✅ Console UI-based IAM management (no CLI)
 - ✅ Scoped policies per application/bucket
 - ✅ Component-specific policy examples
@@ -51,11 +55,13 @@
 **Components:** Dragonfly Operator, Dragonfly Instance
 
 **When to Use:**
+
 - Setting up shared cache for multiple applications
 - Troubleshooting Redis authentication or permission errors
 - Implementing key namespace isolation
 
 **Key Features:**
+
 - ✅ Key prefix-based namespace separation
 - ✅ Redis ACL compatible
 - ✅ Operator-managed declarative configuration
@@ -76,6 +82,7 @@
 → [Dragonfly ACL Configuration](./dragonfly-acl-configuration.md)
 
 **...troubleshoot authentication errors:**
+
 - Database auth → [CNPG Password Rotation](./cnpg-password-rotation.md) (Troubleshooting section)
 - S3 auth → [RustFS IAM Setup](./rustfs-iam-setup.md) (Troubleshooting section)
 - Redis auth → [Dragonfly ACL Configuration](./dragonfly-acl-configuration.md) (Troubleshooting section)
@@ -187,6 +194,7 @@ Links to related docs
 ## Related Documentation
 
 ### AI Context Guides
+
 - [LiteLLM Configuration](../litellm.md)
 - [Langfuse Configuration](../langfuse.md)
 - [Obot Configuration](../obot.md)
@@ -194,10 +202,12 @@ Links to related docs
 - [Configuration Variables Reference](../configuration-variables.md)
 
 ### Research Documentation
+
 - CNPG: `docs/research/cnpg-managed-roles-password-rotation-jan-2026.md`
 - RustFS: `docs/research/archive/completed/rustfs-shared-storage-loki-simplescalable-jan-2026.md`
 
 ### Implementation Guides
+
 - `docs/guides/completed/cnpg-implementation.md`
 - `docs/guides/completed/native-oidc-securitypolicy-implementation.md`
 

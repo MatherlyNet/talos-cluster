@@ -24,60 +24,70 @@ These documents provide deep-dive knowledge for AI assistants (Claude, GPT, etc.
 ## Quick Reference
 
 ### For Configuration Variables
+
 ```
 Read: docs/ai-context/configuration-variables.md
 Related: docs/CONFIGURATION.md (complete schema), templates/scripts/plugin.py (derived logic)
 ```
 
 ### For GitOps Tasks
+
 ```
 Read: docs/ai-context/flux-gitops.md
 Agent: .claude/agents/flux-expert.md
 ```
 
 ### For Node Operations
+
 ```
 Read: docs/ai-context/talos-operations.md
 Agent: .claude/agents/talos-expert.md
 ```
 
 ### For Network Issues
+
 ```
 Read: docs/ai-context/cilium-networking.md
 Agent: .claude/agents/network-debugger.md
 ```
 
 ### For Template Changes
+
 ```
 Read: docs/ai-context/template-system.md
 Agent: .claude/agents/template-expert.md
 ```
 
 ### For Infrastructure/IaC
+
 ```
 Read: docs/ai-context/infrastructure-opentofu.md
 Agent: .claude/agents/infra-expert.md
 ```
 
 ### For Dragonfly/Cache
+
 ```
 Read: docs/ai-context/dragonfly.md
 Related: docs/ai-context/litellm.md, docs/ai-context/langfuse.md (consumers)
 ```
 
 ### For LiteLLM/AI Gateway
+
 ```
 Read: docs/ai-context/litellm.md
 Related: docs/ai-context/dragonfly.md (caching backend)
 ```
 
 ### For Langfuse/LLM Observability
+
 ```
 Read: docs/ai-context/langfuse.md
 Related: docs/ai-context/litellm.md (LiteLLM integration)
 ```
 
 ### For Obot/MCP Gateway
+
 ```
 Read: docs/ai-context/obot.md
 Related: docs/ai-context/litellm.md (model gateway), docs/ai-context/langfuse.md (observability)
@@ -86,6 +96,7 @@ Related: docs/ai-context/litellm.md (model gateway), docs/ai-context/langfuse.md
 ## Complementary Documentation
 
 For quick reference during operations:
+
 - `docs/TROUBLESHOOTING.md` - Diagnostic flowcharts and decision trees
 - `docs/CLI_REFERENCE.md` - Complete command reference for all tools
 - `docs/QUICKSTART.md` - Step-by-step setup guide
@@ -94,12 +105,14 @@ For quick reference during operations:
 ## Token Efficiency
 
 These documents are designed for efficient context loading:
+
 - Each document focuses on one domain
 - Includes practical commands and examples
 - Avoids redundancy with main docs
 - Provides troubleshooting decision trees
 
 For minimal context loading, start with:
+
 1. `PROJECT_INDEX.json` or `PROJECT_INDEX.md` (3KB)
 2. Relevant ai-context document (~8-12KB each)
 

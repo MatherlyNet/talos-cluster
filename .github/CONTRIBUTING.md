@@ -44,6 +44,7 @@ All GitHub Actions workflows **MUST** include explicit `permissions` blocks to a
 Without explicit permissions, workflows inherit repository/organization defaults which may include unnecessary write access. Organizations created before February 2023 default to `read-write` permissions, granting workflows more access than required.
 
 **Security Benefits:**
+
 - Reduces attack surface if workflow is compromised
 - Prevents accidental modifications to repository resources
 - Makes security audits straightforward
@@ -54,6 +55,7 @@ Without explicit permissions, workflows inherit repository/organization defaults
 Every workflow MUST include a `permissions` block at either the root level or job level.
 
 ❌ **INCORRECT** - Missing permissions:
+
 ```yaml
 name: "My Workflow"
 
@@ -65,6 +67,7 @@ jobs:
 ```
 
 ✅ **CORRECT** - Explicit permissions:
+
 ```yaml
 name: "My Workflow"
 
@@ -83,12 +86,14 @@ jobs:
 Use these permission patterns based on your workflow's operations:
 
 #### Read-Only Workflows (Testing, Validation, Linting)
+
 ```yaml
 permissions:
   contents: read
 ```
 
 **When to use:**
+
 - Running tests
 - Linting code
 - Validating configuration
@@ -100,6 +105,7 @@ permissions:
 ---
 
 #### PR Automation Workflows
+
 ```yaml
 permissions:
   contents: read
@@ -107,6 +113,7 @@ permissions:
 ```
 
 **When to use:**
+
 - Posting comments on pull requests
 - Adding/removing PR labels
 - Requesting reviewers
@@ -116,6 +123,7 @@ permissions:
 ---
 
 #### Issue/Label Management Workflows
+
 ```yaml
 permissions:
   contents: read
@@ -123,6 +131,7 @@ permissions:
 ```
 
 **When to use:**
+
 - Syncing repository labels
 - Creating/closing issues
 - Adding issue labels
@@ -132,6 +141,7 @@ permissions:
 ---
 
 #### Security Scanning Workflows (with SARIF Upload)
+
 ```yaml
 permissions:
   contents: read
@@ -139,6 +149,7 @@ permissions:
 ```
 
 **When to use:**
+
 - Uploading security scan results (Trivy, CodeQL, Semgrep, etc.)
 - Publishing vulnerability findings to Security tab
 
@@ -147,6 +158,7 @@ permissions:
 ---
 
 #### Release Workflows
+
 ```yaml
 permissions:
   contents: write       # Create releases and tags
@@ -155,6 +167,7 @@ permissions:
 ```
 
 **When to use:**
+
 - Creating GitHub releases
 - Tagging versions
 - Generating and signing SBOMs
@@ -165,6 +178,7 @@ permissions:
 ---
 
 #### Repository Automation Workflows
+
 ```yaml
 permissions:
   contents: write
@@ -172,6 +186,7 @@ permissions:
 ```
 
 **When to use:**
+
 - Committing generated files (manifest regeneration)
 - Creating pull requests
 - Automated dependency updates
@@ -209,6 +224,7 @@ jobs:
 ```
 
 **Advantages:**
+
 - Simple and clear
 - Avoids repetition
 - Easy to audit
@@ -244,6 +260,7 @@ jobs:
 ```
 
 **Advantages:**
+
 - Each job has minimal required permissions
 - More granular security control
 - Clear permission requirements per job
@@ -282,6 +299,7 @@ jobs:
 ```
 
 **Advantages:**
+
 - Most jobs use minimal permissions (root-level)
 - Special jobs explicitly override when needed
 - Best balance of security and clarity
@@ -337,6 +355,7 @@ This means your workflow is missing the required `permissions` block. Add approp
 1. **Pinning Actions to SHA Commits**
    - Always pin third-party actions to full commit SHAs (not tags)
    - Include the semantic version as a comment for readability
+
    ```yaml
    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
    ```
@@ -344,6 +363,7 @@ This means your workflow is missing the required `permissions` block. Add approp
 2. **Timeout Minutes**
    - Always specify `timeout-minutes` to prevent runaway jobs
    - Typical values: 5-15 minutes depending on job complexity
+
    ```yaml
    jobs:
      test:
@@ -352,6 +372,7 @@ This means your workflow is missing the required `permissions` block. Add approp
 
 3. **Concurrency Control**
    - Use concurrency groups to cancel outdated workflow runs
+
    ```yaml
    concurrency:
      group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -360,6 +381,7 @@ This means your workflow is missing the required `permissions` block. Add approp
 
 4. **Conditional Execution**
    - Skip workflows for bot accounts or draft PRs when appropriate
+
    ```yaml
    jobs:
      review:
@@ -370,6 +392,7 @@ This means your workflow is missing the required `permissions` block. Add approp
 
 5. **Path Filtering**
    - Use `paths` and `paths-ignore` to trigger workflows only when relevant files change
+
    ```yaml
    on:
      pull_request:
@@ -385,11 +408,13 @@ This means your workflow is missing the required `permissions` block. Add approp
 Before pushing workflow changes:
 
 1. **Validate YAML syntax:**
+
    ```bash
    yamllint .github/workflows/my-workflow.yaml
    ```
 
 2. **Use `act` for local testing (optional):**
+
    ```bash
    act pull_request -W .github/workflows/my-workflow.yaml
    ```
@@ -413,11 +438,13 @@ When modifying Jinja2 templates:
    - Comments: `#| comment text #|` (note: both ends use `#|`)
 
 2. **Always regenerate manifests:**
+
    ```bash
    task configure -y
    ```
 
 3. **Commit both templates and generated manifests:**
+
    ```bash
    git add templates/config/
    git add kubernetes/
@@ -440,22 +467,26 @@ When modifying Jinja2 templates:
 Before submitting a pull request:
 
 1. **Template validation:**
+
    ```bash
    task configure -y
    ```
 
 2. **Flux validation:**
+
    ```bash
    task flux:validate
    ```
 
 3. **Local Flux test:**
+
    ```bash
    flux-local test --enable-helm --all-namespaces \
      --path kubernetes/flux/cluster -v
    ```
 
 4. **Security scanning:**
+
    ```bash
    trivy config --severity CRITICAL,HIGH kubernetes/
    ```
@@ -463,6 +494,7 @@ Before submitting a pull request:
 ### CI/CD Validation
 
 All pull requests automatically run:
+
 - E2E configuration tests (public and private configs)
 - Flux validation and diff generation
 - Security scanning (Trivy)
@@ -476,17 +508,20 @@ Monitor the PR checks and address any failures before requesting review.
 ## References
 
 ### GitHub Documentation
+
 - [Automatic Token Authentication](https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication)
 - [Permissions for the GITHUB_TOKEN](https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
 - [Security Hardening for GitHub Actions](https://docs.github.com/en/actions/security-for-github-actions)
 
 ### Repository Documentation
+
 - `docs/ARCHITECTURE.md` - System architecture
 - `docs/CONFIGURATION.md` - Configuration reference
 - `docs/OPERATIONS.md` - Operational procedures
 - `docs/CLI_REFERENCE.md` - Task commands reference
 
 ### Community
+
 - **Issues:** Use GitHub Issues for bug reports and feature requests
 - **Security:** Report security issues via email (see `SECURITY.md`)
 

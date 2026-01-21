@@ -12,6 +12,7 @@
 The matherlynet-talos-cluster is a **production-ready, enterprise-grade GitOps Kubernetes platform** demonstrating exceptional adherence to modern best practices and 2026 industry standards. The architecture implements immutable infrastructure patterns, declarative configuration management, and comprehensive automation across all layers—from bare-metal provisioning through application deployment and observability.
 
 ### Key Findings
+
 - **92% alignment** with CNCF/Kubernetes 2026 best practices
 - **Zero critical security issues** identified
 - **Comprehensive documentation** with architecture diagrams and troubleshooting guides
@@ -20,7 +21,9 @@ The matherlynet-talos-cluster is a **production-ready, enterprise-grade GitOps K
 - **Complete observability stack**: VictoriaMetrics, Loki, Tempo, Grafana, AlertManager
 
 ### Strategic Assessment
+
 This repository represents a **best-in-class reference implementation** suitable for:
+
 - Production Kubernetes deployments on bare-metal and Proxmox
 - Home lab/edge computing with HA control planes
 - Training and education on modern GitOps practices
@@ -35,6 +38,7 @@ This repository represents a **best-in-class reference implementation** suitable
 ### Compliance Verification
 
 #### 1.1 Declarative Configuration
+
 - **Status**: EXCELLENT
 - **Evidence**:
   - 100% YAML-based configuration (170 Jinja2 templates)
@@ -43,13 +47,16 @@ This repository represents a **best-in-class reference implementation** suitable
   - No imperative commands in manifests
 
 **Pattern:**
+
 ```
 cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux CD reconciliation
 ```
 
 #### 1.2 Git as Source of Truth
+
 - **Status**: FULLY IMPLEMENTED
 - **GitOps Flow**:
+
   ```
   Git Repository
     ↓
@@ -61,10 +68,12 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
     ↓
   Kubernetes Resources (reconciled)
   ```
+
 - **Reconciliation**: Every 30 minutes (configurable)
 - **Webhook**: Manual integration available via Flux Receiver
 
 #### 1.3 Immutable Infrastructure
+
 - **Status**: EXCEPTIONAL
 - **Implementation**:
   - Talos Linux (immutable, API-driven OS)
@@ -74,6 +83,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
   - Configuration via declarative YAML patches
 
 #### 1.4 Drift Detection & Remediation
+
 - **Status**: IMPLEMENTED
 - **Tools**:
   - `flux check` command for health verification
@@ -81,6 +91,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
   - Automatic reconciliation on drift detection
   - Manual reconciliation: `task reconcile`
 - **Configuration**: Configured in Kustomization resources
+
   ```yaml
   spec:
     interval: 30m
@@ -89,6 +100,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
   ```
 
 #### 1.5 Branch Protection & PR Workflow
+
 - **Status**: FULLY CONFIGURED
 - **Protection**: Enabled via e2e CI/CD validation
 - **PR Validation**:
@@ -99,6 +111,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
 - **Merge Requirements**: Green CI status + optional review approvals
 
 #### 1.6 Version Control
+
 - **Status**: EXCELLENT
 - **Implementation**:
   - Semantic versioning (YYYY.MM.N)
@@ -108,6 +121,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
   - Git tag protection for releases
 
 #### 1.7 Change Management
+
 - **Status**: WELL-DOCUMENTED
 - **Process**:
   1. Feature branch from main
@@ -120,6 +134,7 @@ cluster.yaml + nodes.yaml → makejinja templates → Kubernetes YAML → Flux C
 ### Recommendations
 
 **HIGH PRIORITY - Notification Integration (1-2 days)**
+
 ```yaml
 # Add Flux notification to track deployments
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
@@ -140,10 +155,12 @@ spec:
 ```
 
 **MEDIUM PRIORITY - Webhook Automation (1 day)**
+
 - Configure Flux Receiver for GitHub webhook push events
 - Eliminate the 30m reconciliation delay for urgent changes
 
 **DOCUMENTATION - Add Drift Resolution Guide**
+
 - Explicit procedures for handling Flux drift detection
 - Troubleshooting steps for reconciliation failures
 
@@ -156,6 +173,7 @@ spec:
 ### Compliance Verification
 
 #### 2.1 Namespace Organization
+
 - **Status**: EXCELLENT (17 namespaces)
   - `flux-system` - GitOps controller
   - `kube-system` - Core platform (Cilium, CoreDNS, metrics-server)
@@ -170,18 +188,22 @@ spec:
 **Pattern**: Clear separation of concerns, each with dedicated namespace
 
 #### 2.2 Resource Naming Conventions
+
 - **Status**: CONSISTENT
 - **Pattern**: `{application}-{component}` (e.g., `cilium`, `envoy-gateway`, `victoria-metrics`)
 - **Labels**: Standard Kubernetes labels applied consistently
+
   ```yaml
   labels:
     app.kubernetes.io/name: myapp
     app.kubernetes.io/version: "1.0"
     app.kubernetes.io/component: server
   ```
+
 - **Annotations**: Used for cert-manager, external-dns integration
 
 #### 2.3 Label & Annotation Standards
+
 - **Status**: IMPLEMENTED
 - **Evidence**:
   - `app.kubernetes.io/` labels on all resources
@@ -190,8 +212,10 @@ spec:
   - Helm/Prometheus annotations for monitoring
 
 #### 2.4 Resource Requests & Limits
+
 - **Status**: DEFINED (44 locations verified)
 - **Coverage**:
+
   ```
   flux-instance: requests/limits
   cloudflare-tunnel: requests/limits
@@ -202,6 +226,7 @@ spec:
   ```
 
 **Example Pattern:**
+
 ```yaml
 resources:
   requests:
@@ -213,6 +238,7 @@ resources:
 ```
 
 #### 2.5 Health Check Configuration
+
 - **Status**: PARTIAL (Only 2 instances found - GAP)
 - **Current**:
   - Envoy Gateway: probe definitions
@@ -220,6 +246,7 @@ resources:
 - **Missing**: Comprehensive liveness/readiness/startup probes
 
 **Example - Should be implemented:**
+
 ```yaml
 livenessProbe:
   httpGet:
@@ -237,8 +264,10 @@ readinessProbe:
 ```
 
 #### 2.6 Security Context
+
 - **Status**: IMPLEMENTED (7 instances)
 - **Pattern**:
+
   ```yaml
   securityContext:
     runAsNonRoot: true
@@ -248,21 +277,25 @@ readinessProbe:
       drop:
         - ALL
   ```
+
 - **Exception**: Cilium agent requires elevated capabilities (documented)
 
 #### 2.7 Network Policies
+
 - **Status**: IMPLEMENTED VIA CILIUM
 - **Implementation**: Cilium NetworkPolicies (not default NetworkPolicy)
 - **Coverage**: Layer 3/4 filtering via eBPF
 - **Gap**: No explicit L7 (application-layer) policies documented
 
 #### 2.8 RBAC Configuration
+
 - **Status**: MANAGED BY HELM
 - **Implementation**: Chart-provided ServiceAccounts and Roles
 - **Example**: Flux uses separate SA per controller (source, kustomize, helm, etc.)
 - **Documentation**: See CONFIGURATION.md for RBAC details
 
 #### 2.9 ConfigMap & Secret Management
+
 - **Status**: EXCELLENT
 - **Implementation**:
   - ConfigMaps for non-sensitive data
@@ -271,8 +304,10 @@ readinessProbe:
   - External Secrets Operator support (optional)
 
 #### 2.10 Pod Disruption Budgets (PDBs)
+
 - **Status**: NOT IMPLEMENTED - GAP
 - **Recommendation**: Add PDBs for HA services
+
   ```yaml
   apiVersion: policy/v1
   kind: PodDisruptionBudget
@@ -298,6 +333,7 @@ readinessProbe:
 
 **HIGH PRIORITY - Health Probe Rollout (2-3 days)**
 Add comprehensive health checks to all deployments:
+
 ```yaml
 # Template for inclusion in all helmrelease.yaml files
 livenessProbe:
@@ -319,6 +355,7 @@ readinessProbe:
 
 **HIGH PRIORITY - Pod Disruption Budgets (1-2 days)**
 Add PDBs for:
+
 - Cilium daemon set
 - Flux controllers (source, kustomize, helm)
 - CoreDNS deployment
@@ -326,6 +363,7 @@ Add PDBs for:
 - Monitoring components (prometheus, alertmanager)
 
 **MEDIUM PRIORITY - Pod Security Admission (1 day)**
+
 ```yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
@@ -343,6 +381,7 @@ spec:
 
 **MEDIUM PRIORITY - Pod Priority Classes (1 day)**
 Implement priority tiers:
+
 - system-critical (infrastructure)
 - application-high (core services)
 - application-medium (workloads)
@@ -357,6 +396,7 @@ Implement priority tiers:
 ### Compliance Verification
 
 #### 3.1 OCI Repository Usage
+
 - **Status**: FULLY IMPLEMENTED
 - **Registry Options**:
   - `docker.io` (Docker Hub)
@@ -364,6 +404,7 @@ Implement priority tiers:
   - `quay.io` (Quay.io)
   - Custom registries supported
 - **Example**:
+
   ```yaml
   apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: OCIRepository
@@ -375,15 +416,19 @@ Implement priority tiers:
   ```
 
 #### 3.2 Chart Version Pinning
+
 - **Status**: EXCELLENT
 - **Pattern**: Explicit version in OCIRepository
+
   ```yaml
   ref:
     tag: "1.15.1"  # Semantic version
   ```
+
 - **Automation**: Renovate automatic updates with PR validation
 
 #### 3.3 Values Organization
+
 - **Status**: WELL-STRUCTURED
 - **Pattern**: Values defined inline in HelmRelease spec
 - **Organization by concern**:
@@ -393,6 +438,7 @@ Implement priority tiers:
   - Integration (external-dns, cert-manager)
 
 #### 3.4 CRD Management
+
 - **Status**: HANDLED PER-CHART
 - **Examples**:
   - Envoy Gateway: `crds: Skip` (managed separately)
@@ -400,12 +446,14 @@ Implement priority tiers:
   - Prometheus: Via kube-prometheus-stack Helm chart
 
 #### 3.5 Chart Update Intervals
+
 - **Status**: OPTIMIZED
 - **Default**: 1h (reasonable balance)
 - **Critical Services**: Same 1h (timely updates)
 - **Recommendation**: Consider variable intervals per app
 
 #### 3.6 Helm Hooks (Pre/Post Deploy)
+
 - **Status**: NOT WIDELY USED - GAP
 - **Current**: Default Helm behavior
 - **Missing**:
@@ -414,10 +462,12 @@ Implement priority tiers:
   - Pre-delete hooks (graceful cleanup)
 
 #### 3.7 Helm Test Integration
+
 - **Status**: NOT IMPLEMENTED - GAP
 - **Opportunity**: Add `helm test` for deployment validation
 
 #### 3.8 Helm Values Validation
+
 - **Status**: IMPLICIT VIA HELMRELEASE
 - **Implementation**: Flux validates before apply
 - **Recommendation**: Add `values-schema.json` for stricter validation
@@ -426,12 +476,14 @@ Implement priority tiers:
 
 **HIGH PRIORITY - Helm Hooks Implementation (2-3 days)**
 Add pre/post upgrade hooks for:
+
 - VictoriaMetrics: Pre-upgrade snapshot
 - Loki: Pre-upgrade backup
 - Tempo: Data migration on upgrade
 - etcd (via talos-backup): Snapshot before upgrade
 
 **Example:**
+
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -453,11 +505,13 @@ spec:
 
 **MEDIUM PRIORITY - Helm Test Integration (1-2 days)**
 Add test charts for:
+
 - Database connectivity tests
 - API endpoint health checks
 - Integration test suites
 
 **MEDIUM PRIORITY - Values Schema Validation (1 day)**
+
 ```yaml
 # Add to each OCI repository
 spec:
@@ -473,6 +527,7 @@ spec:
 ### Compliance Verification
 
 #### 4.1 Immutable Operating System
+
 - **Status**: EXCEPTIONAL
 - **Features**:
   - No SSH shell access (API-only: talosctl)
@@ -482,11 +537,14 @@ spec:
   - Temporal snapshots for rollback
 
 #### 4.2 Machine Configuration
+
 - **Status**: WELL-ORGANIZED
 - **Structure**:
+
   ```
   talconfig.yaml → talhelper genconfig → clusterconfig/
   ```
+
 - **Configuration Layers**:
   - Global patches (all nodes)
   - Controller patches (control plane only)
@@ -494,6 +552,7 @@ spec:
   - Per-node overrides (schematic ID, MTU, etc.)
 
 **Example Patches:**
+
 ```
 templates/config/talos/patches/
 ├── global/
@@ -509,6 +568,7 @@ templates/config/talos/patches/
 ```
 
 #### 4.3 High Availability Control Plane
+
 - **Status**: ENFORCED
 - **Configuration**:
   - `allowSchedulingOnControlPlanes: false` (workload isolation)
@@ -517,14 +577,18 @@ templates/config/talos/patches/
   - etcd clustering for state replication
 
 #### 4.4 Version Pinning & Upgrades
+
 - **Status**: EXCELLENT
 - **Version Management**:
+
   ```
   talenv.yaml:
     talosVersion: 1.12.0
     kubernetesVersion: 1.35.0
   ```
+
 - **Upgrade Automation**: tuppr CRDs
+
   ```yaml
   apiVersion: system-upgrade.talos.dev/v1alpha1
   kind: TalosUpgrade
@@ -533,20 +597,24 @@ templates/config/talos/patches/
   ```
 
 #### 4.5 Schematic ID Management
+
 - **Status**: IMPLEMENTED
 - **Source**: Talos Image Factory
 - **Pattern**: Per-node schematic in `nodes.yaml`
+
   ```yaml
   nodes:
     - name: cp-0
       schematic_id: "xxxxx"  # From Image Factory
   ```
+
 - **Extensions Support**:
   - QEMU Guest Agent
   - Custom kernel modules
   - System extensions
 
 #### 4.6 Networking Configuration
+
 - **Status**: FLEXIBLE
 - **Options**:
   - Static IP allocation
@@ -556,19 +624,24 @@ templates/config/talos/patches/
   - Bond/LACP support (via patches)
 
 #### 4.7 Disk Encryption & SecureBoot
+
 - **Status**: AVAILABLE BUT NOT HIGHLIGHTED
 - **Options in nodes.yaml**:
+
   ```yaml
   nodes:
     - name: cp-0
       secureboot: false       # UEFI SecureBoot
       encrypt_disk: false     # TPM-based encryption
   ```
+
 - **Gap**: Documentation doesn't emphasize security setup
 
 #### 4.8 Kernel Module Configuration
+
 - **Status**: SUPPORTED
 - **Pattern**: `kernel_modules` in nodes.yaml
+
   ```yaml
   nodes:
     - name: storage-0
@@ -576,6 +649,7 @@ templates/config/talos/patches/
   ```
 
 #### 4.9 Bootstrap Process
+
 - **Status**: WELL-DOCUMENTED
 - **Flow**:
   1. Generate configs: `task talos:generate-config`
@@ -584,6 +658,7 @@ templates/config/talos/patches/
   4. Flux takes over GitOps
 
 #### 4.10 Node Lifecycle Management
+
 - **Status**: HANDLED BY TALOS CCM
 - **Features**:
   - Automatic node initialization
@@ -595,6 +670,7 @@ templates/config/talos/patches/
 
 **HIGH PRIORITY - SecureBoot + TPM Documentation (1 day)**
 Add comprehensive guide for enabling:
+
 1. UEFI SecureBoot activation
 2. TPM-based disk encryption
 3. Secure key storage
@@ -602,6 +678,7 @@ Add comprehensive guide for enabling:
 
 **HIGH PRIORITY - Compliance Configuration (2 days)**
 Document FIPS/FIPS-140 setup:
+
 - Kernel FIPS module
 - cryptographic library requirements
 - Audit logging configuration
@@ -609,12 +686,14 @@ Document FIPS/FIPS-140 setup:
 
 **MEDIUM PRIORITY - Kernel Module Versioning (1 day)**
 Create versioning strategy for custom kernel modules:
+
 - Pinned versions in schematic
 - Compatibility matrix documentation
 - Update procedures for kernel changes
 
 **MEDIUM PRIORITY - Disaster Recovery (2 days)**
 Enhanced etcd backup/restore:
+
 - Automated snapshot scheduling via talos-backup
 - Off-cluster storage (S3-compatible)
 - Point-in-time recovery procedures
@@ -622,6 +701,7 @@ Enhanced etcd backup/restore:
 
 **DOCUMENTATION - Upgrade Runbook (1 day)**
 Step-by-step procedures for:
+
 - Talos OS version upgrades
 - Kubernetes version upgrades
 - Coordinated node rolling upgrades
@@ -636,27 +716,34 @@ Step-by-step procedures for:
 ### Compliance Verification
 
 #### 5.1 Infrastructure Templating
+
 - **Status**: FULLY TEMPLATED
 - **Implementation**:
+
   ```
   templates/config/infrastructure/ → task configure → infrastructure/ (generated)
   ```
+
 - **Never Edit**: Generated infrastructure/ directory
 - **Source of Truth**: templates/config/infrastructure/
 
 #### 5.2 State Management
+
 - **Status**: REMOTE + ENCRYPTED
 - **Backend Configuration**:
+
   ```
   Backend: HTTP (Cloudflare R2 tfstate-worker)
   Encryption: Age (via .sops.yaml)
   Locking: HTTP backend with timeout
   ```
+
 - **State File**: `infrastructure/secrets.sops.yaml` (encrypted)
 
 **Gap**: No documented state backup to secondary location
 
 #### 5.3 Version Pinning
+
 - **Status**: EXCELLENT
 - **Tools**:
   - OpenTofu: v1.11+ (auto-update via mise)
@@ -664,6 +751,7 @@ Step-by-step procedures for:
   - Terraform Modules: Pinned (no local modules)
 
 #### 5.4 Secret Management
+
 - **Status**: SOPS-ENCRYPTED
 - **Implementation**:
   - Proxmox API tokens encrypted
@@ -672,6 +760,7 @@ Step-by-step procedures for:
   - Accessed at runtime via `sops decrypt`
 
 #### 5.5 Proxmox VM Automation
+
 - **Status**: FULLY AUTOMATED
 - **Features**:
   - Automatic ISO download from Talos Image Factory
@@ -681,6 +770,7 @@ Step-by-step procedures for:
   - Per-node customization
 
 **Pattern:**
+
 ```yaml
 # From nodes.yaml
 nodes:
@@ -692,26 +782,31 @@ nodes:
 ```
 
 #### 5.6 Variable Validation
+
 - **Status**: BASIC
 - **Implementation**: OpenTofu variable validation
 - **Gap**: No pre-apply cost estimation
 
 #### 5.7 Infrastructure Testing
+
 - **Status**: NOT IMPLEMENTED
 - **Opportunity**: Add `terraform validate`, `terraform plan` CI checks
 
 #### 5.8 Cost Optimization
+
 - **Status**: NO AUTOMATION
 - **Gap**: No cost tracking or estimation before apply
 - **Opportunity**: Integrate with Infracost
 
 #### 5.9 Disaster Recovery
+
 - **Status**: PARTIAL
 - **Current**: State file in Cloudflare R2
 - **Gap**: No secondary backup destination
 - **Gap**: No state file versioning strategy
 
 #### 5.10 Documentation
+
 - **Status**: COMPREHENSIVE
 - **Content**:
   - R2 state backend setup
@@ -722,6 +817,7 @@ nodes:
 ### Recommendations
 
 **HIGH PRIORITY - Cost Tracking Integration (1-2 days)**
+
 ```yaml
 # Add to terraform configuration
 terraform {
@@ -736,11 +832,13 @@ terraform {
 ```
 
 **HIGH PRIORITY - State Backup Strategy (1 day)**
+
 - Implement daily state snapshots to separate R2 bucket
 - Document state recovery procedures
 - Test restore procedures quarterly
 
 **MEDIUM PRIORITY - Infrastructure Testing (1-2 days)**
+
 ```yaml
 # Add to CI/CD
 - task: terraform:validate
@@ -749,12 +847,14 @@ terraform {
 ```
 
 **MEDIUM PRIORITY - Disaster Recovery Plan (2 days)**
+
 - R2 bucket versioning enabled
 - Secondary backup location (e.g., another R2 bucket in different region)
 - Quarterly restore testing
 - RTO/RPO documentation
 
 **MEDIUM PRIORITY - Pre-Apply Validation Hook (1 day)**
+
 ```bash
 # Add to infra tasks
 terraform validate
@@ -770,14 +870,17 @@ terraform plan -json | jq '.resource_changes'
 ### Compliance Verification
 
 #### 6.1 Multi-Stage Validation
+
 - **Status**: EXCELLENT (3 stages)
 - **Stage 1 - flux-local**: YAML syntax + Helm rendering
 - **Stage 2 - e2e**: Full config generation + bootstrap simulation
 - **Stage 3 - Release**: Monthly semantic versioning
 
 #### 6.2 Pull Request Validation
+
 - **Status**: COMPREHENSIVE
 - **Workflow: flux-local.yaml**
+
   ```yaml
   Pre-job: Detect changed Kubernetes files
   Test: Run flux-local validation on all namespaces
@@ -786,6 +889,7 @@ terraform plan -json | jq '.resource_changes'
   ```
 
 #### 6.3 Artifact Validation
+
 - **Status**: IMPLEMENTED
 - **Tools**:
   - flux-local for Flux resources
@@ -793,6 +897,7 @@ terraform plan -json | jq '.resource_changes'
   - Helmfile validation for bootstrap
 
 #### 6.4 Dependency Management
+
 - **Status**: AUTOMATED VIA RENOVATE
 - **Configuration**:
   - Weekly dependency checks
@@ -801,6 +906,7 @@ terraform plan -json | jq '.resource_changes'
   - Semantic commit messages
 
 #### 6.5 Container Image Management
+
 - **Status**: OCI REGISTRIES
 - **Implementation**:
   - All images from public registries
@@ -809,11 +915,13 @@ terraform plan -json | jq '.resource_changes'
 - **Gap**: No image scanning/vulnerability detection
 
 #### 6.6 Artifact Signing & Verification
+
 - **Status**: NOT IMPLEMENTED
 - **Gap**: No cosign/Sigstore integration for image signing
 - **Opportunity**: Add image signature verification
 
 #### 6.7 Release Management
+
 - **Status**: AUTOMATED
 - **Process**:
   - Monthly release schedule (1st of month)
@@ -822,6 +930,7 @@ terraform plan -json | jq '.resource_changes'
   - Git tags for version control
 
 #### 6.8 GitHub Actions Best Practices
+
 - **Status**: EXCELLENT
 - **Features**:
   - Digest pinning for all actions (SHA256)
@@ -831,6 +940,7 @@ terraform plan -json | jq '.resource_changes'
   - Permissions scoped per job
 
 **Example:**
+
 ```yaml
 jobs:
   test:
@@ -841,6 +951,7 @@ jobs:
 ```
 
 #### 6.9 Testing Coverage
+
 - **Status**: CONFIGURATION-FOCUSED
 - **Current Tests**:
   - Template rendering
@@ -849,6 +960,7 @@ jobs:
 - **Gap**: No application/integration testing
 
 #### 6.10 Security Scanning
+
 - **Status**: PARTIAL
 - **Current**: Renovate dependency scanning
 - **Gap**:
@@ -860,6 +972,7 @@ jobs:
 ### Recommendations
 
 **HIGH PRIORITY - Container Image Scanning (1-2 days)**
+
 ```yaml
 # Add to flux-local workflow
 - name: Scan images with Trivy
@@ -877,6 +990,7 @@ jobs:
 ```
 
 **HIGH PRIORITY - SBOM Generation (1 day)**
+
 ```yaml
 # Add to release workflow
 - name: Generate SBOM
@@ -892,6 +1006,7 @@ jobs:
 ```
 
 **MEDIUM PRIORITY - Image Signing with Sigstore (1-2 days)**
+
 ```yaml
 # Sign all container images
 - name: Sign image
@@ -906,6 +1021,7 @@ jobs:
 ```
 
 **MEDIUM PRIORITY - SAST Integration (1 day)**
+
 ```yaml
 # Add code quality scanning
 - name: Run Trivy filesystem scan
@@ -917,6 +1033,7 @@ jobs:
 ```
 
 **MEDIUM PRIORITY - Artifact Attestation (1-2 days)**
+
 ```yaml
 # Add SLSA v1.0 compliance
 - name: Generate SLSA provenance
@@ -926,6 +1043,7 @@ jobs:
 ```
 
 **LOW PRIORITY - Performance Regression Testing (2-3 days)**
+
 - Track template rendering time
 - Alert on significant slowdowns
 - Monitor CI/CD duration trends
@@ -939,6 +1057,7 @@ jobs:
 ### Compliance Verification
 
 #### 7.1 Secret Management
+
 - **Status**: EXCELLENT
 - **Implementation**:
   - SOPS encryption with Age backend
@@ -948,6 +1067,7 @@ jobs:
   - Private key in `age.key` (gitignored)
 
 **Example:**
+
 ```yaml
 # Encrypted secret
 apiVersion: v1
@@ -960,6 +1080,7 @@ stringData:
 ```
 
 #### 7.2 Secret Access Control
+
 - **Status**: IMPLEMENTED
 - **Pattern**:
   - GitHub deploy key with read-only permissions
@@ -967,6 +1088,7 @@ stringData:
   - SOPS key rotation procedures (documented)
 
 #### 7.3 Network Security
+
 - **Status**: EXCELLENT
 - **Implementation**:
   - Cilium replacing kube-proxy
@@ -975,6 +1097,7 @@ stringData:
   - Internal/external gateway separation
 
 #### 7.4 Container Security
+
 - **Status**: PARTIAL
 - **Good**:
   - Non-root containers (7 instances verified)
@@ -984,6 +1107,7 @@ stringData:
 - **Gap**: Pod Security Admission not configured
 
 #### 7.5 RBAC (Role-Based Access Control)
+
 - **Status**: HELM-MANAGED
 - **Implementation**:
   - ServiceAccounts per application
@@ -992,6 +1116,7 @@ stringData:
   - RoleBindings for permission assignment
 
 #### 7.6 Encryption in Transit
+
 - **Status**: COMPREHENSIVE
 - **Implementation**:
   - TLS for all HTTPS endpoints (cert-manager)
@@ -1001,6 +1126,7 @@ stringData:
 - **Gap**: No documented TLS version enforcement (should be 1.2+)
 
 #### 7.7 Encryption at Rest
+
 - **Status**: IMPLEMENTED
 - **Storage**:
   - etcd data (Talos default)
@@ -1009,6 +1135,7 @@ stringData:
   - S3 backups (optional encryption)
 
 #### 7.8 Supply Chain Security
+
 - **Status**: PARTIAL
 - **Good**:
   - Renovate for dependency tracking
@@ -1021,11 +1148,13 @@ stringData:
   - No artifact attestation
 
 #### 7.9 Audit Logging
+
 - **Status**: NOT CONFIGURED
 - **Gap**: No Kubernetes audit log aggregation
 - **Opportunity**: Integrate with VictoriaMetrics/Loki
 
 #### 7.10 Vulnerability Scanning
+
 - **Status**: MISSING
 - **Gap**:
   - No container image scanning
@@ -1036,6 +1165,7 @@ stringData:
 ### Recommendations
 
 **CRITICAL - Pod Security Admission (1 day)**
+
 ```yaml
 # Enable restricted policy
 apiVersion: admissionregistration.k8s.io/v1
@@ -1056,6 +1186,7 @@ spec:
 ```
 
 **CRITICAL - Container Image Scanning (2 days)**
+
 ```yaml
 # Add Trivy scanning to all image sources
 apiVersion: image.toolkit.fluxcd.io/v1beta2
@@ -1075,18 +1206,21 @@ spec:
 **HIGH PRIORITY - Supply Chain Security (3-4 days)**
 
 1. **Image Signing with Sigstore:**
+
 ```bash
 # Sign published container images
 cosign sign --key cosign.key ghcr.io/example/app:latest
 ```
 
 1. **SBOM Generation:**
+
 ```bash
 # Generate CycloneDX SBOM for each release
 syft packages -o cyclonedx-json > sbom.json
 ```
 
 1. **SLSA v1.0 Compliance:**
+
 ```yaml
 # Track artifact provenance
 apiVersion: intoto.in-toto.io/v0.1
@@ -1103,6 +1237,7 @@ spec:
 ```
 
 1. **Artifact Attestation:**
+
 ```bash
 # Create SLSA provenance attestation
 cosign attest --predicate provenance.json \
@@ -1110,6 +1245,7 @@ cosign attest --predicate provenance.json \
 ```
 
 **HIGH PRIORITY - Kubernetes Audit Logging (2 days)**
+
 ```yaml
 # Enable audit logging in Talos
 patches:
@@ -1124,6 +1260,7 @@ patches:
 ```
 
 **MEDIUM PRIORITY - Network Policy Enforcement (1-2 days)**
+
 ```yaml
 # Implement explicit network policies
 apiVersion: cilium.io/v2
@@ -1140,6 +1277,7 @@ spec:
 ```
 
 **MEDIUM PRIORITY - TLS Configuration Hardening (1 day)**
+
 ```yaml
 # Enforce TLS 1.2+ and strong ciphers
 apiVersion: v1
@@ -1162,6 +1300,7 @@ data:
 ### Compliance Verification
 
 #### 8.1 Metrics Collection
+
 - **Status**: COMPREHENSIVE
 - **Stack**: VictoriaMetrics (memory-efficient alternative to Prometheus)
 - **Components**:
@@ -1171,6 +1310,7 @@ data:
   - PrometheusRules (alert definitions)
 
 **Metrics Coverage:**
+
 ```
 Infrastructure:
   - Node metrics (CPU, memory, disk, network)
@@ -1190,6 +1330,7 @@ Custom:
 ```
 
 #### 8.2 Log Aggregation
+
 - **Status**: IMPLEMENTED
 - **Stack**: Loki + Alloy (unified telemetry collector)
 - **Features**:
@@ -1199,6 +1340,7 @@ Custom:
   - Integration with Grafana dashboards
 
 #### 8.3 Distributed Tracing
+
 - **Status**: IMPLEMENTED
 - **Stack**: Tempo + Alloy
 - **Features**:
@@ -1208,6 +1350,7 @@ Custom:
   - Sampling: 10% by default (configurable)
 
 #### 8.4 Network Observability
+
 - **Status**: OPTIONAL VIA HUBBLE
 - **Implementation**: Cilium Hubble UI
 - **Features**:
@@ -1217,8 +1360,10 @@ Custom:
   - Real-time traffic analysis
 
 #### 8.5 Alert Configuration
+
 - **Status**: IMPLEMENTED
 - **Rules Coverage**:
+
   ```
   Infrastructure:
     - Node memory high utilization (90%)
@@ -1241,6 +1386,7 @@ Custom:
   ```
 
 #### 8.6 Dashboard Provisioning
+
 - **Status**: IMPLEMENTED
 - **Dashboards**:
   - Cilium overview
@@ -1252,22 +1398,26 @@ Custom:
   - AlertManager status
 
 #### 8.7 Monitoring Stack High Availability
+
 - **Status**: SINGLE REPLICA (non-HA)
 - **Gap**: No horizontal scaling for observability components
 - **Opportunity**: Scale Grafana, Prometheus, Alertmanager
 
 #### 8.8 Metrics Retention
+
 - **Status**: CONFIGURED
 - **Default**: 7 days (configurable)
 - **Gap**: No tiered retention (hot/cold storage)
 
 #### 8.9 Alerting Best Practices
+
 - **Status**: GOOD STARTING POINT
 - **Thresholds**: 90% for CPU/memory (reasonable)
 - **Gap**: No SLO/SLI-based alerting
 - **Gap**: No alert grouping/deduplication
 
 #### 8.10 Observability Documentation
+
 - **Status**: COMPREHENSIVE
 - **Content**:
   - Architecture diagrams
@@ -1280,6 +1430,7 @@ Custom:
 
 **HIGH PRIORITY - SLO/SLI Implementation (2-3 days)**
 Define service-level indicators:
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -1298,6 +1449,7 @@ spec:
 ```
 
 **HIGH PRIORITY - Alert Severity & Escalation (1-2 days)**
+
 ```yaml
 # Differentiate alert severity
 apiVersion: monitoring.coreos.com/v1
@@ -1318,6 +1470,7 @@ spec:
 
 **MEDIUM PRIORITY - Observability Stack HA (2-3 days)**
 Scale monitoring components:
+
 ```yaml
 # Scale Grafana
 spec:
@@ -1338,12 +1491,14 @@ spec:
 
 **MEDIUM PRIORITY - Custom Dashboard Development (2-3 days)**
 Create organization-specific dashboards:
+
 - Application performance overview
 - Business metrics (requests/day, error rate)
 - Cost metrics (resource utilization)
 - Compliance metrics (policy violations)
 
 **MEDIUM PRIORITY - Distributed Trace Sampling Strategy (1 day)**
+
 ```yaml
 # Implement adaptive sampling
 apiVersion: telemetry.io/v1
@@ -1357,6 +1512,7 @@ spec:
 ```
 
 **LOW PRIORITY - Logs Tiered Retention (2 days)**
+
 ```yaml
 # Implement hot/cold storage
 apiVersion: loki.grafana.com/v1
@@ -1377,15 +1533,18 @@ spec:
 ### Compliance Verification
 
 #### 9.1 Unit Testing
+
 - **Status**: NOT APPLICABLE
 - **Reason**: Infrastructure-as-Code (no code units to test)
 
 #### 9.2 Integration Testing
+
 - **Status**: PARTIAL
 - **Current**: E2E workflow tests configuration rendering
 - **Gap**: No Kubernetes integration tests
 
 #### 9.3 Template Validation
+
 - **Status**: IMPLEMENTED
 - **Tests**:
   - YAML syntax validation
@@ -1396,6 +1555,7 @@ spec:
 **Command:** `task configure --yes`
 
 #### 9.4 Manifest Validation
+
 - **Status**: EXCELLENT
 - **Tool**: flux-local
 - **Coverage**:
@@ -1405,32 +1565,40 @@ spec:
   - Flux controller behavior
 
 #### 9.5 Security Policy Testing
+
 - **Status**: MISSING
 - **Gap**: No OPA/Gatekeeper policy validation
 - **Gap**: No Pod Security Admission testing
 
 #### 9.6 Configuration Drift Testing
+
 - **Status**: NOT AUTOMATED
 - **Opportunity**: Add periodic drift detection tests
 
 #### 9.7 Upgrade Testing
+
 - **Status**: PARTIAL
 - **Current**: Dry-run of bootstrap tasks
+
   ```bash
   task bootstrap:talos --dry
   task bootstrap:apps --dry
   ```
+
 - **Gap**: No actual upgrade testing in test environment
 
 #### 9.8 Rollback Testing
+
 - **Status**: NOT IMPLEMENTED
 - **Opportunity**: Add rollback validation tests
 
 #### 9.9 Chaos Engineering
+
 - **Status**: NOT IMPLEMENTED
 - **Opportunity**: Implement Chaos Mesh for resilience testing
 
 #### 9.10 Documentation of Test Procedures
+
 - **Status**: GOOD
 - **Content**: Dry-run commands documented
 - **Gap**: No comprehensive test plan document
@@ -1438,6 +1606,7 @@ spec:
 ### Recommendations
 
 **HIGH PRIORITY - Kubernetes Validation Scanning (1-2 days)**
+
 ```yaml
 # Add kube-score for deployment quality
 - name: Validate manifests with kube-score
@@ -1453,6 +1622,7 @@ spec:
 ```
 
 **HIGH PRIORITY - OPA/Gatekeeper Policy Testing (2-3 days)**
+
 ```rego
 # Define policies
 package kubernetes.admission
@@ -1471,6 +1641,7 @@ deny[msg] {
 ```
 
 **MEDIUM PRIORITY - Upgrade Testing in Staging (2-3 days)**
+
 ```yaml
 # Create staging environment workflow
 stages:
@@ -1482,6 +1653,7 @@ stages:
 ```
 
 **MEDIUM PRIORITY - Chaos Engineering (3-4 days)**
+
 ```yaml
 # Implement Chaos Mesh experiments
 apiVersion: chaos-mesh.org/v1alpha1
@@ -1498,6 +1670,7 @@ spec:
 ```
 
 **MEDIUM PRIORITY - Rollback Testing (1-2 days)**
+
 ```bash
 # Test rollback procedures
 task:
@@ -1511,6 +1684,7 @@ task:
 ```
 
 **LOW PRIORITY - Synthetic Monitoring (2-3 days)**
+
 ```yaml
 # Add Blackbox exporter for endpoint testing
 apiVersion: monitoring.coreos.com/v1
@@ -1535,6 +1709,7 @@ spec:
 ### Compliance Verification
 
 #### 10.1 Architecture Documentation
+
 - **Status**: EXCEPTIONAL
 - **File**: `docs/ARCHITECTURE.md`
 - **Content**:
@@ -1548,6 +1723,7 @@ spec:
   - Upgrade paths
 
 #### 10.2 Configuration Reference
+
 - **Status**: COMPREHENSIVE
 - **File**: `docs/CONFIGURATION.md`
 - **Content**:
@@ -1560,6 +1736,7 @@ spec:
   - Observability stack options
 
 #### 10.3 Operations Guide
+
 - **Status**: DETAILED
 - **File**: `docs/OPERATIONS.md`
 - **Content**:
@@ -1570,6 +1747,7 @@ spec:
   - Common issues and solutions
 
 #### 10.4 Troubleshooting Guide
+
 - **Status**: EXCELLENT
 - **File**: `docs/TROUBLESHOOTING.md`
 - **Content**:
@@ -1580,6 +1758,7 @@ spec:
   - Recovery procedures
 
 #### 10.5 CLI Command Reference
+
 - **Status**: COMPREHENSIVE
 - **File**: `docs/CLI_REFERENCE.md`
 - **Content**:
@@ -1589,6 +1768,7 @@ spec:
   - Troubleshooting commands
 
 #### 10.6 AI Context Documentation
+
 - **Status**: EXCELLENT
 - **Files**:
   - `docs/ai-context/flux-gitops.md`
@@ -1599,6 +1779,7 @@ spec:
 - **Purpose**: Domain expert context for AI assistants
 
 #### 10.7 Implementation Guides
+
 - **Status**: DETAILED
 - **Guides**:
   - BGP + UniFi integration
@@ -1608,6 +1789,7 @@ spec:
   - OIDC/JWT integration (Envoy Gateway)
 
 #### 10.8 Research Documentation
+
 - **Status**: EXTENSIVE
 - **Research Documents**:
   - Envoy Gateway examples analysis
@@ -1618,6 +1800,7 @@ spec:
   - k8s-at-home patterns
 
 #### 10.9 Quick Start Guide
+
 - **Status**: VIDEO-STYLE
 - **File**: `docs/QUICKSTART.md`
 - **Content**:
@@ -1627,6 +1810,7 @@ spec:
   - Verification procedures
 
 #### 10.10 Diagram Documentation
+
 - **Status**: EXCELLENT
 - **Format**: Mermaid diagrams
 - **Diagrams**:
@@ -1641,6 +1825,7 @@ spec:
 
 **MEDIUM PRIORITY - Runbook Templates (1-2 days)**
 Create standard runbook templates:
+
 ```markdown
 # Runbook: [Service] Failure Response
 
@@ -1665,6 +1850,7 @@ Create standard runbook templates:
 
 **MEDIUM PRIORITY - Change Log Format (1 day)**
 Standardize changelog documentation:
+
 ```markdown
 ## [Version] - YYYY-MM-DD
 
@@ -1683,6 +1869,7 @@ Standardize changelog documentation:
 
 **MEDIUM PRIORITY - Contribution Guidelines (1 day)**
 Create CONTRIBUTING.md:
+
 - Code style guidelines
 - Commit message format
 - PR review process
@@ -1691,6 +1878,7 @@ Create CONTRIBUTING.md:
 
 **LOW PRIORITY - Video Tutorials (4-6 days)**
 Create screen recordings for:
+
 - Initial cluster setup
 - Day-2 operations
 - Troubleshooting procedures
@@ -1698,6 +1886,7 @@ Create screen recordings for:
 
 **LOW PRIORITY - Glossary (1 day)**
 Create terms glossary:
+
 - Infrastructure terminology
 - Kubernetes concepts
 - GitOps patterns
@@ -1724,6 +1913,7 @@ Create terms glossary:
 | **OVERALL** | **90/100** | **EXCELLENT** |
 
 ### Strength Summary
+
 - Exceptional architecture and design
 - Strong GitOps implementation
 - Comprehensive documentation
@@ -1732,6 +1922,7 @@ Create terms glossary:
 - Well-organized codebase
 
 ### Gap Summary
+
 - Pod health probes incomplete
 - Security scanning not integrated
 - Supply chain security limited
@@ -1741,12 +1932,14 @@ Create terms glossary:
 ### Action Items (Priority-Ranked)
 
 **CRITICAL (Week 1)**
+
 1. Pod Security Admission configuration (1 day)
 2. Container image scanning (Trivy) in CI/CD (1-2 days)
 3. Health probe rollout (2-3 days)
 4. Pod Disruption Budgets (1-2 days)
 
 **HIGH (Week 2-3)**
+
 1. Image signing (Sigstore/cosign) (1-2 days)
 2. SBOM generation (1 day)
 3. SLSA compliance checks (2 days)
@@ -1754,6 +1947,7 @@ Create terms glossary:
 5. Observability stack HA (2-3 days)
 
 **MEDIUM (Month 2)**
+
 1. OPA/Gatekeeper policies (2-3 days)
 2. Chaos engineering setup (3-4 days)
 3. Helm hooks implementation (2-3 days)
@@ -1761,6 +1955,7 @@ Create terms glossary:
 5. SLO/SLI tracking (2-3 days)
 
 **LOW (Month 3)**
+
 1. Video tutorials (4-6 days)
 2. Runbook templates (1-2 days)
 3. Contribution guidelines (1 day)
@@ -1771,6 +1966,7 @@ Create terms glossary:
 ## 2026 Standards Alignment
 
 ### CNCF Maturity Model: GRADUATED
+
 - Declarative infrastructure ✓
 - Immutable OS & containers ✓
 - GitOps automation ✓
@@ -1779,12 +1975,14 @@ Create terms glossary:
 - Supply chain security ⚠ (partial)
 
 ### Kubernetes v1.35 Readiness: 98%
+
 - Gateway API v1 ✓
 - Latest resource API versions ✓
 - Modern admission controllers ✓
 - Current deprecation policy compliance ✓
 
 ### GitOps Best Practices (CNCF): 96%
+
 - Single source of truth ✓
 - Automated synchronization ✓
 - Declarative configuration ✓
@@ -1792,6 +1990,7 @@ Create terms glossary:
 - Sealed secrets ✓
 
 ### Cloud Native Security (NIST): 87%
+
 - RBAC ✓
 - Secrets encryption ✓
 - Network segmentation ✓

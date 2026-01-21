@@ -11,6 +11,7 @@
 ### Original Requirements
 
 From validation report (`docs/OIDC-IMPLEMENTATION-VALIDATION-JAN-2026.md`):
+
 1. Create RBAC ClusterRoleBindings for OIDC group-based access control
 2. Follow established project patterns and conventions
 3. Implement as templates for proper version control
@@ -19,17 +20,20 @@ From validation report (`docs/OIDC-IMPLEMENTATION-VALIDATION-JAN-2026.md`):
 ### Implementation Approach
 
 ✅ **Followed established patterns** from:
+
 - `.claude/skills/scaffold-flux-app/SKILL.md` - Directory structure and file organization
 - `style_and_conventions` memory - Template delimiters, conditional patterns, YAML style
 - Existing RBAC pattern from `ai-system/obot/mcp-policies/app/rbac.yaml.j2`
 
 ✅ **Created proper template structure**:
+
 ```
 templates/config/kubernetes/apps/kube-system/headlamp/app/
 └── oidc-rbac.yaml.j2  ← New RBAC template
 ```
 
 ✅ **Updated Kustomization** to include RBAC conditionally:
+
 ```yaml
 #% if kubernetes_oidc_enabled | default(false) %#
   - ./oidc-rbac.yaml
@@ -43,11 +47,13 @@ templates/config/kubernetes/apps/kube-system/headlamp/app/
 ### 1. Template Delimiters ✅
 
 **Standard**: From `style_and_conventions` memory
+
 - Variable: `#{ variable }#`
 - Block: `#% if condition %# ... #% endif %#`
 - Comment: `#| comment #|`
 
 **Implementation**:
+
 ```yaml
 #% if headlamp_enabled | default(false) and kubernetes_oidc_enabled | default(false) %#
 #| ============================================================================= #|
@@ -63,16 +69,19 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 ### 2. Conditional Component Pattern ✅
 
 **Standard**: From `style_and_conventions` memory (January 2026 preferred pattern)
+
 ```yaml
 #% if variable_enabled | default(false) %#
 ```
 
 **Implementation**:
+
 ```yaml
 #% if headlamp_enabled | default(false) and kubernetes_oidc_enabled | default(false) %#
 ```
 
 **Rationale**: RBAC should only exist when:
+
 1. Headlamp is enabled (parent component)
 2. Kubernetes OIDC is enabled (feature gate)
 
@@ -83,6 +92,7 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 ### 3. YAML Style ✅
 
 **Standards**: From `style_and_conventions` memory
+
 - Document separator `---` at start
 - 2-space indentation
 - Lowercase keys
@@ -97,6 +107,7 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 ### 4. Labels and Metadata ✅
 
 **Pattern observed**: Applications use consistent labels
+
 ```yaml
 labels:
   app.kubernetes.io/name: <app-name>
@@ -105,6 +116,7 @@ labels:
 ```
 
 **Implementation**:
+
 ```yaml
 labels:
   app.kubernetes.io/name: headlamp
@@ -119,6 +131,7 @@ labels:
 ### 5. Role Mapping Alignment ✅
 
 **Keycloak Realm Roles** (from `cluster.yaml` lines 1069-1078):
+
 - `admin` - Full administrative access
 - `operator` - Operational access
 - `developer` - Development access
@@ -142,12 +155,14 @@ labels:
 ### 6. Variable Usage ✅
 
 **Configuration Variables** (from `cluster.yaml`):
+
 ```yaml
 kubernetes_oidc_enabled: true
 kubernetes_oidc_groups_prefix: "oidc:"
 ```
 
 **Template Implementation**:
+
 ```yaml
 name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 ```
@@ -163,10 +178,12 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 **Question**: Should RBAC be in `headlamp/app/` or in a separate location?
 
 **Analysis**:
+
 - **Current**: Placed in `headlamp/app/oidc-rbac.yaml.j2`
 - **Alternative**: Could be in `kube-system/rbac/` or `identity/rbac/`
 
 **Reasoning for current placement**:
+
 1. RBAC is **triggered by Headlamp enablement** - Headlamp is the primary UI consumer
 2. Conditional logic ties RBAC to both `headlamp_enabled` and `kubernetes_oidc_enabled`
 3. Labels reference `headlamp` as the managing application
@@ -181,10 +198,12 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 **Question**: Should each ClusterRoleBinding be a separate file?
 
 **Analysis**:
+
 - **Current**: All 5 bindings in single multi-document YAML
 - **Alternative**: Split into separate files
 
 **Reasoning for single file**:
+
 1. All bindings share same lifecycle (enable/disable together)
 2. Easier to maintain related RBAC in one place
 3. Multi-document YAML is standard Kubernetes pattern
@@ -199,6 +218,7 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 ### scaffold-flux-app Skill ✅
 
 **Checklist from SKILL.md**:
+
 - [x] Files created in `templates/config/kubernetes/apps/`
 - [x] Parent kustomization.yaml.j2 updated with conditional
 - [x] Dependencies N/A (RBAC has no external dependencies)
@@ -214,6 +234,7 @@ name: #{ kubernetes_oidc_groups_prefix | default('oidc:') }#admin
 **Relevance**: OIDC RBAC is **complementary but separate** from Gateway/Native OIDC patterns
 
 **Current SKILL.md Coverage**:
+
 - Gateway OIDC (SecurityPolicy) ✅ Documented
 - Native SSO (application-level OAuth) ✅ Documented
 - **Kubernetes API Server OIDC + RBAC** ❌ Not documented
@@ -292,6 +313,7 @@ Auto-created via `templates/config/kubernetes/apps/identity/keycloak/config/real
 Template: `templates/config/kubernetes/apps/kube-system/headlamp/app/oidc-rbac.yaml.j2`
 
 Maps Keycloak groups to Kubernetes ClusterRoles:
+
 - `oidc:admin` → `cluster-admin`
 - `oidc:operator` → `edit`
 - `oidc:developer` → `edit`
@@ -320,6 +342,7 @@ Maps Keycloak groups to Kubernetes ClusterRoles:
 - REF: docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md
 - REF: docs/guides/kubectl-oidc-login-setup.md
 - REF: docs/OIDC-IMPLEMENTATION-VALIDATION-JAN-2026.md
+
 ```
 
 ---
@@ -413,6 +436,7 @@ REF: docs/OIDC-IMPLEMENTATION-VALIDATION-JAN-2026.md"
 
 **Priority**: Low (documentation housekeeping)
 **Actions**:
+
 1. Add completion status to `docs/research/kubernetes-api-server-oidc-authentication-jan-2026.md`
 2. Move `docs/guides/kubectl-oidc-login-setup.md` to `docs/guides/completed/`
 3. Add implementation reference to both guides pointing to validation report

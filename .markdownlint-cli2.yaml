@@ -112,6 +112,12 @@ config:
       - "source"
       # Mermaid diagrams
       - "mermaid"
+      # Path placeholder syntax used in documentation
+      - "namespace"
+      - "app"
+      - "ip"
+      - "node"
+      - "version"
 
   # MD034 - Bare URL
   # Disable - URLs in documentation are often intentionally bare

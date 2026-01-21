@@ -130,11 +130,13 @@ examples/
 #### HTTP Routing (`http-routing.yaml`)
 
 **What it demonstrates:**
+
 - Basic HTTPRoute with host-based routing
 - Path prefix matching (`/login`)
 - Header-based routing (canary deployments)
 
 **Current project comparison:**
+
 - Project already has HTTPS redirect HTTPRoute
 - Pattern useful for application routing templates
 
@@ -161,6 +163,7 @@ rules:
 #### gRPC Routing (`grpc-routing.yaml`)
 
 **What it demonstrates:**
+
 - GRPCRoute resource (experimental channel)
 - gRPC service backend configuration
 
@@ -190,6 +193,7 @@ spec:
 #### TCP Routing (`tcp-routing.yaml`)
 
 **What it demonstrates:**
+
 - TCPRoute with multiple listeners on different ports
 - Gateway listener configuration for TCP protocol
 
@@ -198,6 +202,7 @@ spec:
 **Adoption recommendation:** ⏸️ **Defer until TCP services needed**
 
 **Use cases:**
+
 - Database connections (PostgreSQL, MySQL)
 - Redis/memcached access
 - Custom TCP protocols
@@ -207,6 +212,7 @@ spec:
 #### TLS Passthrough (`tls-passthrough.yaml`)
 
 **What it demonstrates:**
+
 - TLSRoute for SNI-based routing without termination
 - End-to-end encryption to backend
 
@@ -215,6 +221,7 @@ spec:
 **Adoption recommendation:** ⏸️ **Consider for mTLS requirements**
 
 **Use cases:**
+
 - Services requiring end-to-end mTLS
 - Legacy applications with embedded certificates
 - Compliance requirements for unbroken encryption
@@ -224,6 +231,7 @@ spec:
 #### TLS Termination (`tls-termination.yaml`)
 
 **What it demonstrates:**
+
 - Gateway listener with TLS mode "Terminate"
 - Certificate reference pattern
 
@@ -238,6 +246,7 @@ spec:
 #### Merged Gateways (`merged-gateways.yaml`)
 
 **What it demonstrates:**
+
 - Single Envoy proxy serving multiple Gateway resources
 - `mergeGateways: true` in EnvoyProxy spec
 - Reduced resource consumption
@@ -247,11 +256,13 @@ spec:
 **Adoption recommendation:** 🔍 **Evaluate for optimization**
 
 **Potential benefits:**
+
 - Reduced pod count
 - Lower resource usage
 - Simplified management
 
 **Potential drawbacks:**
+
 - Single point of failure
 - Mixed security domains
 
@@ -271,6 +282,7 @@ spec:
 #### Gateway Namespace Mode (`gateway-namespace-mode.yaml`)
 
 **What it demonstrates:**
+
 - Deploy Envoy proxies in same namespace as Gateway
 
 **Current project comparison:** ✅ Already using `GatewayNamespace` mode
@@ -293,6 +305,7 @@ config:
 #### EnvoyProxy Config (`envoy-proxy-config.yaml`)
 
 **What it demonstrates:**
+
 - Custom image configuration
 - Resource requests/limits
 - Pod and service annotations
@@ -316,6 +329,7 @@ config:
 #### Zone-Aware Routing (`zone-aware-routing.yaml`)
 
 **What it demonstrates:**
+
 - Pod affinity/anti-affinity for zone-aware traffic
 - Scheduler-based locality routing
 
@@ -324,6 +338,7 @@ config:
 **Adoption recommendation:** ⏸️ **Defer - single zone deployment**
 
 **When to adopt:**
+
 - Multi-zone cluster deployment
 - Cross-region traffic optimization
 - Data locality requirements
@@ -333,6 +348,7 @@ config:
 #### Multicluster Service (`multicluster-service.yaml`)
 
 **What it demonstrates:**
+
 - ServiceImport from Submariner
 - ReferenceGrant for cross-namespace access
 
@@ -349,6 +365,7 @@ config:
 #### JWT Authentication (`jwt/jwt.yaml`)
 
 **What it demonstrates:**
+
 - SecurityPolicy with JWT provider
 - Remote JWKS validation
 - Route-level targeting
@@ -359,6 +376,7 @@ config:
 **Adoption recommendation:** ✅ **High priority for API protection**
 
 **New in v1.6:**
+
 - Configurable `cacheDuration` for remoteJWKS
 - OIDC refresh token auto-enabled (set `refreshToken: false` to disable)
 - `CSRFTokenTTL` configuration available
@@ -390,6 +408,7 @@ spec:
 ```
 
 **Integration with existing OIDC research:**
+
 - Complements `envoy-gateway-oidc-integration.md` findings
 - JWT validation for API endpoints (service-to-service)
 - OIDC for interactive user sessions (browser-based)
@@ -400,6 +419,7 @@ spec:
 #### External Auth gRPC (`ext-auth-grpc-service.yaml`)
 
 **What it demonstrates:**
+
 - Custom gRPC authorization service
 - Bearer token validation
 - TLS between gateway and auth service
@@ -413,6 +433,7 @@ spec:
 #### External Auth HTTP (`ext-auth-http-service.yaml`)
 
 **What it demonstrates:**
+
 - HTTP-based external authorization
 - Token to user mapping
 
@@ -427,6 +448,7 @@ spec:
 #### External Processing (`ext-proc-grpc-service.yaml`)
 
 **What it demonstrates:**
+
 - gRPC external processor for request/response modification
 - Header manipulation at proxy level
 
@@ -435,6 +457,7 @@ spec:
 **Adoption recommendation:** ⏸️ **Reference for advanced use cases**
 
 **Use cases:**
+
 - Request transformation
 - Response modification
 - Custom logging/metrics injection
@@ -444,6 +467,7 @@ spec:
 #### Merge Patch (`mergepatch.yaml`)
 
 **What it demonstrates:**
+
 - EnvoyPatchPolicy for low-level Envoy config
 
 **Current project status:** Not using EnvoyPatchPolicy
@@ -484,6 +508,7 @@ spec:
 #### Recommended: JSON Access Logging (Official Default Format)
 
 **Benefits:**
+
 - Structured format for log aggregation
 - Parseable by Loki, Elasticsearch, etc.
 - Compatible with existing kube-prometheus-stack
@@ -576,6 +601,7 @@ settings:
 #### Recommended: OpenTelemetry Access Logging
 
 **Benefits:**
+
 - Native integration with OTel Collector
 - Correlation with traces
 - Centralized observability
@@ -636,6 +662,7 @@ telemetry:
 #### Recommended: Zipkin Tracing with OTel Collector
 
 **Benefits:**
+
 - Request tracing across services
 - Latency analysis
 - Dependency mapping
@@ -671,6 +698,7 @@ spec:
 ```
 
 **Integration considerations:**
+
 - Requires OpenTelemetry Collector deployment
 - Consider Tempo for trace storage (integrates with Grafana)
 - Start with low sampling rate in production
@@ -682,6 +710,7 @@ spec:
 ### Extension Server (`extension-server/`)
 
 **What it provides:**
+
 - Full Go implementation of EG extension
 - Helm chart for deployment
 - API definitions and internal logic
@@ -691,6 +720,7 @@ spec:
 **Adoption recommendation:** ⏸️ **Reference for custom extensions**
 
 **When to consider:**
+
 - Custom xDS modifications
 - Policy injection requirements
 - Integration with external systems
@@ -700,6 +730,7 @@ spec:
 ### Simple Extension Server (`simple-extension-server/`)
 
 **What it provides:**
+
 - Minimal extension implementation
 - Learning resource
 
@@ -710,6 +741,7 @@ spec:
 ### Redis Integration (`redis/`)
 
 **What it provides:**
+
 - Rate limiting with Redis backend
 - Session storage patterns
 
@@ -722,11 +754,13 @@ spec:
 ### Admin Console Config (`admin-console-config.yaml`)
 
 **What it provides:**
+
 - Development vs production configurations
 - pprof and config dump settings
 - Logging level configuration
 
 **Current project comparison:**
+
 - Current logging level: `info`
 - No admin console exposure configured
 
@@ -767,9 +801,11 @@ spec:
 #### 1. Add JSON Access Logging
 
 **Files to modify:**
+
 - `templates/config/kubernetes/apps/network/envoy-gateway/app/envoy.yaml.j2`
 
 **Changes:**
+
 ```yaml
 # Add to EnvoyProxy spec.telemetry
 telemetry:
@@ -796,9 +832,11 @@ telemetry:
 #### 2. Add JWT SecurityPolicy
 
 **Files to create:**
+
 - `templates/config/kubernetes/apps/network/envoy-gateway/app/securitypolicy-jwt.yaml.j2`
 
 **Integration with existing OIDC research:**
+
 - Use for API authentication
 - Complement OIDC for user sessions
 - Enable `claimToHeaders` for backend user info
@@ -810,10 +848,12 @@ telemetry:
 #### 3. Add Distributed Tracing
 
 **Prerequisites:**
+
 - OpenTelemetry Collector deployed
 - Tempo or Jaeger for trace storage
 
 **Files to modify:**
+
 - `templates/config/kubernetes/apps/network/envoy-gateway/app/envoy.yaml.j2`
 
 ---
@@ -823,6 +863,7 @@ telemetry:
 #### 4. Evaluate Merged Gateways
 
 **Decision criteria:**
+
 - Resource constraints
 - Security domain requirements
 - Operational complexity tolerance
@@ -927,6 +968,7 @@ spec:
 | `targetSelectors` | Label-based matching | `matchLabels: {key: value}` |
 
 **Important Limitations:**
+
 - SecurityPolicy can only target resources **in the same namespace** as the policy
 - `targetSelectors` cannot match resources across namespaces
 - TCPRoute targets are limited to IP-based authorization only (see below)
@@ -1117,6 +1159,7 @@ The official documentation now shows an enhanced default JSON format:
 ```
 
 **New: CEL Expression Filtering**
+
 ```yaml
 # Filter logs based on request headers
 matches:
@@ -1124,6 +1167,7 @@ matches:
 ```
 
 **New: Route vs Listener-Specific Logging**
+
 ```yaml
 settings:
   - type: Route    # Logs for matched routes

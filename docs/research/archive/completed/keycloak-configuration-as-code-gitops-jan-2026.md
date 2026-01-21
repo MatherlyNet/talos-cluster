@@ -10,6 +10,7 @@
 This document investigates solutions for managing Keycloak realm configuration as code, addressing the limitation that the current `KeycloakRealmImport` CRD only supports one-time initial imports and cannot update existing realms.
 
 **Recommendation:** Implement **keycloak-config-cli** as a Kubernetes Job triggered after Keycloak deployment. This provides:
+
 - Declarative YAML/JSON configuration compatible with Keycloak export format
 - Incremental updates to existing realms (not create-only like KeycloakRealmImport)
 - GitOps-friendly workflow via Flux post-deployment Jobs
@@ -349,11 +350,13 @@ metadata:
 Convert the existing `realm-import.sops.yaml.j2` to a ConfigMap-based configuration:
 
 **New Files:**
+
 - `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.sops.yaml.j2` - SOPS-encrypted ConfigMap with realm YAML
 - `templates/config/kubernetes/apps/identity/keycloak/config/config-job.yaml.j2` - Kubernetes Job
 - `templates/config/kubernetes/apps/identity/keycloak/config/kustomization.yaml.j2` - Kustomization for config resources
 
 **Directory Structure (following CRD split pattern):**
+
 ```
 keycloak/
 ├── ks.yaml.j2                    # Three Kustomizations: operator → keycloak → keycloak-config
@@ -894,6 +897,7 @@ spec:
 ```
 
 > **NOTE:** The `keycloak-config` Kustomization uses `wait: false` because:
+>
 > 1. The Job runs once and exits
 > 2. Blocking on Job completion would delay the entire Flux reconciliation
 > 3. Job failures are handled via `backoffLimit` and alerting (if configured)
@@ -988,6 +992,7 @@ stringData:
 ### 3. Removal of KeycloakRealmImport CR
 
 The current `realm-import.sops.yaml.j2` must be removed after migration to avoid conflicts. The KeycloakRealmImport CR will:
+
 - Continue to exist but do nothing (realm already exists)
 - Potentially cause confusion during troubleshooting
 
@@ -996,6 +1001,7 @@ The current `realm-import.sops.yaml.j2` must be removed after migration to avoid
 ### 4. First-Time Bootstrap vs Updates
 
 keycloak-config-cli handles both scenarios:
+
 - **Bootstrap (new cluster):** Creates realm and all resources
 - **Update (existing cluster):** Incrementally updates only changed resources
 
@@ -1004,6 +1010,7 @@ The same Job template works for both cases with no special handling required.
 ### 5. Image Version Pinning
 
 The keycloak-config-cli image tag format is `<cli-version>-<keycloak-version>`, e.g., `6.4.0-26.1.4`. When upgrading Keycloak:
+
 1. Check keycloak-config-cli releases for matching Keycloak version
 2. Update `keycloak_config_cli_version` in `cluster.yaml`
 3. Test configuration import in development first
@@ -1021,6 +1028,7 @@ The keycloak-config-cli image tag format is `<cli-version>-<keycloak-version>`, 
 ### Environment Variable Naming Convention
 
 **CRITICAL:** The keycloak-config-cli environment variable naming follows Spring Boot conventions:
+
 - CLI parameter: `--import.var-substitution.enabled`
 - Environment variable: `IMPORT_VARSUBSTITUTION_ENABLED` (no underscore between VAR and SUBSTITUTION)
 
@@ -1043,11 +1051,13 @@ From the [documentation](https://github.com/adorsys/keycloak-config-cli#configur
 ### Variable Substitution Syntax
 
 When `IMPORT_VARSUBSTITUTION_ENABLED=true`:
+
 - Default prefix: `$(`
 - Default suffix: `)`
 - Example: `$(env:MY_VAR)` or `$(file:/path/to/file)`
 
 **Note:** Our implementation uses a hybrid approach:
+
 - **Jinja2 templates** (`#{ }#`) at `task configure` time for non-sensitive values (URLs, subdomains, feature flags)
 - **Runtime `$(env:VAR)` substitution** for secrets injected via `envFrom` from `keycloak-realm-secrets`
 
@@ -1056,6 +1066,7 @@ This ensures sensitive values are never rendered into plain files, only into SOP
 ### Implementation Files
 
 The implementation is located in:
+
 ```
 templates/config/kubernetes/apps/identity/keycloak/config/
 ├── kustomization.yaml.j2      # Kustomize resource list
@@ -1070,6 +1081,7 @@ templates/config/kubernetes/apps/identity/keycloak/config/
 The implementation uses keycloak-config-cli's native variable substitution feature for clean separation of concerns:
 
 **realm-config.yaml** (Plain ConfigMap - NOT SOPS encrypted):
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -1088,6 +1100,7 @@ data:
 ```
 
 **secrets.sops.yaml** (SOPS-encrypted Secret):
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -1101,6 +1114,7 @@ stringData:
 ```
 
 **config-job.yaml** (Job with envFrom):
+
 ```yaml
 containers:
   - name: keycloak-config-cli
@@ -1120,6 +1134,7 @@ volumes:
 ```
 
 **Benefits:**
+
 1. **kubeconform validation passes** - ConfigMap has no SOPS metadata
 2. **Clean separation** - Secrets in standard Secret, config in ConfigMap
 3. **GitOps-friendly** - Config changes visible in plain YAML diffs

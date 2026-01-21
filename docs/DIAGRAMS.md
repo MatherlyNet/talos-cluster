@@ -409,11 +409,13 @@ flowchart TD
 ## Usage
 
 These diagrams are rendered automatically in:
+
 - GitHub markdown preview
 - Most documentation platforms (GitBook, Docusaurus, etc.)
 - VS Code with Mermaid extensions
 
 To view locally:
+
 ```bash
 # Install Mermaid CLI
 npm install -g @mermaid-js/mermaid-cli

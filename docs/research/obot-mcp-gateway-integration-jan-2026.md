@@ -70,6 +70,7 @@ OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES  # Optional role restrictions
 ```
 
 Features:
+
 - PKCE S256 support (v0.2.21+)
 - Profile picture and name sync (v0.2.22+)
 - Group-based access control
@@ -86,12 +87,14 @@ OBOT_ENTRA_AUTH_PROVIDER_CLIENT_SECRET   # App registration secret
 ```
 
 Required Azure permissions:
+
 - Delegated: `User.Read`, `ProfilePhoto.Read.All`
 - Application: `GroupMember.Read.All`, `User.Read.All` (for group restrictions)
 
 ### Helm Chart Configuration
 
 The custom chart extends upstream with:
+
 - Custom image repository support
 - MCP Kubernetes runtime configuration
 - MCP server defaults (resources, security context, affinity)
@@ -1340,6 +1343,7 @@ data:
 | Project pattern alignment | ✅ Verified | Follows LiteLLM/Langfuse patterns |
 
 **All corrections have been applied inline in this document:**
+
 - Environment variables updated to `OBOT_KEYCLOAK_AUTH_PROVIDER_*` format
 - Cookie secret (`obot_keycloak_cookie_secret`) added to configuration
 - Network policies include `enableDefaultDeny` pattern

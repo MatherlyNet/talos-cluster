@@ -5,6 +5,7 @@
 ## Overview
 
 Cilium is the Container Network Interface (CNI) for this cluster, providing:
+
 - Pod networking with native routing
 - kube-proxy replacement via eBPF
 - L2 load balancer announcements (MetalLB alternative)
@@ -118,10 +119,12 @@ Client → Node (LB) → Pod → Client (direct)
 ```
 
 Pros:
+
 - Lower latency for responses
 - Reduced load on LB node
 
 Cons:
+
 - Client IP visible to pods
 - May require MTU adjustments
 
@@ -134,14 +137,17 @@ Client → Node (LB) → Pod → Node (LB) → Client
 ```
 
 Pros:
+
 - Simpler networking
 - Works with any MTU
 
 Cons:
+
 - Higher latency
 - Original client IP hidden (use X-Forwarded-For)
 
 Configuration:
+
 ```yaml
 # cluster.yaml
 cilium_loadbalancer_mode: "snat"  # or "dsr"
@@ -295,11 +301,13 @@ kubectl -n kube-system logs -l k8s-app=cilium | grep -i bgp
 > **BFD is NOT supported** in open-source Cilium (as of January 2026).
 
 BFD (Bidirectional Forwarding Detection) would enable sub-second failover, but:
+
 - GoBGP (Cilium's BGP backend) lacks BFD support
 - Cilium Enterprise added BFD in v1.16
 - No timeline for open-source availability ([GitHub #22394](https://github.com/cilium/cilium/issues/22394))
 
 **Workaround:** Tune BGP timers for ~9s failover:
+
 ```yaml
 cilium_bgp_hold_time: 3        # Minimum
 cilium_bgp_keepalive_time: 1   # Minimum
@@ -457,6 +465,7 @@ User Browser → envoy-internal (Grafana/Hubble)
 ### Key Configuration
 
 **SecurityPolicy OIDC:**
+
 - `issuer`: External URL (`https://sso.matherly.net/realms/matherlynet`)
 - `authorizationEndpoint`: External URL (user browser redirects)
 - `tokenEndpoint`: Internal URL (`http://keycloak-service.identity.svc.cluster.local:8080/...`)
@@ -491,6 +500,7 @@ Cilium's observability layer providing deep visibility into network flows.
 ### Configuration
 
 Enable via `cluster.yaml`:
+
 ```yaml
 hubble_enabled: true        # Enable Hubble relay and metrics
 hubble_ui_enabled: true     # Enable Hubble UI (optional)
@@ -530,6 +540,7 @@ kubectl -n kube-system exec -it ds/cilium -- hubble observe
 ### Integration with Observability Stack
 
 When `monitoring_enabled: true` and `hubble_enabled: true`:
+
 - Hubble metrics are scraped by Prometheus
 - Grafana dashboards are automatically provisioned
 - Metrics include: dns queries, drops, tcp flows, http requests
@@ -541,6 +552,7 @@ Optional network segmentation layer providing L3-L7 policy enforcement. Policies
 ### Configuration
 
 Enable via `cluster.yaml`:
+
 ```yaml
 network_policies_enabled: true   # Enable network policies
 network_policies_mode: "audit"   # "audit" (observe) or "enforce" (block)
@@ -675,7 +687,7 @@ kubectl -n kube-system exec -it ds/cilium -- cilium policy get -n <ns>
 
 ---
 
-**Last Updated:** January 13, 2026  
-**Cilium Version:** 1.19.0-pre.3-dev.1-7df990dc67  
-**CNI Mode:** Native routing (no overlay)  
+**Last Updated:** January 13, 2026
+**Cilium Version:** 1.19.0-pre.3-dev.1-7df990dc67
+**CNI Mode:** Native routing (no overlay)
 **kube-proxy:** Replaced by Cilium eBPF

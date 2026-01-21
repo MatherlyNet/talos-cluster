@@ -116,15 +116,18 @@ terraform {
 ```
 
 **Pros:**
+
 - Zero additional infrastructure
 - Simple configuration
 - Works immediately
 
 **Cons:**
+
 - No state locking (concurrent applies could corrupt state)
 - Requires team coordination ("announce before applying")
 
 > **Important:** OpenTofu 1.11+ and Terraform 1.11+ have known checksum validation issues with R2. Add these environment variables:
+>
 > ```bash
 > export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
 > export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
@@ -158,6 +161,7 @@ terraform {
 ```
 
 **Deployment:**
+
 ```bash
 # Clone the tfstate-worker repository
 git clone https://github.com/cmackenzie1/tfstate-worker
@@ -175,12 +179,14 @@ npx wrangler deploy
 ```
 
 **Pros:**
+
 - Full state locking support
 - Still uses free R2 storage
 - Worker runs on free tier
 - Supports multiple state files
 
 **Cons:**
+
 - Additional infrastructure to maintain
 - Requires Cloudflare Workers deployment
 
@@ -191,6 +197,7 @@ npx wrangler deploy
 Similar functionality, written in Rust, uses pre-shared key authentication.
 
 > **Maintenance Note (Validated Jan 2026):**
+>
 > - **tfstate-worker**: Actively maintained (19 stars, 0 open issues, regular PRs)
 > - **tfstate-backend-r2**: Dormant since Aug 2023 (0 stars, no recent activity)
 >
@@ -228,6 +235,7 @@ terraform {
 ```
 
 **Benefits:**
+
 - State file is encrypted at rest
 - Secrets in state are protected even if R2 bucket is compromised
 - Works with any backend (R2, S3, local, etc.)
@@ -434,6 +442,7 @@ Create a scoped API token with minimal permissions:
 > **Note:** Unauthorized requests to R2 are not charged, so a leaked token with wrong permissions won't incur costs—but still rotate it immediately.
 
 **Best Practices for CI/CD:**
+
 - Use **Account API tokens** (not User API tokens) for CI/CD pipelines — they survive user account changes
 - Scope tokens to specific buckets using "Object Read & Write" permission
 - Consider setting token expiration dates for security
@@ -496,6 +505,7 @@ tasks:
 ### Implementation Steps
 
 1. **Create R2 Bucket**
+
    ```bash
    npx wrangler r2 bucket create matherlynet-tfstate
    ```
@@ -505,6 +515,7 @@ tasks:
    - Create token with Object Read & Write permissions
 
 3. **Add Secrets to SOPS**
+
    ```bash
    sops infrastructure/secrets.sops.yaml
    # Add: r2_access_key_id, r2_secret_access_key, cf_account_id
@@ -514,6 +525,7 @@ tasks:
    - Add `backend.tf` as shown in Option A or B
 
 5. **Test with Empty State**
+
    ```bash
    task infrastructure:tofu:init
    task infrastructure:plan
@@ -562,6 +574,7 @@ Given the new availability of free R2 storage, **OpenTofu with R2 backend is now
 ### Keep Ansible as Fallback
 
 The Ansible implementation from `proxmox-vm-automation.md` remains valid as:
+
 - Backup approach if R2/OpenTofu issues arise
 - Option for users preferring truly stateless operation
 - Educational/comparison purposes
@@ -571,25 +584,30 @@ The Ansible implementation from `proxmox-vm-automation.md` remains valid as:
 ## Sources
 
 ### Primary Documentation
+
 - [Cloudflare R2 Remote Backend](https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/)
 - [Cloudflare R2 Pricing](https://developers.cloudflare.com/r2/pricing/)
 - [OpenTofu State Encryption](https://opentofu.org/docs/v1.9/language/state/encryption/)
 
 ### State Backend Solutions
+
 - [tfstate-worker (cmackenzie1)](https://github.com/cmackenzie1/tfstate-worker) - HTTP backend with locking
 - [tfstate-backend-r2 (leonbreedt)](https://github.com/leonbreedt/tfstate-backend-r2) - Rust-based backend
 - [Terraform State with Cloudflare Workers (dev.to)](https://dev.to/adrienf/use-cloudflare-workers-to-store-your-terraform-states-1kkc)
 
 ### Provider Documentation
+
 - [bpg/proxmox Provider](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) (v0.89.x as of Jan 2026)
 - [siderolabs/talos Provider](https://registry.terraform.io/providers/siderolabs/talos/latest)
 
 ### Community Discussions
+
 - [OpenTofu R2 Native Backend Request](https://github.com/opentofu/opentofu/issues/3075)
 - [Terraform R2 Support Issue](https://github.com/hashicorp/terraform/issues/33847)
 - [Proxmox Forum - Best Terraform Provider](https://forum.proxmox.com/threads/best-terraform-provider.116152/)
 
 ### Tutorials
+
 - [Terraform State Management with R2 (Medium)](https://medium.com/@GarisSpace/terraform-state-management-integrating-cloudflare-r2-b2e82798896d)
 - [Using R2 for TF State (wreckitrob.dev)](https://wreckitrob.dev/posts/2-using-r2-for-tf-state)
 - [Cole's Blog - Terraform Backend on Workers](https://mirio.dev/2022/09/18/implementing-a-terraform-state-backend/)

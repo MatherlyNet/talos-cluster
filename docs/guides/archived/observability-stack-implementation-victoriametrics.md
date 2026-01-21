@@ -797,6 +797,7 @@ resources:
 ### Phase 4: Alloy for Logs AND Traces Collection
 
 > **Important Status Clarification:**
+>
 > - **Promtail**: Deprecated, enters LTS Feb 2025, **EOL March 2, 2026**
 > - **Grafana Agent** (Static/Flow/Operator): Deprecated, **EOL November 1, 2025**
 > - **Grafana Alloy**: **ACTIVE DEVELOPMENT** - This is Grafana's distribution of the OpenTelemetry Collector and the official replacement for both Promtail and Grafana Agent. Alloy serves as a unified collector for **logs** (to Loki), **metrics** (to VictoriaMetrics), and **traces** (to Tempo).
@@ -931,6 +932,7 @@ resources:
 > Tempo uses object storage (filesystem for homelab) and integrates natively with Grafana.
 
 **Architecture:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    DISTRIBUTED TRACING                          │
@@ -1529,16 +1531,19 @@ curl http://localhost:8429/targets | grep -c "node-exporter"
 ## References
 
 ### Related Project Guides
+
 - [Envoy Gateway Observability & Security](../envoy-gateway-observability-security.md) - JSON access logging, JWT auth, tracing (extends this stack)
 - [BGP/UniFi/Cilium Implementation](../bgp-unifi-cilium-implementation.md) - BGP networking with Hubble visibility
 
 ### GitHub Repositories
+
 - [dotdc/grafana-dashboards-kubernetes](https://github.com/dotdc/grafana-dashboards-kubernetes) - Modern K8s dashboards
 - [fluxcd/flux2-monitoring-example](https://github.com/fluxcd/flux2-monitoring-example) - Flux monitoring
 - [isovalent/cilium-grafana-observability-demo](https://github.com/isovalent/cilium-grafana-observability-demo) - Cilium observability
 - [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) - kube-prometheus-stack
 
 ### Documentation
+
 - [VictoriaMetrics Helm Charts](https://victoriametrics.github.io/helm-charts/)
 - [Grafana Loki Documentation](https://grafana.com/docs/loki/latest/)
 - [Cilium Hubble Documentation](https://docs.cilium.io/en/stable/observability/hubble/)
@@ -1546,6 +1551,7 @@ curl http://localhost:8429/targets | grep -c "node-exporter"
 - [cert-manager Prometheus Metrics](https://cert-manager.io/docs/devops-tips/prometheus-metrics/)
 
 ### Grafana Dashboard Sources
+
 - [Grafana Labs Dashboard Directory](https://grafana.com/grafana/dashboards/)
 - [Isovalent Dashboards](https://grafana.com/orgs/isovalent/dashboards)
 - [CoreDNS Mixin](https://monitoring.mixins.dev/coredns/)

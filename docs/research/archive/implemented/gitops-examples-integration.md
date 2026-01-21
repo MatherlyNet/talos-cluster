@@ -54,6 +54,7 @@ This research analyzes GitOps reference implementations to identify technologies
 **Source:** [home-operations/tuppr](https://github.com/home-operations/tuppr) (recommended over sergelogvinov's system-upgrade-controller)
 
 **What It Does:**
+
 - Automates Talos OS and Kubernetes version upgrades
 - Orchestrates upgrades safely across nodes (never self-upgrades)
 - Supports CEL-based health checks before/during upgrades
@@ -63,6 +64,7 @@ This research analyzes GitOps reference implementations to identify technologies
 Currently, upgrades require manual execution of `task talos:upgrade-node` per node. tuppr enables GitOps-driven upgrades where version changes in a CR trigger automated, rolling updates.
 
 **Integration Pattern:**
+
 ```yaml
 # templates/config/kubernetes/apps/system-upgrade/tuppr/app/talosupgrade.yaml.j2
 ---
@@ -85,6 +87,7 @@ spec:
 **Advanced Health Checks Example (from billimek/k8s-gitops):**
 
 For clusters with storage replication or Ceph, add additional safety checks:
+
 ```yaml
   healthChecks:
     # Ensure nodes are ready
@@ -105,11 +108,13 @@ For clusters with storage replication or Ceph, add additional safety checks:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/home-operations/charts/tuppr`
 - Latest Version: **0.0.51** (as of January 2026)
 
 **Prerequisites:**
 Talos API access configuration in machine config (add to `templates/config/talos/patches/global/`):
+
 ```yaml
 # templates/config/talos/patches/global/machine-talos-api.yaml.j2
 machine:
@@ -133,6 +138,7 @@ machine:
 **Source:** [siderolabs/talos-cloud-controller-manager](https://github.com/siderolabs/talos-cloud-controller-manager)
 
 **What It Does:**
+
 - Transforms Talos-specific node information into Kubernetes labels
 - Manages node lifecycle (cordons unresponsive nodes)
 - Applies platform-specific labels (Proxmox VM ID, region, zone)
@@ -140,12 +146,14 @@ machine:
 
 **Why We Need It:**
 Without a CCM, nodes lack cloud-provider metadata. The Talos CCM adds:
+
 - `node.kubernetes.io/instance-type` labels
 - `topology.kubernetes.io/region` and `zone` labels
 - Proper node condition management
 - Foundation for future topology-aware scheduling
 
 **Integration Pattern:**
+
 ```yaml
 # templates/config/kubernetes/apps/kube-system/talos-ccm/app/helmrelease.yaml.j2
 ---
@@ -170,6 +178,7 @@ spec:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/siderolabs/charts/talos-cloud-controller-manager`
 - Latest Version: **0.5.2** (as of January 2026)
 
@@ -182,6 +191,7 @@ spec:
 **Source:** [sergelogvinov/talos-backup](https://github.com/sergelogvinov/helm-charts) (part of his helm-charts repo)
 
 **What It Does:**
+
 - Automated etcd snapshots on schedule
 - Uploads to S3-compatible storage
 - Encrypts backups with Age (same as SOPS)
@@ -189,11 +199,13 @@ spec:
 
 **Why We Need It:**
 etcd is the critical state store. Without backups:
+
 - Control plane failure = cluster rebuild
 - No point-in-time recovery
 - Certificate expiration = disaster
 
 **Integration Pattern:**
+
 ```yaml
 # templates/config/kubernetes/apps/kube-system/talos-backup/app/helmrelease.yaml.j2
 ---
@@ -226,10 +238,12 @@ spec:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/sergelogvinov/charts/talos-backup`
 - Latest Version: **0.1.2** (as of January 2026)
 
 **Prerequisites:**
+
 - S3-compatible storage (MinIO, Cloudflare R2, AWS S3)
 - Age keypair for backup encryption
 
@@ -242,6 +256,7 @@ spec:
 **Source:** [sergelogvinov/proxmox-csi-plugin](https://github.com/sergelogvinov/proxmox-csi-plugin)
 
 **What It Does:**
+
 - Provisions PersistentVolumes directly on Proxmox storage
 - Supports LVM, LVM-thin, ZFS, NFS storage backends
 - Provides topology-aware provisioning (volumes stay on same node as pod)
@@ -250,11 +265,13 @@ spec:
 - Bandwidth control for storage I/O limits
 
 **Recent Changes (v0.17.x - January 2026):**
+
 - v0.17.1 removed the previously required `Sys.Audit` permission (breaking change from v0.16.0 now resolved)
 - Fixed storage topology and VM lock race conditions
 
 **Why We Might Need It:**
 When applications require persistent storage, options include:
+
 1. **Proxmox CSI** - Uses hypervisor storage directly
 2. **Longhorn/Rook-Ceph** - In-cluster distributed storage
 3. **NFS provisioner** - External NFS server
@@ -262,6 +279,7 @@ When applications require persistent storage, options include:
 Proxmox CSI is simpler if you trust hypervisor storage and don't need replication across nodes.
 
 **Integration Pattern:**
+
 ```yaml
 # templates/config/kubernetes/apps/csi-proxmox/proxmox-csi/app/helmrelease.yaml.j2
 ---
@@ -294,10 +312,12 @@ spec:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/sergelogvinov/charts/proxmox-csi-plugin`
 - Latest Version: **0.5.4** (as of January 2026)
 
 **Prerequisites:**
+
 - Proxmox API token with storage permissions
 - `csi-proxmox` namespace with privileged pod security
 
@@ -310,6 +330,7 @@ spec:
 **Source:** [sergelogvinov/proxmox-cloud-controller-manager](https://github.com/sergelogvinov/proxmox-cloud-controller-manager)
 
 **What It Does:**
+
 - Initializes nodes with Proxmox-specific labels
 - Manages node lifecycle based on VM state
 - Removes nodes when VMs are deleted
@@ -317,11 +338,13 @@ spec:
 
 **Why We Might Need It:**
 Provides tighter integration between K8s and Proxmox:
+
 - Automatic node removal when VM is destroyed
 - VM metadata as node labels
 - Foundation for Karpenter integration
 
 **Integration Pattern:**
+
 ```yaml
 # templates/config/kubernetes/apps/kube-system/proxmox-ccm/app/helmrelease.yaml.j2
 ---
@@ -351,6 +374,7 @@ spec:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/sergelogvinov/charts/proxmox-cloud-controller-manager`
 - Latest Version: **0.2.23** (as of January 2026)
 
@@ -363,6 +387,7 @@ spec:
 **Source:** [sergelogvinov/karpenter-provider-proxmox](https://github.com/sergelogvinov/karpenter-provider-proxmox)
 
 **What It Does:**
+
 - Automatically provisions VMs on Proxmox when pods are pending
 - Scales down by terminating empty VMs
 - Supports Talos Linux node templates
@@ -370,16 +395,19 @@ spec:
 
 **Why We Might Need It (Future):**
 For dynamic workloads that need burst capacity:
+
 - CI/CD runners that scale to zero
 - Development environments on-demand
 - GPU workloads that scale with usage
 
 **When NOT to Use:**
+
 - Fixed node count homelab
 - Predictable workload patterns
 - No Proxmox API access from cluster
 
 **Integration Pattern:**
+
 ```yaml
 # Future implementation - requires ProxmoxNodeClass and NodePool CRDs
 ---
@@ -404,6 +432,7 @@ spec:
 ```
 
 **Helm Chart:**
+
 - Repository: `oci://ghcr.io/sergelogvinov/charts/karpenter-provider-proxmox`
 - Latest Version: **0.4.1** (as of January 2026)
 
@@ -429,6 +458,7 @@ spec:
    - Configure Age encryption key
 
 **Files to Add:**
+
 ```
 templates/config/kubernetes/apps/system-upgrade/
 ├── namespace.yaml.j2
@@ -452,6 +482,7 @@ templates/config/kubernetes/apps/kube-system/talos-backup/
 ```
 
 **cluster.yaml Additions:**
+
 ```yaml
 # Talos Upgrade Controller
 talos_version: "1.12.0"
@@ -477,6 +508,7 @@ backup_age_public_key: "age1..."
    - Define storage classes
 
 **Files to Add:**
+
 ```
 templates/config/kubernetes/apps/kube-system/talos-ccm/
 ├── ks.yaml.j2
@@ -553,11 +585,13 @@ spec:
 ### sergelogvinov Repository
 
 For charts from sergelogvinov, the OCI URL pattern is:
+
 ```
 oci://ghcr.io/sergelogvinov/charts/<chart-name>
 ```
 
 Available charts include:
+
 - `talos-backup`
 - `proxmox-csi-plugin`
 - `proxmox-cloud-controller-manager`
@@ -566,16 +600,19 @@ Available charts include:
 ### Siderolabs Repository
 
 For official Talos charts:
+
 ```
 oci://ghcr.io/siderolabs/charts/<chart-name>
 ```
 
 Available charts include:
+
 - `talos-cloud-controller-manager`
 
 ### home-operations Repository
 
 For community tools like tuppr:
+
 ```
 oci://ghcr.io/home-operations/charts/<chart-name>
 ```
@@ -640,15 +677,18 @@ oci://ghcr.io/home-operations/charts/<chart-name>
 ## Risk Assessment
 
 ### Low Risk
+
 - **tuppr**: Well-maintained, simple CRs, rollback possible
 - **Talos CCM**: Official Siderolabs, minimal footprint
 - **Talos Backup**: Passive component, doesn't affect runtime
 
 ### Medium Risk
+
 - **Proxmox CSI**: Storage driver can cause data issues if misconfigured
 - **Proxmox CCM**: Overlaps with Talos CCM, requires careful coordination
 
 ### High Risk
+
 - **Proxmox Karpenter**: Complex automation, can create/destroy VMs unexpectedly
 
 ---
@@ -686,21 +726,25 @@ oci://ghcr.io/home-operations/charts/<chart-name>
 ## Sources
 
 ### Primary Repositories
+
 - [sergelogvinov/gitops-examples](https://github.com/sergelogvinov/gitops-examples) - Reference GitOps implementation
 - [billimek/k8s-gitops](https://github.com/billimek/k8s-gitops) - Production homelab GitOps
 - [home-operations/tuppr](https://github.com/home-operations/tuppr) - Talos upgrade controller
 
 ### Helm Charts
+
 - [sergelogvinov/helm-charts](https://github.com/sergelogvinov/helm-charts) - Proxmox and Talos charts
 - [siderolabs/talos-cloud-controller-manager](https://github.com/siderolabs/talos-cloud-controller-manager) - Official CCM
 
 ### Documentation
+
 - [Proxmox CSI Installation](https://github.com/sergelogvinov/proxmox-csi-plugin/blob/main/docs/install.md)
 - [Proxmox CCM Installation](https://github.com/sergelogvinov/proxmox-cloud-controller-manager/blob/main/docs/install.md)
 - [Karpenter Proxmox Deployment](https://deepwiki.com/sergelogvinov/karpenter-provider-proxmox/4-deployment)
 - [tuppr Documentation](https://github.com/home-operations/tuppr#readme)
 
 ### Artifact Hub
+
 - [proxmox-csi-plugin](https://artifacthub.io/packages/helm/proxmox-csi/proxmox-csi-plugin)
 - [proxmox-cloud-controller-manager](https://artifacthub.io/packages/helm/proxmox-ccm/proxmox-cloud-controller-manager)
 
@@ -759,6 +803,7 @@ This research document has been validated against the project's conventions and 
 ### Version Compatibility
 
 **Talos 1.12.0 + Kubernetes 1.35.0 Compatibility:**
+
 - Talos 1.12.0 ships with Kubernetes 1.35.0 by default ([release notes](https://github.com/siderolabs/talos/releases/tag/v1.12.0))
 - All researched components are Kubernetes-version-agnostic controllers
 - Ensure `talosctl` version matches cluster version when using tuppr
@@ -791,6 +836,7 @@ talosctl -n <control-plane-ip> cp /var/lib/etcd/member/snap/db ./etcd-backup.db
 #### Restore Procedure
 
 1. **Assess Damage:**
+
    ```bash
    # Check etcd health across control plane nodes
    talosctl -n <ip1>,<ip2>,<ip3> service etcd
@@ -798,12 +844,14 @@ talosctl -n <control-plane-ip> cp /var/lib/etcd/member/snap/db ./etcd-backup.db
    ```
 
 2. **If Quorum Lost (>50% nodes down):**
+
    ```bash
    # Wipe etcd data on remaining nodes (AFTER taking snapshot!)
    talosctl -n <ip> reset --system-labels-to-wipe=EPHEMERAL --reboot
    ```
 
 3. **Bootstrap from Snapshot:**
+
    ```bash
    # On ONE control plane node
    talosctl -n <ip> etcd bootstrap --from-backup=./etcd-backup.db
@@ -813,6 +861,7 @@ talosctl -n <control-plane-ip> cp /var/lib/etcd/member/snap/db ./etcd-backup.db
    ```
 
 4. **Verify Recovery:**
+
    ```bash
    kubectl get nodes
    kubectl get pods -A
@@ -902,6 +951,7 @@ task infrastructure:template:create
 ```
 
 This template is then referenced by:
+
 - **Ansible**: In `provision-vms.yaml` playbook (`talos_template` variable)
 - **Karpenter**: In `ProxmoxNodeClass` CR (`instanceTemplateRef` field)
 
@@ -984,15 +1034,18 @@ Add this to your Renovate config to track Helm chart versions:
 ### Monitoring and Metrics
 
 **tuppr Prometheus Metrics:**
+
 - Exposes metrics on `/metrics` endpoint
 - Key metrics: upgrade progress, health check status, job execution time
 - Compatible with Prometheus ServiceMonitor
 
 **Talos CCM Metrics:**
+
 - Exposes standard CCM metrics
 - Node lifecycle events, CIDR allocations
 
 **Recommended Alerting:**
+
 ```yaml
 # Example PrometheusRule for tuppr
 groups:
@@ -1035,6 +1088,7 @@ groups:
 | **Egress** | **Always free** | Restore downloads | ✅ No fees ever |
 
 **Cost Estimate for Talos Backup:**
+
 - 6-hourly backups × 30 days = 180 snapshots/month
 - Each snapshot ~50-100 MB compressed
 - Total storage: ~2-3 GB

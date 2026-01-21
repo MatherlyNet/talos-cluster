@@ -550,11 +550,13 @@ kubectl -n default exec -it deploy/grpc-echo -- grpcurl -plaintext localhost:900
 ## References
 
 ### External Documentation
+
 - [Envoy Gateway gRPC Routing](https://gateway.envoyproxy.io/docs/tasks/traffic/grpc-routing/)
 - [Gateway API GRPCRoute](https://gateway-api.sigs.k8s.io/guides/grpc-routing/)
 - [GRPCRoute API Reference](https://gateway.envoyproxy.io/docs/api/gateway_api/grpcroute/)
 
 ### Project Documentation
+
 - [Envoy Gateway Observability & Security](./envoy-gateway-observability-security.md) - Security integration
 - [JWT SecurityPolicy](./envoy-gateway-observability-security.md#phase-2-jwt-securitypolicy) - API authentication
 

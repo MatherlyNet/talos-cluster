@@ -8,6 +8,7 @@
 >
 > [!NOTE]
 > **Implementation Complete (January 2026)** - Phase 1 (Identity Provider Configuration) and Phase 3 (Role/Group Mappers) are fully implemented in `realm-import.sops.yaml.j2`:
+>
 > - Google IdP with `google_idp_enabled`, `google_client_id/secret`, `google_default_role`, `google_domain_role_mapping`
 > - GitHub IdP with `github_idp_enabled`, `github_client_id/secret`, `github_default_role`, `github_org_role_mapping`
 > - Microsoft Entra ID with `microsoft_idp_enabled`, `microsoft_client_id/secret/tenant_id`, `microsoft_default_role`, `microsoft_group_role_mappings`
@@ -20,12 +21,14 @@
 This research document provides a comprehensive guide for integrating external identity providers (Google, GitHub, Microsoft Entra ID) with the existing Keycloak deployment. The goal is to enable users to authenticate using their existing social/enterprise credentials instead of creating local Keycloak accounts, while maintaining seamless single sign-on (SSO) across all protected applications (Grafana, Hubble UI, RustFS Console, etc.).
 
 **Key Findings:**
+
 - Keycloak 26.x natively supports all three identity providers with minimal configuration
 - Token exchange (RFC 8693) is now officially supported in Keycloak 26.2+
 - SSO session sharing works automatically across all applications in the same realm
 - MCP authorization server support is available for future AI agent authentication needs
 
 **Architecture Note:** Social IdP integration is configured in **Keycloak**, not Envoy Gateway. The flow is:
+
 1. Envoy Gateway redirects unauthenticated users to Keycloak
 2. Keycloak presents login options including configured social IdPs
 3. User authenticates via chosen IdP (Google/GitHub/Microsoft)
@@ -64,6 +67,7 @@ The cluster currently has Keycloak deployed with:
 | Admin Fine-Grained Authz | **Enabled** | Required for token exchange permissions |
 
 **Current Feature Flags** (from `keycloak-cr.yaml`):
+
 ```yaml
 features:
   enabled:
@@ -74,6 +78,7 @@ features:
 ### Realm Configuration (from `realm-import.yaml.j2`)
 
 The realm is already configured with:
+
 - SSO Session Idle Timeout: 1800 seconds (30 minutes)
 - SSO Session Max Lifespan: 36000 seconds (10 hours)
 - Access Token Lifespan: 300 seconds (5 minutes)
@@ -96,9 +101,11 @@ The realm is already configured with:
 4. Navigate to **Credentials** → **Create Credentials** → **OAuth Client ID**
 5. Select **Web Application** as application type
 6. Add **Authorized redirect URI**:
+
    ```
    https://sso.matherly.net/realms/matherlynet/broker/google/endpoint
    ```
+
 7. Save and note the **Client ID** and **Client Secret**
 
 #### Step 2: Keycloak Configuration
@@ -126,6 +133,7 @@ identityProviders:
 #### Required Secrets
 
 Add to `cluster.yaml`:
+
 ```yaml
 # Google Identity Provider
 google_client_id: "YOUR_GOOGLE_CLIENT_ID"
@@ -146,9 +154,11 @@ google_client_secret: "YOUR_GOOGLE_CLIENT_SECRET"  # SOPS-encrypted
    - **Application name:** `MatherlyNet SSO`
    - **Homepage URL:** `https://matherly.net`
    - **Authorization callback URL:**
+
      ```
      https://sso.matherly.net/realms/matherlynet/broker/github/endpoint
      ```
+
 4. Click **Register application**
 5. Generate a **Client Secret** and note both **Client ID** and **Secret**
 
@@ -178,6 +188,7 @@ identityProviders:
 #### Required Secrets
 
 Add to `cluster.yaml`:
+
 ```yaml
 # GitHub Identity Provider
 github_client_id: "YOUR_GITHUB_CLIENT_ID"
@@ -203,6 +214,7 @@ github_client_secret: "YOUR_GITHUB_CLIENT_SECRET"  # SOPS-encrypted
 6. Generate and save the **secret value** (visible only once!)
 7. Go to **Authentication** → Add platform → **Web**
 8. Add redirect URI:
+
    ```
    https://sso.matherly.net/realms/matherlynet/broker/microsoft/endpoint
    ```
@@ -210,11 +222,13 @@ github_client_secret: "YOUR_GITHUB_CLIENT_SECRET"  # SOPS-encrypted
 #### Step 2: Get OpenID Connect Metadata
 
 The discovery endpoint URL format:
+
 ```
 https://login.microsoftonline.com/{tenant-id}/v2.0/.well-known/openid-configuration
 ```
 
 For multi-tenant (recommended):
+
 ```
 https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
 ```
@@ -252,6 +266,7 @@ identityProviders:
 #### Required Secrets
 
 Add to `cluster.yaml`:
+
 ```yaml
 # Microsoft Entra ID Identity Provider
 microsoft_client_id: "YOUR_APPLICATION_CLIENT_ID"
@@ -303,6 +318,7 @@ When a user authenticates via Google/GitHub/Microsoft:
 3. Applications can then exchange external tokens for Keycloak tokens
 
 **Exchange Request Example:**
+
 ```bash
 curl -X POST \
   https://sso.matherly.net/realms/matherlynet/protocol/openid-connect/token \
@@ -364,6 +380,7 @@ From your current `realm-import.yaml.j2`:
 > **Important Clarification:** When using Envoy Gateway's OIDC SecurityPolicy, SSO is managed at **two levels**:
 
 **1. Envoy Gateway Cookies (Primary for cross-app SSO):**
+
 - `OauthHMAC` - Token verification
 - `OauthExpires` - Token lifetime tracking
 - `IdToken` - The actual JWT
@@ -371,6 +388,7 @@ From your current `realm-import.yaml.j2`:
 When `cookieDomain: ".matherly.net"` is configured, these cookies are shared across all subdomains, enabling seamless SSO between `hubble.matherly.net`, `grafana.matherly.net`, etc.
 
 **2. Keycloak Session (During authentication flow):**
+
 - `KEYCLOAK_IDENTITY` cookie on `sso.matherly.net`
 - Used when user needs to re-authenticate (token expired)
 - Enables "remember me" across browser sessions
@@ -420,6 +438,7 @@ grafana.ini:
 ### RustFS Console
 
 RustFS Console uses MinIO-compatible authentication. It may not directly support OIDC SSO. Investigation needed on:
+
 - Whether RustFS supports OpenID Connect authentication
 - If gateway-level JWT validation is sufficient
 
@@ -699,16 +718,19 @@ identityProviderMappers:
 #### Provider-Specific Notes
 
 **Google:**
+
 - `hd` claim contains the hosted domain (e.g., `matherly.net`) for Google Workspace users
 - Personal Gmail accounts do NOT have the `hd` claim
 - Use hardcoded role for all users, domain mapping for organization-specific roles
 
 **GitHub:**
+
 - Requires `read:org` scope to access organization membership
 - GitHub does NOT natively expose org membership as a claim
 - Alternative: Use hardcoded role for all GitHub users
 
 **Microsoft Entra ID:**
+
 - Requires enabling "groups" claim in Azure Portal: Token Configuration → Add optional claim
 - Groups are returned as an array of Object IDs (UUIDs)
 - Use Advanced Claim to Role mapper with regex to match group IDs
@@ -723,6 +745,7 @@ identityProviderMappers:
 | `LEGACY` | Pre-17.0 behavior (deprecated) |
 
 **Source References:**
+
 - [Keycloak ClaimToRoleMapper](https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/broker/oidc/mappers/ClaimToRoleMapper.java)
 - [Keycloak AdvancedClaimToRoleMapper](https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/broker/oidc/mappers/AdvancedClaimToRoleMapper.java)
 - [Keycloak HardcodedRoleMapper](https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/broker/provider/HardcodedRoleMapper.java)
@@ -754,6 +777,7 @@ The default "first broker login" flow can present security risks:
 > "If there is an existing Keycloak account with the same email, automatically linking the existing local account to the external identity provider is a potential security hole as you can't always trust the information you get from the external identity provider."
 
 **Mitigations:**
+
 1. Require email verification before linking (`idp-email-verification` step)
 2. Require password re-authentication (`idp-username-password-form` step)
 3. Disable registration (`registrationAllowed: false`) - already done
@@ -761,6 +785,7 @@ The default "first broker login" flow can present security risks:
 ### Token Storage
 
 Setting `storeToken: true` stores the external IdP tokens in Keycloak. This:
+
 - Enables token exchange functionality
 - Allows calling external APIs on behalf of users
 - Requires secure database (CNPG with encryption recommended)
@@ -768,6 +793,7 @@ Setting `storeToken: true` stores the external IdP tokens in Keycloak. This:
 ### Restrict Registration
 
 The current configuration has `registrationAllowed: false`, which means:
+
 - Users cannot self-register local accounts
 - Users can still authenticate via social IdPs (creates linked account)
 - To further restrict, use `linkOnly: true` on IdPs (only existing users can link)
@@ -777,23 +803,27 @@ The current configuration has `registrationAllowed: false`, which means:
 ## Sources
 
 ### Primary References
+
 - [Keycloak as MCP Authorization Server](https://www.keycloak.org/securing-apps/mcp-authz-server)
 - [Keycloak Token Exchange Documentation](https://www.keycloak.org/securing-apps/token-exchange)
 - [Standard Token Exchange in Keycloak 26.2](https://www.keycloak.org/2025/05/standard-token-exchange-kc-26-2)
 - [Configure Keycloak OAuth2 authentication | Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/configure-access/configure-authentication/keycloak/)
 
 ### Identity Provider Guides
+
 - [Signing in with Google with Keycloak](https://medium.com/@stefannovak96/signing-in-with-google-with-keycloak-bf5166e93d1e)
 - [GitHub as Identity Provider in Keycloak](https://medium.com/keycloak/github-as-identity-provider-in-keyclaok-dca95a9d80ca)
 - [Configure Azure Entra ID as IdP on Keycloak](https://blog.ght1pc9kc.fr/en/2023/configure-azure-entra-id-as-idp-on-keycloak/)
 - [The simplest way to make Keycloak Microsoft Entra ID work](https://hoop.dev/blog/the-simplest-way-to-make-keycloak-microsoft-entra-id-work-like-it-should/)
 
 ### SSO and Token Exchange
+
 - [How does Keycloak SSO work?](https://github.com/keycloak/keycloak/discussions/31428)
 - [Token Exchange: Keycloak's Secret Weapon](https://keycloak-day.dev/assets/files/20250306_KeycloakDevDay_TokenExchange.pdf)
 - [Implementing MCP Dynamic Client Registration with SPIFFE](https://blog.christianposta.com/implementing-mcp-dynamic-client-registration-with-spiffe/)
 
 ### Envoy Gateway Integration
+
 - [Envoy Gateway OIDC Authentication](https://gateway.envoyproxy.io/latest/tasks/security/oidc/)
 - [Envoy Gateway JWT Authentication](https://gateway.envoyproxy.io/latest/tasks/security/jwt-authentication/)
 - [Envoy Gateway JWT Claim Authorization](https://gateway.envoyproxy.io/latest/tasks/security/jwt-claim-authorization/)
@@ -802,6 +832,7 @@ The current configuration has `registrationAllowed: false`, which means:
 - [JBW - Integrating Keycloak OIDC with Envoy Gateway](https://www.jbw.codes/blog/Integrating-Keycloak-OIDC-with-Envoy-API-Gateway)
 
 ### User-Provided References (Analyzed)
+
 - [Keycloak Token Exchange (2018)](https://www.mathieupassenaud.fr/token-exchange-keycloak/) - Outdated (v4.8) but concepts valid; now natively supported in v26
 - [Grafana OAuth with Keycloak (2020)](https://janikvonrotz.ch/2020/08/27/grafana-oauth-with-keycloak-and-how-to-validate-a-jwt-token/) - Core concepts valid; modern config differs slightly
 - [Shakudo Google SSO Guide](https://docs.shakudo.io/Getting%20started/Sign%20in%20with%20external%20provider/example-1-google/) - Keycloak-specific steps applicable

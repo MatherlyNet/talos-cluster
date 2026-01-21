@@ -3,6 +3,7 @@
 ## Overview
 
 Langfuse is an open-source LLM observability platform providing tracing, prompt management, evaluation, and cost analytics. It enables:
+
 - End-to-end LLM call tracing with latency, tokens, and cost
 - Prompt version control, A/B testing, and experiments
 - LLM-as-a-Judge and human annotation evaluation
@@ -43,12 +44,14 @@ Langfuse is an open-source LLM observability platform providing tracing, prompt 
 ## Configuration Variables
 
 ### Enable/Disable
+
 ```yaml
 langfuse_enabled: true         # Enable Langfuse deployment
 langfuse_subdomain: "langfuse" # Creates langfuse.${cloudflare_domain}
 ```
 
 ### Security Keys (SOPS-encrypted)
+
 ```yaml
 langfuse_nextauth_secret: "..."    # Session secret (min 32 chars)
 langfuse_salt: "..."               # API key hashing salt (min 32 chars)
@@ -56,12 +59,14 @@ langfuse_encryption_key: "..."     # AES-256 key (64 hex chars)
 ```
 
 Generate with:
+
 ```bash
 openssl rand -base64 32  # nextauth_secret, salt
 openssl rand -hex 32     # encryption_key
 ```
 
 ### PostgreSQL Database (CNPG)
+
 ```yaml
 langfuse_postgres_password: "..."  # SOPS-encrypted
 langfuse_postgres_instances: 1     # 1 for dev, 3+ for HA
@@ -71,12 +76,14 @@ langfuse_postgres_storage: "10Gi"
 **Password Rotation:** See [CNPG Password Rotation Pattern](./patterns/cnpg-password-rotation.md) for complete procedure.
 
 ### ClickHouse Analytics
+
 ```yaml
 langfuse_clickhouse_password: "..."   # SOPS-encrypted
 langfuse_clickhouse_storage: "20Gi"
 ```
 
 ### S3 Storage (RustFS)
+
 ```yaml
 langfuse_s3_access_key: ""      # Create via RustFS Console
 langfuse_s3_secret_key: ""      # SOPS-encrypted
@@ -93,6 +100,7 @@ langfuse_s3_secret_key: ""      # SOPS-encrypted
 **Buckets:** `langfuse-events`, `langfuse-media`, `langfuse-exports` (auto-created by RustFS setup job)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - Browse buckets
 - `s3:GetObject` - Download media files, exports
 - `s3:PutObject` - Upload events, media, exports
@@ -101,6 +109,7 @@ langfuse_s3_secret_key: ""      # SOPS-encrypted
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure including:
+
 1. Creating `langfuse-storage` policy with scoped bucket access
 2. Creating service account user
 3. Updating `cluster.yaml` with SOPS-encrypted credentials
@@ -111,6 +120,7 @@ See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Cons
 Langfuse uses the shared Dragonfly deployment in the `cache` namespace.
 
 **Configuration Requirements:**
+
 ```yaml
 dragonfly_enabled: true            # Enable shared Dragonfly
 dragonfly_acl_enabled: true        # Enable ACL for multi-tenant access
@@ -118,6 +128,7 @@ dragonfly_langfuse_password: "..." # SOPS-encrypted, ACL user password
 ```
 
 **Connection Details:**
+
 - **Endpoint:** `dragonfly.cache.svc.cluster.local:6379`
 - **ACL User:** `langfuse` (namespace isolation)
 - **Key Pattern:** `~langfuse:*` (ACL-enforced)
@@ -125,12 +136,14 @@ dragonfly_langfuse_password: "..." # SOPS-encrypted, ACL user password
 See [Dragonfly ACL Configuration Pattern](./patterns/dragonfly-acl-configuration.md) for complete multi-tenant setup.
 
 ### SSO Authentication (requires keycloak_enabled)
+
 ```yaml
 langfuse_sso_enabled: true
 langfuse_keycloak_client_secret: "..."  # SOPS-encrypted
 ```
 
 ### Cookie Domain Isolation
+
 Langfuse automatically sets `NEXTAUTH_COOKIE_DOMAIN` to the Langfuse hostname to prevent
 session cookie collision with Gateway OIDC protected apps (Hubble, RustFS, etc.) on the
 same parent domain.
@@ -138,6 +151,7 @@ same parent domain.
 This is **automatically configured** - no user action required.
 
 ### Observability
+
 ```yaml
 # OpenTelemetry Tracing (requires tracing_enabled)
 langfuse_tracing_enabled: true
@@ -148,6 +162,7 @@ langfuse_monitoring_enabled: true     # ServiceMonitor + Dashboard
 ```
 
 ### Backups (requires rustfs_enabled)
+
 ```yaml
 langfuse_backup_enabled: true
 langfuse_backup_s3_access_key: ""   # Create via RustFS Console
@@ -160,6 +175,7 @@ langfuse_backup_s3_secret_key: ""   # SOPS-encrypted
 **Bucket:** `langfuse-postgres-backups` (auto-created by RustFS setup job)
 
 **Required S3 Permissions:**
+
 - `s3:ListBucket`, `s3:GetBucketLocation` - WAL management
 - `s3:GetObject` - PITR restore
 - `s3:PutObject` - Base backups and WAL segments
@@ -168,11 +184,13 @@ langfuse_backup_s3_secret_key: ""   # SOPS-encrypted
 **Setup Procedure:**
 
 See [RustFS IAM Setup Pattern](./patterns/rustfs-iam-setup.md) for complete Console UI procedure. Use a separate service account for backup isolation (recommended):
+
 1. Create `langfuse-backup-storage` policy scoped to `langfuse-postgres-backups`
 2. Create dedicated backup service account user
 3. Update `cluster.yaml` with `langfuse_backup_s3_access_key` and `langfuse_backup_s3_secret_key`
 
 ### Headless Initialization (GitOps Bootstrap)
+
 Bootstrap an initial admin account for GitOps/non-interactive deployments.
 When both email and password are configured, Langfuse auto-creates the admin
 on first startup (idempotent - only creates if not exists).
@@ -196,6 +214,7 @@ langfuse_disable_signup: false       # MUST be false when using SSO!
 REF: https://langfuse.com/self-hosting/headless-initialization
 
 ### Auto-Provisioning (SSO Default Roles)
+
 Configure default roles for users created via SSO (Keycloak OIDC).
 These apply when a user logs in via SSO for the first time.
 
@@ -210,6 +229,7 @@ langfuse_default_project_role: "VIEWER"  # OWNER|ADMIN|MEMBER|VIEWER
 REF: https://langfuse.com/docs/administration/scim-and-org-api
 
 ### SCIM Role Sync (Keycloak → Langfuse)
+
 Synchronize Keycloak realm roles to Langfuse organization roles via CronJob.
 This enables role-based access control where Keycloak is the source of truth.
 
@@ -236,11 +256,13 @@ langfuse_role_mapping:
 ```
 
 **Requirements:**
+
 - `keycloak_enabled: true` - Keycloak as identity provider
 - `langfuse_sso_enabled: true` - SSO must be enabled
 - Keycloak service account with `view-users` and `view-realm` roles
 
 **Architecture:**
+
 ```
 ┌─────────────────┐     ┌──────────────────────┐     ┌────────────────┐
 │    Keycloak     │────▶│   langfuse-sync      │────▶│    Langfuse    │
@@ -253,6 +275,7 @@ langfuse_role_mapping:
 ```
 
 **Files Generated:**
+
 - `sync-cronjob.yaml.j2` - Kubernetes CronJob definition
 - `sync-secret.sops.yaml.j2` - SOPS-encrypted API credentials
 - `sync-configmap.yaml.j2` - Role mapping config + Python sync script
@@ -287,6 +310,7 @@ templates/config/kubernetes/apps/ai-system/langfuse/
 ## LiteLLM Integration
 
 ### Callback Configuration
+
 Langfuse integrates with LiteLLM as a callback for automatic trace collection:
 
 ```yaml
@@ -302,6 +326,7 @@ environment_variables:
 ```
 
 ### Trace Data Collected
+
 - Model name and provider
 - Token usage and latency
 - Request/response payloads
@@ -309,17 +334,21 @@ environment_variables:
 - Metadata and tags
 
 ### LLM Connections in Langfuse
+
 Configure via Project Settings > LLM Connections for:
+
 - Playground testing
 - LLM-as-a-Judge evaluation
 - Prompt experiments
 
 Point to LiteLLM proxy:
+
 - Base URL: `http://litellm.ai-system.svc.cluster.local:4000`
 
 ## Keycloak OIDC Integration
 
 ### Client Configuration
+
 When `langfuse_sso_enabled: true`, a Keycloak client is created:
 
 ```yaml
@@ -331,7 +360,9 @@ webOrigins:
 ```
 
 ### Account Linking
+
 Langfuse supports merging accounts with the same email:
+
 - Existing email-based users are linked to Keycloak identity
 - Set `AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING=true`
 
@@ -344,6 +375,7 @@ Langfuse supports merging accounts with the same email:
 | langfuse-worker | `/api/health` | Worker health |
 
 ### Kubernetes Probes
+
 ```yaml
 livenessProbe:
   httpGet:
@@ -380,31 +412,40 @@ https://langfuse.<domain>/
 ## Troubleshooting
 
 ### Web Pod CrashLoopBackOff
+
 If langfuse-web crashes on startup:
+
 - Verify PostgreSQL is ready: `kubectl get clusters -n ai-system`
 - Verify ClickHouse is ready: `kubectl get pods -n ai-system -l app.kubernetes.io/name=clickhouse`
 - Check secrets are mounted: `kubectl exec -n ai-system <pod> -- env | grep NEXTAUTH`
 
 ### Worker Not Processing Events
+
 If events are not appearing in traces:
+
 - Check Redis connection: `kubectl logs -n ai-system -l app.kubernetes.io/component=worker`
 - Verify Dragonfly is accessible from ai-system namespace
 - Check ACL permissions if `dragonfly_acl_enabled: true`
 
 ### ClickHouse Query Timeouts
+
 If analytics are slow:
+
 - Check ClickHouse memory: `kubectl top pods -n ai-system -l app.kubernetes.io/name=clickhouse`
 - Increase ClickHouse resources in HelmRelease values
 - Verify storage performance (NVMe recommended)
 
 ### SSO Login Fails
+
 If Keycloak redirect fails:
+
 - Verify Keycloak is healthy: `kubectl get keycloak -n identity`
 - Check client secret matches: `langfuse_keycloak_client_secret`
 - Verify redirect URI in Keycloak client configuration
 - Check pod can reach internal Keycloak: `kubectl exec -n ai-system <pod> -- wget -qO- http://keycloak-service.identity.svc.cluster.local:8080/realms/matherlynet/.well-known/openid-configuration`
 
 **OAuthCreateAccount Error:** If clicking "Login with Keycloak" returns `OAuthCreateAccount - Contact support if this error is unexpected`:
+
 - **Root cause:** `langfuse_disable_signup: true` is blocking SSO user creation
 - **Fix:** Set `langfuse_disable_signup: false` in cluster.yaml, then `task configure && task reconcile`
 - **Why:** The `disable_signup` setting blocks ALL new users, including SSO users logging in for the first time
@@ -414,19 +455,25 @@ If Keycloak redirect fails:
 **Split-horizon DNS Issue**: If external Keycloak URL times out from pods (UniFi DNS resolves to LAN IP), the solution is already implemented - Langfuse uses `keycloak_internal_issuer_url` for OIDC discovery. Keycloak's `backchannelDynamic: true` returns external URLs for browser redirects and internal URLs for server-to-server token/userinfo calls.
 
 ### Traces Not Appearing from LiteLLM
+
 If LiteLLM callbacks are not working:
+
 - Verify Langfuse host is reachable from LiteLLM pod
 - Check public/secret keys match Langfuse project
 - Verify network policies allow ai-system→ai-system traffic
 
 ### S3 Upload Failures
+
 If event uploads fail:
+
 - Verify RustFS buckets exist (langfuse-events, langfuse-media, langfuse-exports)
 - Check S3 credentials: `kubectl get secret -n ai-system langfuse-s3-credentials`
 - Verify `LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"` is set
 
 ### SCIM Role Sync Issues
+
 If roles are not syncing from Keycloak:
+
 - Check CronJob status: `kubectl get cronjobs -n ai-system -l app.kubernetes.io/name=langfuse-role-sync`
 - View recent job logs: `kubectl logs -n ai-system -l job-name=langfuse-role-sync-* --tail=100`
 - Verify Keycloak service account has required roles: `view-users`, `view-realm` on `realm-management` client
@@ -448,6 +495,7 @@ Langfuse requires egress to multiple services:
 | Tempo | monitoring | 4318 | OTEL traces (if tracing) |
 
 When `network_policies_enabled: true`:
+
 - CiliumNetworkPolicy allows required egress
 - Labels added for Kubernetes API access if needed
 
@@ -475,6 +523,7 @@ When `network_policies_enabled: true`:
 | ClickHouse | `langfuse-clickhouse.ai-system.svc.cluster.local` | 8123, 9000 |
 
 ### Derived Variables (computed in plugin.py)
+
 - `langfuse_hostname` - `${langfuse_subdomain}.${cloudflare_domain}`
 - `langfuse_url` - `https://${langfuse_hostname}`
 - `langfuse_sso_enabled` - true when keycloak + sso flag + client secret

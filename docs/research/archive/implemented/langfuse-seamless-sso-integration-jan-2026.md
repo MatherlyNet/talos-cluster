@@ -3,6 +3,7 @@
 **Date:** January 2026
 **Status:** ✅ **IMPLEMENTED** (Bug Fixed)
 **Related:**
+
 - `docs/research/archive/implemented/grafana-sso-authentication-integration-jan-2026.md`
 - `docs/research/archive/completed/oidc-keycloak-implementation-review-jan-2026.md`
 - `docs/research/langfuse-llm-observability-integration-jan-2026.md`
@@ -20,6 +21,7 @@ The current Langfuse deployment shows **only email/password login** - there is n
 ### Root Cause Analysis
 
 **Current Template (`helmrelease.yaml.j2:192-209`):**
+
 ```yaml
 auth:
   disableUsernamePassword: false
@@ -39,6 +41,7 @@ auth:
 
 **Correct Configuration (Environment Variables):**
 The Langfuse Helm chart expects SSO providers to be configured via environment variables:
+
 - `AUTH_KEYCLOAK_CLIENT_ID`
 - `AUTH_KEYCLOAK_CLIENT_SECRET`
 - `AUTH_KEYCLOAK_ISSUER`
@@ -51,6 +54,7 @@ The Langfuse documentation states:
 > "Make sure that NEXTAUTH_URL environment variable is configured correctly if you want to use any authentication method other than email/password."
 
 The current Helm chart values set `langfuse.nextauth.url: "https://langfuse.matherly.net"` which should translate to `NEXTAUTH_URL`. However, if SSO still doesn't work after fixing the environment variables, verify that `NEXTAUTH_URL` is correctly set in the pod's environment by checking:
+
 ```bash
 kubectl -n ai-system exec -it deploy/langfuse-web -- env | grep NEXTAUTH
 ```
@@ -58,6 +62,7 @@ kubectl -n ai-system exec -it deploy/langfuse-web -- env | grep NEXTAUTH
 ### What's Actually Deployed
 
 Looking at the generated `kubernetes/apps/ai-system/langfuse/app/helmrelease.yaml`:
+
 - Lines 106-117 contain the `auth.additionalProviders` block
 - This block is **silently ignored** by the Langfuse Helm chart
 - Result: Only email/password login is available
@@ -94,6 +99,7 @@ Looking at the generated `kubernetes/apps/ai-system/langfuse/app/helmrelease.yam
 ### Current User Experience
 
 Users visiting the Langfuse URL see:
+
 1. A login form with **only email/password fields**
 2. **No SSO provider buttons** (no "Login with Keycloak")
 3. If Gateway OIDC is enabled, users are first redirected to Keycloak, then see the email/password form anyway
@@ -103,11 +109,13 @@ Users visiting the Langfuse URL see:
 ### Option 1: Gateway OIDC Only (Not Recommended for Langfuse)
 
 **How it works:**
+
 - Remove Langfuse's native SSO (`langfuse_sso_enabled: false`)
 - Keep Gateway OIDC protection (`security: oidc-protected` label)
 - Langfuse receives `forwardAccessToken: true` JWT in request headers
 
 **Why it doesn't work for Langfuse:**
+
 - Langfuse's backend is a Next.js application using NextAuth.js
 - It doesn't support extracting user identity from JWT headers natively
 - Langfuse requires its own session management for API keys, project membership, etc.
@@ -118,16 +126,19 @@ Users visiting the Langfuse URL see:
 ### Option 2: Native SSO Only (Current Behavior Without Gateway OIDC)
 
 **How it works:**
+
 - Remove Gateway OIDC label (`security: oidc-protected`)
 - Keep only Langfuse's native Keycloak provider
 - Users see Langfuse login page first
 
 **Pros:**
+
 - Simple configuration
 - Full Langfuse RBAC via org/project roles
 - Account linking works seamlessly
 
 **Cons:**
+
 - Users must click "Login with Keycloak" button manually
 - No automatic SSO from other protected services
 - Extra click compared to Grafana's `auto_login: true`
@@ -137,6 +148,7 @@ Users visiting the Langfuse URL see:
 ### Option 3: Native SSO with Auto-Login (Recommended)
 
 **How it works:**
+
 - Configure Langfuse to automatically redirect to Keycloak on unauthenticated access
 - Similar to Grafana's `auto_login: true` pattern
 - Remove Gateway OIDC to avoid double authentication
@@ -162,6 +174,7 @@ AUTH_SESSION_MAX_AGE=43200                  # 30 days in minutes
 | `AUTH_DISABLE_SIGNUP` | Prevent self-registration | ✅ Implemented |
 
 **User Experience with Option 3:**
+
 1. User visits `langfuse.example.com`
 2. Langfuse sees no session, automatically redirects to Keycloak (no login form shown)
 3. If user has Keycloak session (from Grafana, RustFS, etc.), immediate return
@@ -175,11 +188,13 @@ AUTH_SESSION_MAX_AGE=43200                  # 30 days in minutes
 ### Option 4: Dual-Layer with Session Sharing (Complex)
 
 **How it works:**
+
 - Keep both Gateway OIDC and Langfuse native SSO
 - Configure `cookieDomain: ".${cloudflare_domain}"` for cross-subdomain session
 - Langfuse recognizes Gateway's OIDC session
 
 **Why it's problematic:**
+
 - Langfuse/NextAuth.js doesn't recognize external OIDC sessions
 - Double redirect still occurs
 - Increased complexity with no UX benefit
@@ -195,6 +210,7 @@ AUTH_SESSION_MAX_AGE=43200                  # 30 days in minutes
 The `auth.additionalProviders` structure must be replaced with environment variables in `additionalEnv`.
 
 **Current broken code (`helmrelease.yaml.j2:192-209`):**
+
 ```jinja
 #% if langfuse_sso_enabled | default(false) %#
       auth:
@@ -206,6 +222,7 @@ The `auth.additionalProviders` structure must be replaced with environment varia
 ```
 
 **Correct fix - Replace with environment variables:**
+
 ```jinja
 #% if langfuse_sso_enabled | default(false) %#
         #| ===================================================================== #|
@@ -239,6 +256,7 @@ This adds the SSO environment variables to the existing `additionalEnv` section 
 
 **PKCE Configuration with Confidential Client:**
 The Keycloak client in `realm-config.yaml.j2` is configured as a **confidential client with PKCE**:
+
 ```yaml
 publicClient: false                           # Confidential client (uses client_secret)
 clientAuthenticatorType: "client-secret"      # Token endpoint uses client_secret_basic
@@ -254,6 +272,7 @@ attributes:
 | **Confidential** | `false` | Yes | Additional security | `client_secret_basic` (default) |
 
 Our Keycloak client is **confidential** (`publicClient: false`), meaning:
+
 - The client secret IS used for token endpoint authentication
 - PKCE provides an **additional** security layer, not a replacement
 - `AUTH_KEYCLOAK_CLIENT_AUTH_METHOD` should be **omitted** (uses default `client_secret_basic`)
@@ -264,6 +283,7 @@ Our Keycloak client is **confidential** (`publicClient: false`), meaning:
 #### 2. HTTPRoute Centralization (Implemented)
 
 ✅ Langfuse HTTPRoute is now centralized in `network/envoy-gateway/app/httproutes.yaml.j2` with:
+
 - No `security: oidc-protected` label (Langfuse handles its own auth via native SSO)
 - Both `envoy-external` and `envoy-internal` parentRefs (split-horizon DNS)
 - Cross-namespace reference to `langfuse-web` service via ReferenceGrant
@@ -273,6 +293,7 @@ Our Keycloak client is **confidential** (`publicClient: false`), meaning:
 For the most seamless experience, configure Langfuse to auto-redirect to Keycloak:
 
 **Update `cluster.yaml`:**
+
 ```yaml
 # Langfuse SSO Configuration
 langfuse_sso_enabled: true
@@ -322,6 +343,7 @@ Ensure the following environment variables are correctly rendered in `additional
 ## Implementation Checklist
 
 ### Critical Bug Fix (Required)
+
 - [ ] **FIX: Replace `auth.additionalProviders` with environment variables in `helmrelease.yaml.j2`**
   - Remove the entire `auth:` block (lines 192-209)
   - Add `AUTH_KEYCLOAK_*` environment variables to `additionalEnv` section:
@@ -337,6 +359,7 @@ Ensure the following environment variables are correctly rendered in `additional
 - [ ] Deploy and verify "Login with Keycloak" button appears
 
 ### Seamless SSO Enhancement (Recommended)
+
 - [ ] Set `langfuse_disable_password_auth: true` in cluster.yaml (hide password form)
 - [ ] Set `langfuse_sso_domain_enforcement: "your-domain.com"` for auto-redirect
 - [ ] Set `langfuse_disable_signup: true` for security hardening
@@ -365,6 +388,7 @@ Ensure the following environment variables are correctly rendered in `additional
 ## Conclusion
 
 The recommended approach is **Option 3: Native SSO with Auto-Login** using:
+
 - `AUTH_DISABLE_USERNAME_PASSWORD=true` to hide the password form
 - `AUTH_DOMAINS_WITH_SSO_ENFORCEMENT` to auto-redirect to Keycloak
 - Removal of Gateway-level OIDC protection to avoid double authentication
@@ -400,6 +424,7 @@ This achieves the same seamless SSO experience as Grafana (~200-500ms redirect f
 ### PKCE Configuration by Client Type
 
 **Confidential Client with PKCE (Our Keycloak Config - Recommended):**
+
 ```yaml
 # Keycloak: publicClient=false + pkce.code.challenge.method=S256
 # Client secret provides primary auth, PKCE adds extra security
@@ -408,6 +433,7 @@ AUTH_KEYCLOAK_CHECKS: "pkce,state"
 ```
 
 **Public Client with PKCE (Browser Apps, SPAs):**
+
 ```yaml
 # Keycloak: publicClient=true + pkce.code.challenge.method=S256
 # No client secret - PKCE is the primary authentication method
@@ -416,6 +442,7 @@ AUTH_KEYCLOAK_CHECKS: "pkce,state"
 ```
 
 **Confidential Client without PKCE (Legacy):**
+
 ```yaml
 # Keycloak: publicClient=false, no PKCE attribute
 AUTH_KEYCLOAK_CHECKS: "state"  # or "nonce,state"
@@ -427,11 +454,13 @@ AUTH_KEYCLOAK_CHECKS: "state"  # or "nonce,state"
 ### Problem: Gateway OIDC and Native SSO Cookie Collision
 
 When accessing Langfuse after visiting another app with Gateway OIDC protection (e.g., Hubble), users may experience unexpected session behavior:
+
 - Being auto-logged in as the local admin account instead of Keycloak user
 - Session conflicts between Gateway OIDC cookies and NextAuth.js cookies
 
 **Root Cause:**
 Both Gateway OIDC and Langfuse's NextAuth.js set session cookies on the `*.matherly.net` domain:
+
 - Gateway OIDC: `IdToken`, `AccessToken`, `RefreshToken`
 - NextAuth.js: `next-auth.session-token`, `next-auth.csrf-token`
 
@@ -442,6 +471,7 @@ Without explicit domain isolation, these cookies can interfere with each other.
 Langfuse supports the `NEXTAUTH_COOKIE_DOMAIN` environment variable to scope NextAuth.js cookies to a specific domain.
 
 **Implementation (`helmrelease.yaml.j2`):**
+
 ```yaml
 additionalEnv:
   - name: NEXTAUTH_COOKIE_DOMAIN
@@ -453,6 +483,7 @@ This ensures Langfuse's session cookies are scoped to `langfuse.matherly.net` on
 ### How Cookie Isolation Works
 
 **Langfuse Cookie Configuration (`web/src/server/utils/cookies.ts`):**
+
 ```typescript
 export const getCookieOptions = () => ({
   domain: env.NEXTAUTH_COOKIE_DOMAIN ?? undefined,

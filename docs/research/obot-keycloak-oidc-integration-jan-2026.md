@@ -3,16 +3,18 @@
 > **✅ IMPLEMENTED:** All critical issues identified in this document have been resolved. See [obot-keycloak-oidc-remediation-jan-2026.md](./obot-keycloak-oidc-remediation-jan-2026.md) for the complete remediation details.
 >
 > **Resolved Issues:**
+>
 > 1. ✅ `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` - Correctly named (was BASE_URL)
 > 2. ✅ `OBOT_AUTH_PROVIDER_COOKIE_SECRET` - Correctly named (was KEYCLOAK prefix)
 > 3. ✅ `OBOT_AUTH_PROVIDER_EMAIL_DOMAINS` - Added with configurable default
-
+>
 > **Architecture Note:** Obot uses **native OAuth** via its built-in Keycloak auth provider (oauth2-proxy library).
 > This pattern is used by apps that handle their own OAuth flow: Obot, LiteLLM, Langfuse, Grafana (native OAuth).
 > These apps connect to Keycloak via external URLs (through Cloudflare Tunnel) because the OAuth flow
 > originates from the application itself, not from Envoy Gateway.
 >
 > For apps protected by Envoy Gateway SecurityPolicy (Hubble UI), a **split-path OIDC architecture** is used:
+>
 > - External authorization endpoint for browser redirects
 > - Internal token endpoint for server-to-server token exchange (avoids hairpin NAT/TLS issues)
 > - See: [native-oidc-securitypolicy-implementation.md](../guides/completed/native-oidc-securitypolicy-implementation.md)
@@ -162,6 +164,7 @@ OIDC Issuer URL = {OBOT_KEYCLOAK_AUTH_PROVIDER_URL}/realms/{OBOT_KEYCLOAK_AUTH_P
 ```
 
 **Example:**
+
 - `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` = `https://auth.example.com`
 - `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM` = `matherlynet`
 - **Resulting issuer:** `https://auth.example.com/realms/matherlynet`
@@ -206,10 +209,12 @@ attributes:
 ### Client Scopes
 
 Required scopes attached as defaults:
+
 - `profile` - User profile information
 - `email` - User email address
 
 Optional scopes:
+
 - `offline_access` - Refresh tokens (recommended for long sessions)
 - `groups` - Group memberships (if using `ALLOWED_GROUPS`)
 
@@ -297,6 +302,7 @@ data["obot_keycloak_realm"] = keycloak_realm
 #### 4. Keycloak Client Configuration (`realm-config.yaml.j2`)
 
 Correctly configured with:
+
 - PKCE S256 enabled
 - Confidential client type
 - Standard flow enabled
@@ -307,11 +313,13 @@ Correctly configured with:
 **CRITICAL:** The fork expects `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` but our helmrelease.yaml.j2 uses `OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL`.
 
 **Current (helmrelease.yaml.j2 line 125):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
 ```
 
 **Expected (per fork tool.gpt):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "#{ obot_keycloak_base_url }#"
 ```
@@ -371,6 +379,7 @@ When Obot needs user information:
 2. Auth provider decrypts `obot_access_token` cookie
 3. Auth provider parses ID token to extract user claims
 4. Returns:
+
    ```json
    {
      "accessToken": "...",
@@ -393,6 +402,7 @@ When `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS` is set:
 4. Users without any allowed groups are denied access
 
 **Example:**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_GROUPS: "obot-admins,obot-users"
 ```
@@ -406,6 +416,7 @@ When `OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES` is set:
 3. Users without any allowed roles are denied access
 
 **Example:**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_ALLOWED_ROLES: "obot-admin,obot:developer"
 ```
@@ -423,6 +434,7 @@ Note: Client roles use format `{client-id}:{role-name}` (e.g., `obot:developer`)
 **Cause:** Keycloak URL has trailing slash or incorrect format
 
 **Solution:** Ensure `OBOT_KEYCLOAK_AUTH_PROVIDER_URL` is exactly the base URL:
+
 - ✅ Correct: `https://auth.example.com`
 - ❌ Wrong: `https://auth.example.com/`
 - ❌ Wrong: `https://auth.example.com/realms/matherlynet`
@@ -432,12 +444,14 @@ Note: Client roles use format `{client-id}:{role-name}` (e.g., `obot:developer`)
 **Symptom:** `/obot-get-state` returns empty groups array
 
 **Causes & Solutions:**
+
 1. `groups` client scope not attached as default
 2. Group Membership mapper not configured correctly
 3. "Add to ID token" not enabled on mapper
 4. Users not assigned to groups in Keycloak
 
 **Verification:**
+
 - Use Keycloak Admin → Clients → obot → Client scopes → Evaluate
 - Check generated ID token for `groups` claim
 
@@ -446,11 +460,13 @@ Note: Client roles use format `{client-id}:{role-name}` (e.g., `obot:developer`)
 **Symptom:** Keycloak rejects the callback redirect
 
 **Causes & Solutions:**
+
 1. Protocol mismatch (http vs https)
 2. Missing `/oauth2/callback` in Valid Redirect URIs
 3. Trailing slash issues
 
 **Solution:** Add both patterns to Keycloak client:
+
 ```
 https://obot.example.com/*
 https://obot.example.com/oauth2/callback
@@ -461,10 +477,12 @@ https://obot.example.com/oauth2/callback
 **Symptom:** User redirected to login repeatedly
 
 **Causes & Solutions:**
+
 1. `OBOT_KEYCLOAK_AUTH_PROVIDER_COOKIE_SECRET` invalid (must decode to 16/24/32 bytes)
 2. Secure flag mismatch (cookie Secure=true but accessing via HTTP)
 
 **Generate valid cookie secret:**
+
 ```bash
 openssl rand -base64 32
 ```
@@ -474,6 +492,7 @@ openssl rand -base64 32
 **Symptom:** 401 error during token exchange
 
 **Causes & Solutions:**
+
 1. Client secret mismatch
 2. Client not set as confidential
 3. Client authentication disabled
@@ -510,16 +529,19 @@ Based on this research, the following changes are recommended:
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 
 **Current (line 125):**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_BASE_URL: "#{ obot_keycloak_base_url }#"
 ```
 
 **Change to:**
+
 ```yaml
 OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "#{ obot_keycloak_base_url }#"
 ```
 
 This aligns with the fork's expected environment variable name as defined in `tools/keycloak-auth-provider/tool.gpt`:
+
 ```
 Metadata: envVars: ...,OBOT_KEYCLOAK_AUTH_PROVIDER_URL,...
 ```
@@ -540,6 +562,7 @@ if opts.AllowedGroups != "" {
 However, Keycloak does not have a built-in `groups` client scope. The current realm-config.yaml.j2 includes the group membership protocol mapper on the obot client, but the `groups` scope itself is not defined at the realm level.
 
 **Important Clarification:** The groups claim will still appear in tokens because the protocol mapper (`oidc-group-membership-mapper`) is configured directly on the obot client with `id.token.claim: "true"`. Keycloak typically ignores undefined scope requests rather than rejecting them. However, defining the scope explicitly is recommended for:
+
 - **OIDC Standards Compliance** - Proper scope-to-claim mapping
 - **Consent Screen Clarity** - Shows "Your group memberships" on consent screen if consent is required
 - **Future Maintainability** - Documents the intent clearly
@@ -547,6 +570,7 @@ However, Keycloak does not have a built-in `groups` client scope. The current re
 **File:** `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`
 
 **Add to clientScopes section:**
+
 ```yaml
 #| 'groups' scope for Obot group-based access control #|
 - name: "groups"
@@ -569,6 +593,7 @@ However, Keycloak does not have a built-in `groups` client scope. The current re
 ```
 
 **Then add to obot client's optionalClientScopes:**
+
 ```yaml
 optionalClientScopes:
   - "address"
@@ -592,6 +617,7 @@ For better session persistence, move it to default scopes.
 **File:** `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`
 
 **Current:**
+
 ```yaml
 defaultClientScopes:
   - "profile"
@@ -603,6 +629,7 @@ optionalClientScopes:
 ```
 
 **Change to:**
+
 ```yaml
 defaultClientScopes:
   - "profile"
@@ -622,12 +649,14 @@ optionalClientScopes:
 **File:** `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 
 **Add to config section after OBOT_SERVER_AUTH_PROVIDER:**
+
 ```yaml
 #| Allow all email domains (explicitly configured for clarity) #|
 OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "*"
 ```
 
 Or for domain-restricted deployments:
+
 ```yaml
 OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') }#"
 ```
@@ -652,16 +681,19 @@ OBOT_AUTH_PROVIDER_EMAIL_DOMAINS: "#{ obot_allowed_email_domains | default('*') 
 ## References
 
 ### External Documentation
+
 - [Obot Auth Providers Documentation](https://docs.obot.ai/configuration/auth-providers/)
 - [OAuth2 Proxy Keycloak OIDC Provider](https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc/)
 - [Keycloak Client Documentation](https://www.keycloak.org/docs/latest/server_admin/#oidc-clients)
 
 ### Fork Documentation
+
 - [jrmatherly/obot-entraid Repository](https://github.com/jrmatherly/obot-entraid)
 - [Keycloak Auth Provider tool.gpt](https://raw.githubusercontent.com/jrmatherly/obot-entraid/main/tools/keycloak-auth-provider/tool.gpt)
 - [Keycloak Setup Guide](https://raw.githubusercontent.com/jrmatherly/obot-entraid/main/tools/keycloak-auth-provider/KEYCLOAK_SETUP.md)
 
 ### Project Files
+
 - `templates/config/kubernetes/apps/ai-system/obot/app/helmrelease.yaml.j2`
 - `templates/config/kubernetes/apps/ai-system/obot/app/secret.sops.yaml.j2`
 - `templates/config/kubernetes/apps/identity/keycloak/config/realm-config.yaml.j2`

@@ -150,6 +150,7 @@ tags: kubernetes;linux;talos;template
 The network bridge is essential for VM network connectivity. Without it, Proxmox doesn't know which bridge interface to attach the VM's NIC to.
 
 **Recommendation**: Add to `PROXMOX_VM_ADVANCED`
+
 ```python
 "network_bridge": "vmbr0",
 ```
@@ -163,6 +164,7 @@ The network bridge is essential for VM network connectivity. Without it, Proxmox
 Proxmox uses `ostype` to optimize QEMU settings for the guest OS. For Talos Linux, `l26` is correct.
 
 **Recommendation**: Add to `PROXMOX_VM_ADVANCED`
+
 ```python
 "ostype": "l26",
 ```
@@ -176,6 +178,7 @@ Proxmox uses `ostype` to optimize QEMU settings for the guest OS. For Talos Linu
 The shutdown delay allows Talos to properly drain workloads and shut down gracefully.
 
 **Recommendation**: Add to nodes.yaml schema alongside `vm_startup_delay`
+
 ```yaml
 vm_shutdown_delay?: int & >=0 & <=300
 ```
@@ -189,6 +192,7 @@ vm_shutdown_delay?: int & >=0 & <=300
 For Talos nodes, disk backup is typically unnecessary since the OS is immutable and cluster state is in etcd.
 
 **Recommendation**: Add to `PROXMOX_VM_ADVANCED`
+
 ```python
 "disk_backup": False,
 ```
@@ -202,6 +206,7 @@ For Talos nodes, disk backup is typically unnecessary since the OS is immutable 
 Kubernetes handles HA at the application layer, so Proxmox replication is typically disabled.
 
 **Recommendation**: Add to `PROXMOX_VM_ADVANCED`
+
 ```python
 "disk_replicate": False,
 ```
@@ -315,6 +320,7 @@ The current `main.tf.j2` is a **placeholder** containing only commented example 
 **Status**: Configuration preparation is ~85% complete, but the actual VM provisioning module needs to be implemented.
 
 **Next Steps**:
+
 1. Implement the missing configuration options (this document)
 2. Create the Proxmox VM module (`modules/talos-vm/`)
 3. Wire up the module in `main.tf.j2`

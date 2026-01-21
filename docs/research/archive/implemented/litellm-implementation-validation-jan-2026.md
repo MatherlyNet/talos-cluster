@@ -58,6 +58,7 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 **Status:** ✅ Complete
 
 **Dependencies Verified:**
+
 - `coredns` (kube-system) - Core DNS resolution
 - `cloudnative-pg` (cnpg-system) - PostgreSQL operator
 - `dragonfly` (cache) - Shared Redis-compatible cache
@@ -65,9 +66,11 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 - `rustfs` (storage) - Conditional: when `litellm_backup_enabled`
 
 **Health Checks:**
+
 - Deployment: `litellm` in `ai-system` namespace
 
 **Post-Build Substitution:**
+
 - `cluster-secrets` Secret for `${SECRET_DOMAIN}` replacement
 
 ### 2. HelmRelease (`helmrelease.yaml.j2`)
@@ -75,11 +78,13 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 **Status:** ✅ Complete
 
 **Chart Configuration:**
+
 - Repository: `oci://ghcr.io/bjw-s-labs/helm/app-template`
 - Version: `4.5.0`
 - Image: `ghcr.io/berriai/litellm:main-v1.80.8-stable.1`
 
 **Environment Variables Verified:**
+
 - Core: `LITELLM_MASTER_KEY`, `LITELLM_SALT_KEY`, `DATABASE_URL`, `REDIS_URL`
 - Azure OpenAI US East: `AZURE_API_KEY`, `AZURE_API_BASE`, `AZURE_API_VERSION`
 - Azure OpenAI US East2: `AZURE_API_KEY_EAST2`, `AZURE_API_BASE_EAST2`, `AZURE_API_VERSION_EAST2`
@@ -91,11 +96,13 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 - Alerting: `SLACK_WEBHOOK_URL`, `DISCORD_WEBHOOK_URL`
 
 **Probes Configured:**
+
 - Startup: `/health/liveliness` (30s delay, 5s period, 30 failures)
 - Liveness: `/health/liveliness` (60s delay, 15s period, 3 failures)
 - Readiness: `/health/readiness` (30s delay, 10s period, 3 failures)
 
 **Persistence Mounts:**
+
 - `/app/config.yaml` - ConfigMap (read-only)
 - `/tmp` - emptyDir (100Mi)
 - `/.cache` - emptyDir (500Mi)
@@ -108,24 +115,28 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 **Status:** ✅ Complete
 
 **Configuration:**
+
 - Image: `ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie`
 - Instances: Configurable via `litellm_db_instances` (default: 1)
 - Storage: Configurable via `litellm_db_storage_size` (default: 20Gi)
 - Priority Class: `system-cluster-critical`
 
 **PostgreSQL Parameters:**
+
 - `max_connections: 200`
 - `shared_buffers: 256MB`
 - `effective_cache_size: 1GB`
 - pgvector extension support via ImageVolume
 
 **Backup Configuration:**
+
 - S3 destination: `s3://litellm-backups`
 - Endpoint: `http://rustfs.storage.svc.cluster.local:9000`
 - WAL compression: gzip
 - Retention: 7 days
 
 **Database Resource:**
+
 - Declarative Database CRD for `litellm` database
 - pgvector extension enabled when `cnpg_pgvector_enabled: true`
 
@@ -143,12 +154,14 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 | Azure Cohere | US East2 | 2 | cohere-rerank-v3.5, cohere-embed-v-4-0 |
 
 **LiteLLM Settings:**
+
 - Cache: Redis (Dragonfly), TTL 600s, mode `default_on`
 - Privacy: `turn_off_message_logging: true`, `redact_user_api_key_info: true`
 - Callbacks: prometheus, langfuse (conditional)
 - Rate Limits: TPM 3.5M, RPM 35K, max_budget 1000
 
 **Router Settings:**
+
 - Strategy: `simple-shuffle`
 - Timeout: 120s, stream 300s
 - Retry policy: Auth 1, Timeout 2, RateLimit 3, ContentPolicy 2, Internal 3
@@ -158,6 +171,7 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 **Status:** ✅ Complete
 
 **CiliumNetworkPolicies:**
+
 1. `litellm-azure-egress` - FQDN-based egress to LLM providers
    - `*.openai.azure.com`
    - `*.models.ai.azure.com`
@@ -171,6 +185,7 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 3. `litellm-db-kube-api-egress` - Database Kubernetes API access
 
 **Standard NetworkPolicies:**
+
 1. `litellm` - Application ingress/egress
    - Ingress: Envoy Gateway, Prometheus
    - Egress: DNS, PostgreSQL, Dragonfly, Tempo, external HTTPS
@@ -182,16 +197,19 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 ### 6. Gateway API Integration
 
 **HTTPRoute:** ✅ In `internal-httproutes.yaml.j2` (lines 110-138)
+
 - Hostname: `#{litellm_subdomain}#.${SECRET_DOMAIN}`
 - Backend: `litellm.ai-system:4000`
 - No gateway-level OIDC (LiteLLM uses native SSO)
 
 **ReferenceGrant:** ✅ In `referencegrant.yaml.j2`
+
 - Allows `network` namespace HTTPRoutes to access `ai-system/litellm` Service
 
 ### 7. Keycloak OIDC Integration
 
 **Client Configuration:** ✅ In `realm-config.yaml.j2` (lines 249-310)
+
 - Client ID: `litellm`
 - Auth type: Confidential
 - PKCE: S256
@@ -199,6 +217,7 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 - Protocol mappers: realm-roles, groups
 
 **Secrets:** ✅ In `secrets.sops.yaml.j2` (lines 29-33)
+
 - `LITELLM_CLIENT_ID: "litellm"`
 - `LITELLM_CLIENT_SECRET: "#{litellm_oidc_client_secret}#"`
 
@@ -223,12 +242,14 @@ This document validates the LiteLLM Proxy Gateway implementation against the res
 ### 9. Observability
 
 **ServiceMonitor:** ✅ Complete
+
 - Endpoint: `:4000/metrics`
 - Interval: 30s
 - Scrape timeout: 10s
 - Label: `release: kube-prometheus-stack`
 
 **Grafana Dashboard:** ✅ Complete
+
 - 17 panels covering:
   - Overview: Total requests, spend, tokens, latency
   - Model breakdown: Request/spend rate by model
@@ -312,6 +333,7 @@ To enable LiteLLM, update `cluster.yaml`:
 1. **Set `litellm_enabled: true`**
 
 2. **Configure Azure API Credentials** (at least one provider):
+
    ```yaml
    # Azure OpenAI US East
    azure_openai_us_east_api_key: "<SOPS-encrypted>"
@@ -325,11 +347,13 @@ To enable LiteLLM, update `cluster.yaml`:
    ```
 
 3. **Run template generation**:
+
    ```bash
    task configure
    ```
 
 4. **Commit and push to Git**:
+
    ```bash
    git add kubernetes/apps/ai-system/litellm/
    git commit -m "feat: enable LiteLLM proxy gateway"
@@ -337,6 +361,7 @@ To enable LiteLLM, update `cluster.yaml`:
    ```
 
 5. **Force Flux reconciliation** (optional):
+
    ```bash
    task reconcile
    ```

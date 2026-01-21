@@ -11,6 +11,7 @@
 This document tracks remaining action items from the January 2026 comprehensive review. **Thirteen high-priority items have been remediated; seven items remain pending for future implementation.**
 
 **Completed Today (January 3, 2026):**
+
 - Health probes for critical monitoring apps (#9)
 - CiliumNetworkPolicies implementation - 33 policy templates across 6 namespaces (#11)
 - PodDisruptionBudgets for CoreDNS, cert-manager, Envoy Gateway (#13)
@@ -30,6 +31,7 @@ This document tracks remaining action items from the January 2026 comprehensive 
 **Implementation Details (Completed January 3, 2026):**
 
 Added `security-scan` job to `.github/workflows/flux-local.yaml` with:
+
 - **Filesystem scan**: Detects vulnerabilities in container images referenced in manifests
 - **Config scan**: Identifies Kubernetes misconfigurations and security best practices
 - **SARIF upload**: Results appear in GitHub Security tab
@@ -48,6 +50,7 @@ Added `security-scan` job to `.github/workflows/flux-local.yaml` with:
 **Implementation Details for #9 (Completed January 3, 2026):**
 
 Added readinessProbe and livenessProbe configurations to all critical monitoring apps:
+
 - **VictoriaMetrics (vmsingle)**: `/health` on port 8429
 - **VictoriaMetrics (vmagent)**: `/health` on port 8429
 - **Grafana**: `/api/health` on port 3000
@@ -61,6 +64,7 @@ All probes configured with appropriate `initialDelaySeconds`, `periodSeconds`, a
 **Implementation Details for #10 (Completed January 3, 2026):**
 
 Added `@lru_cache` decorators to `templates/scripts/plugin.py` with:
+
 - **`_read_file_cached()`**: Caches text file reads (maxsize=8) for age.key, github-deploy.key, github-push-token.txt
 - **`_read_json_cached()`**: Caches JSON file reads (maxsize=4) for cloudflare-tunnel.json
 - **Functions refactored**: `age_key()`, `cloudflare_tunnel_id()`, `cloudflare_tunnel_secret()`, `github_deploy_key()`, `github_push_token()`
@@ -99,6 +103,7 @@ def _read_json_cached(file_path: str) -> str:
 Full implementation completed based on research document `docs/research/cilium-network-policies-jan-2026.md`:
 
 **Templates Created (33 files):**
+
 - `templates/config/kubernetes/apps/cluster-policies/network-policies/` - Cluster-wide DNS and API server policies
 - `templates/config/kubernetes/apps/kube-system/network-policies/` - CoreDNS, metrics-server, Spegel, Reloader
 - `templates/config/kubernetes/apps/monitoring/network-policies/` - VictoriaMetrics, Grafana, Loki, Tempo, Alloy
@@ -107,6 +112,7 @@ Full implementation completed based on research document `docs/research/cilium-n
 - `templates/config/kubernetes/apps/network/network-policies/` - Envoy Gateway, Cloudflare Tunnel, external-dns, k8s-gateway
 
 **Key Implementation Features:**
+
 - **Audit Mode by Default**: All policies use `enableDefaultDeny: false` when `network_policies_mode: "audit"`
 - **Conditional Rendering**: Policies only deploy when `network_policies_enabled: true`
 - **Dependency Chain**: Flux Kustomizations ensure cluster-wide policies deploy first
@@ -114,12 +120,14 @@ Full implementation completed based on research document `docs/research/cilium-n
 - **Optional Components**: UniFi DNS, Loki, Tempo, Alloy policies conditional on feature flags
 
 **Configuration (cluster.yaml):**
+
 ```yaml
 network_policies_enabled: true
 network_policies_mode: "audit"  # Start with audit, switch to "enforce" after validation
 ```
 
 **Validation Commands:**
+
 ```bash
 # Monitor policy verdicts
 hubble observe --verdict DROPPED
@@ -133,6 +141,7 @@ kubectl get ccnp -A
 **Implementation Details for #13 (Completed January 3, 2026):**
 
 Created PodDisruptionBudget templates for critical workloads:
+
 - **CoreDNS**: `templates/config/kubernetes/apps/kube-system/coredns/app/pdb.yaml.j2` (minAvailable: 1)
 - **cert-manager**: `templates/config/kubernetes/apps/cert-manager/cert-manager/app/pdb.yaml.j2` (minAvailable: 1)
 - **Envoy Gateway**: `templates/config/kubernetes/apps/network/envoy-gateway/app/pdb.yaml.j2` (minAvailable: 1)
@@ -142,6 +151,7 @@ All PDBs ensure at least one pod remains available during voluntary disruptions 
 **Implementation Details for #14 (Completed January 3, 2026):**
 
 Refactored `scripts/bootstrap-apps.sh` to use parallel execution:
+
 - Added `run_parallel()` and `wait_parallel()` helper functions for background job management
 - Restructured `main()` into 4 distinct phases:
   - Phase 1: Wait for nodes (sequential, required first)
@@ -154,6 +164,7 @@ Refactored `scripts/bootstrap-apps.sh` to use parallel execution:
 **Implementation Details for #15 (Completed January 3, 2026):**
 
 Updated `.github/workflows/release.yaml` to generate SBOMs:
+
 - **SPDX format**: `sbom.spdx.json` for broad tooling compatibility
 - **CycloneDX format**: `sbom.cyclonedx.json` for supply chain analysis
 - **Tool**: `anchore/sbom-action@v0.17.8` with digest pinning
@@ -177,6 +188,7 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 ## Implementation Roadmap
 
 ### Week 2-3 (Immediate)
+
 - [x] Add Trivy scanning to CI (#3) - ✅ Completed January 3, 2026
 - [x] Cache plugin.py file reads (#10) - ✅ Completed January 3, 2026
 - [x] Add health probes to critical apps (#9) - ✅ Completed January 3, 2026
@@ -185,12 +197,15 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 - [x] Add SBOM generation (#15) - ✅ Completed January 3, 2026
 
 ### Month 1
+
 - [ ] Create disaster recovery runbook (#12)
 
 ### Month 2
+
 - [x] Add CiliumNetworkPolicies (#11) - ✅ Implemented January 3, 2026
 
 ### Month 3+
+
 - [ ] Sigstore image signing (#16)
 - [ ] SLSA compliance (#17)
 - [ ] SLO/SLI tracking (#18)
@@ -202,19 +217,23 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 ## Dependencies & Prerequisites
 
 ### For Trivy Scanning (#3)
+
 - GitHub Actions workflow access
 - SARIF upload permissions
 
 ### For NetworkPolicies (#11)
+
 - Cilium CNI already deployed
 - CiliumNetworkPolicy CRD available
 
 ### For Sigstore (#16)
+
 - cosign CLI
 - Container registry with OCI support
 - Policy controller (Kyverno or Gatekeeper)
 
 ### For Chaos Engineering (#19)
+
 - Dedicated namespace for chaos tools
 - RBAC permissions for fault injection
 
@@ -245,6 +264,7 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 **Research Document:** `docs/research/cilium-observability-addon-research-jan-2026.md`
 
 **Critical Bug Fixed:**
+
 - Dashboard ID mismatch: `cilium-agent` was incorrectly using gnetId 16612 (Operator dashboard)
 - Corrected to gnetId 16611 (actual Cilium Agent dashboard)
 - Properly labeled `cilium-operator` entry added with gnetId 16612
@@ -260,16 +280,19 @@ Updated `.github/workflows/release.yaml` to generate SBOMs:
 | `cilium-network-monitoring` | 24056 | Endpoints, BPF maps, connectivity |
 
 **Hubble Metrics Enhanced:**
+
 - Added `port-distribution` for port usage visibility
 - Added `policy` metric with `sourceContext` and `destinationContext` for policy verdicts dashboard
 - Enabled `enableOpenMetrics: true` for exemplar support
 
 **Grafana Sidecar Enabled:**
+
 - Auto-discovery of Cilium-generated ConfigMap dashboards
 - Label: `grafana_dashboard: "1"`
 - Search across all namespaces
 
 **Files Modified:**
+
 - `templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2`
 - `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/app/helmrelease.yaml.j2`
 - `templates/config/kubernetes/apps/kube-system/cilium/app/helmrelease.yaml.j2`

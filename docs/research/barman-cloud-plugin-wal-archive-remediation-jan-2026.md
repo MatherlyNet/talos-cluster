@@ -6,6 +6,7 @@
 > **Issue:** WAL archiving fails with `exit status 1` for CNPG clusters using RustFS S3 backend
 > **Affected:** All CNPG clusters with barman-cloud plugin backup to RustFS
 > **Root Causes:**
+>
 > 1. boto3 1.36+ S3 Data Integrity Protection incompatibility with RustFS (RESOLVED)
 > 2. Stale archive data causing "Expected empty archive" errors (NEW FINDING)
 
@@ -77,6 +78,7 @@ Starting with AWS boto3 1.36 (released early 2025), the SDK implements new S3 Da
 The current ObjectStore configuration for Obot lacks the required environment variables to work around this compatibility issue:
 
 **Current (`kubernetes/apps/ai-system/obot/app/postgresql.yaml`):**
+
 ```yaml
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore
@@ -120,6 +122,7 @@ spec:
 The `instanceSidecarConfiguration` schema (lines ~138-160) must be updated to include the missing fields:
 
 **Current (incomplete):**
+
 ```yaml
 instanceSidecarConfiguration:
   description: Configuration for sidecar containers
@@ -133,6 +136,7 @@ instanceSidecarConfiguration:
 ```
 
 **Required (complete):**
+
 ```yaml
 instanceSidecarConfiguration:
   description: Configuration for sidecar containers
@@ -312,6 +316,7 @@ kubectl get crd objectstores.barmancloud.cnpg.io -o yaml | grep -A 50 instanceSi
 ```
 
 **Expected output should include:**
+
 ```yaml
 instanceSidecarConfiguration:
   properties:
@@ -361,6 +366,7 @@ kubectl get objectstore obot-objectstore -n ai-system -o yaml | grep -A 10 insta
 ```
 
 Expected output should include:
+
 ```yaml
 instanceSidecarConfiguration:
   env:
@@ -419,6 +425,7 @@ kubectl get cluster obot-postgresql -n ai-system -o yaml | grep -A 5 ContinuousA
 ```
 
 **Healthy output:**
+
 ```yaml
 - type: ContinuousArchiving
   status: "True"
@@ -474,6 +481,7 @@ kubectl get ciliumnetworkpolicy -n ai-system
 **Status:** Fixed in plugin-barman-cloud v0.10.0 (PR #6964)
 
 **Check version:**
+
 ```bash
 kubectl get deployment barman-cloud -n cnpg-system -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
@@ -491,6 +499,7 @@ Should show: `ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.10.0` or newer
 **Symptoms:** After upgrading CNPG operator, clusters with >1 instance get stuck
 
 **Workaround:**
+
 ```bash
 # If upgrade hangs, manually restart remaining instances
 kubectl rollout restart statefulset obot-postgresql -n ai-system
@@ -513,6 +522,7 @@ RustFS (like MinIO) uses **path-style** addressing by default, not virtual-host 
 RustFS does NOT support `mc admin` commands. All IAM operations must be done via Console UI:
 
 1. **Create Policy** (`database-storage`):
+
 ```json
 {
   "Version": "2012-10-17",
@@ -581,18 +591,21 @@ cnpg_barman_plugin_enabled: true
 ## References
 
 ### Official Documentation
+
 - [Barman Cloud Plugin Troubleshooting](https://cloudnative-pg.io/docs/1.28/backup_recovery#troubleshooting)
 - [Barman Cloud Plugin Object Stores](https://cloudnative-pg.io/docs/1.28/backup_recovery#object-stores)
 - [CloudNativePG Documentation](https://cloudnative-pg.io/docs/1.28/)
 - [Barman Cloud boto3 Compatibility](https://docs.pgbarman.org/release/3.16.1/user_guide/barman_cloud.html)
 
 ### GitHub Issues
+
 - [Exit status 2 WAL archive error](https://github.com/cloudnative-pg/plugin-barman-cloud/issues/535)
 - [WAL archiving not working on former primary](https://github.com/cloudnative-pg/plugin-barman-cloud/issues/164)
 - [boto3 version hint](https://github.com/cloudnative-pg/cloudnative-pg/issues/8427)
 - [XAmzContentSHA256Mismatch debugging](https://www.beyondwatts.com/posts/debugging-barman-xamzcontentsha256mismatch-error-after-upgrading-to-postgresql175/)
 
 ### Project Documentation
+
 - [CNPG Implementation Guide](../guides/completed/cnpg-implementation.md)
 - [RustFS Integration](./rustfs-shared-storage-loki-simplescalable-jan-2026.md)
 - [Obot Integration](./obot-mcp-gateway-integration-jan-2026.md)
@@ -612,6 +625,7 @@ ERROR: WAL archive check failed for server obot-postgresql: Expected empty archi
 ### Root Cause
 
 This occurs when:
+
 1. A CNPG cluster is recreated (e.g., pod deleted and recreated, PVC data lost)
 2. The new cluster starts with timeline 1 (fresh initdb)
 3. Old WAL files from the previous cluster instance still exist in S3
@@ -755,6 +769,7 @@ The `instanceSidecarConfiguration.env` variables in ObjectStore are passed to th
 ### Key Discovery: Init Container vs Sidecar
 
 Despite the name "sidecar", the plugin uses an **init container** pattern:
+
 - `plugin-barman-cloud` runs as init container, not a continuously running sidecar
 - WAL archiving is done by the main postgres container calling barman-cloud binaries
 - The init container prepares the environment and configuration

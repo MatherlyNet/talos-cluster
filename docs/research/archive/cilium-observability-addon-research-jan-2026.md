@@ -56,12 +56,14 @@ When `dashboards.enabled: true` is set in the Cilium Helm chart (which we have),
 #### P0: Fix Cilium Agent Dashboard (BUG)
 
 **Current (WRONG):**
+
 ```yaml
 cilium-agent:
   gnetId: 16612  # This is OPERATOR, not Agent!
 ```
 
 **Corrected:**
+
 ```yaml
 cilium-agent:
   gnetId: 16611  # Correct Agent dashboard
@@ -76,6 +78,7 @@ cilium-operator:
 #### Cilium Operator Dashboard (Already in templates, just mislabeled)
 
 The dashboard at gnetId 16612 (which we already have, just mislabeled) tracks:
+
 - CPU/memory usage of operator pods
 - IPAM IP address allocation by type
 - EC2 API interactions (if using AWS)
@@ -88,6 +91,7 @@ The dashboard at gnetId 16612 (which we already have, just mislabeled) tracks:
 #### Network Policy Verdicts Dashboard (ID 18015)
 
 This dashboard uses `hubble_policy_verdicts_total` to show:
+
 - Policy enforcement decisions (allow/deny)
 - Source/destination workload context
 - Namespace-level policy visibility
@@ -97,6 +101,7 @@ This dashboard uses `hubble_policy_verdicts_total` to show:
 ### 3. Hubble Metrics Configuration Gap
 
 #### Current Configuration (from `cilium/app/helmrelease.yaml.j2`)
+
 ```yaml
 hubble:
   metrics:
@@ -110,6 +115,7 @@ hubble:
 ```
 
 #### Recommended Addition
+
 ```yaml
 hubble:
   metrics:
@@ -125,10 +131,12 @@ hubble:
 ```
 
 **Why `port-distribution`?**
+
 - Enables the "Top 10 Port Distribution" panel in the Hubble dashboard
 - Helps identify unusual port usage patterns (security visibility)
 
 **Why `httpV2` with exemplars?**
+
 - Links HTTP metrics to distributed traces (Tempo integration)
 - Adds workload context labels for better filtering
 - Required for the L7 observability demonstrated in the [Isovalent demo](https://github.com/isovalent/cilium-grafana-observability-demo)
@@ -143,6 +151,7 @@ There are two approaches to loading Cilium dashboards:
 | **Grafana.com imports** | Our current approach | Simple, declarative | May drift from Cilium version |
 
 **Recommendation:** Use a hybrid approach:
+
 1. Keep `dashboards.enabled: true` in Cilium (creates ConfigMaps)
 2. Configure Grafana sidecar to discover these ConfigMaps
 3. Remove duplicate Grafana.com dashboard imports
@@ -174,6 +183,7 @@ grafana:
 The entry labeled `cilium-agent` is incorrectly using gnetId 16612 (Operator dashboard). Must fix:
 
 **In `templates/config/kubernetes/apps/monitoring/victoria-metrics/app/helmrelease.yaml.j2`:**
+
 ```yaml
 dashboards:
   network:
@@ -213,6 +223,7 @@ dashboards:
 #### 3. Add Cilium Network Monitoring Dashboard (ID 24056)
 
 This modern dashboard provides:
+
 - Endpoint state monitoring
 - BPF map capacity tracking
 - Node connectivity status
@@ -376,6 +387,7 @@ hubble:
 ## References
 
 ### Official Cilium Resources
+
 - [Cilium Prometheus Examples](https://github.com/cilium/cilium/tree/main/examples/kubernetes/addons/prometheus)
 - [Cilium Dashboard JSON](https://github.com/cilium/cilium/blob/main/install/kubernetes/cilium/files/cilium-agent/dashboards/cilium-dashboard.json)
 - [Hubble Dashboard JSON](https://github.com/cilium/cilium/blob/main/install/kubernetes/cilium/files/hubble/dashboards/hubble-dashboard.json)
@@ -383,6 +395,7 @@ hubble:
 - [Cilium Grafana Guide](https://docs.cilium.io/en/stable/observability/grafana/)
 
 ### Grafana Labs Dashboards
+
 - [Cilium v1.12 Agent (16612)](https://grafana.com/grafana/dashboards/16612-cilium-agent/)
 - [Cilium v1.12 Hubble (16613)](https://grafana.com/grafana/dashboards/16613-hubble/)
 - [Cilium Policy Verdicts (18015)](https://grafana.com/grafana/dashboards/18015-cilium-policy-verdicts/)
@@ -390,6 +403,7 @@ hubble:
 - [Cilium Metrics (21431)](https://grafana.com/grafana/dashboards/21431-cilium-metrics/)
 
 ### Additional Resources
+
 - [Isovalent Cilium Grafana Observability Demo](https://github.com/isovalent/cilium-grafana-observability-demo)
 - [Cilium Dashboard Feature Request (GitHub #20354)](https://github.com/cilium/cilium/issues/20354)
 

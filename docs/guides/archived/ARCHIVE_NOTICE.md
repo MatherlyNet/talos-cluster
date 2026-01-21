@@ -10,10 +10,12 @@ The guides in this directory represent historical implementation approaches that
 ### VictoriaMetrics to kube-prometheus-stack Migration (2026-01-05)
 
 The cluster migrated from VictoriaMetrics to **kube-prometheus-stack** on January 5, 2026. See:
+
 - **Migration Report:** `local_docs/archive/victoria_metrics/MIGRATION_REPORT.md`
 - **Current Implementation:** `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/`
 
 Key reasons for migration:
+
 - Better community support and dashboard compatibility
 - Native Prometheus ecosystem integration
 - Simplified Grafana 12 feature configuration
@@ -46,6 +48,7 @@ monitoring_stack: "prometheus"  # kube-prometheus-stack
 ```
 
 See:
+
 - **Application docs:** `docs/APPLICATIONS.md#kube-prometheus-stack`
 - **Template location:** `templates/config/kubernetes/apps/monitoring/kube-prometheus-stack/`
 

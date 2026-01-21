@@ -79,6 +79,7 @@ This research analyzes the [k8s-at-home](https://github.com/topics/k8s-at-home) 
 This project **already has** a comprehensive Renovate configuration that aligns with community best practices:
 
 **Existing Features (`.renovaterc.json5`):**
+
 - Flux manager with `.yaml.j2` template support
 - Kubernetes manifest scanning
 - Helmfile support
@@ -89,6 +90,7 @@ This project **already has** a comprehensive Renovate configuration that aligns 
 - SOPS files properly ignored
 
 **Community Alignment:** Our configuration is **more advanced** than many community examples, including:
+
 - Support for Jinja2 templates (`*.yaml.j2`)
 - Helmfile integration
 - Mise tool version management
@@ -97,6 +99,7 @@ This project **already has** a comprehensive Renovate configuration that aligns 
 ### Why This Matters
 
 Every analyzed repository uses [Renovate](https://docs.renovatebot.com/) for automated dependency updates. Without it:
+
 - Helm charts become outdated (security vulnerabilities)
 - Container images miss critical patches
 - Manual PRs required for every update
@@ -197,6 +200,7 @@ jobs:
 ### Adoption Effort: **Already Complete**
 
 Our existing `.renovaterc.json5` already implements:
+
 - All recommended patterns
 - Template file support (unique to our project)
 - Semantic commit formatting
@@ -211,6 +215,7 @@ Our existing `.renovaterc.json5` already implements:
 ### Community Standard: kube-prometheus-stack + Loki
 
 The [2024 Grafana Labs Observability Survey](https://grafana.com/about/press/2024/03/12/grafana-labs-announces-updates-to-kubernetes-monitoring-solution-open-source-innovations-and-findings-from-2024-observability-survey/) shows:
+
 - 89% of respondents invest in Prometheus
 - 85% invest in OpenTelemetry
 - 40%+ use both together
@@ -238,6 +243,7 @@ For resource-constrained homelabs, [VictoriaMetrics](https://docs.victoriametric
 | Clustering | Complex | Simple |
 
 **Latest Versions (January 2026):**
+
 - `victoria-metrics-k8s-stack`: **0.45.0** (app v1.116.0)
 - `victoria-logs-single`: **0.11.23** (app v1.43.1)
 
@@ -354,6 +360,7 @@ spec:
 ### Why This Matters
 
 Stateful workloads (databases, media servers, home automation) require backup. Without VolSync:
+
 - Data loss on PVC failure
 - No point-in-time recovery
 - Manual backup scripts needed
@@ -361,6 +368,7 @@ Stateful workloads (databases, media servers, home automation) require backup. W
 ### Community Pattern: VolSync + Restic + S3
 
 [VolSync](https://volsync.readthedocs.io/en/stable/) provides:
+
 - Scheduled PVC snapshots
 - Restic-based deduplication
 - S3-compatible storage (R2, MinIO, Backblaze)
@@ -411,6 +419,7 @@ spec:
 ### S3 Backend Configuration
 
 As validated in [gitops-examples-integration.md](./gitops-examples-integration.md#s3-storage-options-for-talos-backup), **Cloudflare R2** is optimal:
+
 - Zero egress fees
 - 10GB free tier
 - Already using Cloudflare
@@ -474,6 +483,7 @@ templates/config/kubernetes/
 ### Recommendation
 
 Our template-based approach is unique but valid. Consider adding:
+
 - `crds/` directory for CRD-only Kustomizations
 - Explicit `core/` vs `apps/` separation for dependency clarity
 
@@ -579,6 +589,7 @@ spec:
 ### Current State: SOPS/Age
 
 Our project uses SOPS with Age encryption. This is solid but has limitations:
+
 - Secrets stored in Git (even encrypted)
 - Key rotation requires re-encrypting all secrets
 - No audit trail of secret access
@@ -637,6 +648,7 @@ spec:
 ### Recommendation
 
 Keep SOPS/Age as baseline, but consider External Secrets if:
+
 - Managing many secrets
 - Need secret rotation automation
 - Already using 1Password/Bitwarden
@@ -701,6 +713,7 @@ We have **already implemented** the dual external-dns pattern:
 | `unifi-dns` | UniFi webhook | `envoy-internal` | `templates/config/kubernetes/apps/network/unifi-dns/` |
 
 **Configuration highlights:**
+
 - `cloudflare-dns`: Uses `--gateway-name=envoy-external` for public-facing services
 - `unifi-dns`: Uses `--gateway-name=envoy-internal` for LAN-only services
 - Both use `DNSEndpoint` CRD and `gateway-httproute` sources
@@ -717,6 +730,7 @@ No additional work required. The dual external-dns pattern is fully operational.
 ### What It Is
 
 [Kubesearch.dev](https://kubesearch.dev/) indexes Flux HelmReleases from k8s-at-home repositories:
+
 - Search how others deploy specific applications
 - Find configuration examples
 - Discover new applications
@@ -730,6 +744,7 @@ No additional work required. The dual external-dns pattern is fully operational.
 ### Integration with Development
 
 Add to `.claude/` agent instructions or developer documentation:
+
 - "Check kubesearch.dev for community examples before implementing new apps"
 
 ---
@@ -760,6 +775,7 @@ Add to `.claude/` agent instructions or developer documentation:
    - Create template for ReplicationSource CRs
 
 2. **Implementation Files:**
+
    ```
    templates/config/kubernetes/apps/storage/
    ├── namespace.yaml.j2
@@ -777,11 +793,13 @@ Add to `.claude/` agent instructions or developer documentation:
 **Goal:** Full metrics, logs, and alerting
 
 **Option A: kube-prometheus-stack + Loki (Community Standard)**
+
 - Higher resource usage (~2-4GB RAM)
 - Mature ecosystem with extensive dashboards
 - Wide community support
 
 **Option B: VictoriaMetrics k8s-stack (Resource-Efficient)**
+
 - 10x less memory than Prometheus
 - Full PromQL compatibility
 - Better for constrained homelab environments
@@ -789,6 +807,7 @@ Add to `.claude/` agent instructions or developer documentation:
 **Recommended:** Start with VictoriaMetrics if resources are limited, migrate to full Prometheus stack if needed.
 
 1. **Implementation Files:**
+
    ```
    templates/config/kubernetes/apps/monitoring/
    ├── namespace.yaml.j2
@@ -924,6 +943,7 @@ templates/config/kubernetes/flux/cluster/repositories/
 ## Sources
 
 ### Primary Repositories
+
 - [GitHub k8s-at-home Topic](https://github.com/topics/k8s-at-home)
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
@@ -934,6 +954,7 @@ templates/config/kubernetes/flux/cluster/repositories/
 - [szinn/k8s-homelab](https://github.com/szinn/k8s-homelab)
 
 ### Tools & Documentation
+
 - [Renovate Flux Manager](https://docs.renovatebot.com/modules/manager/flux/)
 - [bjw-s App Template](https://bjw-s-labs.github.io/helm-charts/docs/app-template/)
 - [External Secrets Operator](https://external-secrets.io/)
@@ -941,11 +962,13 @@ templates/config/kubernetes/flux/cluster/repositories/
 - [Kubesearch.dev](https://kubesearch.dev/)
 
 ### Observability
+
 - [Grafana Kubernetes Monitoring](https://grafana.com/solutions/kubernetes/)
 - [VictoriaMetrics K8s Guide](https://docs.victoriametrics.com/guides/k8s-monitoring-via-vm-cluster.html)
 - [LGTM Stack Setup](https://atmosly.com/blog/lgtm-prometheus)
 
 ### Storage
+
 - [Cilium L2 Announcements](https://docs.cilium.io/en/stable/network/l2-announcements/)
 - [Longhorn vs Rook-Ceph 2025](https://onidel.com/blog/longhorn-vs-openebs-rook-ceph-2025)
 
@@ -1053,6 +1076,7 @@ templates/config/kubernetes/flux/cluster/repositories/
 ### Recommendation Confidence
 
 All recommendations in this document are **validated** as:
+
 - ✅ Technically sound
 - ✅ Aligned with project conventions (makejinja templates, OCIRepository pattern)
 - ✅ Feasible within existing infrastructure (R2 backend, Proxmox CSI)

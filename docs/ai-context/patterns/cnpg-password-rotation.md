@@ -117,6 +117,7 @@ spec:
 ```
 
 **Key Fields:**
+
 - `bootstrap.initdb.owner`: Creates initial database owner
 - `bootstrap.initdb.secret.name`: References secret with password
 - `managed.roles`: Defines role to keep synced with secret
@@ -146,6 +147,7 @@ spec:
 ```
 
 **Reloader Behavior:**
+
 - Watches secrets referenced by pods
 - Calculates checksum of secret data
 - Triggers rolling restart when checksum changes
@@ -167,12 +169,14 @@ Edit the password variable for the component:
 ```
 
 **Generate New Password:**
+
 ```bash
 # Generate 32-character random password
 openssl rand -base64 24
 ```
 
 **Encrypt with SOPS:**
+
 ```bash
 # Edit cluster.yaml with SOPS (auto-encrypts)
 sops cluster.yaml
@@ -199,17 +203,20 @@ git push
 ### Step 3: Verify Password Sync
 
 **Check CloudNativePG Operator logs:**
+
 ```bash
 kubectl logs -n cnpg-system deploy/cloudnative-pg -f | grep "password"
 ```
 
 **Expected output:**
+
 ```
 INFO Reconciling managed roles for cluster <component>-postgresql
 INFO Updated password for user <username>
 ```
 
 **Verify role in PostgreSQL:**
+
 ```bash
 kubectl exec -n <namespace> <component>-postgresql-1 -c postgres -- \
   psql -U postgres -c "\du <username>"
@@ -218,16 +225,19 @@ kubectl exec -n <namespace> <component>-postgresql-1 -c postgres -- \
 ### Step 4: Verify Application Restart
 
 **Watch pod restart:**
+
 ```bash
 kubectl rollout status deployment/<component> -n <namespace>
 ```
 
 **Check Reloader logs:**
+
 ```bash
 kubectl logs -n kube-system deploy/reloader -f | grep <component>
 ```
 
 **Expected output:**
+
 ```
 INFO Changes detected in secret <component>-db-secret
 INFO Triggering rolling restart of deployment <component>
@@ -236,6 +246,7 @@ INFO Triggering rolling restart of deployment <component>
 ### Step 5: Validate Connectivity
 
 **Check application logs for successful connection:**
+
 ```bash
 kubectl logs -n <namespace> deploy/<component> --tail=50 | grep -i "database\|postgres\|connection"
 ```
@@ -249,15 +260,18 @@ kubectl logs -n <namespace> deploy/<component> --tail=50 | grep -i "database\|po
 ### Issue: "FATAL: password authentication failed"
 
 **Symptoms:**
+
 - Application pods crash-looping
 - Logs show PostgreSQL authentication errors
 
 **Causes:**
+
 1. Password not yet synced to PostgreSQL
 2. Pods using old password (not restarted)
 3. Secret not updated correctly
 
 **Resolution:**
+
 ```bash
 # 1. Verify secret has new password
 kubectl get secret -n <namespace> <component>-db-secret -o jsonpath='{.data.password}' | base64 -d
@@ -276,15 +290,18 @@ kubectl rollout restart deployment/<component> -n <namespace>
 ### Issue: Pods Not Restarting After Secret Change
 
 **Symptoms:**
+
 - Secret updated but pods still running
 - Old password still in use
 
 **Causes:**
+
 1. Reloader annotation missing
 2. Reloader controller not running
 3. Secret not referenced in pod spec
 
 **Resolution:**
+
 ```bash
 # 1. Verify Reloader is running
 kubectl get deploy -n kube-system reloader
@@ -303,15 +320,18 @@ kubectl rollout restart deployment/<component> -n <namespace>
 ### Issue: CNPG Operator Not Syncing Password
 
 **Symptoms:**
+
 - Secret updated, pods restarted, but still authentication errors
 - PostgreSQL role has old password
 
 **Causes:**
+
 1. Managed role configuration incorrect
 2. CNPG operator not watching secret
 3. Secret name mismatch
 
 **Resolution:**
+
 ```bash
 # 1. Verify managed role configuration
 kubectl get cluster -n <namespace> <component>-postgresql -o yaml | grep -A 20 "managed:"
@@ -398,6 +418,7 @@ kubectl exec -n ai-system deploy/litellm -- \
 ```
 
 **Expected timeline:**
+
 - Secret update: 0-30s (Flux reconciliation)
 - Password sync: 0-60s (CNPG operator)
 - Pod restart: 30-120s (Reloader + rolling update)
@@ -410,5 +431,6 @@ kubectl exec -n ai-system deploy/litellm -- \
 **Tested With:** CloudNativePG v1.24.1, Reloader v1.1.0
 
 ### Version History
+
 - **v1.1.0** (2026-01-14): Added Mermaid diagrams for visual learning
 - **v1.0.0** (2026-01-14): Initial pattern extraction

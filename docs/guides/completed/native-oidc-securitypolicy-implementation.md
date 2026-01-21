@@ -7,6 +7,7 @@
 >
 > [!NOTE]
 > **Implementation Complete (January 2026)** - All components from this guide have been fully implemented and verified:
+>
 > - `plugin.py` derived variables (`oidc_sso_enabled`, `keycloak_bootstrap_oidc_client`)
 > - OIDC SecurityPolicy template with dynamic redirect URL support
 > - JWT SecurityPolicy template with claim-to-header extraction
@@ -254,6 +255,7 @@ spec:
 The HTTPRoute must include the OAuth2 callback path. Either:
 
 1. Use a PathPrefix that includes `/oauth2/callback`:
+
    ```yaml
    - path:
        type: PathPrefix
@@ -261,6 +263,7 @@ The HTTPRoute must include the OAuth2 callback path. Either:
    ```
 
 2. Or explicitly add a callback rule:
+
    ```yaml
    - matches:
        - path:
@@ -391,6 +394,7 @@ kubectl describe securitypolicy oidc-sso -n network
 ### Test Authentication Flow
 
 1. **Access protected route without session:**
+
    ```bash
    curl -v https://app.matherly.net/
    # Should redirect to OIDC provider login page (302)
@@ -402,12 +406,14 @@ kubectl describe securitypolicy oidc-sso -n network
    - After login, redirected back to application
 
 3. **Verify session cookie:**
+
    ```bash
    # Check browser cookies for the domain
    # Should see session cookie from Envoy Gateway
    ```
 
 4. **Test logout:**
+
    ```bash
    curl -v https://app.matherly.net/logout
    # Should clear session and redirect to IdP logout
@@ -444,12 +450,14 @@ curl https://auth.matherly.net/realms/matherlynet/.well-known/openid-configurati
 **Symptom:** User authenticates successfully with IdP (Google, GitHub, etc.), but the callback fails with "OAuth flow failed" and the callback URL has empty query parameters (`/oauth2/callback?`).
 
 **Root Cause:** OAuth2 token exchange uses `application/x-www-form-urlencoded` POST body. In this encoding:
+
 - `+` is interpreted as a **space** character
 - `=` is a special delimiter
 
 Base64 encoding (`openssl rand -base64 32`) can produce both `+` and `=` characters, causing the secret sent by Envoy Gateway to differ from what Keycloak expects.
 
 **Error Logs:**
+
 ```
 # Envoy Gateway proxy logs
 Failed to get access token, response code: 401, response body: {"error":"unauthorized_client","error_description":"Invalid client or Invalid client credentials"}
@@ -469,16 +477,21 @@ openssl rand -base64 32  # DO NOT USE
 ```
 
 **After changing the secret:**
+
 1. Update `oidc_client_secret` in `cluster.yaml`
 2. Run `task configure -y`
 3. Delete the Keycloak realm import job to force re-import:
+
    ```bash
    kubectl delete job -n identity -l app.kubernetes.io/name=keycloak-realm-import
    ```
+
 4. Restart Envoy Gateway to clear OIDC cache:
+
    ```bash
    kubectl rollout restart deployment envoy-gateway -n network
    ```
+
 5. Commit, push, and reconcile
 
 ---
@@ -504,11 +517,13 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 ## References
 
 ### External Documentation
+
 - [Envoy Gateway OIDC Authentication](https://gateway.envoyproxy.io/docs/tasks/security/oidc/)
 - [SecurityPolicy API Reference](https://gateway.envoyproxy.io/latest/concepts/gateway_api_extensions/security-policy/)
 - [Release Notes v1.6.1](https://docs.tetrate.io/envoy-gateway/release-announcement)
 
 ### Project Documentation
+
 - [Envoy Gateway Observability & Security](../envoy-gateway-observability-security.md) - JWT SecurityPolicy (Phase 2)
 - [OIDC Integration Research](../research/archive/completed/envoy-gateway-oidc-integration.md) - Research analysis
 
@@ -521,17 +536,20 @@ You can use both OIDC (for web browsers) and JWT (for APIs) on the same applicat
 ### Problem: Hairpin NAT and TLS Errors
 
 When Keycloak is accessed via Cloudflare Tunnel, Envoy Gateway's OIDC filter fails during token exchange with:
+
 ```
 TLS_error:|268436526:SSL routines:OPENSSL_internal:TLSV1_ALERT_PROTOCOL_VERSION
 ```
 
 **Root cause:** Envoy Gateway cannot complete TLS handshake with Cloudflare when exchanging authorization code for tokens. This is a server-to-server call that needs to reach Keycloak, but:
+
 1. Hairpin NAT: Pods cannot reach LoadBalancer IPs from inside the cluster
 2. Cloudflare TLS: The Envoy OAuth2 filter has TLS compatibility issues with Cloudflare
 
 ### Solution: Internal Token Exchange with External Authorization
 
 Configure SecurityPolicy to use:
+
 - **External** authorization endpoint (user browser redirects to Cloudflare → Keycloak)
 - **Internal** token endpoint (server-to-server via Kubernetes service)
 - **backendRefs** pointing to internal Keycloak service

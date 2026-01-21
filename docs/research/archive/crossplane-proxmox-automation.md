@@ -119,17 +119,20 @@ This is the most active Crossplane provider for Proxmox, built using [Upjet](htt
 #### Available Managed Resources (31 total)
 
 **Virtual Environment Core:**
+
 - `EnvironmentVM` - Virtual machine management
 - `EnvironmentContainer` - LXC container management
 - `EnvironmentFile` - File management
 - `EnvironmentDownloadFile` - Download file management
 
 **Networking:**
+
 - `EnvironmentNetworkLinuxBridge` - Linux bridge configuration
 - `EnvironmentNetworkLinuxVlan` - VLAN configuration
 - `EnvironmentClusterFirewall` - Cluster-level firewall
 
 **Security & Access Control:**
+
 - `EnvironmentACL` - Access control lists
 - `EnvironmentUser` - User management
 - `EnvironmentGroup` - Group management
@@ -137,12 +140,14 @@ This is the most active Crossplane provider for Proxmox, built using [Upjet](htt
 - `EnvironmentClusterFirewallSecurityGroup` - Security groups
 
 **Firewall Management:**
+
 - `EnvironmentFirewallAlias` - Firewall aliases
 - `EnvironmentFirewallIPSet` - IP sets
 - `EnvironmentFirewallOptions` - Firewall options
 - `EnvironmentFirewallRules` - Firewall rules
 
 **System Administration:**
+
 - `EnvironmentCertificate` - Certificate management
 - `EnvironmentDNS` - DNS configuration
 - `EnvironmentHosts` - Hosts file management
@@ -152,14 +157,17 @@ This is the most active Crossplane provider for Proxmox, built using [Upjet](htt
 - `EnvironmentAptStandardRepository` - Standard APT repos
 
 **ACME & DNS:**
+
 - `EnvironmentAcmeAccount` - ACME account management
 - `EnvironmentAcmeDNSPlugin` - ACME DNS plugins
 
 **High Availability:**
+
 - `EnvironmentHagroup` - HA group configuration
 - `EnvironmentHaresource` - HA resource management
 
 **Resource Organization:**
+
 - `EnvironmentPool` - Resource pool management
 
 ---
@@ -656,6 +664,7 @@ User YAML → Crossplane → Upjet → Terraform Schema → Proxmox API
 3. **Future**: Crossplane when Proxmox provider matures (6-12 months)
 
 **Consider Crossplane when:**
+
 - Provider reaches v1.x stable with documented production use
 - Your organization already uses Crossplane for other infrastructure
 - GitOps-native VM management is a hard requirement
@@ -731,6 +740,7 @@ Kubemox is interesting for experimentation but not suitable for production infra
 ## Sources
 
 ### Crossplane
+
 - [Crossplane Official Website](https://www.crossplane.io/)
 - [CNCF Graduation Announcement](https://www.cncf.io/announcements/2025/11/06/cloud-native-computing-foundation-announces-graduation-of-crossplane/)
 - [Crossplane Documentation](https://docs.crossplane.io/)
@@ -738,26 +748,31 @@ Kubemox is interesting for experimentation but not suitable for production infra
 - [Upjet Framework](https://github.com/crossplane/upjet)
 
 ### Proxmox Providers
+
 - [provider-proxmox-bpg GitHub](https://github.com/valkiriaaquatica/provider-proxmox-bpg)
 - [Upbound Marketplace - provider-proxmox-bpg](https://marketplace.upbound.io/providers/valkiriaaquaticamendi/provider-proxmox-bpg/v0.11.1)
 - [provider-proxmoxve GitHub](https://github.com/dougsong/provider-proxmoxve)
 - [bpg/proxmox Terraform Provider](https://registry.terraform.io/providers/bpg/proxmox/latest)
 
 ### Kubemox
+
 - [Kubemox GitHub](https://github.com/alperencelik/kubemox)
 - [Kubemox Documentation](https://alperencelik.github.io/kubemox/)
 - [Kubemox Roadmap](https://alperencelik.github.io/kubemox/roadmap/)
 
 ### Community Discussions
+
 - [Proxmox Forum - Kubernetes Operator](https://forum.proxmox.com/threads/kubernetes-proxmox-operator.125268/)
 - [Crossplane vs Terraform Comparison](https://spacelift.io/blog/crossplane-vs-terraform)
 - [Crossplane vs Terraform vs Ansible](https://devopstoolkit.live/infrastructure-as-code/ansible-vs-terraform-vs-crossplane/index.html)
 
 ### Talos Integration
+
 - [Talos NoCloud Documentation](https://docs.siderolabs.com/talos/v1.11/platform-specific-installations/cloud-platforms/nocloud)
 - [JYSK Tech - Talos NoCloud Boot](https://jysk.tech/3000-clusters-part-3-how-to-boot-talos-linux-nodes-with-cloud-init-and-nocloud-acdce36f60c0)
 
 ### Cluster API (CAPMOX)
+
 - [IONOS CAPMOX](https://github.com/ionos-cloud/cluster-api-provider-proxmox)
 - [Cluster API + Talos + Proxmox Guide](https://a-cup-of.coffee/blog/talos-capi-proxmox/)
 - [CAPMOX Cloud-Init Issue #569](https://github.com/ionos-cloud/cluster-api-provider-proxmox/issues/569)

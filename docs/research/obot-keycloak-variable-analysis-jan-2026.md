@@ -102,6 +102,7 @@ The CURRENT project's variable naming pattern (`OBOT_KEYCLOAK_AUTH_PROVIDER_*`) 
 ### Finding 2: OLD Project Variables Not in Fork
 
 The following OLD project variables are **NOT referenced** in the fork's keycloak-auth-provider source:
+
 - `OBOT_SERVER_AUTH_KEYCLOAK_ISSUER_URL`
 - `OBOT_SERVER_AUTH_KEYCLOAK_CLIENT_ID`
 - `OBOT_SERVER_AUTH_KEYCLOAK_CLIENT_SECRET`
@@ -112,6 +113,7 @@ The following OLD project variables are **NOT referenced** in the fork's keycloa
 ### Finding 3: Missing Variable in CURRENT Project
 
 The fork expects `OBOT_SERVER_PUBLIC_URL` or `OBOT_SERVER_URL` but CURRENT project uses `OBOT_SERVER_HOSTNAME`. This may cause issues as the keycloak-auth-provider tool looks for:
+
 ```go
 ObotServerURL string `env:"OBOT_SERVER_PUBLIC_URL,OBOT_SERVER_URL"`
 ```
@@ -134,6 +136,7 @@ ObotServerURL string `env:"OBOT_SERVER_PUBLIC_URL,OBOT_SERVER_URL"`
 2. **Verify Keycloak URL Format**
 
    The fork expects a **base URL without realm path**:
+
    ```yaml
    # Correct (current project approach)
    OBOT_KEYCLOAK_AUTH_PROVIDER_URL: "https://auth.matherlynet.dev"
@@ -146,6 +149,7 @@ ObotServerURL string `env:"OBOT_SERVER_PUBLIC_URL,OBOT_SERVER_URL"`
 3. **Ensure Cookie Secret is Set**
 
    The `OBOT_AUTH_PROVIDER_COOKIE_SECRET` is required. Verify it's properly set in `secret.sops.yaml.j2`:
+
    ```yaml
    OBOT_AUTH_PROVIDER_COOKIE_SECRET: "#{ obot_keycloak_cookie_secret }#"
    ```
@@ -153,9 +157,11 @@ ObotServerURL string `env:"OBOT_SERVER_PUBLIC_URL,OBOT_SERVER_URL"`
 4. **Optional: Add PostgreSQL Session Storage**
 
    For large Keycloak tokens (with many groups/roles), PostgreSQL session storage prevents cookie overflow:
+
    ```yaml
    OBOT_AUTH_PROVIDER_POSTGRES_CONNECTION_DSN: "postgresql://..."
    ```
+
    (Already configured in CURRENT project)
 
 ---
@@ -165,6 +171,7 @@ ObotServerURL string `env:"OBOT_SERVER_PUBLIC_URL,OBOT_SERVER_URL"`
 ### OLD Project Configuration (talos-k8s-cluster)
 
 **cluster.yaml variables:**
+
 ```yaml
 obot_keycloak_enabled: true
 obot_keycloak_client_id: "obot"  # via default
@@ -176,6 +183,7 @@ obot_keycloak_client_secret: "..."
 ```
 
 **plugin.py computed values:**
+
 ```python
 # OLD project plugin.py (lines 378-387)
 data.setdefault("obot_enabled", False)
@@ -193,6 +201,7 @@ data.setdefault("obot_keycloak_client_secret", "")
 ### CURRENT Project Configuration (matherlynet-talos-cluster)
 
 **cluster.yaml variables:**
+
 ```yaml
 obot_keycloak_enabled: true
 obot_keycloak_client_id: "obot"
@@ -203,6 +212,7 @@ obot_keycloak_cookie_secret: "..."  # NEW - required by fork
 ```
 
 **plugin.py computed values:**
+
 ```python
 # CURRENT project plugin.py (lines 616-635)
 # Keycloak integration - derive URLs for custom auth provider
@@ -220,6 +230,7 @@ if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
 ```
 
 **Key Observation:** The CURRENT project's `plugin.py` correctly computes:
+
 - `obot_keycloak_base_url` - for `OBOT_KEYCLOAK_AUTH_PROVIDER_URL`
 - `obot_keycloak_realm` - for `OBOT_KEYCLOAK_AUTH_PROVIDER_REALM`
 - `obot_keycloak_issuer_url` - for reference/documentation
@@ -237,12 +248,14 @@ if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
 ### Critical Architectural Difference
 
 **OLD Project Approach:**
+
 - Relies on Flux `${VAR}` substitution for secrets
 - Constructs URLs directly in HelmRelease templates
 - Hardcodes realm name in templates
 - Uses `OBOT_SERVER_AUTH_KEYCLOAK_*` variable naming (NOT fork-compatible)
 
 **CURRENT Project Approach:**
+
 - Computes all derived values in `plugin.py`
 - Uses pure Jinja2 templating in HelmRelease
 - Realm name flows from `keycloak_realm` cluster variable
@@ -264,17 +277,21 @@ if data.get("obot_keycloak_enabled") and data.get("keycloak_enabled"):
 ### Example: Hostname Construction
 
 **OLD Project:**
+
 ```yaml
 OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname | default('obot') }#.${SECRET_DOMAIN}"
 ```
+
 - Uses Jinja2 for app name with default
 - Uses Flux substitution for domain
 - Results in: `https://obot.example.com`
 
 **CURRENT Project:**
+
 ```yaml
 OBOT_SERVER_HOSTNAME: "https://#{ obot_hostname }#"
 ```
+
 - `obot_hostname` is pre-computed in `plugin.py` to include full hostname
 - Results in: `https://obot.matherlynet.dev`
 
@@ -371,6 +388,7 @@ KeycloakRealm string `env:"OBOT_KEYCLOAK_AUTH_PROVIDER_REALM"`
 ```
 
 If the OLD project was working, it was either:
+
 - Using a different (older) version of the fork
 - Using a different authentication mechanism
 - Not actually tested with Keycloak authentication

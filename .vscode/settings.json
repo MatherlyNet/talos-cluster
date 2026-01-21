@@ -2,7 +2,6 @@
   // Disable GitHub Actions variable lookups to prevent permission errors
   // on organization repos where OAuth lacks fine-grained variable access
   "github-actions.workflows.pinned.refresh.enabled": false,
-
   "editor.bracketPairColorization.enabled": true,
   "files.associations": {
     "**/*.json5": "json5"
