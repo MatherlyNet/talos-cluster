@@ -222,6 +222,35 @@ user <username> on ><password> ~<key-pattern> +<commands>
 | `+@write` | Write | SET, MSET, HSET, LPUSH, etc. |
 | `+@admin` | Admin | CONFIG, FLUSHDB, SHUTDOWN, etc. |
 | `+@dangerous` | Destructive | FLUSHALL, KEYS, etc. |
+| `+@pubsub` | Pub/Sub | SUBSCRIBE, PUBLISH, PSUBSCRIBE, etc. |
+
+### Pub/Sub Channel Permissions
+
+**⚠️ CRITICAL: Dragonfly doesn't parse `&*` correctly - use `allchannels` instead!**
+
+| Syntax | Description | Dragonfly Support |
+| ------ | ----------- | ----------------- |
+| `allchannels` | Access to all pub/sub channels | ✅ Works |
+| `&*` | Redis alias for allchannels | ❌ Parsed as `resetchannels` (no access) |
+| `&<pattern>` | Specific channel pattern | ✅ Works |
+| `resetchannels` | Revoke all channel access | ✅ Works |
+
+**Example ACL with pub/sub:**
+
+```
+# CORRECT - use allchannels keyword
+user mcpgateway on >password ~* allchannels +@all -@dangerous
+
+# WRONG - Dragonfly doesn't parse &* correctly
+user mcpgateway on >password ~* &* +@all -@dangerous
+```
+
+**Verify channel permissions:**
+
+```bash
+kubectl exec -n cache dragonfly-0 -- redis-cli -a <password> ACL GETUSER <username>
+# Check "channels" field - should show "allchannels" not "resetchannels"
+```
 
 ---
 
