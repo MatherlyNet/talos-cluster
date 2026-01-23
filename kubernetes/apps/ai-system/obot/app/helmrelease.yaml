@@ -24,7 +24,7 @@ spec:
 
     image:
       repository: ghcr.io/jrmatherly/obot-entraid
-      tag: v0.2.43
+      tag: v0.15.3
       pullPolicy: IfNotPresent
 
     replicaCount: 1
