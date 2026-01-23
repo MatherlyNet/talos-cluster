@@ -10,5 +10,3 @@ resources:
   - ./namespace.yaml
   - ./litellm/ks.yaml
   - ./langfuse/ks.yaml
-  - ./obot/ks.yaml
-  - ./mcp-context-forge/ks.yaml

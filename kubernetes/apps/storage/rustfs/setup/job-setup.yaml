@@ -92,17 +92,8 @@ spec:
               echo "langfuse-postgres-backups bucket created."
               echo "NOTE: Create Langfuse backup access keys in RustFS Console and update cluster.yaml"
 
-              mc mb --ignore-existing rustfs/obot-postgres-backups
-              echo "obot-postgres-backups bucket created."
-              echo "NOTE: Create Obot backup access keys in RustFS Console and update cluster.yaml"
 
-              mc mb --ignore-existing rustfs/obot-audit-logs
-              echo "obot-audit-logs bucket created."
-              echo "NOTE: Create Obot audit log access keys in RustFS Console and update cluster.yaml"
 
-              mc mb --ignore-existing rustfs/mcpgateway-postgres-backups
-              echo "mcpgateway-postgres-backups bucket created."
-              echo "NOTE: Create MCP Context Forge backup access keys in RustFS Console and update cluster.yaml"
 
               echo ""
               echo "============================================="
@@ -169,28 +160,6 @@ spec:
               echo "  - Create 'langfuse-backup' user in ai-system group"
               echo "  - Update langfuse_backup_s3_access_key/langfuse_backup_s3_secret_key in cluster.yaml"
               echo "  - See: docs/research/langfuse-llm-observability-integration-jan-2026.md"
-              echo ""
-              echo "OBOT BACKUP (ai-system group):"
-              echo "  - Create 'obot-storage' policy scoped to obot-postgres-backups bucket"
-              echo "  - Create 'ai-system' group with policy attached (if not exists)"
-              echo "  - Create 'obot-backup' user in ai-system group"
-              echo "  - Update obot_s3_access_key/obot_s3_secret_key in cluster.yaml"
-              echo "  - See: docs/research/obot-mcp-gateway-integration-jan-2026.md"
-              echo ""
-              echo "OBOT AUDIT LOGS (ai-system group):"
-              echo "  - Create 'obot-audit-storage' policy scoped to obot-audit-logs bucket"
-              echo "  - Create 'ai-system' group with policy attached (if not exists)"
-              echo "  - Create 'obot-audit' user in ai-system group"
-              echo "  - Update obot_audit_s3_access_key/obot_audit_s3_secret_key in cluster.yaml"
-              echo "  - Configure in Obot UI: Admin Settings → Audit Logs → Export Audit Logs"
-              echo "  - See: docs/ai-context/obot.md (Audit Log Export section)"
-              echo ""
-              echo "MCP CONTEXT FORGE BACKUP (ai-system group):"
-              echo "  - Create 'mcp-context-forge-storage' policy scoped to mcpgateway-postgres-backups bucket"
-              echo "  - Create 'ai-system' group with policy attached (if not exists)"
-              echo "  - Create 'mcpgateway-backup' user in ai-system group"
-              echo "  - Update mcp_context_forge_s3_access_key/mcp_context_forge_s3_secret_key in cluster.yaml"
-              echo "  - See: docs/research/mcp-context-forge-deployment-guide-jan-2026.md"
               echo ""
               echo "Then run: task configure && task reconcile"
               echo "============================================="
