@@ -21,7 +21,7 @@ jobs:
       attestations: write # For Sigstore attestation
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -61,7 +61,7 @@ jobs:
             return `${nextMajorMinor}.${nextPatch}`;
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0.21.1
+        uses: anchore/sbom-action@62ad5284b8ced813296287a0b63906cb364b73ee # v0.22.0
         with:
           path: .
           format: spdx-json
@@ -69,7 +69,7 @@ jobs:
           artifact-name: sbom-${{ steps.determine-next-tag.outputs.result }}
 
       - name: Generate CycloneDX SBOM
-        uses: anchore/sbom-action@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0.21.1
+        uses: anchore/sbom-action@62ad5284b8ced813296287a0b63906cb364b73ee # v0.22.0
         with:
           path: .
           format: cyclonedx-json
