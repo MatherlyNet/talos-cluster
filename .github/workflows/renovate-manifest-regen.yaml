@@ -114,7 +114,7 @@ jobs:
 
       - name: Detect changed template files
         id: changed-files
-        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
         with:
           files: |
             templates/config/**
@@ -168,7 +168,7 @@ jobs:
       # ------------------------------------------------------------------------
       # mise provides task runner and all required tools (opentofu, talosctl, etc.)
       - name: Setup mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
         with:
           cache: true
 
