@@ -28,7 +28,7 @@ spec:
     image:
       registry: ghcr.io
       repository: headlamp-k8s/headlamp
-      tag: v0.39.0
+      tag: v0.45.0
       pullPolicy: IfNotPresent
 
     replicaCount: 2
