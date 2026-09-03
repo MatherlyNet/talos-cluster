@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
 
-  image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.36.0
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.40.2
 
   resources:
     requests:
