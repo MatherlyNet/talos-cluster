@@ -386,7 +386,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: plugin
-          image: ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.10.0
+          image: ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.15.0
           imagePullPolicy: IfNotPresent
           args:
             - operator
